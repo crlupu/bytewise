@@ -1,0 +1,6 @@
+title: Concurrency fundamentals
+summary: What goes wrong when threads share data, and how locks put it right.
+lessons:
+  - race-conditions
+  - id: synchronized
+    requires: [race-conditions]

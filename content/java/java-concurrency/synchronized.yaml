@@ -1,0 +1,123 @@
+title: Locks with synchronized
+summary: How an intrinsic lock turns read-add-write into one step, and what it does and doesn't protect.
+duration: 8
+tags: [java, threads, synchronized, locks, monitor, atomic]
+steps:
+  - type: explanation
+    title: Every object has a lock
+    body: |
+      Every Java object carries an **intrinsic lock** (also called a *monitor*). A `synchronized`
+      method takes the lock of `this` before it runs and releases it when it returns:
+
+      ```java
+      class Counter {
+          private int count = 0;
+          synchronized void increment() { count++; }
+      }
+      ```
+
+      Only one thread can hold a lock at a time. A second thread that reaches the method **blocks**
+      until the first releases it. So the read-add-write can no longer be interleaved.
+
+  - type: widget
+    widget: threads
+    prompt: |
+      Same two threads, now with `synchronized`. **Try to lose an update** — then run both threads to the end.
+    config:
+      threads: 2
+      increments: 1
+      synchronized: true
+    goal:
+      count: 2
+    question:
+      prompt: What happens when one thread reaches *acquire lock* while the other holds it?
+      options:
+        - text: It waits until the lock is released
+          correct: true
+        - text: It skips the lock and carries on
+          feedback: Then the lock wouldn't protect anything.
+        - text: It throws an exception
+          feedback: Contention for a lock is normal; the thread just blocks.
+    hints:
+      - Run T1 until it holds the lock, then try T2.
+    explanation: |
+      While T1 holds the lock, T2 can't start its read. By the time T2 reads, T1 has written —
+      so no interleaving can lose an update.
+
+  - type: choice
+    prompt: In an instance method declared `synchronized`, which lock does the thread take?
+    options:
+      - text: The lock of `this` — the object the method was called on
+        correct: true
+      - text: A lock belonging to the method itself
+        feedback: Methods don't have locks; objects do.
+      - text: The lock of the class
+        feedback: That's what a `static synchronized` method takes.
+      - text: One global lock shared by all synchronized code
+        feedback: There is no global lock — that would make every program single-threaded.
+
+  - type: explanation
+    title: Locks belong to objects
+    body: |
+      Because the lock is the object's, two threads working on **different** objects don't block each other:
+
+      ```java
+      Counter a = new Counter();
+      Counter b = new Counter();
+      // Thread 1 calls a.increment(); thread 2 calls b.increment().
+      // They take different locks and run in parallel.
+      ```
+
+      That's usually what you want. But it means a lock only protects data that every thread
+      reaches **through the same lock**. A `static` field shared by all instances needs a lock all
+      of them share — `static synchronized`, or a `synchronized (Counter.class)` block.
+
+  - type: choice
+    prompt: |
+      An `Account` has `synchronized void withdraw(int amt) { if (balance >= amt) balance -= amt; }`
+      and a balance of 100. Two threads call `withdraw(80)` on it at the same moment. What's the final balance?
+    options:
+      - text: "20"
+        correct: true
+      - text: "−60"
+        feedback: |
+          That needs both threads to pass the `balance >= amt` check before either subtracts. The lock makes
+          check and subtract one step, so the second thread sees 20 and does nothing.
+      - text: Either 20 or −60, depending on timing
+        feedback: Without `synchronized` that would be right — it's a check-then-act race. The lock removes it.
+    explanation: |
+      **Check-then-act** is another classic race. Holding the lock across both the check and the act
+      makes them atomic together.
+
+  - type: explanation
+    title: Without a lock
+    body: |
+      For a single counter, `java.util.concurrent.atomic.AtomicInteger` does the same job without blocking:
+
+      ```java
+      private final AtomicInteger count = new AtomicInteger();
+      void increment() { count.incrementAndGet(); }
+      ```
+
+      It uses the CPU's **compare-and-swap** instruction: "set it to 6 only if it's still 5", retrying if
+      another thread got there first. Use atomics for single variables; use locks when several fields
+      must change together.
+
+  - type: blank
+    prompt: Complete the sentence.
+    template: "A thread that leaves a synchronized block [[releases]] the lock — even if it leaves by throwing an [[exception]]."
+    hints:
+      - The opposite of acquiring.
+    explanation: Java releases intrinsic locks on every exit path, so an exception can't leave a lock held.
+
+  - type: match
+    prompt: Match each tool to when it fits best.
+    pairs:
+      - left: "`AtomicInteger`"
+        right: One counter, updated very often
+      - left: "`synchronized` method"
+        right: Several fields of one object that must change together
+      - left: "`synchronized (Counter.class)`"
+        right: A static field shared by every instance
+      - left: "`volatile`"
+        right: A flag one thread sets and others only read

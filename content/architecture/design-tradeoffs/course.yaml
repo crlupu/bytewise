@@ -1,0 +1,4 @@
+title: Design trade-offs
+summary: Every design buys something with something else. Choose, and see the bill.
+lessons:
+  - caching

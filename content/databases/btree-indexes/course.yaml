@@ -1,0 +1,6 @@
+title: B-tree indexes
+summary: The data structure behind almost every database index, and why it stays shallow.
+lessons:
+  - why-indexes
+  - id: btree-insert
+    requires: [why-indexes]

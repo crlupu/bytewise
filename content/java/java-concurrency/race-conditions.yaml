@@ -1,0 +1,131 @@
+title: Race conditions
+summary: Why count++ isn't safe when two threads share it, seen one instruction at a time.
+duration: 8
+tags: [java, threads, concurrency, race condition, lost update]
+steps:
+  - type: explanation
+    title: One line, three steps
+    body: |
+      Here is a counter that several threads share:
+
+      ```java
+      class Counter {
+          int count = 0;
+          void increment() { count++; }
+      }
+      ```
+
+      `count++` looks like one action. The JVM actually carries it out as three:
+
+      1. **read** `count` into a temporary (a register),
+      2. **add** one to the temporary,
+      3. **write** the temporary back to `count`.
+
+      A thread can be paused between any two of those steps — and another thread can run in the gap.
+
+  - type: order
+    prompt: Put the steps of `count++` in the order a thread performs them.
+    items:
+      - "Read: `tmp = count`"
+      - "Add: `tmp = tmp + 1`"
+      - "Write: `count = tmp`"
+    explanation: Read, modify, write. Each step is atomic on its own; the sequence as a whole is not.
+
+  - type: choice
+    prompt: Two threads each call `increment()` once on a shared counter that starts at 0. Which final values of `count` are possible?
+    options:
+      - text: "0"
+        feedback: Each thread writes at least once, and every write stores a value of 1 or more.
+      - text: "1"
+        correct: true
+      - text: "2"
+        correct: true
+      - text: "3"
+        feedback: There are only two increments in total, so the value can't exceed 2.
+    hints:
+      - What if both threads read `count` before either writes?
+    explanation: |
+      2 when the threads take turns. 1 when both read 0 before either writes — then both write 1,
+      and one update is lost. Let's make that happen.
+
+  - type: widget
+    widget: threads
+    prompt: |
+      **Lose an update.** Run the threads one instruction at a time, in any order, so that both finish
+      but `count` ends at **1**.
+    config:
+      threads: 2
+      increments: 1
+    goal:
+      count: 1
+    hints:
+      - Let T1 read `count` first.
+      - Before T1 writes, let T2 read `count` too. Both now hold 0.
+    explanation: |
+      Both threads read 0, both computed 1, both wrote 1. The second write overwrote the first:
+      a **lost update**.
+
+  - type: widget
+    widget: threads
+    prompt: |
+      **Three threads.** Each increments once, so the right answer is 3. Can you make it end at **1** —
+      losing two updates?
+    config:
+      threads: 3
+      increments: 1
+    goal:
+      count: 1
+    hints:
+      - Get all three threads to read before any of them writes.
+    explanation: |
+      With *n* threads you can lose up to *n − 1* updates. Real programs increment millions of times,
+      so the final count can be far off — and different on every run.
+
+  - type: explanation
+    title: Race conditions
+    body: |
+      When the result depends on the **timing** of threads, that's a **race condition**. The section of
+      code that must not be interleaved — here, the read-add-write — is a **critical section**.
+
+      Races are hard to catch in testing:
+
+      - the bad interleaving needs a thread switch at exactly the wrong instruction;
+      - on a quiet machine that may happen once in a million runs;
+      - adding a `println` to debug it changes the timing and hides it.
+
+      So we don't test our way out of races; we design them out.
+
+  - type: choice
+    prompt: Which of these make `increment()` safe for many threads?
+    options:
+      - text: Declare the method `synchronized`
+        correct: true
+      - text: Use an `AtomicInteger` and call `incrementAndGet()`
+        correct: true
+      - text: Declare `count` as `volatile`
+        feedback: |
+          `volatile` makes each read and write visible to other threads, but the read-add-write is
+          still three separate steps. Two threads can still read the same value.
+      - text: Run the program on a single-core machine
+        feedback: The scheduler can still pause a thread between the read and the write, and switch to another.
+    explanation: |
+      Both fixes make the three steps behave as one: `synchronized` with a lock, `AtomicInteger` with
+      a single hardware compare-and-swap.
+
+  - type: match
+    prompt: Match each term to its meaning.
+    pairs:
+      - left: Race condition
+        right: The result depends on the timing of threads
+      - left: Atomic
+        right: Happens all at once; no other thread sees it half-done
+      - left: Critical section
+        right: Code that must not run in two threads at the same time
+      - left: Lost update
+        right: One thread's write silently overwrites another's
+
+  - type: blank
+    prompt: Complete the sentence.
+    template: "`count++` is a read-[[modify]]-write sequence, so it is not [[atomic]]."
+    hints:
+      - The middle step changes the value.

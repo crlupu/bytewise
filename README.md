@@ -1,1 +1,124 @@
-# bytewise
+# Bytewise
+
+A personal, Brilliant-style learning app for software engineering. Short interactive
+lessons: you predict or manipulate something first, and the explanation follows.
+
+Next.js (static export) on GitHub Pages. No server and no accounts: lessons are YAML
+files in this repo, validated and rendered at build time, and progress lives in the
+browser's localStorage.
+
+## Running it
+
+```sh
+npm install
+npm run dev        # http://localhost:3000
+npm run build      # static site in out/
+npx tsc --noEmit   # type check
+```
+
+## Deployment
+
+`.github/workflows/deploy-pages.yml` builds with `GITHUB_PAGES=true` (which sets the
+`/bytewise` base path) and deploys on every push to `main`. One-time setup: in the
+repository's **Settings → Pages**, set **Source** to **GitHub Actions**.
+
+## What's in v1
+
+| Area | Where |
+|---|---|
+| Topic → Course → Lesson → Step, prerequisites, file validation (FR-1–5) | `content/`, `lib/schema.ts`, `lib/content.ts` |
+| Step types: explanation, multiple choice, predict the output, ordering, matching, fill in the blank, widget (FR-6–12) | `components/steps/` |
+| Immediate feedback, per-answer explanations, unlimited retries, progressive hints (FR-13–17) | `components/steps/StepView.tsx`, `lib/grade.ts` |
+| Widgets with step back / forward / reset, reporting state against a goal (FR-18–21) | `lib/widgets/` (logic), `components/widgets/` (UI) |
+| Home with Continue, course screens with lock/override, lesson progress and resume (FR-22–28) | `components/HomeView.tsx`, `CourseView.tsx`, `LessonPlayer.tsx` |
+| Per-step and per-lesson records, reset, export/import (FR-29–33) | `lib/progress.ts`, `components/SettingsView.tsx` |
+| Spaced repetition and mixed review sessions (FR-34–37) | `lib/progress.ts`, `ReviewView.tsx`, `SessionView.tsx` |
+| Streak and activity history (FR-38–39) | `ProgressView.tsx` |
+| Search by title, summary and tags (FR-40) | `SearchView.tsx` |
+| Light/dark/system theme, reduced motion (FR-41–42) | `lib/settings.ts`, `SettingsView.tsx` |
+
+Widgets, one or more per topic: thread interleaving (Java), B-tree insert and search
+(databases), page replacement — FIFO/LRU/OPT (operating systems), TCP handshake and
+teardown (networking), trade-off scenarios (architecture).
+
+The open questions were settled as the requirements assumed: predict-the-output compares
+against authored answers, progress is per device with export/import as the bridge, and
+v1 ships one course per topic (two for Java).
+
+## Writing lessons
+
+Adding a lesson is adding a file — no code changes.
+
+```
+content/
+  <topic>/topic.yaml               title, summary, order, courses: [course ids in order]
+  <topic>/<course>/course.yaml     title, summary, lessons: [ids in order]
+  <topic>/<course>/<lesson>.yaml   the lesson
+```
+
+A lesson in `course.yaml` is either an id or `{ id, requires: [other-lesson | course/lesson] }`.
+Course ids are unique across topics.
+
+```yaml
+title: Race conditions
+summary: One line shown in lists and search.
+duration: 8               # minutes
+tags: [java, threads]
+steps:                    # 5 to 15
+  - type: explanation
+    title: Optional heading
+    body: |
+      Markdown, with fenced code blocks (highlighted), tables, images and inline SVG.
+```
+
+Every exercise takes `prompt`, plus optional `explanation` (shown when right), `feedback`
+(shown when wrong and nothing more specific applies), `hints: [...]` (revealed one at a
+time) and `id` (keeps progress stable if steps are reordered; defaults to `step-N`).
+
+| `type` | Fields |
+|---|---|
+| `choice` | `options: [{ text, correct, feedback }]`; several `correct` makes it multi-select. Optional `code`, `language`. |
+| `predict` | `code`, `language`, then either `answer` (string or list, typed; `wrong: [{ answer, feedback }]`) or `options` (selected). |
+| `order` | `items` in the correct order; shown shuffled. |
+| `match` | `pairs: [{ left, right }]`. |
+| `blank` | `template` with `[[answer]]` or `[[answer\|alternative]]`; `code: true` for monospace. |
+| `widget` | `widget`, `config`, and a `goal`, a `question` (`{ prompt, options }`), or both. |
+
+Widget configs and goals:
+
+| Widget | `config` | `goal` |
+|---|---|---|
+| `threads` | `threads` (2–3), `increments`, `synchronized`, `variable`, `initial` | `count` |
+| `btree` | `order` (3–6), `initial`, `sequence`, `custom`, `search` | `height`, `splits`, `contains`, `found` |
+| `paging` | `reference`, `frames`, `frameChoices`, `algorithms` (FIFO, LRU, OPT) | `algorithm`, `frames` (and played to the end) |
+| `tcp` | `start` (closed/established), `teardown`, `clientIsn`, `serverIsn` | `client`, `server` (TCP states) |
+| `tradeoff` | `metrics: [{ id, label, start, better }]`, `decisions: [{ id, label, options: [{ id, label, effects, consequence }] }]` | `require: [{ metric, min, max }]` |
+
+A mistake stops the build (and shows in `npm run dev`) with every problem found, each
+naming its file and field:
+
+```
+content/networking/tcp/handshake.yaml: steps[2].goal.client: Invalid enum value …
+```
+
+To add a widget: put its logic and zod schemas in `lib/widgets/<name>.ts`, register them in
+`lib/widgets/registry.ts`, and add the component to `components/widgets/index.tsx`.
+
+## Design
+
+The interface follows Momentum's design language (Apple's Human Interface Guidelines):
+ink on paper with one accent, electric blue `#097CFB`, which only ever means progress —
+a correct answer, a filled meter, the primary button, the current tab. Amber means
+"not yet" (a wrong answer, items due); red is for destructive actions only. The accent
+never carries small text. Type is the system face on the iOS type ladder; figures use
+the rounded variant with tabular digits. Tab bar on phones, sidebar from 1056px, one
+filled button per screen, 44px touch targets, hover styles only behind `(hover: hover)`.
+All tokens are in `app/globals.css`.
+
+## Progress data
+
+One JSON document in localStorage (`bytewise:v1`), changed only through the actions in
+`lib/progress.ts`. Review intervals are 1, 3, 7, 14, 30, 60 and 120 days: an exercise
+right first time without a hint starts on 3 days and climbs; a miss or a hint sends it
+back to 1 day. Settings live separately (`bytewise:settings`) so the theme can be applied
+before first paint.

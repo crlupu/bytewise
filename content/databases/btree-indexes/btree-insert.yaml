@@ -1,0 +1,135 @@
+title: Inserting into a B-tree
+summary: Watch nodes fill, split and push keys upward — and the tree grow only at the root.
+duration: 9
+tags: [databases, b-tree, insert, split, balanced tree]
+steps:
+  - type: explanation
+    title: The rules
+    body: |
+      A B-tree of **order *m*** keeps a few rules:
+
+      - every node holds at most *m* − 1 keys, in sorted order;
+      - a node with *k* keys has *k* + 1 children, and the keys separate their ranges;
+      - all leaves are on the same level.
+
+      New keys always go into a **leaf**. When a leaf would hold *m* keys, it **splits**: the middle key
+      moves up into the parent, and the keys either side become two nodes.
+
+      In the next steps the order is small, so splits come quickly.
+
+  - type: widget
+    widget: btree
+    prompt: |
+      An empty B-tree of order 3 — at most **2 keys** per node. Insert 10, 20 and 30 with the button or
+      **Step forward**, and watch what happens when a leaf gets a third key.
+    config:
+      order: 3
+      sequence: [10, 20, 30]
+      custom: false
+    goal:
+      splits: 1
+    question:
+      prompt: After inserting 30, which key is in the root?
+      options:
+        - text: "10"
+        - text: "20"
+          correct: true
+        - text: "30"
+          feedback: 30 went into a leaf. Look at which key moved *up*.
+    explanation: |
+      [10, 20, 30] overflowed, so it split around its middle key: 20 moved up into a new root,
+      with [10] and [30] as its children.
+
+  - type: predict
+    prompt: |
+      Starting from that tree — root [20], leaves [10] and [30] — you insert **40** and then **50**.
+      Which key moves up into the root?
+    options:
+      - text: "30"
+      - text: "40"
+        correct: true
+      - text: "50"
+    hints:
+      - 40 joins the leaf [30]. Where does 50 go, and is that leaf now too full?
+    explanation: |
+      40 makes the leaf [30, 40]. 50 makes it [30, 40, 50] — too many — so it splits, and the middle
+      key, 40, moves up. The root becomes [20, 40].
+
+  - type: widget
+    widget: btree
+    prompt: |
+      This tree already holds 10–50. **Make it grow to three levels.** Use the keys offered, or type your own.
+    config:
+      order: 3
+      initial: [10, 20, 30, 40, 50]
+      sequence: [60, 70]
+      custom: true
+    goal:
+      height: 3
+    question:
+      prompt: What made the tree one level taller?
+      options:
+        - text: The root split
+          correct: true
+        - text: A leaf got a third key
+          feedback: A leaf split only adds a key to its parent. Height changes only when the split reaches the top.
+        - text: Inserting a key larger than all the others
+          feedback: Large keys go to the rightmost leaf like any other key; that alone doesn't add a level.
+    hints:
+      - Insert 60, then 70, and watch the root.
+    explanation: |
+      Inserting 70 split a leaf, which pushed 60 into the root, which then held three keys and split too.
+      A B-tree grows **at the root**, never at the leaves.
+
+  - type: explanation
+    title: Always balanced
+    body: |
+      Because new levels only appear at the top, **every leaf stays at the same depth**. No insertion order
+      can make the tree lopsided.
+
+      Compare a plain binary search tree: insert keys in sorted order and it degenerates into a linked list,
+      with searches as slow as a scan. A B-tree's worst case is the same as its best case: one node per level.
+
+  - type: widget
+    widget: btree
+    prompt: |
+      Here's an order-4 tree (up to 3 keys per node) holding ten keys. **Search for 47** and look at the path it takes.
+    config:
+      order: 4
+      initial: [5, 12, 19, 26, 33, 40, 47, 54, 61, 68]
+      custom: false
+      search: true
+    goal:
+      found: 47
+    question:
+      prompt: How many nodes did the search visit?
+      options:
+        - text: "1"
+        - text: "2"
+          correct: true
+        - text: "3"
+        - text: "10"
+          feedback: That would be a scan. The search only follows one path from the root.
+    explanation: |
+      At the root [19, 40, 61], 47 is between 40 and 61, so the search follows the third child — and finds 47 there.
+      One node per level: two levels, two nodes.
+
+  - type: choice
+    prompt: A B-tree of order 100 holds 1,000,000 keys. Roughly how many nodes does a search visit?
+    options:
+      - text: About 3
+        correct: true
+      - text: About 20
+        feedback: That's a binary search tree — fan-out 2. With fan-out 100, each level divides the range by 100.
+      - text: About 1,000
+      - text: About 1,000,000
+    explanation: 100³ = 1,000,000, so about three levels.
+
+  - type: order
+    prompt: Put the steps of inserting a key into a full leaf in order.
+    items:
+      - Search down from the root to the leaf where the key belongs
+      - Add the key to the leaf in sorted position
+      - The leaf now has too many keys, so split it in two
+      - Move the middle key up into the parent
+      - If the parent now overflows, split it too — possibly up to the root

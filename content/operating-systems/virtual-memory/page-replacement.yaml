@@ -1,0 +1,131 @@
+title: Page replacement
+summary: FIFO, LRU and the optimal policy, played out on the same reference string.
+duration: 9
+tags: [operating systems, page replacement, fifo, lru, belady, clock]
+steps:
+  - type: explanation
+    title: Who gets evicted?
+    body: |
+      Memory is full and a page fault needs a frame. Which page goes? Three classic answers:
+
+      - **FIFO** — evict the page that was **loaded earliest**. Simple: a queue.
+      - **LRU** — evict the page **used least recently**. The past predicts the future.
+      - **OPT** (Bélády's optimal) — evict the page that **won't be needed for the longest**. Perfect, but it needs to see the future.
+
+      We'll play each against the same sequence of page accesses — a **reference string**.
+
+  - type: widget
+    widget: paging
+    prompt: |
+      Here's FIFO with 3 frames. **Step through the whole reference string** and watch each eviction.
+    config:
+      reference: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]
+      frames: 3
+      algorithms: [FIFO]
+    goal:
+      algorithm: FIFO
+    question:
+      prompt: How many page faults did FIFO have?
+      options:
+        - text: "7"
+        - text: "9"
+        - text: "10"
+          correct: true
+        - text: "13"
+          feedback: That would mean every access faulted. Look for the ✓ hits in the bottom row.
+    hints:
+      - Use Step forward until the last column is filled, then count the F marks.
+    explanation: |
+      10 faults out of 13 accesses. Notice FIFO evicting page 0 when page 3 arrives, even though 0 is
+      needed again on the very next access — it only looks at *when* a page arrived, not *how* it's used.
+
+  - type: widget
+    widget: paging
+    prompt: |
+      Now switch to **LRU**, same string, and step through it.
+    config:
+      reference: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]
+      frames: 3
+      algorithms: [FIFO, LRU, OPT]
+    goal:
+      algorithm: LRU
+    question:
+      prompt: How many faults with LRU?
+      options:
+        - text: "7"
+          feedback: That's OPT. Make sure the LRU tab is selected.
+        - text: "9"
+          correct: true
+        - text: "10"
+          feedback: That's FIFO's count. Switch to the LRU tab.
+    explanation: |
+      LRU: 9. Try OPT too — it gets 7, the fewest any policy could manage on this string.
+      LRU lands between FIFO and the ideal.
+
+  - type: choice
+    prompt: Why don't real operating systems use OPT?
+    options:
+      - text: It needs to know which pages the program will access in the future
+        correct: true
+      - text: It's too slow to compute
+        feedback: Speed isn't the obstacle. The information it needs simply doesn't exist yet.
+      - text: It suffers from Bélády's anomaly
+        feedback: OPT never does. You'll meet the anomaly in a moment.
+    explanation: OPT is a yardstick — run it afterwards on a recorded trace to see how close a real policy got.
+
+  - type: widget
+    widget: paging
+    prompt: |
+      More memory should mean fewer faults. Run FIFO on this string with **3 frames**, then with **4 frames**.
+    config:
+      reference: [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5]
+      frames: 3
+      frameChoices: [3, 4]
+      algorithms: [FIFO]
+    goal:
+      frames: 4
+    question:
+      prompt: What happened?
+      options:
+        - text: 4 frames had **more** faults than 3
+          correct: true
+        - text: 4 frames had fewer faults, as expected
+          feedback: Count again — 3 frames gives 9 faults, 4 frames gives 10.
+        - text: They had the same number
+    hints:
+      - Play to the end with each setting and compare the fault counts in the bar.
+    explanation: |
+      9 faults with 3 frames, 10 with 4. That's **Bélády's anomaly**: under FIFO, adding memory can make things worse.
+
+  - type: explanation
+    title: Stack algorithms and the clock
+    body: |
+      LRU and OPT can't show the anomaly. They are **stack algorithms**: the pages held with *n* frames
+      are always a subset of those held with *n* + 1, so more frames can never mean more faults.
+
+      True LRU is costly — it needs to timestamp every memory access. Real kernels approximate it with the
+      **clock** (second-chance) algorithm: each frame has a *referenced* bit the hardware sets on access;
+      a hand sweeps the frames, clearing set bits and evicting the first frame whose bit is already clear.
+
+  - type: match
+    prompt: Match each policy to the page it evicts.
+    pairs:
+      - left: FIFO
+        right: The page that was loaded earliest
+      - left: LRU
+        right: The page that hasn't been used for the longest
+      - left: OPT
+        right: The page that won't be needed for the longest
+      - left: Clock
+        right: The first page the sweeping hand finds with its referenced bit clear
+
+  - type: choice
+    prompt: Which policies can never suffer from Bélády's anomaly?
+    options:
+      - text: LRU
+        correct: true
+      - text: OPT
+        correct: true
+      - text: FIFO
+        feedback: You just watched FIFO do it.
+    explanation: Both are stack algorithms, so giving them more frames never adds faults.

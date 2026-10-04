@@ -1,0 +1,4 @@
+title: Software architecture
+summary: Designing systems — the choices, and what each one costs.
+order: 5
+courses: [design-tradeoffs]

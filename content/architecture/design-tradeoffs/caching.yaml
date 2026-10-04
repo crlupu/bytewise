@@ -1,0 +1,139 @@
+title: Caching a read-heavy service
+summary: Cache-aside, write-through, replicas and CDNs — each buys speed with something else.
+duration: 9
+tags: [architecture, caching, trade-offs, consistency, latency, cdn]
+steps:
+  - type: explanation
+    title: There is no free speed
+    body: |
+      You run the **product catalogue** for a shop. 95% of requests are reads of product pages, and they're
+      slow because every one goes to the database.
+
+      You have a few levers — a cache, read replicas, a CDN — and each one improves some qualities while
+      hurting others:
+
+      - **Latency**: how long a page takes (lower is better);
+      - **Staleness**: how out of date a price might be (lower is better);
+      - **Cost** and **complexity**: what you pay in money and in moving parts.
+
+      Architecture is choosing which costs you can live with, for *this* system.
+
+  - type: widget
+    widget: tradeoff
+    prompt: |
+      **Product pages.** Get latency down to **3 or less**. Prices may be a little stale (staleness up to **5**),
+      but your small team can't run anything too intricate (complexity up to **7**).
+    config: &catalogue
+      metrics:
+        - { id: latency, label: Latency, start: 8, better: lower }
+        - { id: staleness, label: Staleness, start: 0, better: lower }
+        - { id: cost, label: Cost, start: 3, better: lower }
+        - { id: complexity, label: Complexity, start: 2, better: lower }
+      decisions:
+        - id: cache
+          label: Application cache
+          options:
+            - id: none
+              label: No cache
+              consequence: Every page view queries the database; under load, latency stays high.
+            - id: aside
+              label: Cache-aside, 60 s TTL
+              effects: { latency: -5, staleness: 4, cost: 2, complexity: 2 }
+              consequence: Most reads come from memory. A changed price can be up to a minute old.
+            - id: through
+              label: Write-through
+              effects: { latency: -5, staleness: 1, cost: 2, complexity: 4 }
+              consequence: Writes update the cache as well, so it's rarely stale — but every write path must know about the cache.
+        - id: db
+          label: Database
+          options:
+            - id: single
+              label: Single primary
+              consequence: One place to read and write. Simple, and the obvious bottleneck.
+            - id: replicas
+              label: Read replicas
+              effects: { latency: -1, staleness: 2, cost: 3, complexity: 2 }
+              consequence: Reads are spread out, but replicas lag the primary by a little.
+        - id: edge
+          label: Edge
+          options:
+            - id: none
+              label: No CDN
+              consequence: Every request reaches your servers.
+            - id: cdn
+              label: CDN for pages
+              effects: { latency: -2, staleness: 3, cost: 1, complexity: 1 }
+              consequence: Pages are served close to users, but purging an old price everywhere takes time.
+    goal:
+      require:
+        - { metric: latency, max: 3 }
+        - { metric: staleness, max: 5 }
+        - { metric: complexity, max: 7 }
+    hints:
+      - The application cache is the biggest lever on latency.
+      - Read replicas and a CDN both add staleness. You may not need either.
+    explanation: |
+      A cache alone gets you there. Adding replicas or a CDN on top would buy a little more speed at the price of
+      staleness you'd then have to manage. More than one design passes — that's normal.
+
+  - type: choice
+    prompt: How does **cache-aside** work?
+    options:
+      - text: The app checks the cache; on a miss it reads the database and puts the result in the cache
+        correct: true
+      - text: The cache sits in front of the database and fetches misses itself
+        feedback: That's *read-through*. In cache-aside, the application does the fetching and filling.
+      - text: Every write goes to the cache first and is copied to the database later
+        feedback: That's *write-back* (write-behind) — fast, but data can be lost if the cache fails.
+    explanation: Cache-aside keeps the cache dumb and the logic in the application, which makes it the most common pattern.
+
+  - type: widget
+    widget: tradeoff
+    prompt: |
+      **Same building blocks, different product.** The checkout shows how many items are left in stock, and it
+      must be nearly exact — staleness **1 or less**. Latency up to **4** is fine.
+    config: *catalogue
+    goal:
+      require:
+        - { metric: staleness, max: 1 }
+        - { metric: latency, max: 4 }
+    hints:
+      - Which cache option keeps the cache in step with writes?
+      - Every other lever adds staleness.
+    explanation: |
+      Only write-through on a single primary, with no CDN, passes. The levers that were fine for product pages
+      are wrong here — the requirements, not the technology, decide.
+
+  - type: match
+    prompt: Match each choice to the trade-off it makes.
+    pairs:
+      - left: Cache-aside with a TTL
+        right: Fast reads; data can be stale until the entry expires
+      - left: Write-through
+        right: A fresher cache; slower writes, more coupling
+      - left: Read replicas
+        right: Scales reads; replicas lag the primary
+      - left: CDN
+        right: Fastest for distant users; hardest to invalidate
+
+  - type: explanation
+    title: Two hard things
+    body: |
+      > There are only two hard things in computer science: cache invalidation and naming things. — Phil Karlton
+
+      One failure mode worth knowing by name: a **cache stampede** (or *thundering herd*). A popular entry expires,
+      and a thousand requests all miss at the same moment, all query the database, and all write the same value back.
+      The database, which the cache was protecting, takes the full load at once.
+
+  - type: choice
+    prompt: Which of these reduce the risk of a cache stampede?
+    options:
+      - text: Let one request recompute a missing entry while the others wait for its result
+        correct: true
+      - text: Add random jitter to TTLs so entries don't expire together
+        correct: true
+      - text: Use a shorter TTL
+        feedback: Shorter TTLs mean entries expire more often — more chances for a stampede, not fewer.
+    explanation: |
+      *Request coalescing* (also called single-flight) and *jittered expiry* are the standard fixes; refreshing hot
+      entries shortly before they expire is a third.

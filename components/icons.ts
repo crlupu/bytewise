@@ -1,0 +1,40 @@
+/**
+ * The app's icons, in one place: Ionicons, whose shapes follow the iOS
+ * system glyphs, taken as React components so nothing has to be fetched
+ * before they draw.
+ */
+export {
+  IoBook as LearnIcon,
+  IoRepeat as ReviewIcon,
+  IoSearch as SearchIcon,
+  IoStatsChart as ProgressIcon,
+  IoSettingsSharp as SettingsIcon,
+  IoFlame as StreakIcon,
+  IoClose as CloseIcon,
+  IoChevronBack as BackIcon,
+  IoChevronForward as ChevronIcon,
+  IoChevronUp as UpIcon,
+  IoChevronDown as DownIcon,
+  IoCheckmark as CheckIcon,
+  IoLockClosed as LockIcon,
+  IoBulbOutline as HintIcon,
+  IoPlaySkipBack as StepBackIcon,
+  IoPlaySkipForward as StepForwardIcon,
+  IoRefresh as ResetIcon,
+  IoReorderTwo as GripIcon,
+  IoFlag as GoalIcon,
+  IoCodeSlash as CodeIcon,
+  IoSparkles as SparkIcon,
+  IoTimeOutline as TimeIcon,
+  IoDownloadOutline as ExportIcon,
+  IoCloudUploadOutline as ImportIcon,
+  IoTrashOutline as TrashIcon,
+  IoCheckmarkCircle as DoneIcon,
+  IoAlert as WrongIcon,
+  IoReaderOutline as ReadIcon,
+  IoTrophy as TrophyIcon,
+  IoCalendar as CalendarIcon,
+  IoPlay as PlayIcon,
+  IoArrowForward as ForwardIcon,
+  IoHandRight as InteractIcon,
+} from "react-icons/io5";

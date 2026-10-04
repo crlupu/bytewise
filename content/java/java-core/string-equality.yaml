@@ -1,0 +1,160 @@
+title: String and Integer equality
+summary: Why == sometimes works on strings and boxed numbers — and why you shouldn't rely on it.
+duration: 7
+tags: [java, strings, equality, interning, autoboxing]
+steps:
+  - type: explanation
+    title: Two kinds of "equal"
+    body: |
+      In Java, `==` on objects asks **"are these the same object?"** — it compares references.
+      `equals()` asks **"do these hold the same value?"** — whatever the class decides that means.
+
+      ```java
+      StringBuilder a = new StringBuilder("hi");
+      StringBuilder b = new StringBuilder("hi");
+      a == b;        // false: two separate objects
+      a == a;        // true: the same object
+      ```
+
+      For strings, the difference is easy to miss, because `==` *sometimes* gives the answer you wanted.
+      Let's find out when.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      String a = "hello";
+      String b = "hello";
+      System.out.println(a == b);
+    language: java
+    options:
+      - text: "`true`"
+        correct: true
+      - text: "`false`"
+        feedback: |
+          That would be right for two `new String(...)` objects. But these are **literals**,
+          and the JVM keeps only one copy of each literal string.
+      - text: It doesn't compile
+        feedback: Comparing two references with `==` is always legal; it just might not mean what you expect.
+    explanation: |
+      String literals are **interned**: the JVM keeps one shared `String` object per distinct literal.
+      `a` and `b` both point at it, so `==` is `true`.
+
+  - type: predict
+    prompt: And this? Type both lines of output.
+    code: |
+      String a = "hello";
+      String b = new String("hello");
+      System.out.println(a == b);
+      System.out.println(a.equals(b));
+    language: java
+    answer: ["false true", "false, true", "false\ntrue"]
+    wrong:
+      - answer: "true true"
+        feedback: "`new` always creates a fresh object, so `b` is not the interned literal."
+      - answer: "false false"
+        feedback: "`equals()` compares the characters, and they're the same."
+    hints:
+      - What does `new` always do, whatever the class?
+    explanation: |
+      `new String("hello")` makes a new object with the same characters, so `==` is `false`,
+      while `equals()` compares content and is `true`.
+
+  - type: explanation
+    title: When the compiler joins strings for you
+    body: |
+      Concatenating two **compile-time constants** is done by the compiler, so the result is a literal too —
+      and gets interned:
+
+      ```java
+      String s = "hel" + "lo";   // compiled as "hello"
+      ```
+
+      But if any part is only known at run time, the concatenation happens at run time and produces
+      a brand-new object:
+
+      ```java
+      String part = "hel";
+      String s = part + "lo";    // a new String, built while running
+      ```
+
+      You can ask for the shared copy explicitly with `s.intern()`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      String part = "hel";
+      String a = part + "lo";
+      System.out.println(a == "hello");
+    language: java
+    options:
+      - text: "`true`"
+        feedback: |
+          `part` is an ordinary variable, not a constant, so the concatenation happens at run time and makes a new object.
+      - text: "`false`"
+        correct: true
+    hints:
+      - Is `part` a compile-time constant? It isn't declared `final`.
+    explanation: |
+      `part + "lo"` is evaluated at run time and yields a new `String`. (Declare `part` as
+      `final String part = "hel";` and it becomes a constant — then the answer flips to `true`.)
+
+  - type: predict
+    prompt: Autoboxing has the same trap. What does this print?
+    code: |
+      Integer x = 127, y = 127;
+      Integer p = 128, q = 128;
+      System.out.println(x == y);
+      System.out.println(p == q);
+    language: java
+    answer: ["true false", "true, false", "true\nfalse"]
+    wrong:
+      - answer: "true true"
+        feedback: Only a limited range of boxed values is shared. 128 is just outside it.
+      - answer: "false false"
+        feedback: Small boxed values *are* shared, so the first comparison sees the same object.
+    hints:
+      - "`Integer.valueOf` keeps a cache of commonly used values."
+      - The cache covers −128 to 127 by default.
+    explanation: |
+      Autoboxing calls `Integer.valueOf`, which returns cached objects for −128 to 127.
+      127 hits the cache (same object); 128 doesn't (two objects). Compare boxed numbers with `equals()`,
+      or unbox them first.
+
+  - type: choice
+    prompt: Which of these safely compare two `String` values by content?
+    code: |
+      String a = readName();
+      String b = expectedName();
+    language: java
+    options:
+      - text: "`a.equals(b)`"
+        correct: true
+      - text: "`Objects.equals(a, b)`"
+        correct: true
+      - text: "`a == b`"
+        feedback: "`==` compares references. It only *happens* to work when both strings are interned."
+      - text: "`a.compareTo(b) == 0`"
+        correct: true
+    explanation: |
+      `equals`, `Objects.equals` and `compareTo(...) == 0` all compare characters.
+      Of these, `Objects.equals(a, b)` is the only one that is also safe when `a` is `null`.
+
+  - type: blank
+    prompt: Complete the statement.
+    template: "`a.equals(b)` throws a [[NullPointerException|NPE]] when `a` is null, while `Objects.equals(a, b)` returns [[false]] when exactly one of them is null."
+    hints:
+      - Calling any method on a null reference throws the same exception.
+    explanation: "`Objects.equals` checks for null first, so it's the safer default for values that may be missing."
+
+  - type: match
+    prompt: Match each expression to its result.
+    pairs:
+      - left: '`"ab" == "a" + "b"`'
+        right: "`true` — folded into one literal at compile time"
+      - left: '`new String("ab") == "ab"`'
+        right: "`false` — `new` always makes a fresh object"
+      - left: '`new String("ab").intern() == "ab"`'
+        right: "`true` — `intern()` returns the shared copy"
+      - left: "`Integer.valueOf(1000) == Integer.valueOf(1000)`"
+        right: "`false` — outside the Integer cache"
+    explanation: The rule behind all four is the same — `==` asks whether two references point at one object.

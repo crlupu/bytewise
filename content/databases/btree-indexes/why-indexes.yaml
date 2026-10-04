@@ -1,0 +1,105 @@
+title: Why indexes exist
+summary: From scanning every row to finding one in three page reads.
+duration: 6
+tags: [databases, indexes, b-tree, sql, performance]
+steps:
+  - type: explanation
+    title: Finding one row in ten million
+    body: |
+      A table is stored on disk as **pages** — blocks of, say, 8 KiB, each holding a few dozen rows
+      in no particular order.
+
+      ```sql
+      SELECT * FROM users WHERE email = 'ada@example.com';
+      ```
+
+      Without help, the database has only one way to answer this: read every page and check every row.
+      That's a **full table scan**.
+
+  - type: choice
+    prompt: "`users` has 10 million rows and no index on `email`. In the worst case, how many rows does the query above examine?"
+    options:
+      - text: All 10 million
+        correct: true
+      - text: About 24 — a binary search
+        feedback: Binary search needs the rows sorted by `email`. In a heap table they're in insertion order.
+      - text: Just one
+        feedback: The database can't know where the row is without looking.
+    explanation: With nothing sorted by `email`, the only safe answer is to look at every row.
+
+  - type: explanation
+    title: Keep a sorted copy — as a tree
+    body: |
+      An **index** is a separate structure holding the indexed column, **sorted**, with a pointer to each row.
+      Sorted means we can search instead of scan.
+
+      A sorted array would make inserts expensive (shift everything over). So databases use a **B-tree**:
+      a tree whose nodes are whole disk pages, each holding **hundreds** of keys and pointing to hundreds of children.
+
+      With that much **fan-out**, the tree is very shallow. A search reads one node per level, and the top
+      levels are almost always cached in memory.
+
+  - type: predict
+    prompt: |
+      Each B-tree node holds up to 500 keys, so it has up to about 500 children.
+      **How many levels** are needed to index 100 million keys?
+    answer: ["3", "three"]
+    wrong:
+      - answer: "2"
+        feedback: Two levels reach about 500 × 500 = 250,000 keys. Not enough.
+      - answer: "4"
+        feedback: Close — but three levels already reach 500³ = 125 million.
+    hints:
+      - One level holds 500 keys; two levels hold about 500 × 500.
+    explanation: "500³ = 125,000,000 ≥ 100 million, so three levels — three page reads to find any row."
+
+  - type: match
+    prompt: Match each B-tree term to its meaning.
+    pairs:
+      - left: Root
+        right: The single node at the top, where every search starts
+      - left: Leaf
+        right: A node with no children, at the bottom level
+      - left: Fan-out
+        right: How many children a node has
+      - left: Order
+        right: The most children a node is allowed
+
+  - type: choice
+    prompt: There's an index on `last_name`. Which of these can use it?
+    options:
+      - text: "`WHERE last_name = 'Lovelace'`"
+        correct: true
+      - text: "`WHERE last_name LIKE 'Lov%'`"
+        correct: true
+      - text: "`WHERE last_name LIKE '%lace'`"
+        feedback: A leading wildcard means the match could start anywhere in the sorted order, so the tree can't narrow it down.
+      - text: "`ORDER BY last_name`"
+        correct: true
+    hints:
+      - The index helps when the sorted order narrows down where to look.
+    explanation: |
+      Equality, prefix matches and sorting all follow the index's order. A suffix match doesn't,
+      so it falls back to scanning.
+
+  - type: explanation
+    title: Indexes aren't free
+    body: |
+      Every index is another structure to keep up to date:
+
+      - each `INSERT`, `UPDATE` of the column and `DELETE` must change the index too;
+      - it takes disk space and memory;
+      - the query planner has more options to weigh.
+
+      Index the columns you search and sort by often — not every column, just in case.
+
+  - type: choice
+    prompt: Which of these are costs of adding an index?
+    options:
+      - text: Writes to the table get slower
+        correct: true
+      - text: It takes extra disk space
+        correct: true
+      - text: Reads that use it get slower
+        feedback: Reads that use an index get faster — that's the point. The costs land on writes and storage.
+    explanation: Indexes trade write speed and space for read speed.

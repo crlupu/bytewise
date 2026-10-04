@@ -1,0 +1,6 @@
+title: TCP connections
+summary: How a connection is opened and closed, segment by segment.
+lessons:
+  - handshake
+  - id: teardown
+    requires: [handshake]

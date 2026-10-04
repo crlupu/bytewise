@@ -1,0 +1,89 @@
+title: Closing a connection
+summary: Four segments, half-closes, and why TIME_WAIT hangs around.
+duration: 7
+tags: [networking, tcp, fin, teardown, time_wait, close_wait]
+steps:
+  - type: explanation
+    title: Each direction closes on its own
+    body: |
+      A TCP connection is two byte streams, one each way. Closing is done **per direction**: a side sends
+      **FIN** to say "I've finished sending", and the other side acknowledges it.
+
+      So a full close takes four segments: FIN and ACK one way, FIN and ACK the other. In between, the
+      connection is **half-closed** — one side can still send.
+
+      Afterwards, the side that closed first waits in **TIME_WAIT** for twice the maximum segment lifetime
+      (2×MSL) before it is truly CLOSED.
+
+  - type: widget
+    widget: tcp
+    prompt: |
+      The connection is open. **Close it completely**, client first, until both sides are CLOSED.
+    config:
+      start: established
+      teardown: true
+      clientIsn: 1000
+      serverIsn: 5000
+    goal:
+      client: CLOSED
+      server: CLOSED
+    hints:
+      - The client sends FIN first. What must the server do with it?
+      - After the server's own FIN is acknowledged, the client still has to wait.
+    explanation: |
+      FIN → ACK → FIN → ACK, then the client waited out TIME_WAIT. The server closed as soon as its FIN was acknowledged.
+
+  - type: order
+    prompt: Put a client-initiated close in order.
+    items:
+      - The client sends FIN
+      - The server acknowledges the client's FIN
+      - The server sends its own FIN
+      - The client acknowledges the server's FIN
+      - The client waits 2×MSL in TIME_WAIT, then closes
+
+  - type: choice
+    prompt: The server has acknowledged the client's FIN, but hasn't sent its own. Can the server still send data to the client?
+    options:
+      - text: Yes — the connection is half-closed, and only the client's direction is finished
+        correct: true
+      - text: No — once either side sends FIN, the connection is closed
+        feedback: FIN closes only the sender's direction. The other stream stays open until its own FIN.
+    explanation: That's how a client can send a whole request, close its side, and still read the full response.
+
+  - type: choice
+    prompt: Why does the side that closed first wait in TIME_WAIT?
+    options:
+      - text: To resend the final ACK if it gets lost
+        correct: true
+      - text: So delayed segments from this connection die out before the same addresses and ports can be reused
+        correct: true
+      - text: To give the application time to read the rest of the data
+        feedback: All the data has already been delivered by then; TIME_WAIT is about stray segments, not the application.
+    explanation: |
+      If the last ACK is lost, the other side resends its FIN — someone has to be around to answer.
+      And waiting 2×MSL guarantees no old segment can be mistaken for part of a new connection.
+
+  - type: match
+    prompt: Match each state to its meaning.
+    pairs:
+      - left: FIN_WAIT_1
+        right: Sent FIN, waiting for it to be acknowledged
+      - left: FIN_WAIT_2
+        right: Our FIN is acknowledged; waiting for the other side's FIN
+      - left: CLOSE_WAIT
+        right: Received a FIN; our application hasn't closed yet
+      - left: LAST_ACK
+        right: Sent our FIN after receiving one; waiting for the last ACK
+      - left: TIME_WAIT
+        right: Everything's acknowledged; waiting 2×MSL before closing
+
+  - type: explanation
+    title: Reading socket states in production
+    body: |
+      `ss -tan` (or `netstat`) shows these states for live sockets, and two patterns are worth recognising:
+
+      - **Many CLOSE_WAIT** sockets: the peer closed, but *your* application never called `close()`. That's a bug —
+        a leaked connection.
+      - **Many TIME_WAIT** sockets on a busy client: normal. Each closed connection waits a minute or so.
+        It only bites when you run out of local ports; reusing connections (keep-alive, pooling) is the fix.

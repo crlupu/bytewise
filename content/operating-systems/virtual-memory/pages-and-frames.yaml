@@ -1,0 +1,84 @@
+title: Pages and frames
+summary: How every address your program uses is translated, and what a page fault really is.
+duration: 6
+tags: [operating systems, virtual memory, paging, page fault, tlb]
+steps:
+  - type: explanation
+    title: Every process gets its own address space
+    body: |
+      Your program never sees physical memory directly. It uses **virtual addresses**, which the CPU
+      translates on every access.
+
+      Translation works in fixed-size blocks:
+
+      - virtual memory is cut into **pages** (commonly 4 KiB);
+      - physical memory is cut into **frames** of the same size;
+      - each process has a **page table** saying which frame holds each page — or that the page isn't in memory at all.
+
+      An address splits into a **page number** and an **offset** within the page. Only the page number is translated.
+
+  - type: predict
+    prompt: Pages are 4 KiB (4,096 bytes). Which page number holds virtual address **9,000**?
+    answer: ["2", "page 2"]
+    wrong:
+      - answer: "3"
+        feedback: Pages are numbered from 0. Page 0 covers 0–4,095, page 1 covers 4,096–8,191…
+      - answer: "2.19"
+        feedback: Page numbers are whole — take the integer part of the division.
+    hints:
+      - Divide the address by the page size and drop the remainder.
+    explanation: 9,000 ÷ 4,096 = 2 remainder 808, so it's page 2.
+
+  - type: blank
+    prompt: Fill in both parts of the address.
+    template: "Address 9,000 is in page [[2]], at offset [[808]] within it."
+    hints:
+      - The offset is what's left after removing whole pages — 9,000 − 2 × 4,096.
+    explanation: The offset passes through translation unchanged; only the page number is swapped for a frame number.
+
+  - type: choice
+    prompt: A program touches a page whose page-table entry says "not in memory". What happens?
+    options:
+      - text: The OS loads the page from disk into a frame — evicting another page if none is free — updates the page table, and re-runs the instruction
+        correct: true
+      - text: The program crashes with a segmentation fault
+        feedback: That's for an address the process isn't allowed to use at all. A valid page that's simply on disk is fetched.
+      - text: The CPU skips the instruction
+        feedback: Skipping would silently corrupt the program. The instruction is retried once the page is present.
+    explanation: That's a **page fault**. It's invisible to the program, apart from the time it takes.
+
+  - type: match
+    prompt: Match each term to its meaning.
+    pairs:
+      - left: Page
+        right: A fixed-size block of virtual memory
+      - left: Frame
+        right: A fixed-size block of physical memory
+      - left: Page table
+        right: Maps each page to its frame
+      - left: TLB
+        right: A small CPU cache of recent translations
+
+  - type: explanation
+    title: Faults are expensive
+    body: |
+      | Where the data is | Rough time to get it |
+      |---|---|
+      | TLB hit, in RAM | ~100 ns |
+      | Page fault, from SSD | ~100 µs (1,000× slower) |
+      | Page fault, from spinning disk | ~10 ms (100,000× slower) |
+
+      When memory is full, every fault must **evict** a page to make room. Pick badly — throw out a page
+      that's needed again soon — and you pay for another fault. That choice is the subject of the next lesson.
+
+  - type: predict
+    prompt: |
+      A process has **3 frames**, all empty to begin with. It touches pages in this order:
+      **1, 2, 3, 1, 2, 3**. How many page faults happen?
+    answer: ["3", "three"]
+    wrong:
+      - answer: "6"
+        feedback: Once a page is in a frame, touching it again is a hit — and three frames hold all three pages.
+      - answer: "0"
+        feedback: The frames start empty, so the first touch of each page has to load it.
+    explanation: The first touch of each page faults; after that all three fit, so the rest are hits.

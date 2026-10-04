@@ -1,0 +1,6 @@
+title: Virtual memory
+summary: Pages, frames, faults — and choosing what to throw out when memory is full.
+lessons:
+  - pages-and-frames
+  - id: page-replacement
+    requires: [pages-and-frames]

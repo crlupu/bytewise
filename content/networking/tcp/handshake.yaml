@@ -1,0 +1,99 @@
+title: The three-way handshake
+summary: SYN, SYN-ACK, ACK — what each segment carries and why it takes three.
+duration: 8
+tags: [networking, tcp, handshake, syn, sequence numbers]
+steps:
+  - type: explanation
+    title: Agreeing where to start counting
+    body: |
+      TCP gives you a reliable, ordered byte stream over a network that loses, duplicates and reorders packets.
+      It does that by **numbering every byte**. Each side picks a random starting number — its
+      **initial sequence number (ISN)** — and the other side must learn it before any data flows.
+
+      Opening a connection is that exchange:
+
+      1. the client sends a **SYN** carrying its ISN;
+      2. the server answers with **SYN-ACK**: its own ISN, and an acknowledgment of the client's;
+      3. the client sends an **ACK** of the server's ISN.
+
+  - type: order
+    prompt: Put the opening of a TCP connection in order.
+    items:
+      - The client sends SYN with its initial sequence number
+      - The server replies with SYN-ACK, acknowledging the client's number and sending its own
+      - The client sends ACK, acknowledging the server's number
+      - Both sides are ESTABLISHED, and data can flow
+    explanation: Three segments, and each side has sent its own number and seen it acknowledged.
+
+  - type: widget
+    widget: tcp
+    prompt: |
+      **Open the connection.** Choose which side sends what. If a move isn't allowed in the current state,
+      the simulation says why.
+    config:
+      start: closed
+      clientIsn: 1000
+      serverIsn: 5000
+    goal:
+      client: ESTABLISHED
+      server: ESTABLISHED
+    hints:
+      - The client speaks first, from CLOSED.
+      - The server can only answer a SYN it has received.
+    explanation: |
+      Look at the numbers on each arrow: SYN seq=1000; SYN-ACK seq=5000 ack=1001; ACK seq=1001 ack=5001.
+
+  - type: predict
+    prompt: |
+      The client's ISN is **1000** and the server's is **5000**. What **acknowledgment number** does the server
+      put in its SYN-ACK?
+    answer: ["1001", "ack=1001"]
+    wrong:
+      - answer: "1000"
+        feedback: An ACK names the *next* sequence number expected — and the SYN itself used up number 1000.
+      - answer: "5001"
+        feedback: That's what the client will acknowledge for the server. The server acknowledges the client's ISN.
+      - answer: "5000"
+        feedback: That's the server's own sequence number, not its acknowledgment.
+    hints:
+      - The acknowledgment number is the next sequence number the receiver expects.
+    explanation: The SYN flag counts as one byte of sequence space, so the next expected number is 1000 + 1.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "A SYN consumes [[one|1]] sequence number, so the reply acknowledges ISN + [[1|one]]."
+
+  - type: choice
+    prompt: Why isn't a two-way handshake (SYN, then SYN-ACK) enough?
+    options:
+      - text: The server wouldn't know the client received the server's ISN
+        correct: true
+      - text: Two segments can't carry two sequence numbers
+        feedback: The SYN-ACK alone carries one number and acknowledges the other. What's missing is confirmation in the other direction.
+      - text: The third segment carries the first data
+        feedback: It may, but it doesn't have to. Its job is acknowledging the server's ISN.
+    explanation: |
+      Each side needs proof the other has its number. Without the final ACK, a delayed duplicate SYN from an old
+      connection could make the server open a connection nobody asked for.
+
+  - type: match
+    prompt: Match each state to its meaning.
+    pairs:
+      - left: LISTEN
+        right: Server waiting for a SYN
+      - left: SYN_SENT
+        right: Client has sent SYN and awaits the reply
+      - left: SYN_RECEIVED
+        right: Server got a SYN and has replied with SYN-ACK
+      - left: ESTABLISHED
+        right: Handshake finished; data can flow
+
+  - type: explanation
+    title: In the real world
+    body: |
+      A server keeps a little state for each half-open connection in SYN_RECEIVED. A **SYN flood** sends
+      huge numbers of SYNs and never completes them, filling that table.
+
+      The usual defence is **SYN cookies**: the server encodes the connection's details into its ISN and keeps
+      *no* state until the final ACK comes back carrying that number + 1. The handshake's arithmetic doubles
+      as a defence.

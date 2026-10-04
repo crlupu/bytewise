@@ -1,0 +1,4 @@
+title: Core Java gotchas
+summary: The small rules that make familiar-looking code behave in surprising ways.
+lessons:
+  - string-equality
