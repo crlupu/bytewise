@@ -1,0 +1,67 @@
+title: Use streams judiciously
+summary: Streams make some code beautiful and other code unreadable — knowing which is the skill.
+duration: 6
+tags: [java, effective java, streams, readability, iteration]
+sources:
+  - { book: effective-java, ref: "Item 45" }
+steps:
+  - type: explanation
+    title: Pipelines
+    body: |
+      A stream pipeline is a **source**, zero or more **intermediate operations** (`map`, `filter`, `sorted`…), and one
+      **terminal operation** (`collect`, `count`, `forEach`…). Pipelines are evaluated **lazily**: nothing happens until
+      the terminal operation runs.
+
+      Streams are good at some things and bad at others. Overused, they produce code that's hard to read and maintain.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      "Hello world!".chars().forEach(System.out::print);
+    language: java
+    options:
+      - text: "`721011081081113211911111410810033`"
+        correct: true
+      - text: "`Hello world!`"
+        feedback: "`chars()` returns an `IntStream`, so `print(int)` is chosen — each character prints as its number."
+      - text: It doesn't compile
+    explanation: Fix it with `forEach(x -> System.out.print((char) x))` — or, better, avoid streams for processing `char` values.
+
+  - type: choice
+    prompt: Which of these can a code block do, but a lambda in a stream can't?
+    options:
+      - text: Modify a local variable of the enclosing method
+        correct: true
+      - text: Return from the enclosing method, or `break`/`continue` an enclosing loop
+        correct: true
+      - text: Throw a checked exception declared by the method
+        correct: true
+      - text: Transform each element
+        feedback: That's exactly what streams are good at.
+
+  - type: match
+    prompt: Streams are a good fit when you want to…
+    pairs:
+      - left: Uniformly transform sequences of elements
+        right: "`map`"
+      - left: Keep only some elements
+        right: "`filter`"
+      - left: Combine elements with one operation
+        right: "`reduce`, `sum`, `max`"
+      - left: Gather elements into a collection, perhaps grouped
+        right: "`collect`"
+      - left: Find an element satisfying some criterion
+        right: "`anyMatch`, `findFirst`"
+
+  - type: choice
+    prompt: A loop with several nested conditions and early exits is hard to express as a stream. What should you do?
+    options:
+      - text: Keep the loop — or combine both, a stream calling well-named helper methods
+        correct: true
+      - text: Rewrite it as a stream anyway, for consistency
+        feedback: There's no rule that all loops become streams. Use whichever reads better.
+    explanation: When in doubt, try both and keep the clearer one.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "In stream pipelines, careful naming of [[lambda]] parameters is essential, and helper [[methods]] help readability even more than in iterative code."

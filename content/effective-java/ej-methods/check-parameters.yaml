@@ -1,0 +1,55 @@
+title: Check parameters for validity
+summary: Fail fast at the method's entrance, with a clear exception — not later, somewhere confusing.
+duration: 4
+tags: [java, effective java, validation, exceptions, preconditions, objects]
+sources:
+  - { book: effective-java, ref: "Item 49" }
+steps:
+  - type: explanation
+    title: Fail at the door
+    body: |
+      Most methods have restrictions on their parameters: indexes must be non-negative, references non-null. Check them
+      at the start of the method and throw at once. Otherwise the method may fail later with a confusing exception —
+      or, worse, succeed and silently compute or store a wrong result, failing somewhere unrelated much later.
+
+      ```java
+      /**
+       * @throws ArithmeticException if m is less than or equal to 0
+       */
+      public BigInteger mod(BigInteger m) {
+          if (m.signum() <= 0) throw new ArithmeticException("Modulus <= 0: " + m);
+          ...
+      }
+      ```
+
+  - type: match
+    prompt: Match each built-in helper to its job.
+    pairs:
+      - left: "`Objects.requireNonNull(x, \"x\")`"
+        right: Throw a `NullPointerException` with a message if x is null; otherwise return x
+      - left: "`Objects.checkIndex(i, n)`"
+        right: Throw `IndexOutOfBoundsException` unless 0 ≤ i < n
+      - left: "`assert x > 0;`"
+        right: Check a precondition of a private method, only when assertions are enabled
+
+  - type: choice
+    prompt: A constructor stores a parameter for later use. Why is checking it especially important?
+    options:
+      - text: An invalid value would otherwise cause a failure much later, far from the code that passed it in
+        correct: true
+      - text: Constructors can't throw exceptions
+        feedback: They can, and should, for invalid arguments.
+    explanation: Checking in constructors protects the class's invariants from the start.
+
+  - type: choice
+    prompt: When can you skip an explicit check?
+    options:
+      - text: When it's expensive and the computation performs it implicitly anyway — like `Collections.sort` failing on mutually incomparable elements
+        correct: true
+      - text: When the method is public
+        feedback: Public methods especially need checks — and `@throws` documentation.
+
+  - type: blank
+    prompt: Validate and assign in one line.
+    template: "this.strategy = Objects.[[requireNonNull]](strategy, \"strategy\");"
+    code: true

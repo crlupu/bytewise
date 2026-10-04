@@ -1,0 +1,55 @@
+title: Method references
+summary: When a method already does what your lambda would, name it — but only when that's clearer.
+duration: 5
+tags: [java, effective java, method references, lambdas]
+sources:
+  - { book: effective-java, ref: "Item 43" }
+steps:
+  - type: explanation
+    title: Even more concise
+    body: |
+      Counting words in a map:
+
+      ```java
+      map.merge(key, 1, (count, incr) -> count + incr);
+      map.merge(key, 1, Integer::sum);
+      ```
+
+      The parameters `count` and `incr` add nothing — `Integer.sum` already says "add two ints". A **method reference**
+      is often shorter and clearer than the lambda it replaces.
+
+  - type: match
+    prompt: Match each kind of method reference to an example.
+    pairs:
+      - left: Static
+        right: "`Integer::parseInt`"
+      - left: Bound (receiver fixed)
+        right: "`Instant.now()::isAfter`"
+      - left: Unbound (receiver is the first argument)
+        right: "`String::toLowerCase`"
+      - left: Class constructor
+        right: "`TreeMap<K,V>::new`"
+      - left: Array constructor
+        right: "`int[]::new`"
+
+  - type: blank
+    prompt: Replace `s -> s.toLowerCase()` with a method reference.
+    template: "words.stream().map([[String::toLowerCase]])"
+    code: true
+
+  - type: choice
+    prompt: "Inside a class called `GoshThisClassNameIsHumongous`, which is clearer: `service.execute(GoshThisClassNameIsHumongous::action)` or `service.execute(() -> action())`?"
+    options:
+      - text: The lambda — here it's shorter and reads better
+        correct: true
+      - text: The method reference — always prefer method references
+        feedback: The rule is "use a method reference when it's shorter and clearer", not always.
+    explanation: Likewise `x -> x` may read better than `Function.identity()`.
+
+  - type: choice
+    prompt: A lambda's body is long. What should you do?
+    options:
+      - text: Move the code into a named method, and pass a reference to it
+        correct: true
+      - text: Keep it inline so it's close to where it's used
+    explanation: The method gets a name and documentation; the call site gets a one-word reference.

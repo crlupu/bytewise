@@ -1,0 +1,72 @@
+title: Lambdas over anonymous classes
+summary: Concise function objects — as long as they stay short and obvious.
+duration: 5
+tags: [java, effective java, lambdas, anonymous classes, functional interfaces]
+sources:
+  - { book: effective-java, ref: "Item 42" }
+steps:
+  - type: explanation
+    title: From anonymous class to lambda
+    body: |
+      ```java
+      // Anonymous class
+      Collections.sort(words, new Comparator<String>() {
+          public int compare(String s1, String s2) {
+              return Integer.compare(s1.length(), s2.length());
+          }
+      });
+
+      // Lambda
+      Collections.sort(words, (s1, s2) -> Integer.compare(s1.length(), s2.length()));
+
+      // Better still
+      words.sort(comparingInt(String::length));
+      ```
+
+      The compiler **infers** the parameter types from context. Omit them unless they make the code clearer.
+
+  - type: choice
+    prompt: How long should a lambda be?
+    options:
+      - text: Ideally one line, three at most — a lambda has no name or documentation to explain itself
+        correct: true
+      - text: As long as the logic needs
+        feedback: A long lambda is hard to read; extract a named method instead.
+    explanation: If the computation isn't self-explanatory, it deserves a name.
+
+  - type: explanation
+    title: Enums with lambdas
+    body: |
+      Constant-specific behaviour can be passed as a lambda to the enum's constructor:
+
+      ```java
+      public enum Operation {
+          PLUS ("+", (x, y) -> x + y),
+          TIMES("*", (x, y) -> x * y);
+
+          private final String symbol;
+          private final DoubleBinaryOperator op;
+          Operation(String symbol, DoubleBinaryOperator op) { this.symbol = symbol; this.op = op; }
+          public double apply(double x, double y) { return op.applyAsDouble(x, y); }
+      }
+      ```
+
+  - type: match
+    prompt: Lambda or anonymous class?
+    pairs:
+      - left: A short function object implementing a functional interface
+        right: Lambda
+      - left: An instance of an abstract class
+        right: Anonymous class — lambdas only implement interfaces
+      - left: A function object that needs to refer to itself
+        right: Anonymous class — in a lambda, `this` is the enclosing instance
+      - left: An interface with several abstract methods
+        right: Anonymous class — lambdas need exactly one abstract method
+
+  - type: choice
+    prompt: Should you serialize lambdas?
+    options:
+      - text: Rarely, if ever — their serialized form can vary between implementations
+        correct: true
+      - text: Yes, it's the same as serializing any object
+    explanation: If you need a serializable function object, use an instance of a private static nested class.

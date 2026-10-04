@@ -1,0 +1,11 @@
+title: Methods
+summary: Effective Java, chapter 8 (Items 49–56) — parameters, signatures, overloading, varargs, optionals and docs.
+lessons:
+  - check-parameters
+  - defensive-copies
+  - method-signatures
+  - overloading
+  - varargs
+  - empty-not-null
+  - optionals
+  - doc-comments

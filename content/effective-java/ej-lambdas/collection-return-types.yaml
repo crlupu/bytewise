@@ -1,0 +1,51 @@
+title: Return Collection, not Stream
+summary: A Collection can be both iterated and streamed; a Stream can't be iterated with for-each.
+duration: 4
+tags: [java, effective java, streams, collections, api design, iterable]
+sources:
+  - { book: effective-java, ref: "Item 47" }
+steps:
+  - type: explanation
+    title: Two kinds of caller
+    body: |
+      A method returning a sequence of elements has two kinds of callers: some want to iterate with `for`, some want to
+      run a stream pipeline.
+
+      `Stream` doesn't extend `Iterable`, so a returned stream can't be used in a for-each loop without an awkward
+      adapter. `Collection`, on the other hand, extends `Iterable` **and** has a `stream()` method.
+
+  - type: predict
+    prompt: Does this compile?
+    code: |
+      for (ProcessHandle ph : ProcessHandle.allProcesses()) { ... }
+    language: java
+    options:
+      - text: No — `allProcesses()` returns a `Stream`, which isn't `Iterable`
+        correct: true
+      - text: Yes
+        feedback: For-each requires an array or an `Iterable`.
+    explanation: "Workaround: `for (ProcessHandle ph : (Iterable<ProcessHandle>) ProcessHandle.allProcesses()::iterator)` — legal, but ugly."
+
+  - type: choice
+    prompt: What's the best return type for a public method returning a sequence?
+    options:
+      - text: "`Collection` or an appropriate subtype like `List`, when it's practical to hold the elements"
+        correct: true
+      - text: "`Stream`, because it's modern"
+        feedback: Then for-each users suffer.
+      - text: "`Iterator`"
+        feedback: Neither for-each nor stream users can use it directly.
+
+  - type: choice
+    prompt: The sequence is huge — say, the power set of 30 elements (about a billion subsets). What then?
+    options:
+      - text: Return a custom collection that computes elements on demand — for example, an `AbstractList` whose `get(i)` builds the i-th subset
+        correct: true
+      - text: Build all of it in an `ArrayList`
+        feedback: That needs memory for a billion sets.
+    explanation: A special-purpose collection can be compact; just remember `Collection.size()` is limited to `Integer.MAX_VALUE`.
+
+  - type: blank
+    prompt: Every Collection can be streamed.
+    template: "list.[[stream]]().filter(...)"
+    code: true

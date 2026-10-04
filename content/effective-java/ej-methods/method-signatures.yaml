@@ -1,0 +1,46 @@
+title: Design method signatures carefully
+summary: Good names, short parameter lists, interface types and enums instead of booleans.
+duration: 5
+tags: [java, effective java, api design, parameters, naming, enums]
+sources:
+  - { book: effective-java, ref: "Item 51" }
+steps:
+  - type: explanation
+    title: A handful of rules
+    body: |
+      - **Choose names carefully**, following the conventions and staying consistent across the API.
+      - **Don't go overboard with convenience methods** — each one is something to document, test and maintain.
+      - **Avoid long parameter lists**: four or fewer. Long runs of identically typed parameters are especially harmful.
+      - **Prefer interfaces over classes for parameter types**: take a `Map`, not a `HashMap`.
+      - **Prefer two-element enums to `boolean` parameters**, unless the meaning is clear from the method name.
+
+  - type: match
+    prompt: Match each technique for shortening a parameter list.
+    pairs:
+      - left: Split the method into several orthogonal methods
+        right: "`List` offers `subList` and `indexOf`, rather than `indexOfInSubList(from, to, x)`"
+      - left: Create a helper class to hold a group of parameters
+        right: A `Card` object instead of separate rank and suit
+      - left: Use a builder for the method's parameters
+        right: Set the parameters one by one, then call `execute()`
+
+  - type: choice
+    prompt: Which call is easier to read and extend?
+    options:
+      - text: "`Thermometer.newInstance(TemperatureScale.CELSIUS)`"
+        correct: true
+      - text: "`Thermometer.newInstance(true)`"
+        feedback: What does `true` mean? And how would you add Kelvin?
+    explanation: A two-element enum reads well and can grow a third constant without a new method.
+
+  - type: choice
+    prompt: What's the cost of declaring a parameter as `HashMap` instead of `Map`?
+    options:
+      - text: Callers holding a `TreeMap` or other map must copy it into a `HashMap` just to call you
+        correct: true
+      - text: None
+    explanation: Using the class ties clients to one implementation and may force expensive copying.
+
+  - type: blank
+    prompt: Complete the guideline.
+    template: "Aim for [[four|4]] parameters or fewer."

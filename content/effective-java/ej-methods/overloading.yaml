@@ -1,0 +1,65 @@
+title: Use overloading judiciously
+summary: Overloads are chosen at compile time, overrides at run time — and that difference surprises people.
+duration: 6
+tags: [java, effective java, overloading, overriding, autoboxing, api design]
+sources:
+  - { book: effective-java, ref: "Item 52" }
+steps:
+  - type: explanation
+    title: A classifier
+    body: |
+      ```java
+      public class CollectionClassifier {
+          public static String classify(Set<?> s)        { return "Set"; }
+          public static String classify(List<?> lst)    { return "List"; }
+          public static String classify(Collection<?> c) { return "Unknown Collection"; }
+
+          public static void main(String[] args) {
+              Collection<?>[] collections = {
+                  new HashSet<String>(), new ArrayList<BigInteger>(), new HashMap<String, String>().values()
+              };
+              for (Collection<?> c : collections) System.out.println(classify(c));
+          }
+      }
+      ```
+
+  - type: predict
+    prompt: What does it print?
+    options:
+      - text: "`Unknown Collection`, three times"
+        correct: true
+      - text: "`Set`, `List`, `Unknown Collection`"
+        feedback: That's what the author hoped. But which overload runs is decided by the *compile-time* type of `c`.
+    explanation: "`c` is declared as `Collection<?>`, so the compiler picks `classify(Collection<?>)` every time."
+
+  - type: match
+    prompt: Overloading or overriding?
+    pairs:
+      - left: Which method runs is chosen at compile time, from the declared types of the arguments
+        right: Overloading
+      - left: Which method runs is chosen at run time, from the actual class of the object
+        right: Overriding
+
+  - type: predict
+    prompt: What do the set and the list contain afterwards?
+    code: |
+      Set<Integer> set = new TreeSet<>();
+      List<Integer> list = new ArrayList<>();
+      for (int i = -3; i < 3; i++) { set.add(i); list.add(i); }
+      for (int i = 0; i < 3; i++) { set.remove(i); list.remove(i); }
+    language: java
+    options:
+      - text: "set `[-3, -2, -1]`, list `[-2, 0, 2]`"
+        correct: true
+      - text: "Both `[-3, -2, -1]`"
+        feedback: "`list.remove(i)` with an `int` picks `remove(int index)`, removing by position, not by value."
+    explanation: "Fix it with `list.remove((Integer) i)` — and the confusion came from autoboxing plus an overload."
+
+  - type: choice
+    prompt: What's a safe, conservative policy?
+    options:
+      - text: Never export two overloadings with the same number of parameters — give the methods different names instead, like `writeInt` and `writeLong`
+        correct: true
+      - text: Overload freely; the compiler sorts it out
+        feedback: The compiler's choice may not be the one readers expect.
+    explanation: For constructors, where names can't differ, consider static factories instead.

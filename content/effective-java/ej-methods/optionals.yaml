@@ -1,0 +1,63 @@
+title: Return optionals judiciously
+summary: Optional says "there may be no result" in the type — use it for return values, not everywhere.
+duration: 5
+tags: [java, effective java, optional, "null", api design]
+sources:
+  - { book: effective-java, ref: "Item 55" }
+steps:
+  - type: explanation
+    title: A result that might not exist
+    body: |
+      Before Java 8, a method with no value to return either threw or returned null. `Optional<T>` is a third choice:
+      an immutable container holding one value or nothing.
+
+      ```java
+      public static <E extends Comparable<E>> Optional<E> max(Collection<E> c) {
+          if (c.isEmpty()) return Optional.empty();
+          ...
+          return Optional.of(result);
+      }
+      ```
+
+      The return type itself tells the caller to deal with the empty case.
+
+  - type: match
+    prompt: Match each way of using an optional to its behaviour.
+    pairs:
+      - left: "`opt.orElse(\"Unknown\")`"
+        right: The value, or a default
+      - left: "`opt.orElseGet(this::expensiveDefault)`"
+        right: The value, or a default computed only when needed
+      - left: "`opt.orElseThrow(TemperTantrumException::new)`"
+        right: The value, or a chosen exception
+      - left: "`opt.map(String::length)`"
+        right: An optional of the transformed value, if present
+
+  - type: choice
+    prompt: Which of these are good uses of `Optional`?
+    options:
+      - text: The return type of a method that may legitimately have no result
+        correct: true
+      - text: Wrapping a collection that might be empty
+        feedback: Return an empty collection instead — containers shouldn't be wrapped in optionals.
+      - text: Keys or values in a map
+        feedback: That creates two ways to say "absent" and makes the map hard to use.
+      - text: "An `Optional<Integer>` return, when `OptionalInt` exists"
+        feedback: Boxed primitives inside optionals cost twice; use `OptionalInt`, `OptionalLong`, `OptionalDouble`.
+
+  - type: choice
+    prompt: A method declared to return `Optional<T>` hits a case with no value. What must it never return?
+    options:
+      - text: "`null`"
+        correct: true
+      - text: "`Optional.empty()`"
+        feedback: That's exactly what it should return.
+    explanation: Returning null from an optional-returning method defeats the whole purpose.
+
+  - type: choice
+    prompt: Are optionals free?
+    options:
+      - text: No — an extra object per result; for performance-critical code, measure before using them
+        correct: true
+      - text: Yes, the JIT removes them
+        feedback: Escape analysis sometimes helps, but you can't rely on it.

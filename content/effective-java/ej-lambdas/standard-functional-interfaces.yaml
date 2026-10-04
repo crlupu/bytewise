@@ -1,0 +1,66 @@
+title: Standard functional interfaces
+summary: java.util.function covers most needs — write your own only when there's a strong reason.
+duration: 5
+tags: [java, effective java, functional interfaces, java.util.function, lambdas]
+sources:
+  - { book: effective-java, ref: "Item 44" }
+steps:
+  - type: explanation
+    title: Six to remember
+    body: |
+      `java.util.function` has 43 interfaces, but most are variations of six basic ones. If you know these, you can
+      work out the rest.
+
+  - type: match
+    prompt: Match each interface to its function signature.
+    pairs:
+      - left: "`UnaryOperator<T>`"
+        right: "`T apply(T t)`"
+      - left: "`BinaryOperator<T>`"
+        right: "`T apply(T t1, T t2)`"
+      - left: "`Predicate<T>`"
+        right: "`boolean test(T t)`"
+      - left: "`Function<T,R>`"
+        right: "`R apply(T t)`"
+      - left: "`Supplier<T>`"
+        right: "`T get()`"
+      - left: "`Consumer<T>`"
+        right: "`void accept(T t)`"
+
+  - type: choice
+    prompt: Which interface fits `String::isEmpty`?
+    options:
+      - text: "`Predicate<String>`"
+        correct: true
+      - text: "`Function<String, Boolean>`"
+        feedback: It compiles, but boxes every result — the primitive-returning `Predicate` is the right choice.
+      - text: "`Supplier<Boolean>`"
+        feedback: "`isEmpty` takes the string as input; a Supplier takes nothing."
+
+  - type: choice
+    prompt: When is writing your own functional interface justified?
+    options:
+      - text: It will be widely used and benefits from a descriptive name
+        correct: true
+      - text: It has a strong contract attached
+        correct: true
+      - text: It would benefit from custom default methods
+        correct: true
+      - text: You want a shorter name for `Function`
+        feedback: That's not enough reason to add a type.
+    explanation: "`Comparator` ticks all three boxes, which is why it isn't just a `ToIntBiFunction`."
+
+  - type: blank
+    prompt: Mark a hand-written functional interface.
+    template: |
+      @[[FunctionalInterface]]
+      interface EldestEntryRemovalFunction<K,V> { boolean remove(Map<K,V> map, Map.Entry<K,V> eldest); }
+    code: true
+    explanation: The annotation documents intent and makes the compiler reject a second abstract method.
+
+  - type: choice
+    prompt: Why is overloading a method with different functional interfaces in the same argument position a bad idea?
+    options:
+      - text: Calls with lambdas can become ambiguous, forcing clients to cast — as with `ExecutorService.submit(Callable)` vs `submit(Runnable)`
+        correct: true
+      - text: It doesn't compile

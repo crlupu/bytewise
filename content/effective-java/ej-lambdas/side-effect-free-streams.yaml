@@ -1,0 +1,60 @@
+title: Side-effect-free stream functions
+summary: Streams are a functional paradigm — compute results with collectors, not by mutating state in forEach.
+duration: 5
+tags: [java, effective java, streams, collectors, forEach, side effects]
+sources:
+  - { book: effective-java, ref: "Item 46" }
+steps:
+  - type: choice
+    prompt: What's wrong with this word-frequency code?
+    code: |
+      Map<String, Long> freq = new HashMap<>();
+      try (Stream<String> words = new Scanner(file).tokens()) {
+          words.forEach(word -> freq.merge(word.toLowerCase(), 1L, Long::sum));
+      }
+    language: java
+    options:
+      - text: It's iterative code in disguise — all the work happens as a side effect in `forEach`
+        correct: true
+      - text: It doesn't compile
+        feedback: It compiles and works. It just doesn't use streams the way they're designed to be used.
+      - text: "`merge` isn't allowed in streams"
+    explanation: "`forEach` should only *report* the result of a computation, not perform it."
+
+  - type: blank
+    prompt: The idiomatic version.
+    template: |
+      Map<String, Long> freq = words.collect([[groupingBy]](String::toLowerCase, counting()));
+    code: true
+
+  - type: match
+    prompt: Match each collector to what it builds.
+    pairs:
+      - left: "`toList()`"
+        right: A list of the elements
+      - left: "`toMap(keyFn, valueFn)`"
+        right: A map — and an `IllegalStateException` if two elements produce the same key
+      - left: "`toMap(keyFn, valueFn, mergeFn)`"
+        right: A map that resolves duplicate keys with the merge function
+      - left: "`groupingBy(classifier)`"
+        right: A map from each category to a list of its elements
+      - left: "`joining(\", \")`"
+        right: One string with the elements separated by commas
+
+  - type: predict
+    prompt: What does this produce?
+    code: |
+      Stream.of("apple", "avocado", "banana")
+            .collect(groupingBy(s -> s.charAt(0), counting()));
+    language: java
+    answer: ["{a=2, b=1}", "a=2, b=1"]
+    hints:
+      - Group by first letter, then count each group.
+    explanation: "Two words start with `a`, one with `b`. (The map's iteration order isn't guaranteed in general.)"
+
+  - type: choice
+    prompt: When is `forEach` the right terminal operation?
+    options:
+      - text: For presenting the result, like printing it — not for computing it
+        correct: true
+      - text: Whenever you need a loop

@@ -1,0 +1,53 @@
+title: Make defensive copies
+summary: Assume clients will try to break your invariants — copy mutable inputs and outputs.
+duration: 5
+tags: [java, effective java, defensive copy, immutability, security, date]
+sources:
+  - { book: effective-java, ref: "Item 50" }
+steps:
+  - type: predict
+    prompt: "`Period` stores the two `Date`s it was given in `private final` fields and checks `start` is before `end`. What does this print?"
+    code: |
+      Date start = new Date(0);
+      Date end = new Date(1000);
+      Period p = new Period(start, end);
+      end.setTime(0);
+      System.out.println(p.end().getTime());
+    language: java
+    answer: ["0"]
+    wrong:
+      - answer: "1000"
+        feedback: "`Period` kept a reference to the caller's `Date` — and `Date` is mutable."
+    hints:
+      - "`final` stops the field pointing elsewhere. Does it stop the `Date` itself changing?"
+    explanation: The caller changed the period's internals — and now `end` isn't after `start`, breaking the invariant.
+
+  - type: order
+    prompt: Put a defensive constructor's work in order.
+    items:
+      - Copy each mutable parameter
+      - Validate the copies, not the originals
+      - Assign the copies to the fields
+    explanation: Validating the originals leaves a window in which another thread can change them after the check — a time-of-check/time-of-use attack.
+
+  - type: choice
+    prompt: Why not make the copy with `start.clone()`?
+    options:
+      - text: "`Date` isn't final, so the argument could be a malicious subclass whose `clone` returns an instance it still controls"
+        correct: true
+      - text: "`clone` is too slow"
+    explanation: Don't use `clone` to copy a parameter whose type can be subclassed by untrusted parties.
+
+  - type: blank
+    prompt: The accessor must not leak the internal object either.
+    template: "public Date end() { return new [[Date]](end.getTime()); }"
+    code: true
+
+  - type: choice
+    prompt: What's the best fix of all?
+    options:
+      - text: Use an immutable type such as `Instant` or `LocalDateTime`, so no copies are needed
+        correct: true
+      - text: Document that callers mustn't modify the dates
+        feedback: That can be acceptable between trusted components, but immutability removes the problem.
+    explanation: Defensive copying has a cost; immutable components make it unnecessary.

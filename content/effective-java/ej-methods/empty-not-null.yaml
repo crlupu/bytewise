@@ -1,0 +1,51 @@
+title: Return empty collections, not null
+summary: Returning null forces every caller to special-case "nothing" — and the one who forgets crashes.
+duration: 4
+tags: [java, effective java, "null", collections, api design]
+sources:
+  - { book: effective-java, ref: "Item 54" }
+steps:
+  - type: explanation
+    title: Null as "nothing"
+    body: |
+      ```java
+      /** @return a list of cheeses in stock, or null if none */
+      public List<Cheese> getCheeses() {
+          return cheesesInStock.isEmpty() ? null : new ArrayList<>(cheesesInStock);
+      }
+
+      List<Cheese> cheeses = shop.getCheeses();
+      if (cheeses != null && cheeses.contains(Cheese.STILTON)) ...
+      ```
+
+      Every caller needs the null check. Forget it once and the code works for months — until the shop runs out of cheese.
+
+  - type: choice
+    prompt: The usual argument for returning null is that it avoids allocating an empty list. Why doesn't it hold?
+    options:
+      - text: The allocation is negligible, and if it ever matters you can return the same immutable empty collection every time
+        correct: true
+      - text: Allocation is always free
+        feedback: Not free — just rarely significant, and avoidable anyway.
+
+  - type: blank
+    prompt: Return a shared, immutable empty list.
+    template: "return cheesesInStock.isEmpty() ? Collections.[[emptyList]]() : new ArrayList<>(cheesesInStock);"
+    code: true
+
+  - type: blank
+    prompt: The same idea for arrays — a shared zero-length constant.
+    template: |
+      private static final Cheese[] EMPTY_CHEESE_ARRAY = new Cheese[0];
+      return cheesesInStock.[[toArray]](EMPTY_CHEESE_ARRAY);
+    code: true
+    explanation: "A zero-length array is immutable, so it can be shared freely."
+
+  - type: choice
+    prompt: "Does `for (Cheese c : shop.getCheeses())` work if `getCheeses()` returns an empty list?"
+    options:
+      - text: Yes — the loop simply runs zero times
+        correct: true
+      - text: No — it throws
+        feedback: That's what happens with `null`.
+    explanation: Empty collections flow through loops and streams without any special code.

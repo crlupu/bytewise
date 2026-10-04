@@ -1,0 +1,65 @@
+title: Doc comments for every exposed API element
+summary: Describe the contract — what a method does, its preconditions, postconditions and side effects — not how.
+duration: 5
+tags: [java, effective java, javadoc, documentation, api design]
+sources:
+  - { book: effective-java, ref: "Item 56" }
+steps:
+  - type: explanation
+    title: Document the contract
+    body: |
+      To document an API properly, precede **every exported** class, interface, constructor, method and field with a doc
+      comment. For a method, describe the contract with its client — **what** it does, not how:
+
+      ```java
+      /**
+       * Returns the element at the specified position in this list.
+       *
+       * <p>This method is <i>not</i> guaranteed to run in constant time.
+       *
+       * @param  index index of element to return; must be
+       *         non-negative and less than the size of this list
+       * @return the element at the specified position in this list
+       * @throws IndexOutOfBoundsException if the index is out of range
+       *         ({@code index < 0 || index >= this.size()})
+       */
+      E get(int index);
+      ```
+
+  - type: match
+    prompt: Match each tag to its purpose.
+    pairs:
+      - left: "`@param`"
+        right: Describes a parameter, usually as a noun phrase
+      - left: "`@return`"
+        right: Describes the returned value
+      - left: "`@throws`"
+        right: Names an exception and the condition that causes it
+      - left: "`{@code ...}`"
+        right: Shows code in code font, without interpreting HTML
+      - left: "`@implSpec`"
+        right: Describes self-use, for those who subclass
+
+  - type: choice
+    prompt: Which belong in a method's doc comment?
+    options:
+      - text: Preconditions — what must be true for the client to call it
+        correct: true
+      - text: Postconditions — what will be true afterwards
+        correct: true
+      - text: Side effects, like starting a background thread
+        correct: true
+      - text: A line-by-line description of the algorithm
+        feedback: That's implementation, not contract — it belongs in code comments, if anywhere.
+
+  - type: choice
+    prompt: What should the first sentence of a doc comment be?
+    options:
+      - text: A summary description that stands alone — unique among members of the class
+        correct: true
+      - text: The method's name repeated
+    explanation: It's shown in summary tables; for methods it's a verb phrase, like "Returns the number of elements in this collection."
+
+  - type: blank
+    prompt: Two properties often forgotten in class docs.
+    template: "Whether or not a class is thread-safe, document its [[thread-safety|thread safety]] level; if it's serializable, document its serialized [[form]]."

@@ -1,0 +1,10 @@
+title: Lambdas and streams
+summary: Effective Java, chapter 7 (Items 42–48) — function objects, method references and using streams well.
+lessons:
+  - lambdas-over-anonymous-classes
+  - method-references
+  - standard-functional-interfaces
+  - streams-judiciously
+  - side-effect-free-streams
+  - collection-return-types
+  - parallel-streams

@@ -1,0 +1,69 @@
+title: Caution with parallel streams
+summary: .parallel() can make a pipeline slower, wrong, or hang — it helps only with the right sources and operations.
+duration: 5
+tags: [java, effective java, streams, parallel, performance, concurrency]
+sources:
+  - { book: effective-java, ref: "Item 48" }
+steps:
+  - type: explanation
+    title: Not a free speed-up
+    body: |
+      This prints the first 20 Mersenne primes:
+
+      ```java
+      primes().map(p -> TWO.pow(p.intValueExact()).subtract(ONE))
+              .filter(mersenne -> mersenne.isProbablePrime(50))
+              .limit(20)
+              .forEach(System.out::println);
+      ```
+
+      where `primes()` is `Stream.iterate(TWO, BigInteger::nextProbablePrime)`.
+
+  - type: predict
+    prompt: Someone adds `.parallel()` to this pipeline, hoping for a speed-up on a 4-core machine. What happens?
+    options:
+      - text: It prints nothing and keeps the CPUs busy for a very long time
+        correct: true
+      - text: It runs about 4× faster
+        feedback: The source and the operations are the worst possible case for parallelism.
+      - text: It throws an exception
+    explanation: |
+      The library can't split `Stream.iterate`, and `limit` makes threads compute extra, ever-more-expensive elements
+      that will be thrown away.
+
+  - type: match
+    prompt: Good or poor for parallel streams?
+    pairs:
+      - left: "`ArrayList`, arrays, `IntStream.range`"
+        right: Good — cheaply split, with good locality of reference
+      - left: "`Stream.iterate`"
+        right: Poor — each element depends on the previous one
+      - left: "`limit`"
+        right: Poor — may compute and discard extra elements
+      - left: "`count`, `sum`, `anyMatch`"
+        right: Good terminal operations — they combine cheaply
+
+  - type: choice
+    prompt: Besides being slow, how else can parallel streams go wrong?
+    options:
+      - text: They can give wrong results if functions aren't associative, non-interfering and stateless
+        correct: true
+      - text: They never go wrong, only slow
+    explanation: Use `parallel()` only after measuring a real speed-up on realistic data — and keep correctness requirements in mind.
+
+  - type: explanation
+    title: When it does help
+    body: |
+      Counting primes up to *n* is a good fit — a splittable range, independent work per element, a cheap terminal combination:
+
+      ```java
+      static long pi(long n) {
+          return LongStream.rangeClosed(2, n)
+                           .parallel()
+                           .mapToObj(BigInteger::valueOf)
+                           .filter(i -> i.isProbablePrime(50))
+                           .count();
+      }
+      ```
+
+      On a quad-core machine this runs several times faster than the sequential version.

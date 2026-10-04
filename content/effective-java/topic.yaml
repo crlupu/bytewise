@@ -1,4 +1,4 @@
 title: Effective Java
 summary: Joshua Bloch's 90 items, one short lesson each — chapter by chapter, with practice.
 order: 2
-courses: [ej-objects, ej-common-methods, ej-classes, ej-generics, ej-enums]
+courses: [ej-objects, ej-common-methods, ej-classes, ej-generics, ej-enums, ej-lambdas, ej-methods]
