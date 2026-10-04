@@ -1,0 +1,52 @@
+title: Static member classes over inner classes
+summary: A nested class that doesn't need its enclosing instance should be static — otherwise it carries a hidden reference.
+duration: 5
+tags: [java, effective java, nested classes, inner classes, memory leak, static]
+sources:
+  - { book: effective-java, ref: "Item 24" }
+steps:
+  - type: match
+    prompt: Match each kind of nested class to its description.
+    pairs:
+      - left: Static member class
+        right: Declared with `static` inside another class; no link to an enclosing instance
+      - left: Nonstatic member class (inner class)
+        right: Each instance is tied to an instance of the enclosing class
+      - left: Anonymous class
+        right: Declared and instantiated at one point in an expression, without a name
+      - left: Local class
+        right: Declared inside a method body, with a name
+
+  - type: explanation
+    title: The hidden reference
+    body: |
+      Every instance of a **nonstatic** member class holds a hidden reference to its enclosing instance. That reference
+      costs memory and time — and, worse, keeps the enclosing instance alive as long as the inner one is.
+
+      Nonstatic member classes are right when the nested object genuinely needs the outer one: an `Iterator` that walks
+      its collection's internals, for example.
+
+  - type: choice
+    prompt: "`Map` implementations keep one `Entry` object per key. Should `Entry` be static or nonstatic?"
+    options:
+      - text: Static — entries never use the enclosing map, and a reference per entry would waste space
+        correct: true
+      - text: Nonstatic — entries belong to the map
+        feedback: Belonging isn't the test; needing the enclosing *instance* is.
+    explanation: The rule — **if a member class doesn't need access to an enclosing instance, always make it static.**
+
+  - type: predict
+    prompt: |
+      An inner (nonstatic) class instance is stored in a long-lived cache after its enclosing object is otherwise unused.
+      What happens to the enclosing object?
+    options:
+      - text: It can't be garbage collected, because the inner instance references it
+        correct: true
+      - text: It's collected normally
+        feedback: The hidden reference keeps it reachable.
+    explanation: A classic memory leak — and an invisible one, since the reference doesn't appear in the source.
+
+  - type: blank
+    prompt: Declare a nested class with no link to the outer instance.
+    template: "private [[static]] class Node<E> { E item; Node<E> next; }"
+    code: true

@@ -1,0 +1,59 @@
+title: Override clone judiciously
+summary: Cloneable is a broken mixin; copy constructors and copy factories are almost always better.
+duration: 5
+tags: [java, effective java, clone, cloneable, copy constructor, deep copy]
+sources:
+  - { book: effective-java, ref: "Item 13" }
+steps:
+  - type: explanation
+    title: An odd interface
+    body: |
+      `Cloneable` has no methods. Implementing it changes the behaviour of a **protected** method in `Object`: `clone`
+      then returns a field-by-field copy instead of throwing `CloneNotSupportedException`. That's an unusual — and
+      fragile — use of an interface.
+
+      And field-by-field means **shallow**: references are copied, not the objects they point to.
+
+  - type: predict
+    prompt: "A `Stack` with an `Object[] elements` field overrides `clone` as just `return (Stack) super.clone();`. What's wrong?"
+    options:
+      - text: The clone shares the same array as the original, so pushing onto one corrupts the other
+        correct: true
+      - text: Nothing — `super.clone()` copies everything
+        feedback: It copies the *reference* to the array, not the array.
+      - text: It throws `CloneNotSupportedException`
+        feedback: Only if `Stack` doesn't implement `Cloneable`.
+    explanation: The fix is `result.elements = elements.clone();` — and mutable fields must not be `final`, or you can't reassign them.
+
+  - type: explanation
+    title: Copy constructors and factories
+    body: |
+      A better way to copy:
+
+      ```java
+      public Yum(Yum yum) { ... }                       // copy constructor
+      public static Yum newInstance(Yum yum) { ... }    // copy factory
+      ```
+
+      They don't depend on a risky extralinguistic mechanism, don't conflict with `final` fields, throw no checked
+      exceptions, need no casts — and can take an interface type, like `new TreeSet<>(hashSet)`.
+
+  - type: choice
+    prompt: Which are advantages of copy constructors over `clone`?
+    options:
+      - text: They work with `final` fields
+        correct: true
+      - text: They can accept an interface, converting between implementations
+        correct: true
+      - text: They don't throw a checked exception or need a cast
+        correct: true
+      - text: They perform a deep copy automatically
+        feedback: Neither approach copies deeply on its own; you write that logic either way.
+
+  - type: choice
+    prompt: Where is `clone` still the best choice?
+    options:
+      - text: Copying arrays — `array.clone()` is concise and correct
+        correct: true
+      - text: Copying any new class you design
+        feedback: For new classes, prefer copy constructors or factories.

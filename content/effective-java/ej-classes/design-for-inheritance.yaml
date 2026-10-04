@@ -1,0 +1,60 @@
+title: Design for inheritance, or prohibit it
+summary: A class meant to be extended must document its self-use and never call overridable methods from its constructor.
+duration: 5
+tags: [java, effective java, inheritance, final, constructors, documentation]
+sources:
+  - { book: effective-java, ref: "Item 19" }
+steps:
+  - type: explanation
+    title: Self-use must be documented
+    body: |
+      If a class is designed for subclassing, its docs must say which overridable methods it calls on itself, in what
+      order, and how results affect it — the `@implSpec` "Implementation Requirements" section. Otherwise subclasses
+      break the way `InstrumentedHashSet` did, by overriding a method another one secretly relied on.
+
+      That's a big commitment: the self-use pattern becomes part of the API forever.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Super {
+          Super() { overrideMe(); }
+          void overrideMe() {}
+      }
+      final class Sub extends Super {
+          private final Instant instant;
+          Sub() { super(); instant = Instant.now(); }
+          @Override void overrideMe() { System.out.println(instant); }
+      }
+      // main: new Sub();
+    language: java
+    options:
+      - text: "`null` — the superclass constructor calls the override before `Sub`'s fields are set"
+        correct: true
+      - text: The current time
+        feedback: "`Sub`'s constructor body hasn't run yet when `Super()` calls `overrideMe`."
+      - text: It doesn't compile
+    explanation: "Constructors must not call overridable methods — directly or indirectly. The same goes for `clone` and `readObject`."
+
+  - type: choice
+    prompt: How should you test a class designed for inheritance?
+    options:
+      - text: Write several subclasses before releasing it
+        correct: true
+      - text: Unit-test the class on its own
+        feedback: That checks behaviour, not whether the protected hooks you chose are the right ones.
+    explanation: Writing subclasses reveals missing protected hooks — and hooks nobody needs.
+
+  - type: choice
+    prompt: A class isn't designed or documented for subclassing. What should you do?
+    options:
+      - text: Prohibit it — declare the class `final`, or make constructors private with static factories
+        correct: true
+      - text: Leave it open just in case
+        feedback: Every subclass then depends on undocumented internals.
+    explanation: Prohibiting inheritance for ordinary concrete classes is the safe default.
+
+  - type: blank
+    prompt: Prohibit subclassing.
+    template: "public [[final]] class Money { ... }"
+    code: true

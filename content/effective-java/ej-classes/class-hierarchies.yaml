@@ -1,0 +1,62 @@
+title: Class hierarchies over tagged classes
+summary: A tag field that switches behaviour is a poor imitation of subtypes.
+duration: 5
+tags: [java, effective java, tagged class, inheritance, sealed, polymorphism]
+sources:
+  - { book: effective-java, ref: "Item 23" }
+steps:
+  - type: explanation
+    title: A tagged class
+    body: |
+      ```java
+      class Figure {
+          enum Shape { RECTANGLE, CIRCLE }
+          final Shape shape;
+          double length, width;   // used only for RECTANGLE
+          double radius;          // used only for CIRCLE
+          double area() {
+              switch (shape) {
+                  case RECTANGLE: return length * width;
+                  case CIRCLE:    return Math.PI * radius * radius;
+                  default: throw new AssertionError(shape);
+              }
+          }
+      }
+      ```
+
+      One class trying to be several. Every instance carries fields it doesn't use, and every new shape means editing
+      every switch.
+
+  - type: choice
+    prompt: Which are problems with tagged classes?
+    options:
+      - text: Irrelevant fields in every instance, which can't all be `final` or properly initialised
+        correct: true
+      - text: Adding a flavour means editing every switch — and forgetting one fails only at run time
+        correct: true
+      - text: The type of an instance gives no clue to its flavour
+        correct: true
+      - text: They can't be immutable at all
+        feedback: They can be — just awkwardly.
+
+  - type: order
+    prompt: Put the steps of converting a tagged class into a hierarchy in order.
+    items:
+      - Make an abstract root class with an abstract method for each tag-dependent behaviour
+      - Move code that doesn't depend on the tag, and shared fields, into the root
+      - Make a concrete subclass per flavour, with only the fields it needs
+      - Implement each abstract method in each subclass
+
+  - type: choice
+    prompt: After the change, what happens if someone adds `Triangle` but forgets to implement `area()`?
+    options:
+      - text: It doesn't compile — the abstract method must be implemented
+        correct: true
+      - text: It throws `AssertionError` when `area()` is called
+        feedback: That was the tagged class's behaviour. The hierarchy catches it at compile time.
+
+  - type: blank
+    prompt: In modern Java you can also close the hierarchy to known subtypes.
+    template: "abstract [[sealed]] class Figure [[permits]] Rectangle, Circle { abstract double area(); }"
+    code: true
+    explanation: Sealed classes (Java 17) also let `switch` check that every subtype is handled.

@@ -1,0 +1,58 @@
+title: Accessors, not public fields
+summary: Public classes should expose data through methods, keeping the freedom to change the representation.
+duration: 4
+tags: [java, effective java, encapsulation, getters, records]
+sources:
+  - { book: effective-java, ref: "Item 16" }
+steps:
+  - type: explanation
+    title: Degenerate classes
+    body: |
+      ```java
+      class Point {
+          public double x;
+          public double y;
+      }
+      ```
+
+      Clients read and write the fields directly. You can't change the representation without changing every client,
+      can't enforce invariants (say, coordinates within bounds), and can't do anything when a field is read or written.
+
+      The fix is the familiar one: private fields, public accessors (and mutators, if it must be mutable).
+
+  - type: choice
+    prompt: Which problems do public fields cause in a **public** class?
+    options:
+      - text: The representation can never change without breaking clients
+        correct: true
+      - text: Invariants can't be enforced
+        correct: true
+      - text: No action can be taken when a field is accessed
+        correct: true
+      - text: They make the class slower
+        feedback: Accessors are inlined by the JIT; speed isn't the issue.
+
+  - type: choice
+    prompt: When is exposing fields directly acceptable?
+    options:
+      - text: In package-private or private nested classes, where all clients are under your control
+        correct: true
+      - text: Whenever the fields are `final`
+        feedback: Immutable public fields are less harmful, but still fix the representation forever.
+      - text: Never
+        feedback: Inside a package or a nested class, it can be the clearest code.
+    explanation: Changes then stay within the package, so you can fix every client at once.
+
+  - type: predict
+    prompt: "`java.awt.Point` and `Dimension` expose public fields. What's the lasting consequence?"
+    options:
+      - text: Their representation is frozen in the public API, and the performance problems they cause can't be fixed
+        correct: true
+      - text: Nothing, since they're simple
+    explanation: They're cautionary examples in the platform itself.
+
+  - type: blank
+    prompt: Modern Java offers a concise immutable data carrier with accessors generated for you.
+    template: "public [[record]] Point(double x, double y) {}"
+    code: true
+    explanation: A record's fields are private and final; you read them with `p.x()` and `p.y()`.

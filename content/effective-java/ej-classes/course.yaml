@@ -1,0 +1,14 @@
+title: Classes and interfaces
+summary: Effective Java, chapter 4 (Items 15–25) — encapsulation, immutability, composition and interface design.
+lessons:
+  - minimize-accessibility
+  - accessor-methods
+  - minimize-mutability
+  - composition-over-inheritance
+  - design-for-inheritance
+  - interfaces-over-abstract-classes
+  - interfaces-for-posterity
+  - interfaces-define-types
+  - class-hierarchies
+  - static-member-classes
+  - one-top-level-class

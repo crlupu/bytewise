@@ -1,0 +1,52 @@
+title: Always override toString
+summary: A useful string representation pays off every time an object is logged, printed or shown in a debugger.
+duration: 4
+tags: [java, effective java, tostring, debugging, logging]
+sources:
+  - { book: effective-java, ref: "Item 12" }
+steps:
+  - type: predict
+    prompt: "`PhoneNumber` doesn't override `toString`. What does `System.out.println(new PhoneNumber(707, 867, 5309))` print?"
+    options:
+      - text: Something like `PhoneNumber@163b91`
+        correct: true
+      - text: "`707-867-5309`"
+        feedback: That's what you'd want — but `Object.toString` doesn't know your fields.
+      - text: Nothing — it fails to compile
+    explanation: "`Object.toString` gives the class name, `@`, and the hash code in hex — rarely useful."
+
+  - type: explanation
+    title: Return the interesting information
+    body: |
+      `toString` is called whenever your object meets string concatenation, `println`, `assert` messages, loggers and
+      debuggers. Return all the interesting information the object holds, concisely:
+
+      ```java
+      @Override public String toString() {
+          return String.format("%03d-%03d-%04d", areaCode, prefix, lineNum);
+      }
+      ```
+
+      Records, and many IDEs, generate a decent one for you.
+
+  - type: choice
+    prompt: Should you document the exact format of `toString`'s output?
+    options:
+      - text: For value classes it can help — but once specified, you're stuck with that format forever
+        correct: true
+      - text: Never — it's for debugging only
+        feedback: Either choice is reasonable; what matters is stating the intent clearly.
+    explanation: Either way, say in the docs whether the format is guaranteed, and offer accessors so no one has to parse the string.
+
+  - type: choice
+    prompt: Why provide getters for the values that appear in `toString`?
+    options:
+      - text: Otherwise clients parse the string to get them, making the format a de facto API
+        correct: true
+      - text: Because `toString` can't access private fields
+        feedback: It's inside the class, so it can.
+
+  - type: blank
+    prompt: Complete the override.
+    template: "@Override public [[String]] [[toString]]() { return \"Point[x=\" + x + \", y=\" + y + \"]\"; }"
+    code: true

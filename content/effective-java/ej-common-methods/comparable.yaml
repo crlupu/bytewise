@@ -1,0 +1,58 @@
+title: Implementing Comparable
+summary: A natural ordering makes sorting, searching and sorted collections work — if compareTo keeps its contract.
+duration: 5
+tags: [java, effective java, comparable, compareto, comparator, sorting]
+sources:
+  - { book: effective-java, ref: "Item 14" }
+steps:
+  - type: explanation
+    title: A natural ordering
+    body: |
+      Implementing `Comparable<T>` gives a class a **natural ordering**, and with it `Collections.sort`, `Arrays.binarySearch`,
+      `TreeSet` and `TreeMap` all just work.
+
+      `compareTo` returns a negative number, zero or a positive number as `this` is less than, equal to or greater than
+      the argument. Like `equals`, it must be antisymmetric and transitive — and it's strongly recommended that it be
+      **consistent with equals**: `compareTo` is 0 exactly when `equals` is true.
+
+  - type: predict
+    prompt: |
+      `BigDecimal("1.0")` and `BigDecimal("1.00")` are not `equals` (different scale), but `compareTo` says they're equal.
+      Add both to a `HashSet` and to a `TreeSet`. How many elements does each hold?
+    options:
+      - text: HashSet 2, TreeSet 1
+        correct: true
+      - text: HashSet 1, TreeSet 2
+      - text: Both 2
+        feedback: TreeSet uses `compareTo`, which treats them as equal.
+    explanation: HashSet uses `equals`; TreeSet uses `compareTo`. An ordering inconsistent with equals makes sorted collections behave differently.
+
+  - type: choice
+    prompt: What's wrong with this comparator?
+    code: |
+      static Comparator<Object> hashOrder =
+          (o1, o2) -> o1.hashCode() - o2.hashCode();
+    language: java
+    options:
+      - text: The subtraction can overflow for large values of opposite sign, giving the wrong sign
+        correct: true
+      - text: Comparators can't be lambdas
+      - text: Nothing — subtraction is the standard trick
+        feedback: It's a well-known bug. Use `Integer.compare`.
+    explanation: Use `Integer.compare(o1.hashCode(), o2.hashCode())`, or `Comparator.comparingInt(Object::hashCode)`.
+
+  - type: blank
+    prompt: Build a comparator for phone numbers by area code, then prefix.
+    template: "Comparator.[[comparingInt]]((PhoneNumber pn) -> pn.areaCode).[[thenComparingInt]](pn -> pn.prefix)"
+    code: true
+    explanation: Comparator construction methods read clearly and avoid hand-written arithmetic.
+
+  - type: choice
+    prompt: Inside `compareTo`, how should you compare two `int` fields?
+    options:
+      - text: "`Integer.compare(a, b)`"
+        correct: true
+      - text: "`a < b` and `a > b` chains"
+        feedback: Works, but it's verbose and error-prone; the static `compare` methods are preferred.
+      - text: "`a - b`"
+        feedback: Overflow, as above.

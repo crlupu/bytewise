@@ -1,0 +1,55 @@
+title: One top-level class per source file
+summary: Several top-level classes in one file can make the program's behaviour depend on compile order.
+duration: 4
+tags: [java, effective java, source files, compilation, nested classes]
+sources:
+  - { book: effective-java, ref: "Item 25" }
+steps:
+  - type: explanation
+    title: Two files, same classes
+    body: |
+      The compiler allows several top-level classes in one source file. Suppose:
+
+      ```java
+      // Utensil.java
+      class Utensil { static final String NAME = "pan"; }
+      class Dessert { static final String NAME = "cake"; }
+
+      // Dessert.java
+      class Utensil { static final String NAME = "pot"; }
+      class Dessert { static final String NAME = "pie"; }
+      ```
+
+      and `Main` prints `Utensil.NAME + Dessert.NAME`.
+
+  - type: predict
+    prompt: You compile with `javac Main.java Utensil.java`. What does `Main` print?
+    answer: ["pancake"]
+    wrong:
+      - answer: "potpie"
+        feedback: "`Utensil.java` is listed, so its definitions are compiled first — `Dessert.java` isn't even read."
+    hints:
+      - When `Main` refers to `Utensil`, the compiler finds `Utensil.java`, which defines both classes.
+    explanation: "`pancake`. With `javac Main.java Dessert.java`, compilation fails with duplicate classes; with `javac Dessert.java Main.java`, it prints `potpie`."
+
+  - type: choice
+    prompt: What's the real problem?
+    options:
+      - text: The program's behaviour depends on the order source files are passed to the compiler
+        correct: true
+      - text: The program is slower
+      - text: Java doesn't allow two classes per file
+        feedback: It does — that's exactly why the trap exists.
+
+  - type: choice
+    prompt: What's the fix if the classes really belong together?
+    options:
+      - text: Make them static member classes of one top-level class
+        correct: true
+      - text: Put them in one file and remember the compile order
+        feedback: Relying on compile order is the bug.
+    explanation: Otherwise, one top-level class per file, named after the file.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Never put multiple [[top-level|top level]] classes or interfaces in a single [[source]] file."

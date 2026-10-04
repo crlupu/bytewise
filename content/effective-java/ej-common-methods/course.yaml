@@ -1,0 +1,8 @@
+title: Methods common to all objects
+summary: Effective Java, chapter 3 (Items 10–14) — equals, hashCode, toString, clone and compareTo, done right.
+lessons:
+  - equals-contract
+  - hashcode
+  - tostring
+  - clone
+  - comparable

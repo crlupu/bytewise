@@ -1,0 +1,65 @@
+title: Prefer interfaces to abstract classes
+summary: Interfaces allow mixins and non-hierarchical types; a skeletal implementation gives you the convenience of both.
+duration: 5
+tags: [java, effective java, interfaces, abstract classes, mixins, skeletal implementation]
+sources:
+  - { book: effective-java, ref: "Item 20" }
+steps:
+  - type: explanation
+    title: Two ways to define a type
+    body: |
+      Java has two mechanisms for defining a type with multiple implementations. The decisive difference: a class can
+      extend only **one** abstract class, but implement **any number** of interfaces.
+
+      So existing classes can easily be retrofitted with a new interface — add `implements Comparable` — while fitting a
+      new abstract class means inserting it high in the hierarchy, where it affects every descendant.
+
+  - type: choice
+    prompt: Which are advantages of interfaces over abstract classes?
+    options:
+      - text: Existing classes can be retrofitted to implement them
+        correct: true
+      - text: They're ideal for mixins — optional behaviour like `Comparable`
+        correct: true
+      - text: They allow non-hierarchical types, such as a `SingerSongwriter` that is both a `Singer` and a `Songwriter`
+        correct: true
+      - text: They can hold instance fields
+        feedback: Interfaces can't have instance fields; that's an abstract class's advantage.
+
+  - type: explanation
+    title: Skeletal implementations
+    body: |
+      You can combine both: an interface for the type, plus an abstract **skeletal implementation** class that implements
+      the non-primitive methods on top of a few primitive ones. By convention it's called `AbstractInterface`:
+      `AbstractList`, `AbstractSet`, `AbstractMap`.
+
+      ```java
+      static List<Integer> intArrayAsList(int[] a) {
+          return new AbstractList<>() {
+              @Override public Integer get(int i) { return a[i]; }
+              @Override public Integer set(int i, Integer v) { int old = a[i]; a[i] = v; return old; }
+              @Override public int size() { return a.length; }
+          };
+      }
+      ```
+
+  - type: match
+    prompt: Match each interface to its skeletal implementation.
+    pairs:
+      - left: "`List`"
+        right: "`AbstractList`"
+      - left: "`Set`"
+        right: "`AbstractSet`"
+      - left: "`Map`"
+        right: "`AbstractMap`"
+      - left: "`Collection`"
+        right: "`AbstractCollection`"
+
+  - type: choice
+    prompt: Why not just put all the shared code into default methods on the interface?
+    options:
+      - text: Default methods can't have state, and can't provide `equals`, `hashCode` or `toString`
+        correct: true
+      - text: Interfaces can't have method bodies
+        feedback: Since Java 8 they can — default and static methods.
+    explanation: Defaults help, but the skeletal class can hold fields and override `Object`'s methods.

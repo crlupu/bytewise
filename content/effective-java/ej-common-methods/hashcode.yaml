@@ -1,0 +1,76 @@
+title: Override hashCode with equals
+summary: Equal objects must have equal hash codes — or hash-based collections can't find them.
+duration: 5
+tags: [java, effective java, hashcode, equals, hashmap, hashset]
+sources:
+  - { book: effective-java, ref: "Item 11" }
+steps:
+  - type: explanation
+    title: The rule
+    body: |
+      Hash-based collections find an object by its `hashCode` first and only then call `equals`. So:
+
+      > **Equal objects must have equal hash codes.**
+
+      Override `equals` without `hashCode`, and two equal objects usually get different, identity-based hash codes —
+      a `HashMap` will look in the wrong bucket and never find your key.
+
+  - type: predict
+    prompt: "`Point` overrides `equals` to compare `x` and `y`, but not `hashCode`. What does this print?"
+    code: |
+      Map<Point, String> names = new HashMap<>();
+      names.put(new Point(1, 2), "home");
+      System.out.println(names.get(new Point(1, 2)));
+    language: java
+    answer: ["null"]
+    wrong:
+      - answer: "home"
+        feedback: The two `Point`s are equal, but their inherited hash codes differ, so `get` searches another bucket.
+    hints:
+      - Which method does `HashMap.get` call first?
+    explanation: Almost certainly `null`. (Occasionally the identity hashes collide — making the bug intermittent, which is worse.)
+
+  - type: choice
+    prompt: Which `hashCode` implementations are legal for that `Point`?
+    options:
+      - text: "`return Objects.hash(x, y);`"
+        correct: true
+      - text: "`return 31 * Integer.hashCode(x) + Integer.hashCode(y);`"
+        correct: true
+      - text: "`return 42;`"
+        correct: true
+      - text: "`return System.identityHashCode(this);`"
+        feedback: Two equal points would get different values — exactly the bug we just saw.
+    explanation: |
+      `return 42` is *legal* but every point lands in one bucket and the map degrades into a list. `Objects.hash` is
+      concise but allocates an array per call; the hand-written form is fastest.
+
+  - type: blank
+    prompt: Complete the contract.
+    template: "If two objects are [[equal]] according to `equals`, they must have the same [[hashCode|hash code]]. The reverse need not hold."
+    explanation: Unequal objects *may* share a hash code — that's a collision, and costs only performance.
+
+  - type: predict
+    prompt: "`Person` uses `name` in both `equals` and `hashCode`, and has a setter for `name`. What does this print?"
+    code: |
+      Set<Person> people = new HashSet<>();
+      Person p = new Person("Ada");
+      people.add(p);
+      p.setName("Grace");
+      System.out.println(people.contains(p));
+    language: java
+    options:
+      - text: "`true`"
+        feedback: "`p` is still in the set — but filed in the bucket for its *old* hash code."
+      - text: "`false`"
+        correct: true
+    explanation: Mutating a field `hashCode` uses, while the object sits in a hash collection, strands it in the wrong bucket.
+
+  - type: choice
+    prompt: May you leave a significant field out of `hashCode` to make it faster?
+    options:
+      - text: Only if you accept more collisions — and never include a field that `equals` ignores
+        correct: true
+      - text: Yes, always — fewer fields means a faster hash
+        feedback: Leaving out important fields can make hash tables unusably slow.
+    explanation: Fields excluded from `equals` *must* be excluded from `hashCode`, or equal objects could hash differently.

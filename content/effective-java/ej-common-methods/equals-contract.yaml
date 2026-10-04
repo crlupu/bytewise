@@ -1,0 +1,81 @@
+title: The equals contract
+summary: Reflexive, symmetric, transitive, consistent, non-null — and how easily each one breaks.
+duration: 6
+tags: [java, effective java, equals, contract, collections]
+sources:
+  - { book: effective-java, ref: "Item 10" }
+steps:
+  - type: explanation
+    title: Often, don't override it
+    body: |
+      `Object.equals` means identity: an object equals only itself. That's right for many classes — threads, services,
+      anything with identity rather than a value. Override `equals` for **value classes**, like `Money` or `Point`,
+      where two instances with the same contents should count as the same.
+
+      When you do, collections and libraries will trust your `equals` to behave like equality. It must be:
+
+      - **reflexive** — `x.equals(x)` is true;
+      - **symmetric** — `x.equals(y)` exactly when `y.equals(x)`;
+      - **transitive** — if `x.equals(y)` and `y.equals(z)`, then `x.equals(z)`;
+      - **consistent** — repeated calls agree while the objects don't change;
+      - and `x.equals(null)` is false.
+
+  - type: match
+    prompt: Match each property to an example of it being broken.
+    pairs:
+      - left: Symmetry
+        right: "`a.equals(b)` is true but `b.equals(a)` is false"
+      - left: Transitivity
+        right: "`a` equals `b`, `b` equals `c`, but `a` doesn't equal `c`"
+      - left: Consistency
+        right: The answer changes because `equals` reads a remote resource
+      - left: Non-nullity
+        right: "`x.equals(null)` throws a `NullPointerException`"
+
+  - type: choice
+    prompt: |
+      `CaseInsensitiveString.equals` returns true for an ordinary `String` with the same letters in any case.
+      What's wrong with that?
+    code: |
+      CaseInsensitiveString cis = new CaseInsensitiveString("Polish");
+      String s = "polish";
+      cis.equals(s); // true
+      s.equals(cis); // ?
+    language: java
+    options:
+      - text: It breaks symmetry — `String.equals` knows nothing about the new class and returns false
+        correct: true
+      - text: It breaks reflexivity
+        feedback: "`cis.equals(cis)` is still true. The problem appears between two different classes."
+      - text: Nothing — it's a sensible convenience
+        feedback: Put both in a `List` and `contains` could answer either way depending on the implementation.
+    explanation: Don't try to make `equals` interoperate with a class you don't control.
+
+  - type: choice
+    prompt: "`ColorPoint extends Point` adds a color, and you want `equals` to compare it too. What's the catch?"
+    options:
+      - text: There's no way to extend an instantiable class with a value field and keep the equals contract — use composition instead
+        correct: true
+      - text: Just compare `getClass()` instead of using `instanceof`
+        feedback: That keeps the contract but breaks substitutability — a `Point` subclass could never equal a `Point`.
+      - text: Ignore the color in `ColorPoint.equals`
+        feedback: Then two points of different colors are "equal", which isn't what you wanted.
+    explanation: Give `ColorPoint` a private `Point` field and an `asPoint()` view, rather than extending `Point`.
+
+  - type: order
+    prompt: Put the steps of a high-quality `equals` in order.
+    items:
+      - Return true if the argument is `this` (a cheap shortcut)
+      - Use `instanceof` to check the type — it also returns false for null
+      - Cast the argument to the right type
+      - Compare each significant field
+    explanation: "`if (!(o instanceof Point p)) return false;` does the check and cast in one line with pattern matching."
+
+  - type: choice
+    prompt: Which is a sound way to compare `double` fields in `equals`?
+    options:
+      - text: "`Double.compare(a, b) == 0`"
+        correct: true
+      - text: "`a == b`"
+        feedback: "`NaN == NaN` is false and `-0.0 == 0.0` is true — both wrong for equality of values."
+    explanation: Use `Float.compare` and `Double.compare` for floating-point fields; for records, the compiler does this for you.
