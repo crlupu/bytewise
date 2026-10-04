@@ -139,7 +139,18 @@ const Match = z
     ...exerciseBase,
     pairs: z.array(z.object({ left: md, right: md }).strict()).min(2),
   })
-  .strict();
+  .strict()
+  // Grading checks each pair by position, so two identical items on one side
+  // would make a correct-looking answer count as wrong.
+  .superRefine((s, ctx) => {
+    for (const side of ["left", "right"] as const) {
+      const seen = new Set<string>();
+      s.pairs.forEach((p, i) => {
+        if (seen.has(p[side])) ctx.addIssue({ code: "custom", path: ["pairs", i, side], message: `duplicate ${side} item; each must be unique` });
+        seen.add(p[side]);
+      });
+    }
+  });
 
 const Blank = z
   .object({

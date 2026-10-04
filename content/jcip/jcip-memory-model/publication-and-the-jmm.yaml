@@ -1,0 +1,78 @@
+title: Publication and the memory model
+summary: Why unsafe publication fails, why double-checked locking was broken, and the idioms that are safe.
+duration: 6
+tags: [java, concurrency, memory model, publication, double-checked locking, lazy initialization, holder class]
+sources:
+  - { book: jcip, ref: "§16.2, Publication" }
+steps:
+  - type: explanation
+    title: Unsafe publication
+    body: |
+      ```java
+      private static Resource resource;
+      public static Resource getInstance() {
+          if (resource == null) resource = new Resource();   // unsafe publication
+          return resource;
+      }
+      ```
+
+      Besides the race, there's a subtler problem: writing the reference and writing the object's fields aren't ordered
+      by happens-before for another thread. It may see a non-null `resource` whose fields still hold their default values.
+
+  - type: choice
+    prompt: In unsafe publication, what can a second thread see?
+    options:
+      - text: An up-to-date reference to an object with stale — even default — field values
+        correct: true
+      - text: Only a null reference or a fully constructed object
+        feedback: That's what safe publication guarantees. Without it, a partially constructed object is possible.
+
+  - type: explanation
+    title: Double-checked locking
+    body: |
+      ```java
+      public static Resource getInstance() {
+          if (resource == null) {
+              synchronized (DoubleCheckedLocking.class) {
+                  if (resource == null) resource = new Resource();
+              }
+          }
+          return resource;
+      }
+      ```
+
+      The unsynchronized first check was meant to avoid locking in the common case — but it reads `resource` without
+      happens-before, so it can see a partially constructed object.
+
+  - type: choice
+    prompt: How do you fix double-checked locking under the Java 5 memory model?
+    options:
+      - text: Declare `resource` as `volatile`
+        correct: true
+      - text: Add a third check
+        feedback: More unsynchronized checks don't add a happens-before edge.
+    explanation: It works — but the lazy initialization holder class idiom is simpler and at least as fast.
+
+  - type: blank
+    prompt: The lazy initialization holder class idiom.
+    template: |
+      public class ResourceFactory {
+          private static class ResourceHolder {
+              public static Resource resource = new Resource();
+          }
+          public static Resource getResource() { return [[ResourceHolder]].resource; }
+      }
+    code: true
+    explanation: The JVM initializes the holder class on first use, under a lock, so the static field is safely published — with no synchronization on later calls.
+
+  - type: match
+    prompt: Match each initialization approach to its verdict.
+    pairs:
+      - left: Eager static initialization
+        right: Safe and simplest, if laziness isn't needed
+      - left: Lazy initialization holder class
+        right: Safe, lazy, and no synchronization on access
+      - left: Double-checked locking with a volatile field
+        right: Safe since Java 5, but more complex than needed
+      - left: Double-checked locking without volatile
+        right: Broken

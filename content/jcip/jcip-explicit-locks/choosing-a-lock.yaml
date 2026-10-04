@@ -1,0 +1,47 @@
+title: Fairness, and synchronized vs ReentrantLock
+summary: Fair locks cost throughput; ReentrantLock is for when you need its extra features — otherwise use synchronized.
+duration: 5
+tags: [java, concurrency, fairness, reentrantlock, synchronized, performance]
+sources:
+  - { book: jcip, ref: "§13.2–13.4, Performance Considerations; Fairness; Choosing Between Synchronized and ReentrantLock" }
+steps:
+  - type: explanation
+    title: Fair and nonfair
+    body: |
+      `ReentrantLock` offers a choice. A **fair** lock grants access in the order threads asked. A **nonfair** lock (the
+      default) lets a thread **barge** in: if the lock happens to be free when it asks, it takes it, even if others are
+      queued.
+
+  - type: choice
+    prompt: Why is nonfair locking usually faster under contention?
+    options:
+      - text: Resuming a suspended thread takes time; letting an already-running thread barge in uses the lock during that gap
+        correct: true
+      - text: Fair locks use more memory
+        feedback: The cost is in latency between release and the next acquisition, not memory.
+    explanation: In JCIP's benchmarks fair locks were dramatically slower — sometimes by two orders of magnitude.
+
+  - type: choice
+    prompt: When does fairness matter?
+    options:
+      - text: When locks are held relatively long, or requests arrive slowly enough that barging rarely helps — and starvation must be avoided
+        correct: true
+      - text: Always
+        feedback: Most programs never need fairness, and pay for it heavily if they ask for it.
+
+  - type: match
+    prompt: Synchronized or ReentrantLock?
+    pairs:
+      - left: Plain mutual exclusion around a block of code
+        right: "`synchronized` — simpler, and impossible to forget to unlock"
+      - left: Timed or polled lock attempts
+        right: "`ReentrantLock.tryLock`"
+      - left: Interruptible lock acquisition
+        right: "`ReentrantLock.lockInterruptibly`"
+      - left: Non-block-structured locking, like hand-over-hand
+        right: "`ReentrantLock` — `lock` and `unlock` in different scopes"
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Use ReentrantLock only when you need something intrinsic locking doesn't provide; otherwise prefer [[synchronized]]."
+    explanation: Since Java 6, intrinsic locking performs about as well as ReentrantLock, so performance isn't a reason to switch.

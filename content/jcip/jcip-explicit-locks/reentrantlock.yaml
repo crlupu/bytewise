@@ -1,0 +1,72 @@
+title: Lock and ReentrantLock
+summary: The same mutual exclusion as synchronized, plus timed, polled and interruptible acquisition — at the price of unlocking yourself.
+duration: 6
+tags: [java, concurrency, lock, reentrantlock, trylock, lockinterruptibly]
+sources:
+  - { book: jcip, ref: "§13.1, Lock and ReentrantLock" }
+steps:
+  - type: explanation
+    title: An explicit lock
+    body: |
+      ```java
+      Lock lock = new ReentrantLock();
+      ...
+      lock.lock();
+      try {
+          // update object state
+      } finally {
+          lock.unlock();
+      }
+      ```
+
+      `ReentrantLock` gives the same mutual exclusion and memory-visibility guarantees as `synchronized`, and is reentrant
+      too. Why have it? Because intrinsic locking can't do some things: you can't interrupt a thread waiting for one,
+      or give up after a timeout, and it must be released in the same block where it was acquired.
+
+  - type: choice
+    prompt: What happens if you forget the `finally` and the code between `lock()` and `unlock()` throws?
+    options:
+      - text: The lock is never released — every later thread that needs it blocks forever
+        correct: true
+      - text: The JVM releases it automatically, as with synchronized
+        feedback: That's the safety net `synchronized` gives you and `Lock` doesn't.
+    explanation: This is why explicit locks are more dangerous — a bug that's easy to miss in review.
+
+  - type: match
+    prompt: Match each acquisition method to its behaviour.
+    pairs:
+      - left: "`lock()`"
+        right: Wait as long as it takes, ignoring interrupts
+      - left: "`tryLock()`"
+        right: Take the lock if it's free right now; otherwise return false at once
+      - left: "`tryLock(timeout, unit)`"
+        right: Wait up to a time limit, then give up
+      - left: "`lockInterruptibly()`"
+        right: Wait, but stop with `InterruptedException` if interrupted
+
+  - type: blank
+    prompt: Always release in finally.
+    template: |
+      lock.lock();
+      try {
+          balance -= amount;
+      } [[finally]] {
+          lock.[[unlock]]();
+      }
+    code: true
+
+  - type: choice
+    prompt: A task should give up if it can't send a message within its time budget. Which method fits?
+    options:
+      - text: "`tryLock(timeLeft, NANOSECONDS)` — and report failure if it returns false"
+        correct: true
+      - text: "`lock()`"
+        feedback: It could wait indefinitely and blow the budget.
+
+  - type: choice
+    prompt: Why might you need hand-over-hand ("chained") locking, as when traversing a linked list?
+    options:
+      - text: To lock the next node before releasing the current one — impossible with block-structured synchronized
+        correct: true
+      - text: To make locks reentrant
+    explanation: Explicit locks can be acquired and released in different scopes, which enables patterns like this.

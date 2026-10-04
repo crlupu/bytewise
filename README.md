@@ -44,18 +44,20 @@ trade-off scenarios (architecture).
 
 ## Content and the books behind it
 
-120 lessons in 26 courses. Most courses follow a standard book; each lesson names the
+177 lessons in 39 courses. Most courses follow a standard book; each lesson names the
 chapter or item it teaches in `sources`, shown on the course page, on the lesson's
 completion screen and in Search's Library. The lessons are written fresh — the books
 are where to go for the full treatment.
 
-**Effective Java** has its own section: one lesson for each of the 90 items, in a course
-per chapter (2–12), each with a short explanation and practice exercises.
+**Effective Java** and **Java Concurrency in Practice** each have their own section, with a
+course per chapter: one lesson for each of Effective Java's 90 items, and one lesson per
+major section of JCIP's 16 chapters (61 lessons, ending with a follow-up on Java 21 virtual
+threads). Each lesson has a short explanation and practice exercises.
 
 | Topic | Books |
 |---|---|
-| Java | *Java Concurrency in Practice* (Goetz et al.) |
 | Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |
+| Java Concurrency in Practice | *Java Concurrency in Practice* (Goetz et al.) — every chapter |
 | Databases | *SQL Performance Explained* (Winand), *High-Performance Java Persistence* (Mihalcea), *Database Internals* (Petrov) |
 | Operating systems | *Operating Systems: Three Easy Pieces* (Arpaci-Dusseau) |
 | Networking | *Computer Networking: A Top-Down Approach* (Kurose & Ross) |
@@ -113,12 +115,13 @@ Widget configs and goals:
 
 | Widget | `config` | `goal` |
 |---|---|---|
-| `threads` | `threads` (2–3), `increments`, `synchronized`, `variable`, `initial` | `count` |
+| `threads` | `threads` (2–3), `increments`, `synchronized`, `cas`, `variable`, `initial` | `count`, `retries` |
 | `btree` | `order` (3–6), `initial`, `sequence`, `custom`, `search` | `height`, `splits`, `contains`, `found` |
 | `paging` | `reference`, `frames`, `frameChoices`, `algorithms` (FIFO, LRU, OPT) | `algorithm`, `frames` (and played to the end) |
 | `tcp` | `start` (closed/established), `teardown`, `clientIsn`, `serverIsn` | `client`, `server` (TCP states) |
 | `scheduler` | `jobs: [{ name, arrival, burst }]`, `algorithms` (FIFO, SJF, STCF, RR), `quantum`, `quantumChoices` | `algorithm`, `quantum`, `avgTurnaroundAtMost`, `avgResponseAtMost` (and played to the end) |
 | `congestion` | `variant` (reno/tahoe), `ssthresh`, `switchable`, `maxRounds` | `rounds`, `cwndAtLeast`, `events` (dupack, timeout), `variant` |
+| `locks` | `threads: [{ name, ops }]`, ops being `lock X`, `unlock X`, `trylock X` (backs off on failure) or plain steps | `deadlock: true`, `finished: true` |
 | `tradeoff` | `metrics: [{ id, label, start, better }]`, `decisions: [{ id, label, options: [{ id, label, effects, consequence }] }]` | `require: [{ metric, min, max }]` |
 
 A mistake stops the build (and shows in `npm run dev`) with every problem found, each

@@ -1,0 +1,59 @@
+title: Explicit condition objects
+summary: A Lock can have several Conditions — one per predicate — so signal wakes exactly the right waiters.
+duration: 5
+tags: [java, concurrency, condition, await, signal, reentrantlock, bounded buffer]
+sources:
+  - { book: jcip, ref: "§14.3, Explicit Condition Objects" }
+steps:
+  - type: explanation
+    title: One lock, several conditions
+    body: |
+      An intrinsic lock has exactly one condition queue, shared by all predicates. With `Lock`, you can create as many
+      `Condition`s as you need:
+
+      ```java
+      private final Lock lock = new ReentrantLock();
+      private final Condition notFull  = lock.newCondition();
+      private final Condition notEmpty = lock.newCondition();
+
+      public void put(T x) throws InterruptedException {
+          lock.lock();
+          try {
+              while (count == items.length) notFull.await();
+              items[tail] = x; ...; ++count;
+              notEmpty.signal();
+          } finally { lock.unlock(); }
+      }
+      ```
+
+  - type: choice
+    prompt: Why is `signal` safe here, when `notify` wasn't with intrinsic condition queues?
+    options:
+      - text: Each condition has only one kind of waiter — consumers wait on `notEmpty`, producers on `notFull`
+        correct: true
+      - text: signal wakes all waiters
+        feedback: "`signal` wakes one; `signalAll` wakes all."
+    explanation: Fewer wake-ups means fewer context switches and lock acquisitions.
+
+  - type: match
+    prompt: Match the intrinsic method to its `Condition` equivalent.
+    pairs:
+      - left: "`wait`"
+        right: "`await`"
+      - left: "`notify`"
+        right: "`signal`"
+      - left: "`notifyAll`"
+        right: "`signalAll`"
+
+  - type: choice
+    prompt: "A `Condition` is an `Object`, so it also has `wait` and `notify`. What happens if you call `notEmpty.wait()` by mistake?"
+    options:
+      - text: It uses the Condition object's own intrinsic queue — not the one tied to the Lock — and almost certainly misbehaves
+        correct: true
+      - text: It's an alias for await
+        feedback: It's a completely different mechanism; be careful to use `await` and `signal`.
+
+  - type: blank
+    prompt: Wait on an explicit condition.
+    template: "while (count == 0) notEmpty.[[await]]();"
+    code: true

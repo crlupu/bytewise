@@ -1,0 +1,70 @@
+title: AbstractQueuedSynchronizer
+summary: The framework behind ReentrantLock, Semaphore, CountDownLatch and FutureTask — state, acquire and release.
+duration: 6
+tags: [java, concurrency, aqs, abstractqueuedsynchronizer, synchronizers, latch]
+sources:
+  - { book: jcip, ref: "§14.4–14.6, Anatomy of a Synchronizer; AbstractQueuedSynchronizer" }
+steps:
+  - type: explanation
+    title: A common core
+    body: |
+      `ReentrantLock` and `Semaphore` look alike — both have a gate that lets some threads through and blocks others. In
+      fact both, along with `CountDownLatch`, `ReentrantReadWriteLock` and (originally) `FutureTask`, are built on
+      **`AbstractQueuedSynchronizer`** (AQS).
+
+      AQS manages one integer of **state**, and a queue of waiting threads. A synchronizer built on it defines what
+      **acquire** and **release** mean for that state.
+
+  - type: match
+    prompt: Match each synchronizer to what its AQS state means.
+    pairs:
+      - left: "`ReentrantLock`"
+        right: How many times the owning thread has acquired the lock
+      - left: "`Semaphore`"
+        right: The number of permits left
+      - left: "`CountDownLatch`"
+        right: The current count
+      - left: "`FutureTask`"
+        right: The task's status — running, completed or cancelled
+
+  - type: explanation
+    title: A binary latch
+    body: |
+      ```java
+      public class OneShotLatch {
+          private final Sync sync = new Sync();
+          public void signal() { sync.releaseShared(0); }
+          public void await() throws InterruptedException { sync.acquireSharedInterruptibly(0); }
+
+          private class Sync extends AbstractQueuedSynchronizer {
+              protected int tryAcquireShared(int ignored) {
+                  return (getState() == 1) ? 1 : -1;   // succeed if open
+              }
+              protected boolean tryReleaseShared(int ignored) {
+                  setState(1);   // open the latch
+                  return true;   // let other threads try to acquire
+              }
+          }
+      }
+      ```
+
+  - type: choice
+    prompt: What does a negative return from `tryAcquireShared` tell AQS?
+    options:
+      - text: Acquisition failed — queue the thread and block it until a release
+        correct: true
+      - text: The latch is open
+        feedback: Non-negative means success.
+    explanation: AQS takes care of queueing, blocking, waking and interruption; the subclass only defines the state rules.
+
+  - type: choice
+    prompt: Why does `OneShotLatch` hold a private `Sync` instead of extending AQS itself?
+    options:
+      - text: AQS's public methods would leak into the latch's API — composition keeps the interface to `signal` and `await`
+        correct: true
+      - text: AQS can't be extended
+        feedback: It's designed to be — but by a private helper, not by the public class.
+
+  - type: blank
+    prompt: Complete the summary.
+    template: "AQS-based synchronizers keep their state in a single [[int|integer]], read and written with getState, setState and compareAndSetState."

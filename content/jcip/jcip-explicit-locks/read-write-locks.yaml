@@ -1,0 +1,56 @@
+title: Read-write locks
+summary: Many readers or one writer — a win for read-mostly data, and a cost when it isn't.
+duration: 5
+tags: [java, concurrency, readwritelock, reentrantreadwritelock, read-mostly]
+sources:
+  - { book: jcip, ref: "§13.5, Read-write Locks" }
+steps:
+  - type: explanation
+    title: Readers don't conflict
+    body: |
+      Mutual exclusion is conservative: it stops readers from overlapping with each other, though reads alone can't
+      interfere. A `ReadWriteLock` has two locks: any number of threads may hold the **read** lock at once, but the
+      **write** lock is exclusive.
+
+      ```java
+      public V get(Object key) {
+          r.lock();
+          try { return map.get(key); } finally { r.unlock(); }
+      }
+      public V put(K key, V value) {
+          w.lock();
+          try { return map.put(key, value); } finally { w.unlock(); }
+      }
+      ```
+
+  - type: match
+    prompt: Who can proceed?
+    pairs:
+      - left: Several threads want the read lock; no writer holds the lock
+        right: All of them, at the same time
+      - left: A thread wants the write lock; two readers hold the read lock
+        right: It waits until both readers release
+      - left: A thread wants the read lock; a writer holds the write lock
+        right: It waits until the writer releases
+
+  - type: choice
+    prompt: When does a read-write lock beat a plain lock?
+    options:
+      - text: When data is read far more often than written, and reads take long enough to matter
+        correct: true
+      - text: Always — it never hurts
+        feedback: It's more complex, so it's slower when reads and writes are balanced or critical sections are tiny.
+
+  - type: choice
+    prompt: A thread holds the read lock and wants to update the data. Can `ReentrantReadWriteLock` upgrade it to the write lock?
+    options:
+      - text: No — upgrading would deadlock if two readers tried it at once; release the read lock and acquire the write lock instead
+        correct: true
+      - text: Yes, call `writeLock().lock()` while holding the read lock
+        feedback: That deadlocks — the writer waits for all readers to leave, including itself.
+    explanation: Downgrading — taking the read lock while holding the write lock, then releasing the write lock — is allowed.
+
+  - type: blank
+    prompt: Get the shared lock.
+    template: "Lock r = rwl.[[readLock]]();"
+    code: true

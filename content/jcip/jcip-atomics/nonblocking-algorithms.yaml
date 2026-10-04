@@ -1,0 +1,67 @@
+title: Nonblocking algorithms
+summary: The Treiber stack, the Michael–Scott queue, and the ABA problem.
+duration: 6
+tags: [java, concurrency, nonblocking, lock-free, treiber stack, aba problem, cas]
+sources:
+  - { book: jcip, ref: "§15.4, Nonblocking Algorithms" }
+steps:
+  - type: explanation
+    title: Lock-free and wait-free
+    body: |
+      An algorithm is **nonblocking** if the failure or suspension of any thread can't cause another thread to fail or be
+      suspended. It's **lock-free** if, at each step, *some* thread can make progress.
+
+      The simplest example is a stack — **Treiber's algorithm**:
+
+      ```java
+      public void push(E item) {
+          Node<E> newHead = new Node<>(item);
+          Node<E> oldHead;
+          do {
+              oldHead = top.get();
+              newHead.next = oldHead;
+          } while (!top.compareAndSet(oldHead, newHead));
+      }
+      ```
+
+  - type: order
+    prompt: Put one attempt to `pop` from a Treiber stack in order.
+    items:
+      - Read the current head into `oldHead`; return null if it's empty
+      - Read `oldHead.next` into `newHead`
+      - CAS the top from `oldHead` to `newHead`
+      - If the CAS failed, another thread changed the top — start over
+    explanation: The whole operation is a single CAS on one reference, so there's never a half-done state for others to see.
+
+  - type: choice
+    prompt: Why is a linked queue harder than a stack?
+    options:
+      - text: Adding a node updates two references — the old tail's `next` and the tail pointer — which can't be changed in one CAS
+        correct: true
+      - text: Queues need locks by definition
+        feedback: "`ConcurrentLinkedQueue` is lock-free."
+    explanation: The Michael–Scott queue handles it by letting any thread finish another thread's half-done insert, helping it along.
+
+  - type: explanation
+    title: The ABA problem
+    body: |
+      CAS asks "is the value still V?". But a value can change from **A** to **B** and back to **A** while you weren't
+      looking. If your algorithm cares whether anything happened — for example, because a node was removed and reused —
+      CAS can't tell.
+
+      The fix is to compare a reference **plus a version number**, incremented on each update. Java provides
+      `AtomicStampedReference` (reference + int stamp) and `AtomicMarkableReference` (reference + boolean).
+
+  - type: choice
+    prompt: Why is ABA rarely a problem in Java's own nonblocking collections?
+    options:
+      - text: Garbage collection means a node can't be reused while any thread still holds a reference to it
+        correct: true
+      - text: Java's CAS checks the full history
+        feedback: CAS only compares current values.
+    explanation: In languages where nodes are freed and recycled manually, ABA is a classic source of bugs.
+
+  - type: blank
+    prompt: A reference paired with a version counter.
+    template: "AtomicStampedReference<Node> top = new [[AtomicStampedReference]]<>(null, 0);"
+    code: true

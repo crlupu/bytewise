@@ -1,0 +1,45 @@
+title: Initialization safety
+summary: Final fields of a properly constructed object are visible to every thread — however the object was published.
+duration: 5
+tags: [java, concurrency, memory model, final fields, initialization safety, immutability]
+sources:
+  - { book: jcip, ref: "§16.3, Initialization Safety" }
+steps:
+  - type: explanation
+    title: A guarantee for final fields
+    body: |
+      The JMM makes a special promise about `final` fields. For a **properly constructed** object — `this` didn't escape
+      during construction — every thread sees the values its constructor wrote to final fields, and anything reachable
+      through them as of the end of the constructor. Even if the object was published **unsafely**.
+
+      That's what makes properly constructed immutable objects safe to share without synchronization.
+
+  - type: predict
+    prompt: An object with only `final` fields is published through a plain, non-volatile static field, with no locking. Can another thread see a field at its default value?
+    options:
+      - text: No — initialization safety guarantees final fields are seen as the constructor set them
+        correct: true
+      - text: Yes — unsafe publication allows it
+        feedback: For non-final fields, yes. Final fields of a properly constructed object are the exception.
+
+  - type: choice
+    prompt: A final field refers to a `HashMap` filled in the constructor. Later, another method adds entries. What do other threads see?
+    options:
+      - text: The entries added in the constructor; later additions need their own synchronization
+        correct: true
+      - text: Every entry, always
+        feedback: The guarantee covers the state reachable through the final field *as of the end of construction*.
+
+  - type: match
+    prompt: Match each field kind to its visibility guarantee across threads.
+    pairs:
+      - left: "`final` field of a properly constructed object"
+        right: Visible as constructed, even after unsafe publication
+      - left: Non-final field, safely published
+        right: Visible as of publication; later changes need synchronization
+      - left: Non-final field, unsafely published
+        right: No guarantee — stale or default values possible
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Initialization safety applies only to values reachable through [[final]] fields, as of the time the constructor finishes."

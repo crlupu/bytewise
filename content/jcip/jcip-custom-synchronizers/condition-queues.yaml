@@ -1,0 +1,53 @@
+title: Using condition queues
+summary: Condition predicates, waiting in a loop, missed signals, and notifyAll versus notify.
+duration: 6
+tags: [java, concurrency, condition queues, wait, notifyall, missed signals, spurious wakeup]
+sources:
+  - { book: jcip, ref: "§14.2, Using Condition Queues" }
+steps:
+  - type: explanation
+    title: The condition predicate
+    body: |
+      The **condition predicate** is the precondition that makes an operation state-dependent: "the buffer is not empty"
+      for `take`. Document it for every condition queue and every wait.
+
+      There's a three-way relationship: the **lock**, the **condition predicate**, and the **condition queue**. The
+      predicate involves state variables guarded by the lock, and the lock object *is* the condition queue.
+
+  - type: choice
+    prompt: Why must you test the condition predicate in a `while` loop, not an `if`?
+    options:
+      - text: A woken thread may find the predicate false — another thread got there first, notifyAll woke everyone, or a spurious wakeup occurred
+        correct: true
+      - text: Loops are faster than if statements
+    explanation: "Returning from `wait` is a hint that something changed, not a guarantee the predicate holds."
+
+  - type: match
+    prompt: Match each rule for using `wait` to the bug it prevents.
+    pairs:
+      - left: Test the predicate before waiting
+        right: Sleeping when the condition is already true
+      - left: Wait in a loop
+        right: Proceeding when the condition is false after waking
+      - left: Hold the lock while testing and waiting
+        right: A missed signal between the test and the wait
+
+  - type: choice
+    prompt: Several threads wait on the same object, for **different** predicates (not-full and not-empty). Is `notify` safe?
+    options:
+      - text: No — it wakes one arbitrary thread, which may be waiting for the other predicate; the right thread stays asleep
+        correct: true
+      - text: Yes, it's more efficient than notifyAll
+        feedback: More efficient, but only correct under narrow conditions.
+    explanation: Use `notify` only when all waiters wait for the same predicate and each notification enables exactly one of them. Otherwise, `notifyAll`.
+
+  - type: explanation
+    title: Conditional notification
+    body: |
+      `notifyAll` wakes everyone, which can cause a stampede of context switches. One optimisation: notify only on the
+      transitions that can make a waiter succeed — `put` notifies only when the buffer goes from empty to not-empty.
+      It's easy to get wrong, so make it work first, then optimise if needed.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Whenever you wait on a condition, make sure someone will perform a [[notification]] whenever the condition predicate becomes true."

@@ -1,0 +1,63 @@
+title: Atomic variable classes
+summary: AtomicInteger, AtomicReference and friends — better volatile variables, and lock-free updates to immutable holders.
+duration: 5
+tags: [java, concurrency, atomicinteger, atomicreference, volatile, cas]
+sources:
+  - { book: jcip, ref: "§15.3, Atomic Variable Classes" }
+steps:
+  - type: explanation
+    title: Better volatiles
+    body: |
+      The atomic classes in `java.util.concurrent.atomic` are a generalisation of volatile variables: they have the
+      same memory semantics on `get` and `set`, plus atomic read-modify-write operations built on CAS.
+
+      Twelve classes in four groups: scalars (`AtomicInteger`, `AtomicLong`, `AtomicBoolean`, `AtomicReference`),
+      field updaters, arrays, and compound variables.
+
+  - type: match
+    prompt: Match each `AtomicInteger` method to what it does.
+    pairs:
+      - left: "`incrementAndGet()`"
+        right: Add one and return the new value
+      - left: "`getAndIncrement()`"
+        right: Add one and return the old value
+      - left: "`compareAndSet(expect, update)`"
+        right: Set to update only if the current value equals expect
+      - left: "`updateAndGet(fn)`"
+        right: Apply a function atomically, retrying on contention
+
+  - type: explanation
+    title: Invariants over several values
+    body: |
+      Two `AtomicInteger`s can't keep `lower <= upper` together — each is atomic only by itself. But an
+      `AtomicReference` to an **immutable** pair can:
+
+      ```java
+      private static class IntPair { final int lower; final int upper; ... }
+      private final AtomicReference<IntPair> values = new AtomicReference<>(new IntPair(0, 0));
+
+      public void setLower(int i) {
+          while (true) {
+              IntPair oldv = values.get();
+              if (i > oldv.upper) throw new IllegalArgumentException("Can't set lower to " + i + " > upper");
+              IntPair newv = new IntPair(i, oldv.upper);
+              if (values.compareAndSet(oldv, newv)) return;
+          }
+      }
+      ```
+
+  - type: choice
+    prompt: Why does the CAS-on-immutable-holder approach preserve the invariant?
+    options:
+      - text: Both bounds change together by swapping one reference, and the swap only succeeds if nobody changed the pair since it was read
+        correct: true
+      - text: "`AtomicReference` locks both fields"
+        feedback: No locks are involved; it's a single CAS on a reference.
+
+  - type: choice
+    prompt: Should atomic classes be used as keys in a `HashMap`?
+    options:
+      - text: No — they're mutable and don't override `equals` and `hashCode`
+        correct: true
+      - text: Yes, they're thread-safe
+        feedback: Thread-safe doesn't make them good keys; their identity-based equality and mutability do the opposite.

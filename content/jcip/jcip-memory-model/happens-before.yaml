@@ -1,0 +1,65 @@
+title: Happens-before
+summary: The Java Memory Model's partial ordering — the only thing that guarantees one thread sees another's writes.
+duration: 7
+tags: [java, concurrency, memory model, jmm, happens-before, reordering, data race]
+sources:
+  - { book: jcip, ref: "§16.1, What Is a Memory Model, and Why Would I Want One?" }
+steps:
+  - type: explanation
+    title: Reordering is everywhere
+    body: |
+      Compilers reorder instructions, processors execute out of order, caches delay writes. Within one thread, none of
+      it is visible — the JMM promises **within-thread as-if-serial** semantics. Between threads, all bets are off unless
+      the program uses synchronization.
+
+      ```java
+      // Thread one       // Thread two
+      a = 1;              b = 1;
+      x = b;              y = a;
+      ```
+
+  - type: predict
+    prompt: "`a`, `b`, `x`, `y` start at 0, with no synchronization. Can the result be x = 0 and y = 0?"
+    options:
+      - text: Yes — each thread's two actions may be reordered, or its write may not yet be visible to the other
+        correct: true
+      - text: No — at least one write must happen first
+        feedback: That reasoning assumes a single global order of operations. Without synchronization, there isn't one.
+    explanation: Every combination — (1, 0), (0, 1), (1, 1) and (0, 0) — is possible.
+
+  - type: explanation
+    title: The happens-before rules
+    body: |
+      The JMM defines a partial ordering called **happens-before**. If action A happens-before action B, then B is
+      guaranteed to see A's results. If two accesses to a variable aren't ordered by happens-before, and at least one is
+      a write, the program has a **data race**.
+
+  - type: match
+    prompt: Match each rule to what it orders.
+    pairs:
+      - left: Program order
+        right: Each action in a thread happens-before every later action in that thread
+      - left: Monitor lock
+        right: An unlock happens-before every later lock of the same monitor
+      - left: Volatile variable
+        right: A write happens-before every later read of the same field
+      - left: Thread start
+        right: "`Thread.start` happens-before every action in the started thread"
+      - left: Thread termination
+        right: Every action in a thread happens-before another thread detects it ended, via `join` or `isAlive`
+      - left: Transitivity
+        right: If A happens-before B, and B before C, then A happens-before C
+
+  - type: explanation
+    title: Piggybacking
+    body: |
+      Transitivity lets you "piggyback" on another synchronization. `FutureTask` writes its result to an ordinary field,
+      then does a volatile/CAS write of its state. A thread calling `get` reads that state — so it's guaranteed to see the
+      result field too.
+
+      Library classes give the same guarantees: putting an object into a `BlockingQueue` happens-before taking it out;
+      a `countDown` happens-before the corresponding `await` returns.
+
+  - type: blank
+    prompt: Complete the definition.
+    template: "A data race occurs when a variable is read by more than one thread and written by at least one, and the reads and writes are not ordered by [[happens-before]]."
