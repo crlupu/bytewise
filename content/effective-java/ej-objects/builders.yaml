@@ -1,0 +1,68 @@
+title: Builders for many parameters
+summary: Named, validated, immutable — why builders beat telescoping constructors and JavaBeans setters.
+duration: 5
+tags: [java, effective java, builder, constructors, immutability]
+sources:
+  - { book: effective-java, ref: "Item 2" }
+steps:
+  - type: explanation
+    title: Too many constructor parameters
+    body: |
+      With many optional parameters, constructors become a guessing game:
+
+      ```java
+      new NutritionFacts(240, 8, 100, 0, 35, 27); // which number is which?
+      ```
+
+      The **builder** pattern names each argument, keeps the finished object immutable, and validates once in `build()`:
+
+      ```java
+      NutritionFacts cola = new NutritionFacts.Builder(240, 8)
+          .calories(100)
+          .sodium(35)
+          .carbohydrate(27)
+          .build();
+      ```
+
+  - type: match
+    prompt: Match each approach to its main weakness.
+    pairs:
+      - left: Telescoping constructors
+        right: Long runs of unnamed arguments that are easy to swap by mistake
+      - left: JavaBeans (no-arg constructor + setters)
+        right: The object exists half-built and can't be immutable
+      - left: Builder
+        right: Slightly more code, and one extra object per construction
+
+  - type: order
+    prompt: Put the steps of using a builder in order.
+    items:
+      - Call the builder's constructor with the required parameters
+      - Call a setter-like method for each optional parameter you want
+      - Call `build()`, which checks the values and creates the object
+    explanation: Required values up front, optional ones by name, validation in one place.
+
+  - type: choice
+    prompt: A class has 2 required and 8 optional parameters. Which is the best fit?
+    options:
+      - text: A builder
+        correct: true
+      - text: Telescoping constructors
+        feedback: That's eight-plus constructors, and callers still pass long runs of unnamed numbers.
+      - text: A no-arg constructor and setters
+        feedback: The object is mutable and can be used before it's fully set up.
+
+  - type: blank
+    prompt: Complete the builder's last line.
+    template: "public NutritionFacts [[build]]() { return new NutritionFacts(this); }"
+    code: true
+    explanation: The product's private constructor takes the builder and copies its fields — after checking them.
+
+  - type: choice
+    prompt: Where should a builder check that `servings` is positive?
+    options:
+      - text: In `build()` or the product's constructor, after copying the values
+        correct: true
+      - text: Nowhere — builders are only for readability
+        feedback: Validating at build time is one of their main benefits.
+    explanation: Checking in one place, on the copied values, guarantees no invalid object is ever created.

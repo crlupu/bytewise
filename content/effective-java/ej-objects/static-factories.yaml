@@ -1,0 +1,72 @@
+title: Static factory methods
+summary: Methods that return instances can have names, reuse objects and return subtypes — constructors can't.
+duration: 5
+tags: [java, effective java, static factory, constructors, api design]
+sources:
+  - { book: effective-java, ref: "Item 1" }
+steps:
+  - type: explanation
+    title: Constructors have limits
+    body: |
+      A constructor always has the class's name, always creates a new object, and always returns exactly that class.
+      A **static factory method** — an ordinary static method that returns an instance — has none of those limits:
+
+      ```java
+      Boolean.valueOf(true);             // returns a shared instance; no allocation
+      List.of(1, 2, 3);                  // returns some List implementation
+      BigInteger.probablePrime(64, rnd); // a name that says what you get
+      ```
+
+      The advice: *consider* a static factory before reaching for a public constructor.
+
+  - type: choice
+    prompt: Which of these can a static factory method do that a constructor can't?
+    options:
+      - text: Have a descriptive name, like `fromString` or `probablePrime`
+        correct: true
+      - text: Return an existing, cached instance instead of a new one
+        correct: true
+      - text: Return an object of a subtype, even a non-public one
+        correct: true
+      - text: Be called without naming the class
+        feedback: Both are called through the class — `new Foo()` and `Foo.of()`.
+    explanation: |
+      Names, caching and subtypes are the big three. A factory can also choose the returned class from its arguments —
+      `EnumSet.noneOf` picks a small or large implementation depending on the enum's size.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Boolean a = Boolean.valueOf("true");
+      Boolean b = Boolean.valueOf("TRUE");
+      System.out.println(a == b);
+    language: java
+    options:
+      - text: "`true`"
+        correct: true
+      - text: "`false`"
+        feedback: "`valueOf` doesn't create objects — it returns one of two shared constants."
+    explanation: "`Boolean.valueOf` returns `Boolean.TRUE` or `Boolean.FALSE`, so both variables hold the very same object."
+
+  - type: match
+    prompt: Match each conventional factory name to what it signals.
+    pairs:
+      - left: "`from`"
+        right: Converts a single argument of another type
+      - left: "`of`"
+        right: Aggregates several values into one instance
+      - left: "`getInstance`"
+        right: Returns an instance that may be shared
+      - left: "`newInstance`"
+        right: Guarantees a fresh instance on every call
+
+  - type: choice
+    prompt: What are the costs of providing only static factories, with private constructors?
+    options:
+      - text: The class can't be subclassed
+        correct: true
+      - text: Factories are harder to find in API documentation than constructors
+        correct: true
+      - text: They are slower to call than constructors
+        feedback: A static call is as cheap as a constructor call; often cheaper, when it avoids allocation.
+    explanation: The subclassing limit is often a blessing — it nudges towards composition. Naming conventions fix discoverability.

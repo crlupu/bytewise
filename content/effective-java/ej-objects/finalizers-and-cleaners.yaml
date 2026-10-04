@@ -1,0 +1,49 @@
+title: Avoid finalizers and cleaners
+summary: They run late, maybe never, and slowly — close resources explicitly instead.
+duration: 5
+tags: [java, effective java, finalizers, cleaners, resources, autocloseable]
+sources:
+  - { book: effective-java, ref: "Item 8" }
+steps:
+  - type: explanation
+    title: Not destructors
+    body: |
+      C++ destructors run at a predictable moment. Java's **finalizers** (`Object.finalize`, deprecated since Java 9 and
+      deprecated for removal since Java 18) and their replacement **cleaners** (`java.lang.ref.Cleaner`) do not:
+      they run whenever the garbage collector gets round to it — possibly never.
+
+  - type: choice
+    prompt: Which are real problems with finalizers?
+    options:
+      - text: There's no guarantee when — or whether — they run
+        correct: true
+      - text: They slow object creation and collection considerably
+        correct: true
+      - text: An exception thrown in a finalizer is silently ignored, leaving the object possibly corrupt
+        correct: true
+      - text: They run immediately when the last reference disappears
+        feedback: That's the misconception. Timing depends entirely on the GC.
+    explanation: They also open a security hole — a malicious subclass's finalizer can resurrect a half-constructed object.
+
+  - type: choice
+    prompt: A class holds an open file. What's the right way to release it?
+    options:
+      - text: Implement `AutoCloseable`, and have clients call `close()` — typically via try-with-resources
+        correct: true
+      - text: Close it in `finalize()`
+        feedback: The file might stay open for minutes, or until the program exits — and you could run out of file descriptors.
+      - text: Rely on the OS closing it when the program ends
+        feedback: Long-running servers would leak handles until they crash.
+
+  - type: choice
+    prompt: So are cleaners ever useful?
+    options:
+      - text: As a safety net, in case a client forgets to call `close()` — late cleanup is better than none
+        correct: true
+      - text: As the main way to release resources
+        feedback: Never rely on them for anything time-critical.
+    explanation: A second legitimate use is releasing a *native peer* object that holds no critical resource.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Never depend on a finalizer or cleaner to update [[persistent]] state; release resources by implementing [[AutoCloseable]]."

@@ -1,0 +1,12 @@
+title: Creating and destroying objects
+summary: Effective Java, chapter 2 (Items 1–9) — when and how to create objects, and how to make sure they go away.
+lessons:
+  - static-factories
+  - builders
+  - singletons
+  - noninstantiable-classes
+  - dependency-injection
+  - unnecessary-objects
+  - obsolete-references
+  - finalizers-and-cleaners
+  - try-with-resources

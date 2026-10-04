@@ -1,0 +1,58 @@
+title: Classes that shouldn't be instantiated
+summary: Utility classes need a private constructor — making them abstract doesn't work.
+duration: 4
+tags: [java, effective java, utility class, constructors]
+sources:
+  - { book: effective-java, ref: "Item 4" }
+steps:
+  - type: explanation
+    title: Utility classes
+    body: |
+      Some classes are just groups of static methods: `java.lang.Math`, `java.util.Arrays`, `Collections`.
+      Creating an instance makes no sense — but if you write no constructor at all, the compiler adds a public,
+      no-argument **default constructor**, and anyone can call `new Arrays()`.
+
+      The fix is a private constructor:
+
+      ```java
+      public class UtilityClass {
+          // Suppress default constructor for noninstantiability
+          private UtilityClass() {
+              throw new AssertionError();
+          }
+      }
+      ```
+
+  - type: choice
+    prompt: Why not just make the utility class `abstract`?
+    options:
+      - text: It can still be subclassed, and the subclass instantiated — and it misleadingly suggests subclassing is intended
+        correct: true
+      - text: Abstract classes can't have static methods
+        feedback: They can.
+      - text: It works fine — that's the standard approach
+        feedback: It's a common mistake rather than the standard.
+    explanation: A private constructor also prevents subclassing, because every subclass constructor must call a superclass one.
+
+  - type: predict
+    prompt: A class has no constructors written in it. Is `new Helper()` legal from another package?
+    options:
+      - text: Yes — the compiler supplies a public default constructor (for a public class)
+        correct: true
+      - text: No — no constructor means no instances
+        feedback: Java adds a default constructor whenever none is declared.
+    explanation: That invisible constructor is exactly what the private one suppresses.
+
+  - type: choice
+    prompt: Why does the private constructor throw `AssertionError`?
+    options:
+      - text: To catch accidental calls from inside the class itself
+        correct: true
+      - text: Private constructors must throw something
+        feedback: They don't have to — it's a safety net.
+    explanation: Outside code can't reach it anyway; the throw guards against the class's own code.
+
+  - type: blank
+    prompt: Complete the declaration.
+    template: "[[private]] Arrays() {}"
+    code: true

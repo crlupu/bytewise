@@ -1,4 +1,4 @@
 title: Java
 summary: The language and the JVM, from equality to threads.
 order: 1
-courses: [java-core, effective-java, java-concurrency]
+courses: [java-core, java-concurrency]

@@ -1,0 +1,62 @@
+title: Eliminate obsolete references
+summary: Garbage collection doesn't prevent memory leaks — a class that manages its own memory must null out what it no longer needs.
+duration: 5
+tags: [java, effective java, memory leak, garbage collection, caches, weakhashmap]
+sources:
+  - { book: effective-java, ref: "Item 7" }
+steps:
+  - type: explanation
+    title: A leak in a garbage-collected language
+    body: |
+      ```java
+      public class Stack {
+          private Object[] elements = new Object[16];
+          private int size = 0;
+          public void push(Object e) { ensureCapacity(); elements[size++] = e; }
+          public Object pop() {
+              if (size == 0) throw new EmptyStackException();
+              return elements[--size];
+          }
+      }
+      ```
+
+      It works — but it leaks. After `pop`, the array slot still points at the popped object.
+
+  - type: choice
+    prompt: Why can't the garbage collector reclaim popped objects?
+    options:
+      - text: The array still holds references to them, so they are reachable
+        correct: true
+      - text: The GC never collects objects stored in arrays
+        feedback: It collects anything unreachable. These are still reachable through the array.
+      - text: "`pop` returns a copy, not the original"
+        feedback: Java returns the reference itself.
+    explanation: Those references are **obsolete** — they'll never be dereferenced again — but the GC can't know that.
+
+  - type: blank
+    prompt: Fix `pop`.
+    template: |
+      Object result = elements[--size];
+      elements[size] = [[null]];
+      return result;
+    code: true
+    explanation: Nulling the slot lets the GC reclaim the object — and turns accidental later use into a fast `NullPointerException`.
+
+  - type: choice
+    prompt: Should you null out every local variable when you're done with it?
+    options:
+      - text: No — let variables fall out of scope; null out only in classes that manage their own memory
+        correct: true
+      - text: Yes — it helps the garbage collector
+        feedback: It just clutters code; locals become unreachable when their scope ends.
+    explanation: The warning sign is a class that keeps its own storage pool, like the stack's array.
+
+  - type: match
+    prompt: Match each common source of leaks to a fix.
+    pairs:
+      - left: A class managing its own array of elements
+        right: Null out slots that are no longer in use
+      - left: A cache that only grows
+        right: Evict entries, or key it with a `WeakHashMap` when appropriate
+      - left: Listeners and callbacks that are never deregistered
+        right: Deregister them, or hold them through weak references

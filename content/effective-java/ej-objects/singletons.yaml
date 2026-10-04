@@ -1,0 +1,65 @@
+title: Singletons
+summary: Three ways to guarantee one instance — and why a one-element enum is usually the best.
+duration: 5
+tags: [java, effective java, singleton, enum, serialization, reflection]
+sources:
+  - { book: effective-java, ref: "Item 3" }
+steps:
+  - type: explanation
+    title: Exactly one instance
+    body: |
+      A **singleton** is a class instantiated exactly once. There are three common ways:
+
+      ```java
+      // 1. Public final field
+      public class Elvis {
+          public static final Elvis INSTANCE = new Elvis();
+          private Elvis() {}
+      }
+
+      // 2. Static factory
+      public class Elvis {
+          private static final Elvis INSTANCE = new Elvis();
+          private Elvis() {}
+          public static Elvis getInstance() { return INSTANCE; }
+      }
+
+      // 3. Single-element enum
+      public enum Elvis { INSTANCE; }
+      ```
+
+  - type: choice
+    prompt: With approaches 1 and 2, which can still create a second instance?
+    options:
+      - text: Reflection calling the private constructor with `setAccessible(true)`
+        correct: true
+      - text: Deserializing a serialized instance, unless `readResolve` is added
+        correct: true
+      - text: Calling `getInstance()` twice
+        feedback: That returns the same instance both times.
+    explanation: Class-based singletons need extra defences — a constructor that throws on a second call, and `readResolve`.
+
+  - type: choice
+    prompt: Why is the single-element enum usually the best approach?
+    options:
+      - text: The JVM guarantees one instance, even against reflection and serialization, for free
+        correct: true
+      - text: Enums are faster than classes
+        feedback: Speed isn't the point; the guarantees are.
+      - text: Enums can extend any superclass
+        feedback: The opposite — an enum can't extend a class, which is this approach's one limitation.
+    explanation: The only case it doesn't fit is a singleton that must extend a superclass other than `Enum`.
+
+  - type: choice
+    prompt: What's an advantage of the static-factory approach over the public field?
+    options:
+      - text: You can later stop it being a singleton — say, one instance per thread — without changing the API
+        correct: true
+      - text: It's the only one that's thread-safe
+        feedback: Both initialise in a static field, which the JVM makes thread-safe.
+    explanation: A method hides the decision; a public field commits to it forever.
+
+  - type: blank
+    prompt: Declare a singleton the recommended way.
+    template: "public [[enum]] Registry { [[INSTANCE]]; }"
+    code: true

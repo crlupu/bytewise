@@ -1,0 +1,66 @@
+title: Avoid creating unnecessary objects
+summary: Reuse what you can — and watch for objects created behind your back by autoboxing and regexes.
+duration: 5
+tags: [java, effective java, performance, autoboxing, regex, string]
+sources:
+  - { book: effective-java, ref: "Item 6" }
+steps:
+  - type: predict
+    prompt: How many new `String` objects does this create, if called a million times?
+    code: |
+      String s = new String("bikini");
+    language: java
+    options:
+      - text: A million — one per call, all with the same content
+        correct: true
+      - text: One — the literal is shared
+        feedback: The literal is shared, but `new` copies it into a fresh object every time.
+    explanation: Just write `String s = "bikini";` — one interned instance, reused everywhere.
+
+  - type: predict
+    prompt: This sums the integers from 0 to `Integer.MAX_VALUE`. Why is it several times slower than it should be?
+    code: |
+      Long sum = 0L;
+      for (long i = 0; i <= Integer.MAX_VALUE; i++) {
+          sum += i;
+      }
+    language: java
+    options:
+      - text: "`sum` is a `Long`, so every `+=` unboxes it and boxes a new `Long` object"
+        correct: true
+      - text: The loop variable should be an `int`
+        feedback: An `int` would overflow before passing `Integer.MAX_VALUE` — the `long` is right.
+      - text: "`+=` on a `long` is slow in Java"
+        feedback: Primitive `long` addition is a single instruction. The problem is the capital L.
+    explanation: About 2³¹ unnecessary `Long` objects. Prefer primitives to boxed primitives, and watch for unintended autoboxing.
+
+  - type: explanation
+    title: Hidden expensive objects
+    body: |
+      Some calls build costly objects internally every time:
+
+      ```java
+      static boolean isRomanNumeral(String s) {
+          return s.matches("^(?=.)M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+      }
+      ```
+
+      `String.matches` compiles the regex into a `Pattern` on **every call**, then throws it away. Compile it once:
+
+      ```java
+      private static final Pattern ROMAN = Pattern.compile("^(?=.)M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
+      static boolean isRomanNumeral(String s) { return ROMAN.matcher(s).matches(); }
+      ```
+
+  - type: choice
+    prompt: Does this mean object creation is expensive and should be avoided everywhere?
+    options:
+      - text: No — small objects are cheap; avoid only the needlessly repeated *expensive* ones, and don't build object pools for light objects
+        correct: true
+      - text: Yes — always pool and reuse objects
+        feedback: Object pools for lightweight objects add complexity and usually hurt modern garbage collectors.
+    explanation: Database connections are worth pooling; `Point`s are not. Clarity first.
+
+  - type: blank
+    prompt: Complete the rule of thumb.
+    template: "Prefer [[primitives|primitive types]] to boxed primitives, and reuse [[immutable]] objects instead of creating equivalent ones."

@@ -1,0 +1,64 @@
+title: Inject dependencies, don't hardwire them
+summary: Pass the resources a class uses into its constructor, instead of making it build or look them up.
+duration: 5
+tags: [java, effective java, dependency injection, testing, design]
+sources:
+  - { book: effective-java, ref: "Item 5" }
+steps:
+  - type: explanation
+    title: Hardwired resources
+    body: |
+      A spell checker depends on a dictionary. Hardwiring it looks like this:
+
+      ```java
+      public class SpellChecker {
+          private static final Lexicon dictionary = new EnglishDictionary();
+          private SpellChecker() {}
+          public static boolean isValid(String word) { ... }
+      }
+      ```
+
+      Now every spell checker uses English, forever — and tests can't substitute a small test dictionary.
+
+  - type: explanation
+    title: Pass it in
+    body: |
+      **Dependency injection**: hand the resource to the constructor.
+
+      ```java
+      public class SpellChecker {
+          private final Lexicon dictionary;
+          public SpellChecker(Lexicon dictionary) {
+              this.dictionary = Objects.requireNonNull(dictionary);
+          }
+      }
+      ```
+
+      One class now works with any dictionary, the dependency is visible in the signature, and the object can still be
+      immutable. Frameworks like Spring or Guice automate the wiring in big systems, but the pattern is just this.
+
+  - type: choice
+    prompt: Which are benefits of injecting the dictionary?
+    options:
+      - text: Tests can pass in a small fake dictionary
+        correct: true
+      - text: The same class supports many languages
+        correct: true
+      - text: The dependency is visible in the constructor's signature
+        correct: true
+      - text: It removes the need for the dictionary class
+        feedback: The dictionary is still needed — it's just supplied from outside.
+
+  - type: choice
+    prompt: The resource must be created fresh each time it's needed. What can you inject instead?
+    options:
+      - text: A factory, such as a `Supplier<? extends Lexicon>`
+        correct: true
+      - text: Nothing — DI only works for single instances
+        feedback: Injecting a factory is a common variant.
+    explanation: "`Supplier<T>` is the natural factory type; the bounded wildcard lets callers pass a supplier of any subtype."
+
+  - type: blank
+    prompt: Complete the injected constructor.
+    template: "public SpellChecker([[Lexicon]] dictionary) { this.dictionary = Objects.[[requireNonNull]](dictionary); }"
+    code: true

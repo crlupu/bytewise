@@ -1,0 +1,68 @@
+title: try-with-resources
+summary: Shorter, correct with several resources, and it keeps the exception that matters.
+duration: 5
+tags: [java, effective java, try-with-resources, exceptions, resources, autocloseable]
+sources:
+  - { book: effective-java, ref: "Item 9" }
+steps:
+  - type: explanation
+    title: try-finally gets ugly
+    body: |
+      ```java
+      static void copy(String src, String dst) throws IOException {
+          InputStream in = new FileInputStream(src);
+          try {
+              OutputStream out = new FileOutputStream(dst);
+              try {
+                  in.transferTo(out);
+              } finally {
+                  out.close();
+              }
+          } finally {
+              in.close();
+          }
+      }
+      ```
+
+      It's verbose — and it has a subtler flaw.
+
+  - type: choice
+    prompt: The disk fails. `read` throws, and then `close` in the `finally` throws too. Which exception does the caller see?
+    options:
+      - text: The one from `close` — it replaces the original, which is lost
+        correct: true
+      - text: The one from `read`
+        feedback: An exception thrown in `finally` replaces the one in flight.
+      - text: Both, combined
+        feedback: Plain try-finally has no way to combine them.
+    explanation: The first exception — the one explaining what went wrong — is the one that vanishes.
+
+  - type: explanation
+    title: try-with-resources
+    body: |
+      ```java
+      static void copy(String src, String dst) throws IOException {
+          try (InputStream in = new FileInputStream(src);
+               OutputStream out = new FileOutputStream(dst)) {
+              in.transferTo(out);
+          }
+      }
+      ```
+
+      Resources are closed automatically, in **reverse order**. If closing throws while another exception is in flight,
+      the close exception is **suppressed**: attached to the original, retrievable with `getSuppressed()`.
+
+  - type: order
+    prompt: The body throws. Put what happens in order.
+    items:
+      - The body throws exception A
+      - "`out` is closed"
+      - "`in` is closed; if it throws B, B is added to A as suppressed"
+      - A propagates to the caller, carrying B
+    explanation: Reverse order of declaration, and the original exception wins.
+
+  - type: blank
+    prompt: Complete the header.
+    template: "[[try]] (BufferedReader br = new BufferedReader(new FileReader(path))) { return br.readLine(); }"
+    code: true
+    explanation: The resource must implement `AutoCloseable`. A `catch` clause can follow, as with an ordinary try.
