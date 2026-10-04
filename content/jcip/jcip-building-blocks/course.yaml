@@ -1,0 +1,10 @@
+title: Building blocks
+summary: Chapter 5 — the library's concurrent collections and synchronizers.
+lessons:
+  - synchronized-collections
+  - concurrent-collections
+  - blocking-queues
+  - blocking-and-interruption
+  - latches-and-futuretask
+  - semaphores-and-barriers
+  - result-cache

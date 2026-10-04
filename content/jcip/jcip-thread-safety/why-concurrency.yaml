@@ -1,0 +1,53 @@
+title: Why concurrency — and why it's hard
+summary: Threads buy responsiveness and throughput, and bring three kinds of risk with them.
+duration: 5
+tags: [java, concurrency, threads, safety, liveness, performance]
+sources:
+  - { book: jcip, ref: "Chapter 1, Introduction" }
+steps:
+  - type: explanation
+    title: Threads are everywhere
+    body: |
+      Even if you never call `new Thread()`, your code is probably concurrent. Servlet containers, RMI, timers, GUI
+      frameworks and message listeners all call your code from threads they manage — so any state your code touches
+      may be reached by more than one thread at once.
+
+      Threads exist for good reasons:
+
+      - **Exploiting multiple processors** — a single-threaded program uses one core out of many.
+      - **Simpler modelling** — one thread per independent activity can be clearer than one thread juggling them all.
+      - **Simpler handling of asynchronous events** — a thread can block on I/O without stopping everything else.
+      - **More responsive user interfaces** — long work moves off the event thread.
+
+  - type: match
+    prompt: Match each kind of risk to what goes wrong.
+    pairs:
+      - left: Safety hazard
+        right: Something bad happens — data is corrupted or a wrong result is returned
+      - left: Liveness hazard
+        right: Something good never happens — a thread waits forever, as in deadlock
+      - left: Performance hazard
+        right: It happens, but too slowly — context switches, lock contention, poor scaling
+
+  - type: choice
+    prompt: A web framework calls your servlet's `service` method. How many threads might call it at the same time?
+    options:
+      - text: Many — the container serves concurrent requests on different threads, through the same servlet instance
+        correct: true
+      - text: One — each servlet runs on its own thread
+        feedback: The container shares one servlet instance between all request threads.
+    explanation: That's why a servlet's fields are shared mutable state, and why frameworks make your code concurrent whether you planned it or not.
+
+  - type: choice
+    prompt: Which is the real reason concurrency bugs are so costly?
+    options:
+      - text: They depend on timing, so they appear rarely, unpredictably and often only under production load
+        correct: true
+      - text: They only happen in old versions of Java
+        feedback: The Java memory model makes them well-defined, but they still happen in every version.
+      - text: Compilers report them as warnings that people ignore
+        feedback: The compiler can't detect most of them at all.
+
+  - type: blank
+    prompt: Complete the summary of the risks.
+    template: "Safety means nothing bad ever happens; [[liveness]] means something good eventually happens."

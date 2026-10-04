@@ -1,0 +1,6 @@
+title: Task execution
+summary: Chapter 6 — tasks, the Executor framework, and finding parallelism.
+lessons:
+  - tasks-and-threads
+  - executor-framework
+  - callable-and-future

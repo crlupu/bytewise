@@ -1,0 +1,76 @@
+title: Immutability
+summary: Immutable objects are always thread-safe — and a volatile reference to an immutable holder can replace a lock.
+duration: 6
+tags: [java, concurrency, immutability, final, volatile, publication]
+sources:
+  - { book: jcip, ref: "§3.4, Immutability" }
+steps:
+  - type: explanation
+    title: Always thread-safe
+    body: |
+      An object whose state can't change can't be corrupted by races or seen in an inconsistent state.
+      **Immutable objects are always thread-safe.**
+
+      An object is immutable if:
+
+      - its state can't be modified after construction;
+      - all its fields are `final`;
+      - it is properly constructed — `this` doesn't escape during construction.
+
+  - type: choice
+    prompt: "This class keeps a `Set` internally and the set is mutable. Can the class still be immutable?"
+    code: |
+      public final class ThreeStooges {
+          private final Set<String> stooges = new HashSet<>();
+          public ThreeStooges() {
+              stooges.add("Moe"); stooges.add("Larry"); stooges.add("Curly");
+          }
+          public boolean isStooge(String name) { return stooges.contains(name); }
+      }
+    language: java
+    options:
+      - text: Yes — the set is never modified after construction and never escapes
+        correct: true
+      - text: No — it uses a mutable object
+        feedback: Immutability is about the object's observable state, not the classes it uses internally.
+
+  - type: explanation
+    title: A volatile, immutable holder
+    body: |
+      Remember the factorizer that cached a number and its factors in two fields? An immutable holder fixes it without locks:
+
+      ```java
+      class OneValueCache {
+          private final BigInteger lastNumber;
+          private final BigInteger[] lastFactors;
+          // constructor copies the array; getFactors(i) returns a copy if i matches
+      }
+
+      private volatile OneValueCache cache = new OneValueCache(null, null);
+      ...
+      BigInteger[] factors = cache.getFactors(i);
+      if (factors == null) {
+          factors = factor(i);
+          cache = new OneValueCache(i, factors);
+      }
+      ```
+
+  - type: choice
+    prompt: Why does this need no lock?
+    options:
+      - text: The number and its factors change together, by replacing one immutable object, and `volatile` makes the new one visible at once
+        correct: true
+      - text: "`volatile` makes the methods atomic"
+        feedback: It only makes the reference visible; atomicity comes from the pair living in one immutable object.
+    explanation: A thread reading `cache` sees either the old pair or the new pair — never a mix.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Just as it's good practice to make all fields private unless they need more visibility, it's good practice to make all fields [[final]] unless they need to be mutable."
+
+  - type: choice
+    prompt: Are immutable objects inefficient, since every change needs a new object?
+    options:
+      - text: Rarely — allocation is cheap, and immutability removes locking, defensive copies and generational GC costs
+        correct: true
+      - text: Yes, always

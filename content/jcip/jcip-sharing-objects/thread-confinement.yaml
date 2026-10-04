@@ -1,0 +1,52 @@
+title: Thread confinement
+summary: Data that only one thread ever touches needs no synchronization — confine it on purpose.
+duration: 5
+tags: [java, concurrency, thread confinement, threadlocal, stack confinement, jdbc]
+sources:
+  - { book: jcip, ref: "§3.3, Thread Confinement" }
+steps:
+  - type: explanation
+    title: Don't share
+    body: |
+      Accessing shared, mutable data needs synchronization. One way around it: **don't share**. If data is only ever
+      accessed from one thread, no synchronization is needed. This is **thread confinement**, and it's one of the
+      simplest ways to achieve thread safety.
+
+      Swing confines its components to the event dispatch thread; JDBC connection pools hand each connection to one
+      thread at a time, which uses it for the whole request.
+
+  - type: match
+    prompt: Match each kind of confinement to how it works.
+    pairs:
+      - left: Ad hoc confinement
+        right: Left to the implementation — nothing in the language enforces it, so it's fragile
+      - left: Stack confinement
+        right: The object is reachable only through local variables, which live on one thread's stack
+      - left: "`ThreadLocal`"
+        right: Each thread gets its own separate copy of a value
+
+  - type: choice
+    prompt: Is a local `int` variable ever shared between threads?
+    options:
+      - text: Never — primitives in local variables can't be referenced from elsewhere, so they're always stack-confined
+        correct: true
+      - text: Yes, if two threads call the method
+        feedback: Each call has its own stack frame with its own copy.
+    explanation: A local *reference* is confined too — as long as the object it points to never escapes.
+
+  - type: blank
+    prompt: Give each thread its own database connection.
+    template: |
+      private static ThreadLocal<Connection> connectionHolder =
+          ThreadLocal.[[withInitial]](() -> DriverManager.getConnection(DB_URL));
+    code: true
+    explanation: Each thread calling `connectionHolder.get()` gets its own connection, created on first use.
+
+  - type: choice
+    prompt: What's the danger of `ThreadLocal` in a thread pool?
+    options:
+      - text: Pool threads are reused, so values leak from one task to the next — and can keep objects alive — unless removed
+        correct: true
+      - text: There's no danger
+        feedback: Values live as long as the thread does; call `remove()` when the task is done.
+    explanation: "`ThreadLocal`s are like global variables: use them sparingly."

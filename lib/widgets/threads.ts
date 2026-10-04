@@ -13,6 +13,8 @@ export const config = z
     /** How many times each thread increments. */
     increments: z.number().int().min(1).max(2).default(1),
     synchronized: z.boolean().default(false),
+    /** Write with compare-and-swap: succeed only if the variable still holds the value read; otherwise retry. */
+    cas: z.boolean().default(false),
     variable: z.string().default("count"),
     initial: z.number().int().default(0),
   })
@@ -22,24 +24,30 @@ export const goal = z
   .object({
     /** The shared variable's value once every thread has finished. */
     count: z.number().int().optional(),
+    /** At least this many compare-and-swaps failed and retried. */
+    retries: z.number().int().min(1).optional(),
   })
   .strict();
 
 export type Config = z.infer<typeof config>;
 export type Goal = z.infer<typeof goal>;
 
-export type Op = "lock" | "read" | "add" | "write" | "unlock";
+export type Op = "lock" | "read" | "add" | "write" | "unlock" | "cas";
 
 export type State = {
   pcs: number[];
   regs: (number | null)[];
+  /** The value each thread read, for compare-and-swap. */
+  seen?: (number | null)[];
+  /** Failed compare-and-swaps so far. */
+  retries?: number;
   shared: number;
   lock: number | null;
   trace: { thread: number; op: Op; text: string }[];
 };
 
 export function program(c: Config): Op[] {
-  const one: Op[] = c.synchronized ? ["lock", "read", "add", "write", "unlock"] : ["read", "add", "write"];
+  const one: Op[] = c.synchronized ? ["lock", "read", "add", "write", "unlock"] : c.cas ? ["read", "add", "cas"] : ["read", "add", "write"];
   return Array.from({ length: c.increments }, () => one).flat();
 }
 
@@ -56,6 +64,8 @@ export function opText(op: Op, c: Config): string {
       return `${v} = tmp`;
     case "unlock":
       return "release lock";
+    case "cas":
+      return `CAS ${v}: old → tmp`;
   }
 }
 
@@ -63,6 +73,8 @@ export function initial(c: Config): State {
   return {
     pcs: Array(c.threads).fill(0),
     regs: Array(c.threads).fill(null),
+    seen: Array(c.threads).fill(null),
+    retries: 0,
     shared: c.initial,
     lock: null,
     trace: [],
@@ -82,6 +94,8 @@ export function step(s: State, c: Config, t: number): State {
   const op = program(c)[s.pcs[t]];
   const pcs = s.pcs.slice();
   const regs = s.regs.slice();
+  const seen = (s.seen ?? Array(c.threads).fill(null)).slice();
+  let retries = s.retries ?? 0;
   let { shared, lock } = s;
   pcs[t] += 1;
   let text = opText(op, c);
@@ -89,6 +103,7 @@ export function step(s: State, c: Config, t: number): State {
   if (op === "unlock") lock = null;
   if (op === "read") {
     regs[t] = shared;
+    seen[t] = shared;
     text = `tmp = ${c.variable}  → tmp is ${shared}`;
   }
   if (op === "add") {
@@ -99,7 +114,18 @@ export function step(s: State, c: Config, t: number): State {
     shared = regs[t] ?? 0;
     text = `${c.variable} = tmp  → ${c.variable} is ${shared}`;
   }
-  return { pcs, regs, shared, lock, trace: [...s.trace, { thread: t, op, text }] };
+  if (op === "cas") {
+    if (shared === seen[t]) {
+      shared = regs[t] ?? 0;
+      text = `CAS succeeded: ${c.variable} was still ${seen[t]}, now ${shared}`;
+    } else {
+      // Someone else wrote first: go back and read again.
+      retries++;
+      pcs[t] -= 3;
+      text = `CAS failed: expected ${seen[t]} but ${c.variable} is ${shared} — retry`;
+    }
+  }
+  return { pcs, regs, seen, retries, shared, lock, trace: [...s.trace, { thread: t, op, text }] };
 }
 
 export function finished(s: State, c: Config): boolean {
@@ -111,5 +137,7 @@ export function check(g: Goal, s: State, c: Config): { met: boolean; why?: strin
   if (!finished(s, c)) return { met: false, why: "Run every thread to the end first." };
   if (g.count !== undefined && s.shared !== g.count)
     return { met: false, why: `The threads finished with ${c.variable} = ${s.shared}; the goal is ${g.count}.` };
+  if (g.retries !== undefined && (s.retries ?? 0) < g.retries)
+    return { met: false, why: `${s.retries ?? 0} CAS ${(s.retries ?? 0) === 1 ? "retry" : "retries"} so far; make at least ${g.retries} happen.` };
   return { met: true };
 }

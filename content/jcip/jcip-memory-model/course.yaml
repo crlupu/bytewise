@@ -1,0 +1,6 @@
+title: The Java Memory Model
+summary: Chapter 16 — happens-before, publication and initialization safety.
+lessons:
+  - happens-before
+  - publication-and-the-jmm
+  - initialization-safety

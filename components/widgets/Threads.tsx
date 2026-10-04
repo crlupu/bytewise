@@ -65,6 +65,11 @@ export function Threads({ config: c, onState, reducedMotion }: WidgetProps<T.Con
             ))}
           </ol>
         )}
+        {c.cas && (s.retries ?? 0) > 0 && (
+          <p className="sim__message sim__message--warn">
+            {s.retries} compare-and-swap {s.retries === 1 ? "failure" : "failures"} — each time, the thread re-read and tried again.
+          </p>
+        )}
         {done && (
           <p className="sim__message">
             All threads finished. {c.variable} is <b>{s.shared}</b> after{" "}

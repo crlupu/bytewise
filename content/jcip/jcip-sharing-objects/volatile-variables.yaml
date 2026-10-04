@@ -1,0 +1,59 @@
+title: Volatile variables
+summary: A weaker form of synchronization — visibility without locking — and the narrow cases where it's enough.
+duration: 5
+tags: [java, concurrency, volatile, visibility, flags]
+sources:
+  - { book: jcip, ref: "§3.1.4, Volatile Variables" }
+steps:
+  - type: explanation
+    title: What volatile does
+    body: |
+      Declaring a field `volatile` tells the compiler and runtime that it's shared: it isn't cached where other
+      processors can't see it, and operations on it aren't reordered with other memory operations.
+
+      A read of a volatile variable always returns the most recent write by any thread. And everything a thread did
+      **before** writing a volatile becomes visible to the thread that later reads it.
+
+      ```java
+      volatile boolean asleep;
+      ...
+      while (!asleep) countSomeSheep();
+      ```
+
+  - type: choice
+    prompt: Which of these is `volatile` alone enough for?
+    options:
+      - text: A completion, interruption or status flag one thread sets and others read
+        correct: true
+      - text: Publishing a reference to a fully built, immutable object
+        correct: true
+      - text: A counter several threads increment with `count++`
+        feedback: Every read is fresh, but the read-add-write is still three steps that can interleave.
+      - text: An invariant over two variables
+        feedback: Volatile can't make updates to two variables atomic together.
+
+  - type: widget
+    widget: threads
+    prompt: |
+      `count` is now `volatile`, so every read sees the latest write. **Still lose an update**: run both threads so
+      `count` ends at **1**.
+    config:
+      threads: 2
+      increments: 1
+    goal:
+      count: 1
+    hints:
+      - Visibility doesn't help if both threads read before either writes.
+    explanation: Visibility guarantees each read is fresh *when it happens* — but the gap between read and write is still there.
+
+  - type: blank
+    prompt: Complete the rules for when volatile is enough.
+    template: "Writes must not depend on the variable's [[current]] value, the variable must not take part in [[invariants]] with other state, and locking must not be needed for any other reason while it's accessed."
+
+  - type: choice
+    prompt: How do locking and volatile compare?
+    options:
+      - text: Locking guarantees both visibility and atomicity; volatile guarantees only visibility
+        correct: true
+      - text: Volatile is a faster lock
+        feedback: It provides no mutual exclusion at all.

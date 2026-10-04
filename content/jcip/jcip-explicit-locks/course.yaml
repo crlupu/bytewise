@@ -1,0 +1,6 @@
+title: Explicit locks
+summary: Chapter 13 — ReentrantLock, fairness, and read-write locks.
+lessons:
+  - reentrantlock
+  - choosing-a-lock
+  - read-write-locks

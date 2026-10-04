@@ -1,0 +1,6 @@
+title: Atomic variables and nonblocking synchronization
+summary: Chapter 15 — compare-and-swap, atomic classes and nonblocking algorithms.
+lessons:
+  - compare-and-swap
+  - atomic-variables
+  - nonblocking-algorithms

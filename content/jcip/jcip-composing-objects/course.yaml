@@ -1,0 +1,8 @@
+title: Composing objects
+summary: Chapter 4 — designing thread-safe classes from thread-safe parts.
+lessons:
+  - designing-thread-safe-classes
+  - instance-confinement
+  - delegating-thread-safety
+  - adding-functionality
+  - documenting-policies

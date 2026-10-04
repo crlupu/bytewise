@@ -1,0 +1,64 @@
+title: What thread safety means
+summary: Correct behaviour under any interleaving, with no extra coordination from callers — and why stateless objects get it free.
+duration: 5
+tags: [java, concurrency, thread safety, state, stateless, servlets]
+sources:
+  - { book: jcip, ref: "§2.1, What Is Thread Safety?" }
+steps:
+  - type: explanation
+    title: It's all about state
+    body: |
+      Writing thread-safe code is, at its core, about managing access to **shared, mutable state** — data in instance or
+      static fields that more than one thread can reach, and that can change.
+
+      Whenever more than one thread accesses a state variable and at least one of them might write it, they must all
+      coordinate their access. There are three ways to fix a class that doesn't:
+
+      - **don't share** the state across threads;
+      - **make it immutable**;
+      - **use synchronization** whenever it's accessed.
+
+  - type: explanation
+    title: A definition
+    body: |
+      A class is **thread-safe** if it behaves correctly when accessed from multiple threads, regardless of how the
+      runtime schedules or interleaves them, and **with no additional synchronization** from the calling code.
+
+      "Correctly" means it keeps its invariants and meets its specification — so a class with no specification can't
+      really be called thread-safe or not.
+
+  - type: choice
+    prompt: Is this servlet thread-safe?
+    code: |
+      public class StatelessFactorizer implements Servlet {
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = factor(i);
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: Yes — it has no fields; everything it uses lives in local variables on each thread's own stack
+        correct: true
+      - text: No — servlets are always called from many threads
+        feedback: Many threads, yes — but they share nothing, so they can't interfere.
+    explanation: "**Stateless objects are always thread-safe.**"
+
+  - type: match
+    prompt: Match each way of fixing shared mutable state with an example.
+    pairs:
+      - left: Don't share it
+        right: Keep the value in a local variable instead of a field
+      - left: Make it immutable
+        right: Replace a mutable holder with a final field of an immutable type
+      - left: Synchronize access
+        right: Guard every read and write of the field with the same lock
+
+  - type: choice
+    prompt: When is it easiest to make a class thread-safe?
+    options:
+      - text: From the start — retrofitting thread safety onto an existing class is much harder
+        correct: true
+      - text: After it's finished and tested single-threaded
+        feedback: Good encapsulation and immutability make it easy early; adding locks later means re-examining every access.

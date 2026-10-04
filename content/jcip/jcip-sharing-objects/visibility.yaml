@@ -1,0 +1,77 @@
+title: Visibility
+summary: Without synchronization, one thread may never see another's writes — or see them in a surprising order.
+duration: 6
+tags: [java, concurrency, visibility, stale data, reordering, memory model]
+sources:
+  - { book: jcip, ref: "§3.1, Visibility" }
+steps:
+  - type: explanation
+    title: Synchronization isn't just about atomicity
+    body: |
+      Synchronized blocks are usually thought of as being about atomicity. Just as important is **memory visibility**:
+      making sure that when one thread changes an object, other threads can actually see the change.
+
+      Without synchronization, the compiler, the JIT, the processor and its caches may all keep values out of main
+      memory, or reorder operations, as long as the thread doing them can't tell.
+
+  - type: predict
+    prompt: What can this program print?
+    code: |
+      public class NoVisibility {
+          private static boolean ready;
+          private static int number;
+          private static class ReaderThread extends Thread {
+              public void run() {
+                  while (!ready) Thread.yield();
+                  System.out.println(number);
+              }
+          }
+          public static void main(String[] args) {
+              new ReaderThread().start();
+              number = 42;
+              ready = true;
+          }
+      }
+    language: java
+    options:
+      - text: "`42`, or `0`, or nothing at all — it may loop forever"
+        correct: true
+      - text: Always `42`
+        feedback: The reader might never see `ready` change, or might see it before it sees `number`.
+      - text: Always `0`
+    explanation: |
+      Seeing `0` means the reader saw the write to `ready` before the write to `number` — **reordering**. Without
+      synchronization there are no guarantees about the order in which another thread sees writes.
+
+  - type: choice
+    prompt: A getter for a field isn't synchronized, but its setter is. What can a reader see?
+    options:
+      - text: A **stale** value — out of date, possibly for a long time, and possibly stale for some fields but not others
+        correct: true
+      - text: Always the latest value, because the setter is synchronized
+        feedback: Visibility needs both the writing and the reading thread to synchronize on the same lock.
+
+  - type: predict
+    prompt: |
+      A non-volatile `long` field is written by one thread while another reads it, with no synchronization.
+      Apart from staleness, what else could the reader see?
+    options:
+      - text: A value no thread ever wrote — the high 32 bits from one write and the low 32 from another
+        correct: true
+      - text: Only values that some thread actually wrote
+        feedback: That "out-of-thin-air safety" holds for most variables, but the JVM may split 64-bit `long` and `double` writes.
+    explanation: Shared mutable `long` and `double` variables need `volatile` or a lock even when staleness doesn't matter.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Locking is not just about mutual exclusion; it is also about memory [[visibility]]. Reading and writing threads must synchronize on a [[common|the same]] lock."
+
+  - type: match
+    prompt: Match each situation to the problem.
+    pairs:
+      - left: The reader loops forever on a flag another thread set
+        right: The write is never seen — a visibility failure
+      - left: The reader sees a new flag but an old number
+        right: Writes seen out of order — reordering
+      - left: The reader sees half of two different 64-bit writes
+        right: A nonatomic `long` or `double` write

@@ -1,0 +1,73 @@
+title: Safe publication
+summary: How to hand an object to another thread so it sees the object's state — and which objects need more than that.
+duration: 6
+tags: [java, concurrency, safe publication, effectively immutable, volatile, concurrent collections]
+sources:
+  - { book: jcip, ref: "§3.5, Safe Publication" }
+steps:
+  - type: predict
+    prompt: |
+      One thread runs `holder = new Holder(42);` (a plain public field). Another calls `holder.assertSanity()`.
+      Can it throw?
+    code: |
+      public class Holder {
+          private int n;
+          public Holder(int n) { this.n = n; }
+          public void assertSanity() {
+              if (n != n) throw new AssertionError("This statement is false.");
+          }
+      }
+    language: java
+    options:
+      - text: Yes — without safe publication the reader might see `n` as 0 on one read and 42 on the next
+        correct: true
+      - text: No — `n != n` can never be true
+        feedback: In a single thread it can't. Across threads, an improperly published object can appear to change under you.
+    explanation: The problem isn't the `Holder` class; it's how it was published.
+
+  - type: match
+    prompt: Match each safe-publication idiom to an example.
+    pairs:
+      - left: Static initializer
+        right: "`public static Holder holder = new Holder(42);`"
+      - left: Volatile field or `AtomicReference`
+        right: "`private volatile Holder holder;`"
+      - left: A final field of a properly constructed object
+        right: "`private final Holder holder;` set in the constructor"
+      - left: A field guarded by a lock
+        right: Written and read only inside `synchronized` blocks on the same lock
+      - left: A thread-safe collection
+        right: Putting it in a `ConcurrentHashMap` or `BlockingQueue`
+
+  - type: explanation
+    title: What each kind of object needs
+    body: |
+      - **Immutable** objects can be published by any mechanism — even an unsafe one.
+      - **Effectively immutable** objects — never modified after publication, though technically mutable — must be
+        **safely published**, then need no further synchronization. A `Date` stored in a `synchronizedMap` and never
+        changed is an example.
+      - **Mutable** objects must be safely published **and** either be thread-safe or guarded by a lock on every access.
+
+  - type: choice
+    prompt: "You put a `Date` into a `Collections.synchronizedMap` and nobody ever modifies it. Do readers need to lock the `Date`?"
+    options:
+      - text: No — it's effectively immutable, and putting it in the synchronized map published it safely
+        correct: true
+      - text: Yes, always
+        feedback: That's only needed for objects that are still modified after publication.
+
+  - type: blank
+    prompt: Complete the summary.
+    template: "Immutable objects can be published through [[any]] mechanism; effectively immutable objects must be [[safely]] published."
+
+  - type: match
+    prompt: Match each sharing policy to its meaning.
+    pairs:
+      - left: Thread-confined
+        right: Owned and modified by exactly one thread
+      - left: Shared read-only
+        right: Accessed concurrently without synchronization, never modified
+      - left: Shared thread-safe
+        right: Synchronizes internally; callers just use its public interface
+      - left: Guarded
+        right: Accessed only with a specific lock held

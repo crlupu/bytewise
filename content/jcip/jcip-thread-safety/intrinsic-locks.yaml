@@ -1,9 +1,9 @@
-title: Locks with synchronized
+title: Intrinsic locks
 summary: How an intrinsic lock turns read-add-write into one step, and what it does and doesn't protect.
 duration: 8
 tags: [java, threads, synchronized, locks, monitor, atomic]
 sources:
-  - { book: jcip, ref: "Chapter 2, Thread Safety — Locking" }
+  - { book: jcip, ref: "§2.3, Locking" }
 steps:
   - type: explanation
     title: Every object has a lock
@@ -123,3 +123,25 @@ steps:
         right: A static field shared by every instance
       - left: "`volatile`"
         right: A flag one thread sets and others only read
+
+  - type: predict
+    prompt: A subclass overrides a `synchronized` method and calls the superclass version. What happens?
+    code: |
+      public class Widget {
+          public synchronized void doSomething() { ... }
+      }
+      public class LoggingWidget extends Widget {
+          @Override public synchronized void doSomething() {
+              System.out.println(toString() + ": calling doSomething");
+              super.doSomething();
+          }
+      }
+    language: java
+    options:
+      - text: It works — intrinsic locks are reentrant, so a thread can take a lock it already holds
+        correct: true
+      - text: It deadlocks — the thread waits for a lock it already holds
+        feedback: That would happen if Java's locks weren't reentrant. They count acquisitions per owning thread instead.
+    explanation: |
+      **Reentrancy** means locks are acquired per thread, not per call. The JVM keeps an owner and a count; the lock is
+      released when the count returns to zero.

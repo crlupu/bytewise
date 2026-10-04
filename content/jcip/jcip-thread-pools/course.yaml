@@ -1,0 +1,9 @@
+title: Applying thread pools
+summary: Chapters 8–9 — sizing and configuring pools, plus GUI threading — and virtual threads since.
+lessons:
+  - task-couplings
+  - sizing-thread-pools
+  - configuring-threadpoolexecutor
+  - extending-and-recursion
+  - gui-threading
+  - virtual-threads

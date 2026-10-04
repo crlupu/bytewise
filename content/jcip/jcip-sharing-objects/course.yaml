@@ -1,0 +1,9 @@
+title: Sharing objects
+summary: Chapter 3 — visibility, volatile, publication, confinement, immutability and safe publication.
+lessons:
+  - visibility
+  - volatile-variables
+  - publication-and-escape
+  - thread-confinement
+  - immutability
+  - safe-publication

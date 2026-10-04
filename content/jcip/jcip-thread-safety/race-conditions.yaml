@@ -3,7 +3,7 @@ summary: Why count++ isn't safe when two threads share it, seen one instruction 
 duration: 8
 tags: [java, threads, concurrency, race condition, lost update]
 sources:
-  - { book: jcip, ref: "Chapter 2, Thread Safety" }
+  - { book: jcip, ref: "§2.2, Atomicity" }
 steps:
   - type: explanation
     title: One line, three steps
@@ -131,3 +131,24 @@ steps:
     template: "`count++` is a read-[[modify]]-write sequence, so it is not [[atomic]]."
     hints:
       - The middle step changes the value.
+
+  - type: choice
+    prompt: Two threads call `getInstance()` at the same moment on an object that's not yet created. What can happen?
+    code: |
+      public class LazyInitRace {
+          private ExpensiveObject instance = null;
+          public ExpensiveObject getInstance() {
+              if (instance == null)
+                  instance = new ExpensiveObject();
+              return instance;
+          }
+      }
+    language: java
+    options:
+      - text: Both see `null`, both create an object, and the callers end up with two different instances
+        correct: true
+      - text: Nothing — the second thread always sees the first one's object
+        feedback: Nothing makes the check and the assignment one step.
+    explanation: |
+      That's **check-then-act**, the other common race: you observe something (it's null), then act on it — but the
+      observation may be stale by the time you act.

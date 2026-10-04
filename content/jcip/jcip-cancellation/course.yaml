@@ -1,0 +1,8 @@
+title: Cancellation and shutdown
+summary: Chapter 7 — interruption, cancelling tasks and stopping services cleanly.
+lessons:
+  - interruption
+  - cancelling-tasks
+  - stopping-services
+  - abnormal-termination
+  - jvm-shutdown

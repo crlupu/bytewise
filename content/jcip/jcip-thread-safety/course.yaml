@@ -1,0 +1,9 @@
+title: Thread safety
+summary: Chapters 1–2 — what thread safety means, race conditions, atomicity and locking.
+lessons:
+  - why-concurrency
+  - what-is-thread-safety
+  - race-conditions
+  - intrinsic-locks
+  - guarding-state
+  - liveness-and-performance

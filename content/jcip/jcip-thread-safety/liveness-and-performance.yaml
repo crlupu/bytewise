@@ -1,0 +1,46 @@
+title: Liveness and performance of locking
+summary: Synchronizing a whole method serialises everyone — narrow the lock to what must be atomic, and never hold it during slow work.
+duration: 5
+tags: [java, concurrency, synchronized, performance, liveness, lock scope]
+sources:
+  - { book: jcip, ref: "§2.5, Liveness and Performance" }
+steps:
+  - type: explanation
+    title: Too coarse
+    body: |
+      The simplest way to fix the caching factorizer is to make `service` `synchronized`. It's correct — and terrible:
+      now only one request at a time can be served, even though factoring a number doesn't touch shared state at all.
+
+      Requests queue up behind each other; on a multiprocessor, all but one core sit idle.
+
+  - type: order
+    prompt: Put the narrow-locking version of the factorizer in order.
+    items:
+      - Read the request's number (no lock needed — a local variable)
+      - In a short synchronized block, check the cache and copy the cached factors if they match
+      - If there was no hit, factor the number with no lock held — the slow part
+      - In a second short synchronized block, store the new number and factors in the cache
+    explanation: Only the parts that touch shared state are synchronized; the expensive computation runs in parallel.
+
+  - type: choice
+    prompt: How small should synchronized blocks be?
+    options:
+      - text: Small enough not to hold the lock during long work, but not so fragmented that the overhead of acquiring locks dominates
+        correct: true
+      - text: As small as possible — one statement each
+        feedback: Splitting atomic operations breaks correctness, and too many tiny blocks add overhead.
+      - text: As large as possible, for safety
+        feedback: Safe, but it can destroy concurrency.
+    explanation: Simplicity, safety and performance pull in different directions; resist sacrificing simplicity prematurely.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Avoid holding locks during lengthy computations or operations at risk of not completing quickly, such as network or console [[I/O|IO|io]]."
+
+  - type: choice
+    prompt: A thread holds a lock while waiting for a reply from a remote service, which never comes. What else stops?
+    options:
+      - text: Every other thread that needs the same lock — a liveness failure spreading from one slow call
+        correct: true
+      - text: Nothing — only the waiting thread is affected
+        feedback: Every thread queued on that lock waits too.

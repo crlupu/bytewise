@@ -1,0 +1,7 @@
+title: Performance and scalability
+summary: Chapter 11 — Amdahl's law, the costs of threads, and reducing lock contention.
+lessons:
+  - amdahls-law
+  - costs-of-threads
+  - reducing-lock-contention
+  - lock-alternatives

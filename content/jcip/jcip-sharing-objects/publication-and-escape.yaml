@@ -1,0 +1,72 @@
+title: Publication and escape
+summary: Making an object reachable from other code publishes it — and an object that escapes too early is visible half-built.
+duration: 6
+tags: [java, concurrency, publication, escape, this escape, constructors]
+sources:
+  - { book: jcip, ref: "§3.2, Publication and Escape" }
+steps:
+  - type: explanation
+    title: Publishing an object
+    body: |
+      **Publishing** an object makes it available to code outside its current scope: storing a reference where others
+      can find it, returning it from a method, passing it to another class's method.
+
+      An object that's published when it shouldn't have been has **escaped**. Publishing one object can publish others too:
+
+      ```java
+      class UnsafeStates {
+          private String[] states = { "AK", "AL", ... };
+          public String[] getStates() { return states; }   // the private array escapes
+      }
+      ```
+
+  - type: choice
+    prompt: "`getStates()` returns the private array. What's the problem?"
+    options:
+      - text: Any caller can now modify the array — the "private" state has escaped
+        correct: true
+      - text: Nothing, since the field is private
+        feedback: "Private stops code naming the field. It doesn't stop code holding a reference from changing the array."
+
+  - type: explanation
+    title: Letting this escape during construction
+    body: |
+      ```java
+      public class ThisEscape {
+          public ThisEscape(EventSource source) {
+              source.registerListener(new EventListener() {
+                  public void onEvent(Event e) { doSomething(e); }
+              });
+          }
+      }
+      ```
+
+      The anonymous inner class holds a hidden reference to the enclosing `ThisEscape`. Registering it publishes `this`
+      before the constructor has finished.
+
+  - type: choice
+    prompt: Why is publishing `this` from a constructor dangerous?
+    options:
+      - text: Other threads may see — and call methods on — an object whose constructor hasn't finished
+        correct: true
+      - text: It isn't dangerous if it's the constructor's last statement
+        feedback: Even as the last statement, the JVM doesn't guarantee other threads see a fully constructed object.
+    explanation: An object is only in a predictable, consistent state after its constructor returns.
+
+  - type: order
+    prompt: Put the safe alternative — a private constructor and a factory method — in order.
+    items:
+      - The factory calls the private constructor, which only initialises fields
+      - The constructor returns a fully built object
+      - The factory registers the listener with the event source
+      - The factory returns the object
+    explanation: Starting a thread or registering a listener after construction keeps `this` from escaping early.
+
+  - type: choice
+    prompt: Is it safe to *create* a thread in a constructor?
+    options:
+      - text: Creating is fine; starting it from the constructor isn't — it can see the object before construction completes
+        correct: true
+      - text: Neither is safe
+      - text: Both are safe
+    explanation: Provide a `start()` or `initialize()` method, or use a factory.

@@ -1,0 +1,77 @@
+title: Guarding state with locks
+summary: Every shared variable needs one lock, held on every access — and related variables need the same lock.
+duration: 6
+tags: [java, concurrency, locks, invariants, guardedby, synchronized]
+sources:
+  - { book: jcip, ref: "§2.4, Guarding State with Locks" }
+steps:
+  - type: explanation
+    title: One variable, one lock, every access
+    body: |
+      Locks only protect state if they're used consistently:
+
+      > For each mutable state variable that may be accessed by more than one thread, **all** accesses to that variable
+      > must be performed with the **same** lock held.
+
+      Then the variable is said to be **guarded by** that lock. Synchronizing only the writes isn't enough — reads need
+      the lock too, both to see a consistent value and to see the latest one.
+
+  - type: predict
+    prompt: |
+      A servlet caches the last number factored and its factors, in two separate `AtomicReference` fields. Each field
+      is individually thread-safe. Is the servlet?
+    code: |
+      private final AtomicReference<BigInteger> lastNumber = new AtomicReference<>();
+      private final AtomicReference<BigInteger[]> lastFactors = new AtomicReference<>();
+
+      public void service(ServletRequest req, ServletResponse resp) {
+          BigInteger i = extractFromRequest(req);
+          if (i.equals(lastNumber.get()))
+              encodeIntoResponse(resp, lastFactors.get());
+          else {
+              BigInteger[] factors = factor(i);
+              lastNumber.set(i);
+              lastFactors.set(factors);
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: No — another thread can see the new number with the old factors, between the two `set` calls
+        correct: true
+      - text: Yes — each field is atomic
+        feedback: Each update is atomic on its own, but the pair isn't updated atomically together.
+    explanation: |
+      The invariant "`lastFactors` are the factors of `lastNumber`" spans both fields.
+      **To preserve state consistency, update related state variables in a single atomic operation.**
+
+  - type: blank
+    prompt: Complete the rule for invariants.
+    template: "For every invariant that involves more than one variable, all the variables in it must be guarded by the [[same]] lock."
+
+  - type: choice
+    prompt: "Can you make a class thread-safe by declaring every method `synchronized`?"
+    options:
+      - text: Not necessarily — compound actions that call several methods, like check-then-act across calls, still race
+        correct: true
+      - text: Yes, always
+        feedback: "`if (!vector.contains(e)) vector.add(e);` is a race even though both methods are synchronized."
+    explanation: It may also hurt performance badly. Synchronization has to match the operations that must be atomic.
+
+  - type: match
+    prompt: Match each practice to its purpose.
+    pairs:
+      - left: "Annotating a field `@GuardedBy(\"this\")`"
+        right: Documents which lock protects it, for maintainers and tools
+      - left: Keeping state private
+        right: Ensures only your code — which follows the locking rules — can touch it
+      - left: Holding the lock across read and write
+        right: Makes a compound action atomic
+
+  - type: choice
+    prompt: Does acquiring an object's intrinsic lock stop other threads from accessing that object's fields?
+    options:
+      - text: No — it only stops other threads from acquiring the same lock; fields are protected only if everyone agrees to take it
+        correct: true
+      - text: Yes — the object becomes inaccessible to other threads
+        feedback: Locks are a convention. Unsynchronized code can still read and write the fields.

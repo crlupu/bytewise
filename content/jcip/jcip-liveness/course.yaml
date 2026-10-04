@@ -1,0 +1,7 @@
+title: Avoiding liveness hazards
+summary: Chapter 10 — deadlock, and the other ways threads stop making progress.
+lessons:
+  - lock-ordering-deadlocks
+  - open-calls
+  - avoiding-deadlocks
+  - starvation-and-livelock
