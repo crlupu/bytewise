@@ -1,0 +1,58 @@
+title: Avoid excessive synchronization
+summary: Never call alien code while holding a lock — it invites exceptions, deadlocks and slowness.
+duration: 5
+tags: [java, effective java, concurrency, synchronized, deadlock, observer, copyonwritearraylist]
+sources:
+  - { book: effective-java, ref: "Item 79" }
+steps:
+  - type: explanation
+    title: Alien methods
+    body: |
+      An observable set notifies observers while holding its lock:
+
+      ```java
+      private void notifyElementAdded(E element) {
+          synchronized (observers) {
+              for (SetObserver<E> observer : observers)
+                  observer.added(this, element);   // alien method
+          }
+      }
+      ```
+
+      `observer.added` is an **alien** method: the set has no control over what it does.
+
+  - type: choice
+    prompt: An observer unsubscribes itself from inside `added`. What happens?
+    options:
+      - text: "`ConcurrentModificationException` — the list is modified while the loop iterates over it"
+        correct: true
+      - text: Deadlock
+        feedback: That's the next scenario. Here the same thread already holds the lock, so it re-enters and modifies the list.
+      - text: Nothing — it unsubscribes cleanly
+    explanation: Java's locks are reentrant, so the same thread is allowed back in — and breaks the iteration.
+
+  - type: choice
+    prompt: Now the observer unsubscribes using a *different* thread, through an executor, and waits for it. What happens?
+    options:
+      - text: Deadlock — the background thread waits for the lock the main thread holds, and the main thread waits for the background thread
+        correct: true
+      - text: "`ConcurrentModificationException`"
+    explanation: Both failures share one cause — calling an alien method inside a synchronized region.
+
+  - type: match
+    prompt: Match each fix to how it works.
+    pairs:
+      - left: Snapshot the list, then notify outside the lock
+        right: "`synchronized (observers) { snapshot = new ArrayList<>(observers); }` then loop over the copy"
+      - left: "`CopyOnWriteArrayList`"
+        right: Every write copies the array, so iteration needs no lock at all
+      - left: Do as little as possible inside synchronized regions
+        right: Hold locks only to read or modify shared state, nothing more
+
+  - type: choice
+    prompt: "Should a general-purpose mutable class synchronize internally, like `StringBuffer`?"
+    options:
+      - text: Usually not — leave it to clients, as `StringBuilder` does, unless internal synchronization gives much more concurrency
+        correct: true
+      - text: Always, to be safe
+        feedback: "`StringBuffer` is almost always used by one thread, so its locking is pure overhead — hence `StringBuilder`."

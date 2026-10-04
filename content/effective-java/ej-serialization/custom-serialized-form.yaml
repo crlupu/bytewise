@@ -1,0 +1,63 @@
+title: Consider a custom serialized form
+summary: Accept the default form only when an object's physical representation is its logical content.
+duration: 5
+tags: [java, effective java, serialization, transient, writeobject, readobject]
+sources:
+  - { book: effective-java, ref: "Item 87" }
+steps:
+  - type: explanation
+    title: Physical versus logical
+    body: |
+      The default serialized form encodes the **physical** representation: every non-transient field of every object
+      reachable from the root. That's fine for a `Name` class with first, middle and last name fields — the physical
+      form is the logical one.
+
+      It's poor for a string list implemented as a doubly linked list: the logical content is just a sequence of
+      strings, but the default form records every node and both of its links.
+
+  - type: choice
+    prompt: Which are disadvantages of using the default form for that linked list?
+    options:
+      - text: The internal node structure becomes part of the exported API forever
+        correct: true
+      - text: It uses more space and time than needed
+        correct: true
+      - text: It can overflow the stack — the default traversal recurses through the list
+        correct: true
+      - text: It can't be serialized at all
+        feedback: It can — that's what makes the poor choice easy to make.
+
+  - type: explanation
+    title: A custom form
+    body: |
+      ```java
+      public final class StringList implements Serializable {
+          private transient int size = 0;
+          private transient Entry head = null;
+
+          private void writeObject(ObjectOutputStream s) throws IOException {
+              s.defaultWriteObject();
+              s.writeInt(size);
+              for (Entry e = head; e != null; e = e.next) s.writeObject(e.data);
+          }
+          private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+              s.defaultReadObject();
+              int numElements = s.readInt();
+              for (int i = 0; i < numElements; i++) add((String) s.readObject());
+          }
+      }
+      ```
+
+  - type: blank
+    prompt: Exclude a field from the default serialized form.
+    template: "private [[transient]] Entry head = null;"
+    code: true
+    explanation: Mark every field transient unless its value is part of the object's logical state.
+
+  - type: choice
+    prompt: All fields are transient. Why still call `defaultWriteObject` and `defaultReadObject`?
+    options:
+      - text: It lets later versions add non-transient fields while staying compatible in both directions
+        correct: true
+      - text: It's required by the compiler
+    explanation: The serialization spec requires them anyway, and they keep the form flexible.

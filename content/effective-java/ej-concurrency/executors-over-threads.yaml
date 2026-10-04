@@ -1,0 +1,52 @@
+title: Executors, tasks and streams over threads
+summary: Think in tasks; let an executor service manage the threads.
+duration: 4
+tags: [java, effective java, concurrency, executor, thread pool, fork-join]
+sources:
+  - { book: effective-java, ref: "Item 80" }
+steps:
+  - type: explanation
+    title: The executor framework
+    body: |
+      Creating a work queue with threads by hand used to take pages of careful code. Now it's three lines:
+
+      ```java
+      ExecutorService exec = Executors.newSingleThreadExecutor();
+      exec.execute(runnable);
+      exec.shutdown();
+      ```
+
+      The key abstraction is the **task** — a `Runnable` or a `Callable` — separate from the **mechanism** that runs it.
+
+  - type: match
+    prompt: Match each need to the executor feature.
+    pairs:
+      - left: Wait for a particular task to finish
+        right: "`Future.get()` on the result of `submit`"
+      - left: Wait for any or all of a collection of tasks
+        right: "`invokeAny` or `invokeAll`"
+      - left: Run tasks at a set time or periodically
+        right: "`ScheduledThreadPoolExecutor`"
+      - left: Wait for the executor to terminate cleanly
+        right: "`awaitTermination`"
+
+  - type: choice
+    prompt: Which pool suits a heavily loaded production server?
+    options:
+      - text: A fixed thread pool, or a `ThreadPoolExecutor` configured directly for maximum control
+        correct: true
+      - text: "`newCachedThreadPool`"
+        feedback: Under heavy load a cached pool creates new threads for every queued task, making things worse.
+    explanation: A cached pool is fine for a small program or a lightly loaded server.
+
+  - type: choice
+    prompt: What does a fork-join pool add?
+    options:
+      - text: Work stealing — idle threads take tasks from busy ones, keeping all cores busy on divide-and-conquer work
+        correct: true
+      - text: Unlimited threads
+    explanation: Parallel streams are built on fork-join pools.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "Refrain from working directly with [[threads]]; the unit of work is the [[task]]."

@@ -1,0 +1,49 @@
+title: Prefer alternatives to Java serialization
+summary: Deserializing untrusted bytes can run attacker-chosen code paths — the safest serialization is none at all.
+duration: 5
+tags: [java, effective java, serialization, security, deserialization, json, protobuf]
+sources:
+  - { book: effective-java, ref: "Item 85" }
+steps:
+  - type: explanation
+    title: A huge attack surface
+    body: |
+      `ObjectInputStream.readObject` can instantiate objects of almost any `Serializable` class on the classpath, and
+      runs their deserialization code as it goes. An attacker who controls the bytes chooses which classes and in what
+      shape.
+
+      Chains of innocent methods across many libraries can be strung together into exploits — so-called **gadget
+      chains** — and some have led to remote code execution in widely deployed systems.
+
+  - type: choice
+    prompt: Besides gadget chains, what else can a malicious stream do?
+    options:
+      - text: A **deserialization bomb** — a small stream, like deeply nested `HashSet`s, that takes effectively forever to deserialize
+        correct: true
+      - text: Nothing, as long as the classes are from the JDK
+        feedback: Bombs can be built from JDK classes alone.
+    explanation: A stream of about 5,700 bytes built from nested HashSets can keep `hashCode` computations running practically forever.
+
+  - type: choice
+    prompt: What's the best way to avoid serialization exploits?
+    options:
+      - text: Never deserialize anything — use a cross-platform structured format such as JSON or Protocol Buffers instead
+        correct: true
+      - text: Only deserialize data from your own database
+        feedback: Trusting the source helps, but data stores can be compromised; avoiding Java serialization removes the risk.
+    explanation: Those formats are much simpler, and support only data, not arbitrary object graphs and their behaviour.
+
+  - type: match
+    prompt: Match each defence to how it helps.
+    pairs:
+      - left: Use JSON or protobuf
+        right: Removes the attack surface entirely
+      - left: Never deserialize untrusted data
+        right: Keeps attackers' bytes away from `readObject`
+      - left: "`ObjectInputFilter` (Java 9)"
+        right: Allow-lists the classes a stream may contain
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "If you can't avoid Java serialization, use an [[allowlist|whitelist|allow-list]] of classes, not a blocklist."
+    explanation: A blocklist only stops the dangers already known.

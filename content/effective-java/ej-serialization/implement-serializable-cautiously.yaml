@@ -1,0 +1,51 @@
+title: Implement Serializable with great caution
+summary: Adding "implements Serializable" is easy — living with it costs flexibility, safety and testing time.
+duration: 5
+tags: [java, effective java, serialization, serializable, serialversionuid, compatibility]
+sources:
+  - { book: effective-java, ref: "Item 86" }
+steps:
+  - type: explanation
+    title: Two words, lasting costs
+    body: |
+      Making a class serializable can be as simple as adding `implements Serializable`. But once a class is released
+      with a serialized form, that form becomes part of its exported API — including, with the default form, its
+      private fields.
+
+  - type: choice
+    prompt: Which are real costs of implementing `Serializable`?
+    options:
+      - text: It decreases the flexibility to change the class's implementation once released
+        correct: true
+      - text: It increases the likelihood of bugs and security holes — deserialization is a hidden constructor
+        correct: true
+      - text: It increases the testing burden with each new release, which must handle old serialized forms
+        correct: true
+      - text: It makes the class slower to use in normal code
+        feedback: Normal use isn't affected — the costs are in evolution, security and testing.
+
+  - type: choice
+    prompt: You don't declare a `serialVersionUID`. What happens when you add a method to the class?
+    options:
+      - text: The automatically generated UID changes, so old serialized instances fail to deserialize with `InvalidClassException`
+        correct: true
+      - text: Nothing — adding methods is always compatible
+        feedback: The auto-generated UID is computed from the class's structure, methods included.
+    explanation: Always declare an explicit `private static final long serialVersionUID`.
+
+  - type: match
+    prompt: Should it implement Serializable?
+    pairs:
+      - left: A value class like `BigInteger` or `Instant`
+        right: Often yes — they're commonly sent and stored
+      - left: A class representing an active entity, like a thread pool
+        right: Rarely — there's no meaningful state to serialize
+      - left: A class designed for inheritance
+        right: Rarely — it forces the burden onto every subclass
+      - left: An inner (non-static nested) class
+        right: No — its default serialized form is ill-defined
+
+  - type: blank
+    prompt: Declare an explicit serial version UID.
+    template: "private static final long [[serialVersionUID]] = 1L;"
+    code: true

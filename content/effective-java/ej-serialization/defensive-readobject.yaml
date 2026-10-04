@@ -1,0 +1,52 @@
+title: Write readObject defensively
+summary: readObject is a public constructor that takes a byte stream — validate and copy exactly as a constructor would.
+duration: 5
+tags: [java, effective java, serialization, readobject, defensive copy, security]
+sources:
+  - { book: effective-java, ref: "Item 88" }
+steps:
+  - type: explanation
+    title: A hidden constructor
+    body: |
+      The immutable `Period` copies its `Date`s and checks `start <= end` in its constructor. Make it `Serializable` with
+      the default form, and none of that runs on deserialization: `readObject` effectively becomes another public
+      constructor — one that takes whatever bytes an attacker supplies.
+
+  - type: choice
+    prompt: Which attacks become possible against a serializable `Period` with no `readObject`?
+    options:
+      - text: A hand-crafted byte stream produces a `Period` whose end is before its start
+        correct: true
+      - text: An attacker appends references to the private `Date` fields, then mutates them through those references
+        correct: true
+      - text: None, since the fields are private and final
+        feedback: Serialization bypasses constructors and access control.
+
+  - type: order
+    prompt: Put a defensive `readObject` in order.
+    items:
+      - Call `s.defaultReadObject()`
+      - Make defensive copies of the mutable fields
+      - Check the invariants on the copies, throwing `InvalidObjectException` if they fail
+    explanation: Copy before checking, for the same reason as in constructors.
+
+  - type: blank
+    prompt: Report a broken invariant during deserialization.
+    template: "if (start.compareTo(end) > 0) throw new [[InvalidObjectException]](start + \" after \" + end);"
+    code: true
+
+  - type: choice
+    prompt: To make the defensive copies, `start` and `end` can no longer be `final`. Why?
+    options:
+      - text: "`readObject` must assign the copies to the fields after `defaultReadObject` has already set them"
+        correct: true
+      - text: Final fields can't be serialized
+    explanation: An unfortunate trade-off — or use a serialization proxy (Item 90), which keeps them final.
+
+  - type: choice
+    prompt: Can `readObject` call overridable methods?
+    options:
+      - text: No — like a constructor, it must not, directly or indirectly
+        correct: true
+      - text: Yes
+    explanation: The overriding method would run before the subclass's state has been deserialized.

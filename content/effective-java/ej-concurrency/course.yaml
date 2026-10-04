@@ -1,0 +1,10 @@
+title: Concurrency
+summary: Effective Java, chapter 11 (Items 78–84) — sharing data safely, executors, concurrency utilities and documenting thread safety.
+lessons:
+  - synchronize-shared-data
+  - excessive-synchronization
+  - executors-over-threads
+  - concurrency-utilities
+  - document-thread-safety
+  - lazy-initialization
+  - thread-scheduler

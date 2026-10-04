@@ -1,0 +1,54 @@
+title: Don't depend on the thread scheduler
+summary: Programs whose correctness or performance depends on scheduling policy aren't portable.
+duration: 4
+tags: [java, effective java, concurrency, thread scheduler, busy-wait, thread priorities]
+sources:
+  - { book: effective-java, ref: "Item 84" }
+steps:
+  - type: explanation
+    title: Keep runnable threads few
+    body: |
+      When many threads are runnable, the scheduler decides which run and for how long — and policies differ between
+      operating systems. Robust, portable programs keep the average number of **runnable** threads close to the number of
+      processors. Then the scheduler has little choice to make.
+
+      Threads shouldn't run if they aren't doing useful work: size thread pools appropriately, keep tasks reasonably
+      small (but not so small that dispatch overhead dominates), and never **busy-wait**.
+
+  - type: choice
+    prompt: What's wrong with this latch?
+    code: |
+      public void await() {
+          while (true) {
+              synchronized (this) {
+                  if (count == 0) return;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: It busy-waits, burning a CPU and slowing the threads that do useful work
+        correct: true
+      - text: It doesn't synchronize
+        feedback: It does — it's just spinning instead of blocking.
+    explanation: Use `CountDownLatch`, which blocks waiting threads.
+
+  - type: choice
+    prompt: A thread is starved of CPU time. Should you fix it with `Thread.yield()`?
+    options:
+      - text: No — `yield` has no testable semantics; it may help on one JVM and hurt on another
+        correct: true
+      - text: Yes, it's the standard fix
+    explanation: Restructure the program to reduce the number of concurrently runnable threads instead.
+
+  - type: choice
+    prompt: What about raising thread priorities?
+    options:
+      - text: Priorities are among the least portable features of Java; at most, use them to tweak a program that already works
+        correct: true
+      - text: It's a reliable way to fix liveness problems
+    explanation: Fixing a serious liveness problem with priorities is unlikely to work — and won't survive a platform change.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Any program that relies on the thread [[scheduler]] for correctness or performance is likely to be non-[[portable]]."

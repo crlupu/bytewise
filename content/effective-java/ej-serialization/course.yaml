@@ -1,0 +1,9 @@
+title: Serialization
+summary: Effective Java, chapter 12 (Items 85–90) — why to avoid Java serialization, and how to do it safely if you must.
+lessons:
+  - serialization-alternatives
+  - implement-serializable-cautiously
+  - custom-serialized-form
+  - defensive-readobject
+  - enum-over-readresolve
+  - serialization-proxies

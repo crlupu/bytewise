@@ -1,0 +1,62 @@
+title: Serialization proxies
+summary: Serialize a simple stand-in for the logical state, and rebuild the real object through its public API.
+duration: 5
+tags: [java, effective java, serialization, proxy, writereplace, readresolve]
+sources:
+  - { book: effective-java, ref: "Item 90" }
+steps:
+  - type: explanation
+    title: The pattern
+    body: |
+      Instead of serializing the object itself, serialize a private static nested **proxy** that holds its logical state:
+
+      ```java
+      private static class SerializationProxy implements Serializable {
+          private final Date start;
+          private final Date end;
+          SerializationProxy(Period p) { this.start = p.start; this.end = p.end; }
+          private Object readResolve() { return new Period(start, end); }   // public constructor checks everything
+          private static final long serialVersionUID = 1L;
+      }
+
+      private Object writeReplace() { return new SerializationProxy(this); }
+
+      private void readObject(ObjectInputStream stream) throws InvalidObjectException {
+          throw new InvalidObjectException("Proxy required");
+      }
+      ```
+
+  - type: match
+    prompt: Match each method to its role.
+    pairs:
+      - left: "`writeReplace` in the enclosing class"
+        right: Swaps in a proxy whenever an instance is serialized
+      - left: "`readObject` in the enclosing class"
+        right: Throws, so a forged stream of the real class is rejected
+      - left: "`readResolve` in the proxy"
+        right: Rebuilds the real object using only its public API
+
+  - type: choice
+    prompt: Why is this safer than a defensive `readObject`?
+    options:
+      - text: Instances are always created through the ordinary constructor or factory, so invariants are checked by the code that already checks them
+        correct: true
+      - text: The proxy is encrypted
+    explanation: And the real class's fields can stay `final`.
+
+  - type: choice
+    prompt: "`EnumSet` uses this pattern. What does it gain?"
+    options:
+      - text: An EnumSet serialized as a small set can be deserialized as a large-set implementation, if the enum has grown
+        correct: true
+      - text: Nothing in particular
+    explanation: The proxy records just the element type and elements; `EnumSet.noneOf` picks the right implementation on the way back.
+
+  - type: choice
+    prompt: Where does the proxy pattern not fit?
+    options:
+      - text: Classes that clients extend, and object graphs with cycles
+        correct: true
+      - text: Immutable classes
+        feedback: Those are its ideal use.
+    explanation: It's also somewhat slower than defensive copying.

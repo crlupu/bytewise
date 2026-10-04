@@ -1,0 +1,59 @@
+title: Concurrency utilities over wait and notify
+summary: Concurrent collections and synchronizers do correctly what wait/notify does with difficulty.
+duration: 5
+tags: [java, effective java, concurrency, concurrenthashmap, countdownlatch, wait, notify]
+sources:
+  - { book: effective-java, ref: "Item 81" }
+steps:
+  - type: match
+    prompt: Match each `java.util.concurrent` category to an example.
+    pairs:
+      - left: Executor framework
+        right: "`ExecutorService`"
+      - left: Concurrent collections
+        right: "`ConcurrentHashMap`, `BlockingQueue`"
+      - left: Synchronizers
+        right: "`CountDownLatch`, `Semaphore`, `Phaser`"
+
+  - type: blank
+    prompt: Intern strings concurrently, without an extra lookup in the common case.
+    template: |
+      String result = map.get(s);
+      if (result == null) {
+          result = map.[[putIfAbsent]](s, s);
+          if (result == null) result = s;
+      }
+      return result;
+    code: true
+    explanation: "`ConcurrentHashMap` is optimised for reads like `get`, and `putIfAbsent` is atomic."
+
+  - type: choice
+    prompt: Why not wrap a `HashMap` with `Collections.synchronizedMap` instead?
+    options:
+      - text: A concurrent map is much faster under contention — one global lock serialises every access
+        correct: true
+      - text: Synchronized maps aren't thread-safe
+        feedback: They are, but slowly — and compound actions still need external locking.
+
+  - type: explanation
+    title: If you must use wait
+    body: |
+      ```java
+      synchronized (obj) {
+          while (!condition) obj.wait();   // always in a loop
+          ... // perform action appropriate to condition
+      }
+      ```
+
+      Always test the condition in a loop: a thread can wake when the condition doesn't hold — another thread changed
+      it, someone called `notifyAll`, or a *spurious wakeup* happened. And prefer `notifyAll` to `notify`, unless you're
+      sure only one waiter can make progress.
+
+  - type: choice
+    prompt: To time an interval, which is right?
+    options:
+      - text: "`System.nanoTime()`"
+        correct: true
+      - text: "`System.currentTimeMillis()`"
+        feedback: It's wall-clock time, which can jump when the clock is adjusted.
+    explanation: "`nanoTime` is more accurate and unaffected by adjustments to the system clock."

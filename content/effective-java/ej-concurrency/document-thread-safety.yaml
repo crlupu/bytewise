@@ -1,0 +1,58 @@
+title: Document thread safety
+summary: Say how much concurrency a class supports — the synchronized keyword in a signature doesn't count.
+duration: 5
+tags: [java, effective java, concurrency, thread safety, documentation, private lock]
+sources:
+  - { book: effective-java, ref: "Item 82" }
+steps:
+  - type: match
+    prompt: Match each level of thread safety to an example.
+    pairs:
+      - left: Immutable
+        right: "`String`, `Long`, `BigInteger` — no synchronization needed"
+      - left: Unconditionally thread-safe
+        right: "`AtomicLong`, `ConcurrentHashMap` — internally synchronized"
+      - left: Conditionally thread-safe
+        right: "`Collections.synchronized` wrappers — iterators need external locking"
+      - left: Not thread-safe
+        right: "`ArrayList`, `HashMap` — clients must synchronize"
+      - left: Thread-hostile
+        right: Unsafe even with external synchronization — usually by modifying static data
+
+  - type: choice
+    prompt: Is the `synchronized` modifier in a method's Javadoc enough to document thread safety?
+    options:
+      - text: No — it's an implementation detail, not part of the API, and doesn't say what level of safety the class offers
+        correct: true
+      - text: Yes
+        feedback: Javadoc doesn't even include it; and thread safety isn't all-or-nothing.
+
+  - type: predict
+    prompt: "Iterating over a `Collections.synchronizedMap` from several threads — what must the client do?"
+    code: |
+      Map<K, V> m = Collections.synchronizedMap(new HashMap<>());
+      Set<K> s = m.keySet();
+      ...
+      for (K key : s) key.f();
+    language: java
+    options:
+      - text: Wrap the loop in `synchronized (m) { ... }` — locking the map, not the key set
+        correct: true
+      - text: Nothing — the wrapper handles it
+        feedback: Iteration is a compound operation across many calls; the wrapper can't lock around it.
+    explanation: Conditionally thread-safe classes must document which lock clients should hold for which sequences.
+
+  - type: blank
+    prompt: The private lock object idiom.
+    template: |
+      private final Object [[lock]] = new Object();
+      public void foo() { synchronized ([[lock]]) { ... } }
+    code: true
+    explanation: Clients can't reach the lock, so they can't hold it forever — a denial-of-service that's possible with a publicly accessible lock.
+
+  - type: choice
+    prompt: Why should the lock field be `final`?
+    options:
+      - text: Changing it by accident would make different threads synchronize on different objects
+        correct: true
+      - text: It's required by the compiler

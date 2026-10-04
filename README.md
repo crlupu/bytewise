@@ -44,14 +44,18 @@ trade-off scenarios (architecture).
 
 ## Content and the books behind it
 
-34 lessons in 16 courses. Most courses follow a standard book; each lesson names the
+120 lessons in 26 courses. Most courses follow a standard book; each lesson names the
 chapter or item it teaches in `sources`, shown on the course page, on the lesson's
 completion screen and in Search's Library. The lessons are written fresh — the books
 are where to go for the full treatment.
 
+**Effective Java** has its own section: one lesson for each of the 90 items, in a course
+per chapter (2–12), each with a short explanation and practice exercises.
+
 | Topic | Books |
 |---|---|
-| Java | *Effective Java* (Bloch), *Java Concurrency in Practice* (Goetz et al.) |
+| Java | *Java Concurrency in Practice* (Goetz et al.) |
+| Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |
 | Databases | *SQL Performance Explained* (Winand), *High-Performance Java Persistence* (Mihalcea), *Database Internals* (Petrov) |
 | Operating systems | *Operating Systems: Three Easy Pieces* (Arpaci-Dusseau) |
 | Networking | *Computer Networking: A Top-Down Approach* (Kurose & Ross) |

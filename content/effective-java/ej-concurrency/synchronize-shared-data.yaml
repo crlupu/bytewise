@@ -1,0 +1,73 @@
+title: Synchronize access to shared mutable data
+summary: Synchronization is for visibility as well as mutual exclusion — and volatile alone doesn't make ++ atomic.
+duration: 6
+tags: [java, effective java, concurrency, synchronized, volatile, atomic, visibility]
+sources:
+  - { book: effective-java, ref: "Item 78" }
+steps:
+  - type: predict
+    prompt: How long does this program run?
+    code: |
+      public class StopThread {
+          private static boolean stopRequested;
+          public static void main(String[] args) throws InterruptedException {
+              Thread background = new Thread(() -> {
+                  int i = 0;
+                  while (!stopRequested) i++;
+              });
+              background.start();
+              TimeUnit.SECONDS.sleep(1);
+              stopRequested = true;
+          }
+      }
+    language: java
+    options:
+      - text: It may never terminate
+        correct: true
+      - text: About one second
+        feedback: Without synchronization, there's no guarantee the background thread ever sees the write — and the JIT may hoist the read out of the loop.
+    explanation: "Fix it by synchronizing both the write *and* the read, or by declaring the field `volatile`."
+
+  - type: choice
+    prompt: The fix synchronizes the method that writes `stopRequested`, but not the one that reads it. Is that enough?
+    options:
+      - text: No — synchronization has no effect unless both read and write operations are synchronized
+        correct: true
+      - text: Yes — the write is what matters
+    explanation: Visibility needs both sides to use the same lock (or the field to be volatile).
+
+  - type: widget
+    widget: threads
+    prompt: |
+      `volatile int nextSerialNumber` is handed out with `return nextSerialNumber++;`. Every read is fresh — but can two
+      callers get the **same** serial number? Run both threads so the counter ends at **1**, meaning both got 0.
+    config:
+      threads: 2
+      increments: 1
+      variable: nextSerialNumber
+    goal:
+      count: 1
+    hints:
+      - Let both threads read before either writes.
+    explanation: |
+      `volatile` guarantees visibility, not atomicity: `++` is still read-add-write. Use `AtomicLong` and
+      `getAndIncrement()`, or synchronize the method.
+
+  - type: match
+    prompt: Match each tool to what it guarantees.
+    pairs:
+      - left: "`synchronized` (on both reads and writes)"
+        right: Mutual exclusion and visibility
+      - left: "`volatile`"
+        right: Visibility only
+      - left: "`AtomicLong`"
+        right: Visibility and atomic read-modify-write on one variable
+
+  - type: choice
+    prompt: What's the best way to avoid all these problems?
+    options:
+      - text: Don't share mutable data — confine it to one thread, or share only immutable data
+        correct: true
+      - text: Use `volatile` everywhere
+        feedback: That fixes visibility but not compound actions like `++`.
+    explanation: Objects modified by one thread and then safely published become *effectively immutable* for others.

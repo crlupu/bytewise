@@ -1,0 +1,47 @@
+title: Enums over readResolve for instance control
+summary: A serializable singleton needs readResolve and transient fields to stay single — or just make it an enum.
+duration: 4
+tags: [java, effective java, serialization, singleton, readresolve, enum]
+sources:
+  - { book: effective-java, ref: "Item 89" }
+steps:
+  - type: explanation
+    title: Deserialization makes new instances
+    body: |
+      Add `implements Serializable` to a singleton and it's no longer a singleton: every deserialization creates a new
+      instance. The classic fix is `readResolve`, which substitutes the real instance for the deserialized one:
+
+      ```java
+      private Object readResolve() {
+          return INSTANCE;   // the deserialized object becomes garbage
+      }
+      ```
+
+  - type: choice
+    prompt: "With `readResolve`, what else must hold for the singleton to be safe?"
+    options:
+      - text: All instance fields with object references must be `transient`
+        correct: true
+      - text: Nothing else
+        feedback: A non-transient reference field lets an attacker "steal" a reference to the deserialized object before readResolve runs.
+    explanation: The attack uses a crafted "stealer" object that captures the instance mid-deserialization.
+
+  - type: choice
+    prompt: What's the simplest robust approach?
+    options:
+      - text: Make the singleton a single-element enum — Java guarantees there can be no other instances
+        correct: true
+      - text: Add more checks to readResolve
+    explanation: Enums get instance control from the JVM, serialization included.
+
+  - type: blank
+    prompt: The enum singleton.
+    template: "public [[enum]] Elvis { INSTANCE; public void leaveTheBuilding() { ... } }"
+    code: true
+
+  - type: choice
+    prompt: When is `readResolve` still needed?
+    options:
+      - text: For a serializable, instance-controlled class whose instances aren't known at compile time
+        correct: true
+      - text: For every serializable class

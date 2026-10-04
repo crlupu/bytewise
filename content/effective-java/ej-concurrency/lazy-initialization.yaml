@@ -1,0 +1,59 @@
+title: Use lazy initialization judiciously
+summary: Most fields should be initialized normally; when lazy initialization helps, use the right idiom.
+duration: 5
+tags: [java, effective java, concurrency, lazy initialization, double-check, holder class]
+sources:
+  - { book: effective-java, ref: "Item 83" }
+steps:
+  - type: explanation
+    title: Usually, don't
+    body: |
+      Lazy initialization delays creating a field's value until it's first needed. It saves work if the field is never
+      used — and costs something on every access. Under most circumstances, **normal initialization is preferable**.
+
+      When you do need it — the field is expensive to compute and rarely used — pick an idiom that's safe for multiple threads.
+
+  - type: match
+    prompt: Match each lazy-initialization idiom to where it fits.
+    pairs:
+      - left: A synchronized accessor
+        right: Simple, for any field, when contention is low
+      - left: Lazy initialization holder class
+        right: Static fields — the JVM initializes the holder on first use, with no synchronization on access
+      - left: Double-check idiom
+        right: Instance fields read often, where accessor synchronization would be costly
+
+  - type: blank
+    prompt: The holder class idiom for a static field.
+    template: |
+      private static class FieldHolder { static final FieldType field = computeFieldValue(); }
+      private static FieldType getField() { return [[FieldHolder]].field; }
+    code: true
+    explanation: The class isn't initialized until `getField` first touches it — and the JVM guarantees that's thread-safe.
+
+  - type: explanation
+    title: Double-check
+    body: |
+      ```java
+      private volatile FieldType field;
+
+      private FieldType getField() {
+          FieldType result = field;
+          if (result == null) {                 // first check (no locking)
+              synchronized (this) {
+                  if (field == null)            // second check (with locking)
+                      field = result = computeFieldValue();
+              }
+          }
+          return result;
+      }
+      ```
+
+  - type: choice
+    prompt: Why is the field `volatile` in the double-check idiom?
+    options:
+      - text: Without it, another thread could see a non-null reference to a not-yet-fully-constructed object
+        correct: true
+      - text: To make the first check faster
+        feedback: The local variable `result` is what speeds things up, by reading the volatile field only once in the common case.
+    explanation: The idiom was broken before Java 5's memory model made `volatile` strong enough.
