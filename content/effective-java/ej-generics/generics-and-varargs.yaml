@@ -1,0 +1,59 @@
+title: Generics and varargs
+summary: A generic varargs parameter is an array of a non-reifiable type — use @SafeVarargs only when it's truly safe.
+duration: 5
+tags: [java, effective java, generics, varargs, heap pollution, safevarargs]
+sources:
+  - { book: effective-java, ref: "Item 32" }
+steps:
+  - type: explanation
+    title: A leaky abstraction
+    body: |
+      Calling a varargs method creates an array to hold the arguments. If the parameter type is generic —
+      `List<String>... lists` — that array has a non-reifiable element type, which is exactly what Java otherwise
+      forbids you to create. The compiler warns of possible **heap pollution**: a variable of a parameterized type
+      referring to an object that isn't of that type.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      static void dangerous(List<String>... stringLists) {
+          List<Integer> intList = List.of(42);
+          Object[] objects = stringLists;
+          objects[0] = intList;               // heap pollution
+          String s = stringLists[0].get(0);
+      }
+    language: java
+    options:
+      - text: "`ClassCastException` on the last line, from a cast the compiler inserted"
+        correct: true
+      - text: A compile error
+        feedback: Only warnings — that's why it's dangerous.
+      - text: It prints 42
+    explanation: Storing into a generic varargs array is unsafe.
+
+  - type: choice
+    prompt: When is a generic varargs method safe?
+    options:
+      - text: It doesn't store anything into the varargs array, and doesn't let a reference to the array escape
+        correct: true
+      - text: Whenever it's annotated with `@SafeVarargs`
+        feedback: The annotation is a promise by the author; it doesn't make anything safe.
+      - text: When it's `public`
+    explanation: Then annotate it `@SafeVarargs` — allowed on static, final and (since Java 9) private methods.
+
+  - type: predict
+    prompt: "`static <T> T[] toArray(T... args) { return args; }` is called from `<T> T[] pickTwo(T a, T b, T c)` as `toArray(a, b)`. What does `String[] attributes = pickTwo(\"Good\", \"Fast\", \"Cheap\");` do?"
+    options:
+      - text: Throws `ClassCastException` — the array created in `pickTwo` is an `Object[]`
+        correct: true
+      - text: Returns two strings
+        feedback: "`pickTwo` can't know T at run time, so the compiler creates an `Object[]` for its call to `toArray`."
+    explanation: Returning the varargs array lets heap pollution escape up the call stack.
+
+  - type: blank
+    prompt: Mark a provably safe generic varargs method.
+    template: |
+      @[[SafeVarargs]]
+      static <T> List<T> flatten(List<? extends T>... lists) { ... }
+    code: true
+    explanation: The alternative is a `List<List<? extends T>>` parameter, with callers using `List.of(...)`.

@@ -1,0 +1,46 @@
+title: Marker interfaces
+summary: An interface with no methods defines a type the compiler can check; a marker annotation can't.
+duration: 4
+tags: [java, effective java, marker interface, annotations, serializable, types]
+sources:
+  - { book: effective-java, ref: "Item 41" }
+steps:
+  - type: explanation
+    title: Markers
+    body: |
+      A **marker interface** contains no methods; implementing it just marks a class as having some property.
+      `Serializable` is the classic example: it says instances may be written to an `ObjectOutputStream`.
+
+      A **marker annotation** does the same job with an annotation, like `@Test`.
+
+  - type: choice
+    prompt: What can a marker interface do that a marker annotation can't?
+    options:
+      - text: Define a type — so errors can be caught at compile time, through method parameter types
+        correct: true
+      - text: Be targeted more precisely — a marker interface can extend another interface, limiting it to that interface's implementations
+        correct: true
+      - text: Apply to methods and fields
+        feedback: That's the annotation's advantage.
+
+  - type: match
+    prompt: Choose the right marker.
+    pairs:
+      - left: You want methods that accept only marked objects
+        right: Marker interface — it defines a type the compiler checks
+      - left: The mark applies to methods or fields
+        right: Marker annotation — an interface can only mark classes
+      - left: The framework you're part of already relies heavily on annotations
+        right: Marker annotation — for consistency with everything else
+
+  - type: choice
+    prompt: "`ObjectOutputStream.writeObject` takes `Object`, not `Serializable`. Why does Bloch count this as a missed opportunity?"
+    options:
+      - text: Typing the parameter as `Serializable` would have caught unserializable objects at compile time
+        correct: true
+      - text: It doesn't matter — runtime checks are just as good
+        feedback: Compile-time errors are always cheaper than runtime ones.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "If you want to define a type, use an [[interface]]; if not, a marker [[annotation]] may be the better choice."

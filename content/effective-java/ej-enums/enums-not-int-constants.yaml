@@ -1,0 +1,76 @@
+title: Enums instead of int constants
+summary: Enums are type-safe, printable, and full classes — with fields, methods and constant-specific behaviour.
+duration: 6
+tags: [java, effective java, enums, constants, strategy, type safety]
+sources:
+  - { book: effective-java, ref: "Item 34" }
+steps:
+  - type: explanation
+    title: The int enum pattern
+    body: |
+      ```java
+      public static final int APPLE_FUJI  = 0;
+      public static final int APPLE_PIPPIN = 1;
+      public static final int ORANGE_NAVEL = 0;
+      ```
+
+      Nothing stops you passing an orange where an apple is expected, or comparing them with `==`. The values print as
+      bare numbers. And because constants are compiled into clients, changing a value silently breaks them until they're
+      recompiled.
+
+  - type: choice
+    prompt: Which are advantages of a Java `enum` over int constants?
+    options:
+      - text: Compile-time type safety — an `Apple` parameter accepts only `Apple` values
+        correct: true
+      - text: Readable `toString` output, and `values()` to iterate over all constants
+        correct: true
+      - text: Constants can be added or reordered without recompiling clients
+        correct: true
+      - text: They use less memory than ints
+        feedback: Each constant is an object; memory isn't the point.
+
+  - type: explanation
+    title: Enums with behaviour
+    body: |
+      Enums are full classes. Each constant can carry data and even its own method body:
+
+      ```java
+      public enum Operation {
+          PLUS("+")   { public double apply(double x, double y) { return x + y; } },
+          MINUS("-")  { public double apply(double x, double y) { return x - y; } },
+          TIMES("*")  { public double apply(double x, double y) { return x * y; } };
+
+          private final String symbol;
+          Operation(String symbol) { this.symbol = symbol; }
+          public abstract double apply(double x, double y);
+      }
+      ```
+
+      With an **abstract** method, adding a constant without implementing `apply` doesn't compile — safer than a
+      `switch` on `this` that someone forgets to update.
+
+  - type: choice
+    prompt: "Payroll: weekdays and weekends compute overtime differently. Instead of a switch in `PayrollDay`, what's the more robust design?"
+    options:
+      - text: A strategy enum — each day is constructed with a private `PayType` enum (WEEKDAY or WEEKEND) that holds the calculation
+        correct: true
+      - text: One constant-specific method per day, copying the code
+        feedback: Duplicates the weekday logic five times.
+      - text: A switch with a default case
+        feedback: A new day (a holiday, say) would silently get the default pay.
+    explanation: The day must choose a pay type when it's declared, so a new constant can't forget it.
+
+  - type: blank
+    prompt: Iterate over every constant.
+    template: "for (Planet p : Planet.[[values]]()) System.out.println(p);"
+    code: true
+
+  - type: choice
+    prompt: When should you use enums?
+    options:
+      - text: Whenever you need a set of constants whose members are known at compile time
+        correct: true
+      - text: Only for the days of the week and similar natural sets
+        feedback: Menu choices, operation codes, command-line flags — anything known at compile time qualifies.
+    explanation: The set doesn't have to stay fixed forever — enums are designed to evolve compatibly.

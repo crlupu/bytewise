@@ -1,0 +1,61 @@
+title: Prefer lists to arrays
+summary: Arrays are covariant and reified; generics are invariant and erased — which is why lists catch errors earlier.
+duration: 5
+tags: [java, effective java, generics, arrays, covariance, erasure, reification]
+sources:
+  - { book: effective-java, ref: "Item 28" }
+steps:
+  - type: predict
+    prompt: What happens?
+    code: |
+      Object[] objects = new Long[1];
+      objects[0] = "I don't fit in";
+    language: java
+    options:
+      - text: It compiles, then throws `ArrayStoreException` at run time
+        correct: true
+      - text: It fails to compile
+        feedback: Arrays are covariant — a `Long[]` is an `Object[]` — so the first line is legal.
+      - text: It works, storing a String in a Long array
+    explanation: Arrays check element types at run time — they're **reified**.
+
+  - type: predict
+    prompt: And this?
+    code: |
+      List<Object> objects = new ArrayList<Long>();
+      objects.add("I don't fit in");
+    language: java
+    options:
+      - text: It fails to compile at the first line
+        correct: true
+      - text: It throws at run time
+    explanation: Generics are **invariant** — a `List<Long>` is not a `List<Object>` — so the mistake is caught at compile time.
+
+  - type: match
+    prompt: Match each property to arrays or generics.
+    pairs:
+      - left: Covariant
+        right: Arrays — `Sub[]` is a subtype of `Super[]`
+      - left: Invariant
+        right: Generics — `List<Sub>` is unrelated to `List<Super>`
+      - left: Reified
+        right: Arrays — they know and check their element type at run time
+      - left: Erased
+        right: Generics — type arguments are checked at compile time, then discarded
+
+  - type: choice
+    prompt: Why is `new List<String>[10]` illegal?
+    options:
+      - text: A generic array couldn't be type-safe — its reified element type would hide erased type arguments, allowing heap pollution
+        correct: true
+      - text: Arrays can only hold primitives
+      - text: It's legal
+        feedback: The compiler reports "generic array creation".
+
+  - type: choice
+    prompt: A `Chooser` class stores choices in a `T[]` cast from `Object[]`, with an unchecked warning. What's the better design?
+    options:
+      - text: Store a `List<T>` — slightly slower, but type-safe with no warnings
+        correct: true
+      - text: Suppress the warning on the class
+    explanation: When arrays and generics don't mix well, the first instinct should be to replace the array with a list.

@@ -292,7 +292,7 @@ export function BlankAnswer({
   return (
     <div className={step.code ? "blank-text blank-text--code" : "blank-text"}>
       {step.parts.map((p, i) => {
-        if ("text" in p) return <span key={i}>{p.text}</span>;
+        if ("text" in p) return p.html !== undefined ? <span key={i} dangerouslySetInnerHTML={{ __html: p.html }} /> : <span key={i}>{p.text}</span>;
         n++;
         const k = n;
         const mark = phase !== "answering" && right ? (right[k] ? " is-right" : phase === "wrong" ? " is-wrong" : "") : "";

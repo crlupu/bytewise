@@ -1,0 +1,63 @@
+title: Typesafe heterogeneous containers
+summary: Key a map by Class objects, and one container can hold values of many types — still type-safe.
+duration: 5
+tags: [java, effective java, generics, type token, class literal, containers]
+sources:
+  - { book: effective-java, ref: "Item 33" }
+steps:
+  - type: explanation
+    title: Parameterize the key
+    body: |
+      A `Set<E>` or `Map<K,V>` has a fixed number of type parameters. Sometimes you want more flexibility — a container
+      that holds a favourite instance of **any** class:
+
+      ```java
+      public class Favorites {
+          private final Map<Class<?>, Object> favorites = new HashMap<>();
+          public <T> void putFavorite(Class<T> type, T instance) {
+              favorites.put(Objects.requireNonNull(type), type.cast(instance));
+          }
+          public <T> T getFavorite(Class<T> type) {
+              return type.cast(favorites.get(type));
+          }
+      }
+      ```
+
+      `Class<T>` objects used like this are called **type tokens**.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Favorites f = new Favorites();
+      f.putFavorite(String.class, "Java");
+      f.putFavorite(Integer.class, 0xcafebabe);
+      String s = f.getFavorite(String.class);
+      int i = f.getFavorite(Integer.class);
+      System.out.printf("%s %x%n", s, i);
+    language: java
+    answer: ["Java cafebabe"]
+    hints:
+      - "`%x` prints an int in hex."
+    explanation: Each value comes back with its own type, and no casts are needed in the client.
+
+  - type: choice
+    prompt: Why does `getFavorite` call `type.cast(...)` instead of `(T) ...`?
+    options:
+      - text: "`Class.cast` is checked at run time, so it's type-safe — an unchecked `(T)` cast would only produce a warning"
+        correct: true
+      - text: Casts don't work on generics
+    explanation: The map's values are `Object`, but the `Class` key remembers the true type.
+
+  - type: choice
+    prompt: Can you store a favourite `List<String>` this way?
+    options:
+      - text: No — there's no `List<String>.class`; only reifiable types have class literals
+        correct: true
+      - text: Yes, with `List.class`
+        feedback: Then `List<String>` and `List<Integer>` would share one key.
+    explanation: That's the pattern's main limitation.
+
+  - type: blank
+    prompt: Complete the type-token signature.
+    template: "public <T> T getFavorite([[Class]]<T> type)"
+    code: true

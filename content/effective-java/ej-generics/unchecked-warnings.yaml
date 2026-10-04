@@ -1,0 +1,52 @@
+title: Eliminate unchecked warnings
+summary: Each one is a potential ClassCastException. Fix it, or prove it safe and suppress it as narrowly as possible.
+duration: 4
+tags: [java, effective java, generics, warnings, suppresswarnings]
+sources:
+  - { book: effective-java, ref: "Item 27" }
+steps:
+  - type: explanation
+    title: Warnings are bugs waiting
+    body: |
+      With generics you'll see unchecked cast, unchecked method invocation, unchecked conversion warnings and more.
+      Many are trivial to fix:
+
+      ```java
+      Set<Lark> exaltation = new HashSet();     // warning: unchecked conversion
+      Set<Lark> exaltation = new HashSet<>();   // fixed with the diamond
+      ```
+
+      Eliminate every one you can. If you eliminate them all, your code is guaranteed type-safe: no
+      `ClassCastException` from generics at run time.
+
+  - type: choice
+    prompt: You can't eliminate a warning, but you've proved the cast is safe. What should you do?
+    options:
+      - text: Add `@SuppressWarnings("unchecked")` on the smallest possible scope, with a comment saying why it's safe
+        correct: true
+      - text: Put `@SuppressWarnings("unchecked")` on the class
+        feedback: That would hide future, genuinely dangerous warnings in the whole class.
+      - text: Leave the warning
+        feedback: Then real problems get lost among warnings you know are harmless.
+
+  - type: order
+    prompt: Order these scopes from narrowest (best) to widest.
+    items:
+      - A local variable declaration
+      - A method
+      - A class
+    explanation: Even a `return` statement can be split into a local variable declaration so the annotation covers just it.
+
+  - type: blank
+    prompt: Narrow the suppression to one declaration.
+    template: |
+      @SuppressWarnings("[[unchecked]]")
+      T[] result = (T[]) Arrays.copyOf(elements, size, a.getClass());
+    code: true
+
+  - type: choice
+    prompt: Why add a comment next to every suppression?
+    options:
+      - text: It explains why it's safe, so others don't "fix" it — and it forces you to check your reasoning
+        correct: true
+      - text: The compiler requires it

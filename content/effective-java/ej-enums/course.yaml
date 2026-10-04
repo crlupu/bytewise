@@ -1,0 +1,11 @@
+title: Enums and annotations
+summary: Effective Java, chapter 6 (Items 34–41) — enums instead of int constants, EnumSet, EnumMap and annotations.
+lessons:
+  - enums-not-int-constants
+  - instance-fields-not-ordinals
+  - enumset
+  - enummap
+  - extensible-enums
+  - annotations-not-naming-patterns
+  - override-annotation
+  - marker-interfaces

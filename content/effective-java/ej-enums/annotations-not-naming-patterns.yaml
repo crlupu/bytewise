@@ -1,0 +1,59 @@
+title: Annotations over naming patterns
+summary: A misspelled method-name convention fails silently; an annotation is checked and can carry parameters.
+duration: 5
+tags: [java, effective java, annotations, junit, reflection, naming patterns]
+sources:
+  - { book: effective-java, ref: "Item 39" }
+steps:
+  - type: explanation
+    title: Naming patterns
+    body: |
+      Before annotations, tools found special program elements by name. JUnit 3 ran every method whose name began
+      with `test`.
+
+  - type: choice
+    prompt: You wrote a test method called `tsetSafetyOverride`. What happens under a naming pattern?
+    options:
+      - text: The test silently never runs — and passes, by not existing
+        correct: true
+      - text: The framework reports a typo
+        feedback: It has no way to know you meant a test.
+      - text: It fails to compile
+    explanation: Naming patterns also can't attach parameters (like an expected exception) or apply to just the right kinds of elements.
+
+  - type: explanation
+    title: A marker annotation
+    body: |
+      ```java
+      @Retention(RetentionPolicy.RUNTIME)
+      @Target(ElementType.METHOD)
+      public @interface Test {}
+      ```
+
+      `@Retention` and `@Target` are **meta-annotations**. A test runner finds methods with
+      `m.isAnnotationPresent(Test.class)` and invokes them reflectively.
+
+  - type: match
+    prompt: Match each meta-annotation choice to its effect.
+    pairs:
+      - left: "`@Retention(RUNTIME)`"
+        right: The annotation is available through reflection while the program runs
+      - left: "`@Target(METHOD)`"
+        right: The compiler rejects the annotation anywhere but on a method
+      - left: "An annotation with `Class<? extends Throwable> value()`"
+        right: Can carry a parameter, like the exception a test expects
+      - left: "`@Repeatable`"
+        right: The same annotation may appear several times on one element
+
+  - type: blank
+    prompt: Find annotated methods at run time.
+    template: "if (m.[[isAnnotationPresent]](Test.class)) m.invoke(null);"
+    code: true
+
+  - type: choice
+    prompt: Should most programmers define their own annotation types?
+    options:
+      - text: Rarely — but everyone should use the predefined annotations and those their tools provide
+        correct: true
+      - text: Yes, for every convention in the codebase
+    explanation: Writing annotation processors is for tool builders; using annotations is for everyone.

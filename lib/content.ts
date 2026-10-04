@@ -160,7 +160,14 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
       };
     case "blank": {
       const parts = raw.template.split(/\[\[([^\]]+)\]\]/).map((s, i) => {
-        if (i % 2 === 0) return { text: s };
+        if (i % 2 === 0) {
+          if (raw.code) return { text: s };
+          // Inline Markdown for prose, keeping the spaces that sit against the blanks.
+          const lead = s.match(/^\s*/)![0];
+          const trail = s.slice(lead.length).match(/\s*$/)![0];
+          const core = s.trim();
+          return { text: s, html: core ? lead + r.inline(core) + trail : s };
+        }
         const answers = s.split("|").map((a) => a.trim());
         return { answers, size: Math.max(3, ...answers.map((a) => a.length)) };
       });

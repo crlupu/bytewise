@@ -1,0 +1,67 @@
+title: Bounded wildcards — PECS
+summary: Producer extends, consumer super — wildcards make APIs accept everything they logically should.
+duration: 6
+tags: [java, effective java, generics, wildcards, pecs, api design]
+sources:
+  - { book: effective-java, ref: "Item 31" }
+steps:
+  - type: explanation
+    title: Invariance gets in the way
+    body: |
+      ```java
+      public void pushAll(Iterable<E> src) { for (E e : src) push(e); }
+
+      Stack<Number> numbers = new Stack<>();
+      Iterable<Integer> integers = ...;
+      numbers.pushAll(integers);   // error: Iterable<Integer> is not Iterable<Number>
+      ```
+
+      Logically it should work — an Integer *is* a Number. A **bounded wildcard** says so:
+
+      ```java
+      public void pushAll(Iterable<? extends E> src)
+      ```
+
+  - type: blank
+    prompt: "`popAll` moves elements *into* a destination collection. Make it accept a `Collection<Object>` for a `Stack<Number>`."
+    template: "public void popAll(Collection<? [[super]] E> dst)"
+    code: true
+    explanation: A `Collection<Object>` can accept Numbers, so the destination may be of any supertype of E.
+
+  - type: match
+    prompt: Apply PECS — producer-`extends`, consumer-`super`.
+    pairs:
+      - left: "`pushAll(src)` — reads E's out of src"
+        right: "`Iterable<? extends E>`"
+      - left: "`popAll(dst)` — writes E's into dst"
+        right: "`Collection<? super E>`"
+      - left: "A `Comparator` that consumes T's to compare them"
+        right: "`Comparator<? super T>`"
+      - left: "A `Collection` you return to the caller"
+        right: No wildcard — `Collection<E>`
+
+  - type: choice
+    prompt: Why shouldn't you use wildcard types as return types?
+    options:
+      - text: It would force wildcards on your callers' code instead of hiding the flexibility in your API
+        correct: true
+      - text: It doesn't compile
+        feedback: It compiles — it's just bad API design.
+    explanation: If clients have to think about wildcards, the API is probably wrong.
+
+  - type: choice
+    prompt: Which `max` signature accepts the most collections?
+    options:
+      - text: "`<T extends Comparable<? super T>> T max(List<? extends T> list)`"
+        correct: true
+      - text: "`<T extends Comparable<T>> T max(List<T> list)`"
+        feedback: This rejects types like `ScheduledFuture`, which is comparable to a supertype (`Delayed`) rather than to itself.
+    explanation: Comparables and comparators are always consumers, so `Comparable<? super T>` is the rule.
+
+  - type: choice
+    prompt: "Choosing between `<E> void swap(List<E> list, int i, int j)` and `void swap(List<?> list, int i, int j)` for a public API?"
+    options:
+      - text: The wildcard version — a type parameter that appears only once can be replaced with a wildcard
+        correct: true
+      - text: The type-parameter version — wildcards are confusing
+        feedback: For callers, the wildcard is simpler; a private helper can capture the type internally.

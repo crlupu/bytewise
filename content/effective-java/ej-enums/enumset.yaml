@@ -1,0 +1,49 @@
+title: EnumSet instead of bit fields
+summary: The speed of bit flags with the clarity and safety of a Set.
+duration: 4
+tags: [java, effective java, enums, enumset, bit fields, flags]
+sources:
+  - { book: effective-java, ref: "Item 36" }
+steps:
+  - type: explanation
+    title: Bit fields
+    body: |
+      ```java
+      public static final int STYLE_BOLD      = 1 << 0;  // 1
+      public static final int STYLE_ITALIC    = 1 << 1;  // 2
+      public static final int STYLE_UNDERLINE = 1 << 2;  // 4
+      text.applyStyles(STYLE_BOLD | STYLE_ITALIC);
+      ```
+
+      Compact and fast — and it shares every weakness of int constants, plus: a printed bit field is a mystery number,
+      and you can't easily iterate over the flags that are set.
+
+  - type: predict
+    prompt: What does `STYLE_BOLD | STYLE_UNDERLINE` evaluate to?
+    answer: ["5"]
+    hints:
+      - 1 | 4 in binary is 001 | 100.
+    explanation: 101 in binary — 5. Readable to a computer, not to a person reading a log.
+
+  - type: blank
+    prompt: The EnumSet version.
+    template: "text.applyStyles([[EnumSet]].of(Style.BOLD, Style.ITALIC));"
+    code: true
+    explanation: Internally, an EnumSet of up to 64 constants is a single `long` bit vector — as fast as the hand-written version.
+
+  - type: choice
+    prompt: What should the `applyStyles` parameter type be?
+    options:
+      - text: "`Set<Style>` — clients usually pass an EnumSet, but other sets work too"
+        correct: true
+      - text: "`EnumSet<Style>`"
+        feedback: Accepting the interface is more flexible and costs nothing.
+    explanation: Accept interfaces, not implementations (Item 64).
+
+  - type: choice
+    prompt: What's EnumSet's one notable weakness?
+    options:
+      - text: There's no built-in way to create an *immutable* EnumSet — wrap it with `Collections.unmodifiableSet`
+        correct: true
+      - text: It's slower than a HashSet
+        feedback: It's much faster.

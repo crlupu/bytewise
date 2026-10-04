@@ -1,0 +1,11 @@
+title: Generics
+summary: Effective Java, chapter 5 (Items 26–33) — type-safe collections, generic types and methods, and wildcards.
+lessons:
+  - raw-types
+  - unchecked-warnings
+  - lists-over-arrays
+  - generic-types
+  - generic-methods
+  - bounded-wildcards
+  - generics-and-varargs
+  - heterogeneous-containers

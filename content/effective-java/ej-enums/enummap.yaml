@@ -1,0 +1,54 @@
+title: EnumMap instead of ordinal indexing
+summary: Arrays indexed by ordinal() are unchecked and fragile — EnumMap is the safe, equally fast alternative.
+duration: 5
+tags: [java, effective java, enums, enummap, arrays, ordinal]
+sources:
+  - { book: effective-java, ref: "Item 37" }
+steps:
+  - type: explanation
+    title: Indexing arrays by ordinal
+    body: |
+      Group plants by life cycle (annual, perennial, biennial):
+
+      ```java
+      Set<Plant>[] plantsByLifeCycle = (Set<Plant>[]) new Set[LifeCycle.values().length];
+      for (Plant p : garden)
+          plantsByLifeCycle[p.lifeCycle.ordinal()].add(p);
+      ```
+
+      An unchecked cast, labels you must print by hand, and an `int` index the compiler can't check — use the wrong one
+      and you silently get the wrong data.
+
+  - type: blank
+    prompt: The EnumMap version.
+    template: |
+      Map<LifeCycle, Set<Plant>> byLifeCycle = new [[EnumMap]]<>(LifeCycle.class);
+      for (LifeCycle lc : LifeCycle.values()) byLifeCycle.put(lc, new HashSet<>());
+      for (Plant p : garden) byLifeCycle.get(p.lifeCycle).add(p);
+    code: true
+    explanation: The constructor takes the key type's `Class` object — a bounded type token — so the map knows its keys at run time.
+
+  - type: choice
+    prompt: Why is EnumMap about as fast as the ordinal-indexed array?
+    options:
+      - text: Internally it *is* an array indexed by ordinal — the danger is hidden behind a type-safe Map
+        correct: true
+      - text: It uses hashing with perfect hash codes
+        feedback: No hashing at all; that's part of why it's fast.
+
+  - type: choice
+    prompt: "Grouping with streams: `Collectors.groupingBy(p -> p.lifeCycle)` returns a HashMap. How do you get an EnumMap?"
+    options:
+      - text: Use the three-argument `groupingBy`, passing `() -> new EnumMap<>(LifeCycle.class)` as the map factory
+        correct: true
+      - text: You can't — streams always produce HashMaps
+    explanation: "`groupingBy(classifier, mapFactory, downstream)` lets you choose the map implementation."
+
+  - type: choice
+    prompt: "Phase transitions — SOLID to LIQUID is MELT, and so on — are stored in a 2-D array indexed by two ordinals. What's the better representation?"
+    options:
+      - text: "A nested `EnumMap<Phase, EnumMap<Phase, Transition>>`, built from the transitions' own from/to fields"
+        correct: true
+      - text: A bigger array
+        feedback: Adding a phase means getting a larger, error-prone table exactly right.
+    explanation: Adding a new phase (PLASMA, say) then means adding a constant and its transitions — nothing else.

@@ -1,0 +1,51 @@
+title: Extensible enums via interfaces
+summary: Enums can't be extended — but they can implement an interface that other enums implement too.
+duration: 4
+tags: [java, effective java, enums, interfaces, extensibility]
+sources:
+  - { book: effective-java, ref: "Item 38" }
+steps:
+  - type: explanation
+    title: Let clients add operations
+    body: |
+      Enum types can't extend one another. Where extensibility is genuinely useful — like operation codes — define an
+      interface, and have the enum implement it:
+
+      ```java
+      public interface Operation { double apply(double x, double y); }
+
+      public enum BasicOperation implements Operation { PLUS, MINUS, TIMES, DIVIDE; ... }
+
+      public enum ExtendedOperation implements Operation { EXP, REMAINDER; ... }
+      ```
+
+      Code written against `Operation` accepts both.
+
+  - type: choice
+    prompt: Why can't `ExtendedOperation extends BasicOperation`?
+    options:
+      - text: Enums implicitly extend `java.lang.Enum` and are effectively final
+        correct: true
+      - text: It's allowed
+        feedback: Enums can't be subclassed by other enums.
+
+  - type: blank
+    prompt: A method that takes all the constants of any enum implementing `Operation`.
+    template: "private static <T extends Enum<T> & [[Operation]]> void test(Class<T> opEnumType, double x, double y)"
+    code: true
+    explanation: The intersection bound guarantees the Class object represents an enum *and* an Operation.
+
+  - type: choice
+    prompt: What's lost with this approach?
+    options:
+      - text: Implementations can't be inherited from one enum to another — shared code must be duplicated or moved to a helper
+        correct: true
+      - text: Type safety
+        feedback: Everything stays type-safe.
+
+  - type: choice
+    prompt: Is there a JDK example?
+    options:
+      - text: "`java.nio.file.LinkOption` implements `CopyOption` and `OpenOption`"
+        correct: true
+      - text: No, it's a purely theoretical pattern

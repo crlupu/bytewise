@@ -1,0 +1,55 @@
+title: Favor generic methods
+summary: Static utility methods are perfect candidates — type parameters make them safe and cast-free.
+duration: 5
+tags: [java, effective java, generics, generic methods, type inference, recursive bound]
+sources:
+  - { book: effective-java, ref: "Item 30" }
+steps:
+  - type: explanation
+    title: A generic method
+    body: |
+      ```java
+      public static <E> Set<E> union(Set<E> s1, Set<E> s2) {
+          Set<E> result = new HashSet<>(s1);
+          result.addAll(s2);
+          return result;
+      }
+      ```
+
+      The type parameter list `<E>` goes between the modifiers and the return type. Callers don't specify `E` —
+      the compiler **infers** it from the arguments.
+
+  - type: blank
+    prompt: Put the type parameter list in the right place.
+    template: "public static [[<E>]] Set<E> union(Set<E> s1, Set<E> s2)"
+    code: true
+
+  - type: explanation
+    title: Recursive type bounds
+    body: |
+      To find the maximum of a collection, elements must be comparable **to each other**:
+
+      ```java
+      public static <E extends Comparable<E>> E max(Collection<E> c) { ... }
+      ```
+
+      Read it as "any type E that can be compared to itself". A type parameter bounded by an expression involving
+      itself is a **recursive type bound**.
+
+  - type: choice
+    prompt: What does `<E extends Comparable<E>>` guarantee inside `max`?
+    options:
+      - text: Any element can call `compareTo` on any other element
+        correct: true
+      - text: E is exactly `Comparable`
+      - text: The collection is sorted
+        feedback: It only guarantees elements can be compared, not their order.
+
+  - type: choice
+    prompt: "An immutable identity function is stateless. How can one instance serve every type?"
+    options:
+      - text: A generic singleton factory — one object, cast to `UnaryOperator<T>` for any T, safe because it never touches the type
+        correct: true
+      - text: Create a new instance per type
+        feedback: Works, but wasteful; erasure lets one instance be shared.
+    explanation: "`Collections.reverseOrder()` and `Collections.emptySet()` use the same trick."

@@ -1,0 +1,55 @@
+title: Instance fields, not ordinals
+summary: Never derive a value from an enum constant's position — store it in a field.
+duration: 4
+tags: [java, effective java, enums, ordinal, fields]
+sources:
+  - { book: effective-java, ref: "Item 35" }
+steps:
+  - type: explanation
+    title: Tempting, but fragile
+    body: |
+      Every enum constant has an `ordinal()` — its position in the declaration. It's tempting to use it:
+
+      ```java
+      public enum Ensemble {
+          SOLO, DUET, TRIO, QUARTET, QUINTET;
+          public int numberOfMusicians() { return ordinal() + 1; }
+      }
+      ```
+
+  - type: choice
+    prompt: What's wrong with deriving the number of musicians from the ordinal?
+    options:
+      - text: Reordering the constants breaks it
+        correct: true
+      - text: You can't add a second constant with the same count, like a DOUBLE_QUARTET alongside OCTET
+        correct: true
+      - text: You can't add a value without filling every gap — a TRIPLE_QUARTET (12) needs constants for 9, 10 and 11
+        correct: true
+      - text: "`ordinal()` is slow"
+        feedback: It's just a field read; the problem is meaning, not speed.
+
+  - type: blank
+    prompt: Store the value in a field instead.
+    template: |
+      SOLO(1), DUET(2), TRIO(3), QUARTET(4), QUINTET(5), OCTET(8), DOUBLE_QUARTET(8);
+      private final int [[numberOfMusicians]];
+      Ensemble(int size) { this.numberOfMusicians = size; }
+    code: true
+
+  - type: choice
+    prompt: What is `ordinal()` actually for?
+    options:
+      - text: General-purpose enum-based data structures like `EnumSet` and `EnumMap`
+        correct: true
+      - text: Assigning numbers to constants for your own logic
+        feedback: That's precisely the misuse.
+    explanation: Most programmers will never need to call it.
+
+  - type: predict
+    prompt: What does `Ensemble.TRIO.ordinal()` return?
+    answer: ["2"]
+    wrong:
+      - answer: "3"
+        feedback: Ordinals start at 0 — SOLO is 0.
+    explanation: SOLO 0, DUET 1, TRIO 2 — which is exactly why "+ 1" logic is so easy to get wrong.

@@ -1,0 +1,72 @@
+title: Don't use raw types
+summary: A raw List throws away the compiler's type checking — errors surface far from their cause.
+duration: 5
+tags: [java, effective java, generics, raw types, wildcards, type safety]
+sources:
+  - { book: effective-java, ref: "Item 26" }
+steps:
+  - type: explanation
+    title: What a raw type is
+    body: |
+      `List<E>` is a generic type; `List<String>` is a parameterized type. Using `List` with no type argument is a
+      **raw type** — it exists only for compatibility with pre-Java 5 code, and opts out of generic type checking.
+
+      ```java
+      private final Collection stamps = ...;   // raw
+      stamps.add(new Coin(...));               // compiles, with only a warning
+      for (Iterator i = stamps.iterator(); i.hasNext(); ) {
+          Stamp s = (Stamp) i.next();          // ClassCastException — here, far from the mistake
+      }
+      ```
+
+  - type: predict
+    prompt: Does this compile?
+    code: |
+      static void unsafeAdd(List list, Object o) { list.add(o); }
+
+      List<String> strings = new ArrayList<>();
+      unsafeAdd(strings, Integer.valueOf(42));
+      String s = strings.get(0);
+    language: java
+    options:
+      - text: It compiles with a warning, then throws `ClassCastException` at `strings.get(0)`
+        correct: true
+      - text: It fails to compile at `unsafeAdd(strings, ...)`
+        feedback: Passing a `List<String>` to a raw `List` is allowed. Change the parameter to `List<Object>` and it would fail to compile.
+      - text: It runs without error
+        feedback: The compiler-inserted cast to `String` fails when the `Integer` comes out.
+    explanation: The raw parameter silently accepted an `Integer` into a list of strings.
+
+  - type: match
+    prompt: Match each type to what it means.
+    pairs:
+      - left: "`List`"
+        right: Raw — opted out of type checking
+      - left: "`List<Object>`"
+        right: A list that can hold any object, checked by the compiler
+      - left: "`List<?>`"
+        right: A list of some unknown type — you can read, but not add (except null)
+      - left: "`List<String>`"
+        right: A list of strings, checked by the compiler
+
+  - type: choice
+    prompt: You want a method that counts elements common to two sets of unknown element type. Which signature?
+    options:
+      - text: "`int numElementsInCommon(Set<?> s1, Set<?> s2)`"
+        correct: true
+      - text: "`int numElementsInCommon(Set s1, Set s2)`"
+        feedback: Works, but raw — nothing stops the method from inserting junk into the sets.
+      - text: "`int numElementsInCommon(Set<Object> s1, Set<Object> s2)`"
+        feedback: A `Set<String>` is not a `Set<Object>`, so callers couldn't pass their sets.
+    explanation: The unbounded wildcard `?` is the safe version of "any type".
+
+  - type: choice
+    prompt: Where must you still write raw types?
+    options:
+      - text: Class literals, like `List.class`
+        correct: true
+      - text: With `instanceof`, like `o instanceof Set`
+        correct: true
+      - text: In method parameters, for flexibility
+        feedback: Use `?` there instead.
+    explanation: Generic type information is erased at run time, so `List<String>.class` doesn't exist.

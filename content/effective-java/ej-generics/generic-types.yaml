@@ -1,0 +1,54 @@
+title: Favor generic types
+summary: Make your own classes generic, so clients get type safety without casts.
+duration: 5
+tags: [java, effective java, generics, generic class, type parameters]
+sources:
+  - { book: effective-java, ref: "Item 29" }
+steps:
+  - type: explanation
+    title: Generify a class
+    body: |
+      An `Object`-based stack forces casts on every client, and those casts can fail at run time:
+
+      ```java
+      public class Stack {
+          private Object[] elements;
+          public void push(Object e) { ... }
+          public Object pop() { ... }
+      }
+      String s = (String) stack.pop();
+      ```
+
+      Adding a type parameter — `Stack<E>` — moves the checking to compile time. The first snag: you can't create
+      an array of a non-reifiable type, so `new E[16]` doesn't compile.
+
+  - type: match
+    prompt: Match each fix for the `E[]` problem to its trade-off.
+    pairs:
+      - left: "`elements = (E[]) new Object[16];` with a suppressed warning"
+        right: One cast, in the constructor; the array's runtime type differs from its compile-time type
+      - left: "Field typed `Object[]`, cast to `E` on each `pop`"
+        right: A cast on every read, but no heap pollution
+    explanation: Both are acceptable when the array never escapes the class; the first is more common in practice.
+
+  - type: blank
+    prompt: Declare the generic stack.
+    template: "public class Stack<[[E]]> { public void push([[E]] e) { ... } public E pop() { ... } }"
+    code: true
+
+  - type: choice
+    prompt: Can you create a `Stack<int>`?
+    options:
+      - text: No — type arguments must be reference types; use `Stack<Integer>`
+        correct: true
+      - text: Yes
+        feedback: Primitives can't be type arguments (until Valhalla changes that).
+
+  - type: choice
+    prompt: "What does `class DelayQueue<E extends Delayed>` mean?"
+    options:
+      - text: E is a bounded type parameter — only subtypes of `Delayed` are allowed, and `Delayed` methods can be called on elements
+        correct: true
+      - text: The queue holds exactly `Delayed` objects
+        feedback: Any subtype of `Delayed` (including itself) is allowed.
+    explanation: Bounds let a generic class use the methods of the bound without casting.
