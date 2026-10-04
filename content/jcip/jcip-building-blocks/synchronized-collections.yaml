@@ -1,0 +1,68 @@
+title: Synchronized collections
+summary: Vector and the synchronized wrappers are thread-safe per call — compound actions and iteration still need client-side locking.
+duration: 6
+tags: [java, concurrency, synchronized collections, vector, iterators, concurrentmodificationexception]
+sources:
+  - { book: jcip, ref: "§5.1, Synchronized Collections" }
+steps:
+  - type: explanation
+    title: Each call is safe; sequences aren't
+    body: |
+      `Vector`, `Hashtable` and the `Collections.synchronizedXxx` wrappers make every public method synchronized.
+      Each call is atomic — but common **compound actions** made of several calls are not:
+
+      ```java
+      public static Object getLast(Vector list) {
+          int lastIndex = list.size() - 1;
+          return list.get(lastIndex);
+      }
+      public static void deleteLast(Vector list) {
+          int lastIndex = list.size() - 1;
+          list.remove(lastIndex);
+      }
+      ```
+
+  - type: predict
+    prompt: A Vector has 10 elements. Thread A calls `getLast`, thread B `deleteLast`, interleaved badly. What can A get?
+    options:
+      - text: "`ArrayIndexOutOfBoundsException` — A computed index 9, then B removed element 9 before A's `get`"
+        correct: true
+      - text: The new last element
+        feedback: A's index was computed from the old size.
+      - text: Nothing goes wrong — Vector is thread-safe
+        feedback: Each method is; the pair of calls isn't.
+
+  - type: blank
+    prompt: Make `getLast` atomic with client-side locking.
+    template: |
+      synchronized ([[list]]) {
+          int lastIndex = list.size() - 1;
+          return list.get(lastIndex);
+      }
+    code: true
+    explanation: Vector locks on itself, so clients can take the same lock to build atomic compound actions.
+
+  - type: explanation
+    title: Iterators fail fast
+    body: |
+      Iterating over a synchronized collection while another thread modifies it throws
+      `ConcurrentModificationException`: the iterator notices that the collection's modification count changed. It's
+      a best-effort warning, not a guarantee. Locking the collection for the whole loop prevents it — but holds the
+      lock for a long time. Cloning and iterating over the copy is the alternative.
+
+  - type: predict
+    prompt: Where's the iteration in this code?
+    code: |
+      @GuardedBy("this") private final Set<Integer> set = new HashSet<>();
+      public void addTenThings() {
+          Random r = new Random();
+          for (int i = 0; i < 10; i++) add(r.nextInt());
+          System.out.println("DEBUG: added ten elements to " + set);
+      }
+    language: java
+    options:
+      - text: In the string concatenation — `set.toString()` iterates over the set, without holding the lock
+        correct: true
+      - text: There's no iteration
+        feedback: Hidden iterators lurk in `toString`, `hashCode`, `equals`, `containsAll`, `addAll` and the like.
+    explanation: A debug message can throw `ConcurrentModificationException`. Encapsulate the collection with its synchronization, so iteration can't happen unguarded.

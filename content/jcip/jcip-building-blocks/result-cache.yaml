@@ -1,0 +1,76 @@
+title: Building an efficient result cache
+summary: Four versions of a memoizer — from slow and safe to fast and correct — combining everything in the chapter.
+duration: 7
+tags: [java, concurrency, memoization, cache, concurrenthashmap, futuretask, putifabsent]
+sources:
+  - { book: jcip, ref: "§5.6, Building an Efficient, Scalable Result Cache" }
+steps:
+  - type: explanation
+    title: A memoizer
+    body: |
+      `Computable<A, V>` computes a value from an argument, expensively. A **memoizer** wraps it and caches results.
+      The challenge: make it both thread-safe and scalable.
+
+  - type: match
+    prompt: Match each version to its problem.
+    pairs:
+      - left: "`HashMap` cache, `compute` method `synchronized`"
+        right: Safe, but only one thread can compute at a time — sometimes slower than no cache
+      - left: "`ConcurrentHashMap` of results, check then compute"
+        right: Two threads can compute the same value at once, since neither sees the other's work in progress
+      - left: "`ConcurrentHashMap` of `Future`s, check then put"
+        right: A small window remains — two threads can both miss and both put
+      - left: "`ConcurrentHashMap` of `Future`s with atomic `putIfAbsent`"
+        right: None of the above — each value is computed once
+
+  - type: explanation
+    title: The final version
+    body: |
+      ```java
+      public V compute(A arg) throws InterruptedException {
+          while (true) {
+              Future<V> f = cache.get(arg);
+              if (f == null) {
+                  FutureTask<V> ft = new FutureTask<>(() -> c.compute(arg));
+                  f = cache.putIfAbsent(arg, ft);
+                  if (f == null) { f = ft; ft.run(); }
+              }
+              try {
+                  return f.get();
+              } catch (CancellationException e) {
+                  cache.remove(arg, f);
+              } catch (ExecutionException e) {
+                  throw launderThrowable(e.getCause());
+              }
+          }
+      }
+      ```
+
+  - type: choice
+    prompt: Why cache `Future`s instead of results?
+    options:
+      - text: A second thread asking for a value that's being computed finds the future and waits for it, instead of computing it again
+        correct: true
+      - text: Futures take less memory
+    explanation: The map records "computation started", not just "computation finished".
+
+  - type: choice
+    prompt: Why does the final version remove a cancelled future from the cache?
+    options:
+      - text: Otherwise every later request for that argument would get the cancelled result — cache pollution
+        correct: true
+      - text: To save memory
+    explanation: The `while (true)` loop then retries the computation.
+
+  - type: blank
+    prompt: The atomic operation that closes the last window.
+    template: "f = cache.[[putIfAbsent]](arg, ft);"
+    code: true
+
+  - type: choice
+    prompt: What's still missing for a production cache?
+    options:
+      - text: Expiration and eviction — this cache grows forever
+        correct: true
+      - text: Thread safety
+        feedback: That's solved; what's left is a policy for when entries leave.

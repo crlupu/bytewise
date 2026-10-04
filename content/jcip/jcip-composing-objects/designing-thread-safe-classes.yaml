@@ -1,0 +1,57 @@
+title: Designing a thread-safe class
+summary: Identify the state, the invariants that constrain it, and the policy that protects it.
+duration: 5
+tags: [java, concurrency, class design, invariants, state, synchronization policy]
+sources:
+  - { book: jcip, ref: "§4.1, Designing a Thread-safe Class" }
+steps:
+  - type: order
+    prompt: Put the three basic steps of designing a thread-safe class in order.
+    items:
+      - Identify the variables that form the object's state
+      - Identify the invariants that constrain the state variables
+      - Establish a policy for managing concurrent access to the state
+    explanation: The **synchronization policy** says how the class combines immutability, confinement and locking — and which lock guards which variable.
+
+  - type: explanation
+    title: Invariants and postconditions
+    body: |
+      Some states are invalid: a counter can't be negative; in a `NumberRange`, `lower` must be ≤ `upper`. These are
+      **invariants**. Operations also have **postconditions** — after `increment`, the next value is the old one plus one.
+
+      When an invariant or postcondition involves several variables, operations on them must be atomic together:
+      you can't update one, release the lock, and then update the other.
+
+  - type: choice
+    prompt: A counter's state is a `long`, with the invariant "never negative". What does the invariant tell you about the design?
+    options:
+      - text: Every operation that could violate it — like decrement at zero — must check and update atomically
+        correct: true
+      - text: Nothing about concurrency — invariants are just for documentation
+        feedback: Invariants are exactly what synchronization exists to protect.
+
+  - type: explanation
+    title: State-dependent operations
+    body: |
+      Some operations have **state-based preconditions**: you can't remove an item from an empty queue. Single-threaded
+      code can only fail; concurrent code can **wait** for the precondition to become true, because another thread may
+      change the state. Blocking queues and semaphores do exactly this, and are usually the easiest way to build it.
+
+  - type: match
+    prompt: Match each concept to an example.
+    pairs:
+      - left: Invariant
+        right: "`lower <= upper` must always hold for a range"
+      - left: Postcondition
+        right: After `increment`, the counter is one more than before
+      - left: State-based precondition
+        right: "`take` from a queue needs the queue to be non-empty"
+
+  - type: choice
+    prompt: Who owns the state of a `HashMap` stored in a private field of your class?
+    options:
+      - text: Your class — the map's state is part of your object's state, so your synchronization policy covers it
+        correct: true
+      - text: The `HashMap` — it manages its own state
+        feedback: An object you encapsulate is part of your state. Collections hand out shared ownership only through what they return.
+    explanation: Ownership is a design decision; documenting it tells others who is responsible for locking.

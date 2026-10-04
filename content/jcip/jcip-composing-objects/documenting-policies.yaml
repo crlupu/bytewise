@@ -1,0 +1,47 @@
+title: Documenting synchronization policies
+summary: Clients need to know what's thread-safe; maintainers need to know which lock guards what.
+duration: 4
+tags: [java, concurrency, documentation, annotations, guardedby, threadsafe]
+sources:
+  - { book: jcip, ref: "§4.5, Documenting Synchronization Policies" }
+steps:
+  - type: explanation
+    title: Two audiences
+    body: |
+      Documentation is one of the most powerful — and most underused — tools for managing thread safety.
+
+      - **Clients** need to know whether a class is thread-safe, and whether it makes any guarantees about compound actions.
+      - **Maintainers** need to know which variables are guarded by which locks, and what the invariants are.
+
+  - type: match
+    prompt: Match each annotation to what it documents.
+    pairs:
+      - left: "`@ThreadSafe`"
+        right: The class is safe to use from multiple threads without extra coordination
+      - left: "`@NotThreadSafe`"
+        right: Callers must provide synchronization themselves
+      - left: "`@Immutable`"
+        right: The object never changes after construction
+      - left: "`@GuardedBy(\"lock\")`"
+        right: The field or method may only be accessed with that lock held
+
+  - type: choice
+    prompt: The Javadoc for `java.sql.Connection` doesn't say whether it's thread-safe. What should you do?
+    options:
+      - text: Assume it isn't, and design so each connection is used by one thread at a time — and treat it as a documentation bug
+        correct: true
+      - text: Assume it is, since it's a core API
+        feedback: When documentation is silent, guess conservatively.
+    explanation: In practice connection pools confine each connection to one request thread.
+
+  - type: blank
+    prompt: Document which lock guards a field.
+    template: "@[[GuardedBy]](\"this\") private long hits;"
+    code: true
+
+  - type: choice
+    prompt: When should you write down the synchronization policy?
+    options:
+      - text: At design time — it's easiest while the reasoning is fresh, and it shapes the implementation
+        correct: true
+      - text: After the first concurrency bug

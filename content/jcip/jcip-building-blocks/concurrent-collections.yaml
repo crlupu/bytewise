@@ -1,0 +1,61 @@
+title: Concurrent collections
+summary: ConcurrentHashMap and CopyOnWriteArrayList trade a little consistency for far more concurrency.
+duration: 6
+tags: [java, concurrency, concurrenthashmap, copyonwritearraylist, weakly consistent, scalability]
+sources:
+  - { book: jcip, ref: "§5.2, Concurrent Collections" }
+steps:
+  - type: explanation
+    title: Designed for concurrency
+    body: |
+      Synchronized collections serialise every access with one lock. **Concurrent collections** are designed for many
+      threads at once: replacing synchronized collections with concurrent ones can offer dramatic scalability improvements
+      with little risk.
+
+      `ConcurrentHashMap` uses finer-grained locking (lock striping, in the book's era; CAS and per-bin locks today),
+      so any number of readers and a good number of writers proceed in parallel.
+
+  - type: choice
+    prompt: What does `ConcurrentHashMap` give up compared with a synchronized map?
+    options:
+      - text: "`size` and `isEmpty` are estimates while the map is changing"
+        correct: true
+      - text: You can't lock the whole map for exclusive access
+        correct: true
+      - text: Thread safety for individual operations
+        feedback: Individual operations are fully thread-safe.
+    explanation: Both trade-offs rarely matter — `size` of a changing map is out of date the moment it's returned anyway.
+
+  - type: match
+    prompt: Match each atomic `ConcurrentMap` operation to what it does.
+    pairs:
+      - left: "`putIfAbsent(k, v)`"
+        right: Insert only if no value is mapped to k
+      - left: "`remove(k, v)`"
+        right: Remove only if k is mapped to exactly v
+      - left: "`replace(k, old, new)`"
+        right: Replace only if k is mapped to old
+      - left: "`computeIfAbsent(k, f)`"
+        right: Compute and insert a value for k only if absent
+
+  - type: choice
+    prompt: What happens when you iterate over a `ConcurrentHashMap` that another thread is modifying?
+    options:
+      - text: The iterator is **weakly consistent** — no exception; it may or may not reflect changes made after it was created
+        correct: true
+      - text: "`ConcurrentModificationException`"
+        feedback: Concurrent collections' iterators never throw it.
+
+  - type: explanation
+    title: Copy-on-write
+    body: |
+      `CopyOnWriteArrayList` creates and republishes a new copy of the array on every modification. Iterators work on
+      the snapshot that was current when they started, so they need no locking and never throw.
+
+  - type: choice
+    prompt: Which workload suits `CopyOnWriteArrayList`?
+    options:
+      - text: An event-listener list — iterated on every event, modified only when listeners register or unregister
+        correct: true
+      - text: A queue of jobs added and removed thousands of times a second
+        feedback: Each write copies the whole array, so frequent writes are very expensive.

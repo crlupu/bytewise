@@ -1,0 +1,57 @@
+title: Blocking queues and producer–consumer
+summary: A bounded blocking queue decouples producers from consumers and pushes back when work piles up.
+duration: 6
+tags: [java, concurrency, blockingqueue, producer-consumer, bounded queue, work stealing, deque]
+sources:
+  - { book: jcip, ref: "§5.3, Blocking Queues and the Producer-consumer Pattern" }
+steps:
+  - type: explanation
+    title: Put and take
+    body: |
+      A `BlockingQueue` adds blocking `put` and `take`: `put` waits if the queue is full, `take` waits if it's empty.
+      That's exactly what the **producer–consumer** pattern needs. Producers put work in without knowing who'll handle it;
+      consumers take it out without knowing where it came from.
+
+      ```java
+      BlockingQueue<File> queue = new LinkedBlockingQueue<>(BOUND);
+      // producer: queue.put(file);   consumer: File f = queue.take();
+      ```
+
+  - type: choice
+    prompt: Producers suddenly generate work much faster than consumers can handle. What does a **bounded** queue do?
+    options:
+      - text: Fills up, then blocks producers in `put` — slowing them to the consumers' pace
+        correct: true
+      - text: Grows until memory runs out
+        feedback: That's what an unbounded queue does.
+    explanation: Bounded queues are a powerful resource-management tool — they make overload visible early instead of exhausting memory.
+
+  - type: match
+    prompt: Match each `BlockingQueue` implementation to its behaviour.
+    pairs:
+      - left: "`LinkedBlockingQueue` / `ArrayBlockingQueue`"
+        right: FIFO queues, bounded or unbounded
+      - left: "`PriorityBlockingQueue`"
+        right: Orders elements by priority instead of arrival
+      - left: "`SynchronousQueue`"
+        right: No storage at all — each put waits for a take, a direct hand-off
+
+  - type: choice
+    prompt: A producer puts a mutable object into a queue and never touches it again; a consumer takes it. Does the object need its own locking?
+    options:
+      - text: No — **serial thread confinement**; the queue publishes it safely and ownership passes to the consumer
+        correct: true
+      - text: Yes, always
+        feedback: Only one thread owns it at a time, and the queue's internal synchronization makes the hand-off safe.
+
+  - type: explanation
+    title: Deques and work stealing
+    body: |
+      `Deque` and `BlockingDeque` allow insertion and removal at both ends. They enable **work stealing**: each consumer
+      has its own deque, and when it runs out of work it steals from the **tail** of someone else's. Workers rarely
+      contend for one shared queue — which is why fork-join pools use this design.
+
+  - type: blank
+    prompt: The queue method that blocks when the queue is empty.
+    template: "File next = queue.[[take]]();"
+    code: true

@@ -1,0 +1,64 @@
+title: Instance confinement and the monitor pattern
+summary: Encapsulate non-thread-safe objects inside a thread-safe one, and guard every path to them.
+duration: 5
+tags: [java, concurrency, confinement, java monitor pattern, private lock, encapsulation]
+sources:
+  - { book: jcip, ref: "§4.2, Instance Confinement" }
+steps:
+  - type: explanation
+    title: Confine, then lock
+    body: |
+      A non-thread-safe object can still be used safely if it's **confined** inside another object and every access goes
+      through code holding the right lock:
+
+      ```java
+      @ThreadSafe
+      public class PersonSet {
+          @GuardedBy("this") private final Set<Person> mySet = new HashSet<>();
+          public synchronized void addPerson(Person p) { mySet.add(p); }
+          public synchronized boolean containsPerson(Person p) { return mySet.contains(p); }
+      }
+      ```
+
+      The `HashSet` isn't thread-safe, but it never escapes, and both paths to it are synchronized.
+
+  - type: choice
+    prompt: What would break `PersonSet`'s thread safety?
+    options:
+      - text: A method that returns `mySet`, letting callers use it without the lock
+        correct: true
+      - text: Adding a third synchronized method that reads `mySet`
+        feedback: That's fine — it follows the same locking policy.
+      - text: Making `mySet` final
+        feedback: That's good practice.
+
+  - type: explanation
+    title: The Java monitor pattern
+    body: |
+      An object following the **Java monitor pattern** encapsulates all its mutable state and guards it with its own
+      intrinsic lock — `Vector` and `Hashtable` work this way.
+
+      The lock doesn't have to be `this`. A **private lock** works just as well and has an advantage:
+
+      ```java
+      private final Object myLock = new Object();
+      @GuardedBy("myLock") Widget widget;
+      void someMethod() { synchronized (myLock) { ... } }
+      ```
+
+  - type: choice
+    prompt: Why might a private lock be better than `this`?
+    options:
+      - text: Client code can't acquire it — so it can't take part in your policy wrongly, or cause liveness problems by holding it
+        correct: true
+      - text: It's faster
+        feedback: Performance is the same; it's about encapsulation.
+
+  - type: choice
+    prompt: A vehicle tracker returns its internal map of mutable `MutablePoint`s from `getLocations()`. How should it return them safely?
+    options:
+      - text: Return a deep copy — a new map with copies of each point — made while holding the lock
+        correct: true
+      - text: Return `Collections.unmodifiableMap(locations)`
+        feedback: The map is read-only, but the `MutablePoint`s inside can still be changed by callers.
+    explanation: The cost is a snapshot that may be out of date — and copying can be slow for large collections.

@@ -1,0 +1,57 @@
+title: Delegating thread safety
+summary: A class built from thread-safe parts is thread-safe — unless an invariant ties the parts together.
+duration: 6
+tags: [java, concurrency, delegation, invariants, concurrenthashmap, atomic]
+sources:
+  - { book: jcip, ref: "§4.3, Delegating Thread Safety" }
+steps:
+  - type: explanation
+    title: Let the parts do the work
+    body: |
+      A class can sometimes get thread safety for free by **delegating** it to thread-safe components:
+
+      ```java
+      public class DelegatingVehicleTracker {
+          private final ConcurrentMap<String, Point> locations;   // Point is immutable
+          public Point getLocation(String id) { return locations.get(id); }
+          public void setLocation(String id, int x, int y) {
+              if (locations.replace(id, new Point(x, y)) == null)
+                  throw new IllegalArgumentException("invalid vehicle name: " + id);
+          }
+      }
+      ```
+
+      No locks in sight: the concurrent map and the immutable points carry it.
+
+  - type: choice
+    prompt: A class has two **independent** thread-safe state variables — keyboard listeners and mouse listeners, each a `CopyOnWriteArrayList`. Is the class thread-safe?
+    options:
+      - text: Yes — the variables are independent, so delegating to each is enough
+        correct: true
+      - text: No — it needs a lock over both
+        feedback: Nothing relates the two lists, so there's no invariant to protect.
+
+  - type: predict
+    prompt: |
+      `NumberRange` keeps `lower` and `upper` in two `AtomicInteger`s, with the invariant `lower <= upper`. `setLower`
+      checks `i <= upper.get()` then sets `lower`. Range is (0, 10). One thread calls `setLower(5)`, another `setUpper(4)`, at the same time. Can the range end up (5, 4)?
+    options:
+      - text: Yes — each check passes against the old value, then both sets happen
+        correct: true
+      - text: No — the atomic variables prevent it
+        feedback: Each variable is safe on its own; the check-then-act across both isn't.
+    explanation: |
+      When state variables are **not** independent, delegation isn't enough. The class needs its own lock around
+      operations involving both.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "A class can delegate thread safety to its state variables only if they're thread-safe, [[independent]], and no operation has invalid state transitions."
+
+  - type: choice
+    prompt: When can a class safely **publish** a delegated state variable to its callers?
+    options:
+      - text: When it's thread-safe, takes part in no invariants, and has no prohibited state transitions
+        correct: true
+      - text: Never
+        feedback: Publishing a thread-safe, unconstrained variable is fine — callers can't put it into an invalid state.

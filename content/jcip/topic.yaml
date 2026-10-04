@@ -1,4 +1,4 @@
 title: Java Concurrency in Practice
 summary: Goetz et al., chapter by chapter — thread safety, the building blocks, liveness, performance and the memory model.
 order: 3
-courses: [jcip-thread-safety, jcip-sharing-objects]
+courses: [jcip-thread-safety, jcip-sharing-objects, jcip-composing-objects, jcip-building-blocks]

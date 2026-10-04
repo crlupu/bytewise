@@ -1,0 +1,55 @@
+title: Blocking and interruptible methods
+summary: When a method throws InterruptedException, you must propagate it or restore the interrupt — never swallow it.
+duration: 5
+tags: [java, concurrency, interruption, interruptedexception, blocking]
+sources:
+  - { book: jcip, ref: "§5.4, Blocking and Interruptible Methods" }
+steps:
+  - type: explanation
+    title: Blocking methods
+    body: |
+      A thread may block — wait for I/O, for a lock, for `Thread.sleep` to end, for another thread's result. A method
+      that declares `throws InterruptedException` is a **blocking method**, and if it's interrupted it will try to stop
+      blocking early.
+
+      **Interruption** is cooperative: one thread can't force another to stop. It can only ask, by setting its interrupt
+      status; how the target responds is up to it.
+
+  - type: choice
+    prompt: Your code calls `queue.take()`, which throws `InterruptedException`. Which responses are acceptable?
+    options:
+      - text: Propagate it — declare `throws InterruptedException` and let callers deal with it
+        correct: true
+      - text: Catch it and restore the status with `Thread.currentThread().interrupt()`, so code higher up sees it
+        correct: true
+      - text: Catch it and do nothing
+        feedback: That destroys the evidence that interruption happened — the code that asked for it never finds out.
+    explanation: Only code that implements a thread's interruption policy — usually the code that owns the thread — may swallow it.
+
+  - type: blank
+    prompt: Restore the interrupt in a `Runnable`, which can't throw `InterruptedException`.
+    template: |
+      try {
+          processTask(queue.take());
+      } catch (InterruptedException e) {
+          Thread.currentThread().[[interrupt]]();
+      }
+    code: true
+
+  - type: choice
+    prompt: Why does catching `InterruptedException` clear the thread's interrupt status?
+    options:
+      - text: The exception itself carries the signal — so if you don't propagate it or set the status again, it's gone
+        correct: true
+      - text: It doesn't
+        feedback: Methods that throw it clear the status first; that's why restoring it matters.
+
+  - type: match
+    prompt: Match each method to whether it responds to interruption.
+    pairs:
+      - left: "`Thread.sleep`, `BlockingQueue.take`, `Object.wait`"
+        right: Throw `InterruptedException` when interrupted
+      - left: Waiting to enter a `synchronized` block
+        right: Not interruptible — the thread keeps waiting
+      - left: Classic blocking socket I/O in `java.io`
+        right: Not interruptible — closing the socket is the usual workaround

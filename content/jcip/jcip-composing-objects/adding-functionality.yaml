@@ -1,0 +1,65 @@
+title: Adding functionality to thread-safe classes
+summary: Extending, client-side locking and composition — and the "wrong lock" bug that client-side locking invites.
+duration: 6
+tags: [java, concurrency, client-side locking, composition, putifabsent, synchronized collections]
+sources:
+  - { book: jcip, ref: "§4.4, Adding Functionality to Existing Thread-safe Classes" }
+steps:
+  - type: explanation
+    title: Put-if-absent
+    body: |
+      You need a thread-safe list with an atomic **put-if-absent**: check whether an element is present, and add it if
+      not — with no other thread able to add it in between. The safest option is to modify the original class.
+      When you can't, there are three others.
+
+  - type: predict
+    prompt: Is this helper's `putIfAbsent` atomic?
+    code: |
+      public class ListHelper<E> {
+          public List<E> list = Collections.synchronizedList(new ArrayList<>());
+
+          public synchronized boolean putIfAbsent(E x) {
+              boolean absent = !list.contains(x);
+              if (absent) list.add(x);
+              return absent;
+          }
+      }
+    language: java
+    options:
+      - text: No — it locks the `ListHelper`, but the list's other methods lock the list itself
+        correct: true
+      - text: Yes — the method is synchronized
+        feedback: Synchronized on the wrong lock. Another thread calling `list.add` doesn't take the `ListHelper` lock.
+    explanation: An illusion of synchronization — the classic client-side locking mistake.
+
+  - type: blank
+    prompt: Fix it by locking the lock the list actually uses.
+    template: |
+      public boolean putIfAbsent(E x) {
+          synchronized ([[list]]) {
+              boolean absent = !list.contains(x);
+              if (absent) list.add(x);
+              return absent;
+          }
+      }
+    code: true
+    explanation: "`Collections.synchronizedList` documents that it locks on the wrapper — so clients can join in."
+
+  - type: match
+    prompt: Match each approach to its weakness.
+    pairs:
+      - left: Subclassing (`BetterVector extends Vector`)
+        right: Depends on the superclass's synchronization policy staying the same
+      - left: Client-side locking
+        right: Spreads one class's locking policy into unrelated classes
+      - left: Composition (wrap a `List` in your own class)
+        right: Adds a layer of locking — usually a negligible cost
+
+  - type: choice
+    prompt: Why is composition the most robust?
+    options:
+      - text: The wrapper has its own lock and its own policy, and doesn't care whether the wrapped list is thread-safe
+        correct: true
+      - text: It's the fastest
+        feedback: It's slightly slower, but it doesn't break when someone else changes their locking.
+    explanation: "`ImprovedList<T> implements List<T>` wrapping a list, with every method synchronized on itself."

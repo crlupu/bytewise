@@ -1,0 +1,58 @@
+title: Latches and FutureTask
+summary: One-way gates — wait until something has happened, then everyone proceeds.
+duration: 5
+tags: [java, concurrency, countdownlatch, futuretask, synchronizers]
+sources:
+  - { book: jcip, ref: "§5.5.1–5.5.2, Latches and FutureTask" }
+steps:
+  - type: explanation
+    title: Synchronizers
+    body: |
+      A **synchronizer** is any object that coordinates the control flow of threads based on its state. Blocking queues
+      are one kind; the library offers several more.
+
+      A **latch** is a gate: closed until it reaches its terminal state, then open forever. `CountDownLatch` starts
+      with a count; `countDown()` decrements it; `await()` blocks until it reaches zero.
+
+  - type: order
+    prompt: Timing N threads with two latches — put the steps in order.
+    items:
+      - Create a start gate with count 1 and an end gate with count N
+      - Each worker thread waits on the start gate
+      - The timer records the start time and counts down the start gate, releasing all workers at once
+      - Each worker counts down the end gate when it finishes
+      - The timer waits on the end gate, then records the end time
+    explanation: Without the start gate, threads created early would get a head start and skew the measurement.
+
+  - type: predict
+    prompt: A `CountDownLatch` created with count 3 has had `countDown()` called 5 times. What does `await()` do?
+    options:
+      - text: Returns immediately — the count stopped at zero and the latch stays open
+        correct: true
+      - text: Throws an exception
+      - text: Blocks until someone resets it
+        feedback: Latches can't be reset — that's a barrier's job.
+
+  - type: explanation
+    title: FutureTask
+    body: |
+      `FutureTask` also acts like a latch. It wraps a computation (a `Callable`) that can be **waiting to run**,
+      **running**, or **completed**. `get()` returns the result at once if it's complete, and otherwise blocks until it is.
+
+      It's used by executors to represent asynchronous tasks, and it publishes the result safely from the computing
+      thread to whoever calls `get`.
+
+  - type: match
+    prompt: Match each way a `Future.get()` call can end.
+    pairs:
+      - left: The task returned normally
+        right: "`get` returns its result"
+      - left: The task threw an exception
+        right: "`get` throws `ExecutionException`, with the original as its cause"
+      - left: The task was cancelled
+        right: "`get` throws `CancellationException`"
+
+  - type: blank
+    prompt: Release everyone waiting on a start gate.
+    template: "startGate.[[countDown]]();"
+    code: true

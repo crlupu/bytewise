@@ -1,0 +1,70 @@
+title: Semaphores and barriers
+summary: Bound how many threads use a resource, or make a group of threads wait for each other.
+duration: 5
+tags: [java, concurrency, semaphore, cyclicbarrier, exchanger, synchronizers]
+sources:
+  - { book: jcip, ref: "§5.5.3–5.5.4, Semaphores and Barriers" }
+steps:
+  - type: explanation
+    title: Counting semaphores
+    body: |
+      A `Semaphore` manages a set of virtual **permits**. `acquire()` takes one, blocking until one is free; `release()`
+      returns one. A semaphore with N permits lets at most N threads through at a time.
+
+      ```java
+      public class BoundedHashSet<T> {
+          private final Set<T> set = Collections.synchronizedSet(new HashSet<>());
+          private final Semaphore sem;
+          public BoundedHashSet(int bound) { sem = new Semaphore(bound); }
+
+          public boolean add(T o) throws InterruptedException {
+              sem.acquire();
+              boolean wasAdded = false;
+              try { wasAdded = set.add(o); return wasAdded; }
+              finally { if (!wasAdded) sem.release(); }
+          }
+          public boolean remove(Object o) {
+              boolean wasRemoved = set.remove(o);
+              if (wasRemoved) sem.release();
+              return wasRemoved;
+          }
+      }
+      ```
+
+  - type: predict
+    prompt: "In `BoundedHashSet` with bound 2, you add \"a\", \"b\", then \"a\" again. Does the third `add` block?"
+    options:
+      - text: No — "a" is already in the set, so `add` just returns false
+        feedback: "`add` acquires a permit *before* checking the set, and both permits are already taken."
+      - text: Yes — it blocks in `acquire()` until something is removed, even though "a" is already present
+        correct: true
+    explanation: The permit is taken before checking membership. If the add then fails because "a" exists, the permit is given back — but only after `acquire` succeeded.
+
+  - type: choice
+    prompt: What's a binary semaphore (one permit)?
+    options:
+      - text: A non-reentrant mutex — whoever holds the permit holds the lock
+        correct: true
+      - text: A semaphore that can only be acquired twice
+    explanation: Unlike intrinsic locks, a semaphore permit isn't tied to a thread — any thread can release it.
+
+  - type: explanation
+    title: Barriers
+    body: |
+      A **barrier** is like a latch, except that it waits for **other threads** rather than for an event. `CyclicBarrier`
+      makes a fixed number of threads meet at a point: each calls `await()`, and when the last one arrives, all are
+      released — and the barrier resets for the next round.
+
+      Simulations use it: each thread computes its part of one step, waits at the barrier, then all start the next step.
+
+  - type: match
+    prompt: Match each synchronizer to its job.
+    pairs:
+      - left: "`CountDownLatch`"
+        right: Wait for events to happen; one-shot
+      - left: "`Semaphore`"
+        right: Limit the number of threads using a resource
+      - left: "`CyclicBarrier`"
+        right: Make a group of threads wait for each other, repeatedly
+      - left: "`Exchanger`"
+        right: Two threads swap objects at a meeting point
