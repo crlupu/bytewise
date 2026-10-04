@@ -1,0 +1,47 @@
+title: GUI applications
+summary: GUI toolkits are single-threaded by design — keep the event thread for UI work, and move long tasks off it.
+duration: 5
+tags: [java, concurrency, gui, swing, event dispatch thread, single-threaded]
+sources:
+  - { book: jcip, ref: "Chapter 9, GUI Applications" }
+steps:
+  - type: explanation
+    title: Why GUIs are single-threaded
+    body: |
+      Nearly every GUI toolkit — Swing, SWT, Android, Cocoa — confines its components to a single **event thread**.
+      Attempts at multithreaded toolkits kept running into deadlocks: input events flow *up* from the OS to the
+      application, while application actions flow *down* to the OS — the classic recipe for inconsistent lock ordering.
+
+      Thread confinement sidesteps it. All UI state belongs to the event thread.
+
+  - type: choice
+    prompt: A button handler downloads a 2 GB file. What does the user see?
+    options:
+      - text: A frozen window — the event thread is busy, so no repaints or clicks are processed until the download ends
+        correct: true
+      - text: A progress bar
+        feedback: Nothing can repaint while the event thread is downloading.
+
+  - type: order
+    prompt: Put a responsive long-running GUI task in order.
+    items:
+      - The event thread disables the button and shows "Working…"
+      - The long task runs in a background executor
+      - When it completes, the result is handed back to the event thread
+      - The event thread updates the UI and re-enables the button
+    explanation: "`SwingWorker` packages this pattern, including progress reporting and cancellation."
+
+  - type: match
+    prompt: Match each rule to its reason.
+    pairs:
+      - left: Only touch UI components from the event thread
+        right: They aren't thread-safe; confinement is their whole safety story
+      - left: Keep event-thread tasks short
+        right: Every millisecond there is a millisecond the UI is unresponsive
+      - left: Use `invokeLater` from background threads
+        right: It queues the UI update to run on the event thread
+
+  - type: blank
+    prompt: Schedule a UI update from a background thread.
+    template: "SwingUtilities.[[invokeLater]](() -> label.setText(\"Done\"));"
+    code: true

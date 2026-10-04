@@ -1,0 +1,61 @@
+title: Executing tasks in threads
+summary: One thread does too little; a thread per request does too much. Tasks need a policy for how they run.
+duration: 5
+tags: [java, concurrency, tasks, threads, web server, resource management]
+sources:
+  - { book: jcip, ref: "§6.1, Executing Tasks in Threads" }
+steps:
+  - type: explanation
+    title: Tasks
+    body: |
+      Most concurrent applications are organised around **tasks**: abstract, discrete units of work. A server's natural
+      task is one client request. Choosing good task boundaries — independent tasks — is the first step to concurrency.
+
+      The next question is how to run them. Two naive answers:
+
+      ```java
+      // Sequential
+      while (true) {
+          Socket connection = socket.accept();
+          handleRequest(connection);
+      }
+
+      // Thread per task
+      while (true) {
+          Socket connection = socket.accept();
+          new Thread(() -> handleRequest(connection)).start();
+      }
+      ```
+
+  - type: match
+    prompt: Match each approach to its problem.
+    pairs:
+      - left: Sequential
+        right: Only one request at a time; the server is idle while waiting on I/O, and everyone else waits too
+      - left: Thread per task, unbounded
+        right: Under heavy load, thousands of threads exhaust memory and drown the CPU in context switching
+
+  - type: choice
+    prompt: Which are real costs of unbounded thread creation?
+    options:
+      - text: Creating and tearing down threads takes time, adding latency to every request
+        correct: true
+      - text: Idle threads use memory, and more runnable threads than processors means competition for CPUs
+        correct: true
+      - text: There's a limit on how many threads can be created; hitting it typically causes `OutOfMemoryError`
+        correct: true
+      - text: Threads can't share objects
+        feedback: They can; that's what most of this book is about managing.
+
+  - type: choice
+    prompt: Thread-per-task works fine in testing with 10 users. What happens at a sudden 10,000?
+    options:
+      - text: It may crash — throughput collapses well before that, with no graceful degradation
+        correct: true
+      - text: It slows down gracefully
+        feedback: Graceful degradation needs a bound on the work in progress — exactly what thread-per-task lacks.
+    explanation: The right answer is to bound the number of threads, which is what the Executor framework is for.
+
+  - type: blank
+    prompt: Complete the summary.
+    template: "Processing tasks [[sequentially]] gives poor responsiveness; creating a thread per task gives poor [[resource]] management."

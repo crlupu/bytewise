@@ -1,0 +1,68 @@
+title: Finding exploitable parallelism
+summary: Callable and Future for results, CompletionService for results as they arrive, time limits for budgets.
+duration: 6
+tags: [java, concurrency, callable, future, completionservice, invokeall, timeouts]
+sources:
+  - { book: jcip, ref: "§6.3, Finding Exploitable Parallelism" }
+steps:
+  - type: explanation
+    title: Results from tasks
+    body: |
+      `Runnable` can't return a value or throw a checked exception. `Callable<V>` can. Submitting one to an
+      `ExecutorService` returns a `Future<V>`: a handle to a computation that may not have finished.
+
+      A page renderer can download images in the background while rendering text:
+
+      ```java
+      Future<List<ImageData>> future = executor.submit(() -> downloadAll(imageInfos));
+      renderText(source);
+      List<ImageData> images = future.get();   // waits only if needed
+      ```
+
+  - type: choice
+    prompt: Rendering text takes 1 s; downloading all images takes 10 s. How much does the background download save?
+    options:
+      - text: About 1 s — the tasks are very unequal, so running them in parallel gains little
+        correct: true
+      - text: About 10 s
+        feedback: The page still can't finish before the 10 s download does.
+      - text: Half the time
+    explanation: The real payoff comes from many independent, similar tasks — one per image, rendered as each arrives.
+
+  - type: explanation
+    title: CompletionService
+    body: |
+      With one task per image, you want results **as they complete**, not in submission order. A `CompletionService`
+      combines an executor with a blocking queue of finished futures:
+
+      ```java
+      CompletionService<ImageData> cs = new ExecutorCompletionService<>(executor);
+      for (ImageInfo info : infos) cs.submit(info::downloadImage);
+      renderText(source);
+      for (int i = 0; i < infos.size(); i++) renderImage(cs.take().get());
+      ```
+
+  - type: match
+    prompt: Match each tool to its use.
+    pairs:
+      - left: "`Future.get()`"
+        right: Wait for one specific result
+      - left: "`Future.get(timeout, unit)`"
+        right: Wait at most a time budget, then give up and use a default
+      - left: "`CompletionService.take()`"
+        right: Get whichever result finishes next
+      - left: "`invokeAll(tasks, timeout, unit)`"
+        right: Run many tasks, wait for all — cancelling those still running when time is up
+
+  - type: choice
+    prompt: An ad must appear within 2 s, or the page shows a default. What happens to the ad task after `get` times out?
+    options:
+      - text: You should cancel it with `future.cancel(true)` — otherwise it keeps using resources computing a result nobody will use
+        correct: true
+      - text: It stops automatically
+        feedback: A timed `get` only stops *waiting*. The task carries on unless cancelled.
+
+  - type: blank
+    prompt: Wait for a result with a time budget.
+    template: "ad = f.get(timeLeftNanos, TimeUnit.[[NANOSECONDS]]);"
+    code: true

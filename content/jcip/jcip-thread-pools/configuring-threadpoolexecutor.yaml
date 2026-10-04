@@ -1,0 +1,69 @@
+title: Configuring ThreadPoolExecutor
+summary: Core and maximum size, the work queue, the saturation policy and the thread factory.
+duration: 6
+tags: [java, concurrency, threadpoolexecutor, saturation policy, work queue, thread factory]
+sources:
+  - { book: jcip, ref: "§8.3, Configuring ThreadPoolExecutor" }
+steps:
+  - type: explanation
+    title: The general constructor
+    body: |
+      The `Executors` factories are shortcuts for `ThreadPoolExecutor`. Its full constructor exposes every knob:
+
+      ```java
+      new ThreadPoolExecutor(
+          corePoolSize, maximumPoolSize,
+          keepAliveTime, TimeUnit.SECONDS,
+          new ArrayBlockingQueue<>(capacity),       // work queue
+          threadFactory,
+          new ThreadPoolExecutor.CallerRunsPolicy() // saturation policy
+      );
+      ```
+
+  - type: match
+    prompt: Match each parameter to what it controls.
+    pairs:
+      - left: Core pool size
+        right: Threads kept alive even when idle — the target size
+      - left: Maximum pool size
+        right: The upper bound on threads at any one time
+      - left: Keep-alive time
+        right: How long an idle thread above the core size waits before it's removed
+      - left: Work queue
+        right: Where tasks wait when all threads are busy
+
+  - type: predict
+    prompt: |
+      Core size 2, maximum size 10, and an **unbounded** `LinkedBlockingQueue`. 100 slow tasks arrive at once. How many
+      threads run?
+    options:
+      - text: Two
+        correct: true
+      - text: Ten
+        feedback: Extra threads beyond the core are only created when the queue is **full** — and an unbounded queue never is.
+    explanation: A common configuration surprise. With an unbounded queue, the maximum pool size has no effect.
+
+  - type: match
+    prompt: The bounded queue is full. Match each saturation policy to what it does.
+    pairs:
+      - left: Abort (the default)
+        right: Throws `RejectedExecutionException` to the submitter
+      - left: Discard
+        right: Silently drops the new task
+      - left: Discard-oldest
+        right: Drops the task that would run next, and retries
+      - left: Caller-runs
+        right: Runs the task in the submitting thread — which slows the submitter down
+
+  - type: choice
+    prompt: Why is caller-runs a form of graceful degradation in a web server?
+    options:
+      - text: While the main thread runs a task, it doesn't accept connections — new requests queue in the TCP layer, pushing the overload outward
+        correct: true
+      - text: It makes tasks run faster
+    explanation: Overload moves from the pool to the work queue to the application to the TCP layer, and eventually to the client.
+
+  - type: blank
+    prompt: A custom thread factory can name threads and install an exception handler.
+    template: "Thread t = new Thread(r, poolName + \"-\" + [[threadNumber]].incrementAndGet());"
+    code: true

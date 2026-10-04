@@ -1,0 +1,55 @@
+title: Stopping thread-based services
+summary: A service that owns threads must offer lifecycle methods — and shut down without losing or hanging on work.
+duration: 6
+tags: [java, concurrency, shutdown, poison pill, logging service, lifecycle]
+sources:
+  - { book: jcip, ref: "§7.2, Stopping a Thread-based Service" }
+steps:
+  - type: explanation
+    title: Ownership
+    body: |
+      Threads are owned by whoever created them — usually a service like a thread pool or a logging service. The
+      application owns the service, not its threads, so it can't stop them directly.
+
+      > Provide lifecycle methods whenever a thread-owning service has a lifetime longer than that of the method that created it.
+
+  - type: explanation
+    title: A logging service
+    body: |
+      Log calls put messages on a queue; a background thread writes them out. To stop it, we must stop the writer
+      thread **and** stop new messages being queued — without losing messages already accepted, and without anyone
+      blocking forever in `put` on a full queue.
+
+  - type: choice
+    prompt: The stop method just interrupts the writer thread. What goes wrong?
+    options:
+      - text: Messages still in the queue are lost, and producers blocked in `put` on a full queue hang forever
+        correct: true
+      - text: Nothing
+        feedback: Shutdown must also deal with work in flight and with producers.
+    explanation: The fix is a shutdown flag plus a count of reservations, checked atomically when logging — or simply delegating to an `ExecutorService`.
+
+  - type: explanation
+    title: Poison pills
+    body: |
+      For producer–consumer services, a **poison pill** is a recognisable object put on the queue that means "when you
+      get this, stop". FIFO ordering ensures the consumer finishes all earlier work first.
+
+      It works when the number of producers and consumers is known: each consumer needs one pill, and the consumer must
+      wait for one pill from each producer.
+
+  - type: choice
+    prompt: "`shutdownNow` returns the tasks that never started. What about tasks that were *running* when it was called?"
+    options:
+      - text: They're interrupted, and there's no general way to know which ones were — you need extra tracking if it matters
+        correct: true
+      - text: They're returned too
+        feedback: Only never-started tasks are returned; running ones are just interrupted.
+    explanation: A tracking executor can record the tasks that were cancelled mid-run, so they can be retried later.
+
+  - type: order
+    prompt: Put a clean shutdown of an `ExecutorService`-based service in order.
+    items:
+      - Call `shutdown()` so no new tasks are accepted
+      - Call `awaitTermination` to let queued and running tasks finish within a time limit
+      - If they don't finish in time, call `shutdownNow()` to interrupt them

@@ -1,0 +1,54 @@
+title: Extending pools and parallelizing recursion
+summary: Hooks for logging and timing, and turning sequential loops and recursion into parallel tasks.
+duration: 5
+tags: [java, concurrency, threadpoolexecutor, hooks, recursion, parallelism, puzzle solver]
+sources:
+  - { book: jcip, ref: "§8.4–8.5, Extending ThreadPoolExecutor; Parallelizing Recursive Algorithms" }
+steps:
+  - type: explanation
+    title: Hooks
+    body: |
+      `ThreadPoolExecutor` is designed for extension. Subclasses can override:
+
+      - `beforeExecute(Thread t, Runnable r)` — called before each task, in the thread that will run it;
+      - `afterExecute(Runnable r, Throwable t)` — called after each task, whether it succeeded or threw;
+      - `terminated()` — called once when the pool has shut down.
+
+      A timing pool records the start time in a `ThreadLocal` in `beforeExecute` and logs the elapsed time in `afterExecute`.
+
+  - type: choice
+    prompt: Why use a `ThreadLocal` to pass the start time from `beforeExecute` to `afterExecute`?
+    options:
+      - text: Both run in the same worker thread, and many tasks run at once in different threads — each needs its own start time
+        correct: true
+      - text: Fields aren't allowed in executors
+    explanation: It's a natural use of thread confinement.
+
+  - type: explanation
+    title: Loops into tasks
+    body: |
+      If the iterations of a loop are independent, and each does significant work, they can run in parallel:
+
+      ```java
+      void processInParallel(Executor exec, List<Element> elements) {
+          for (final Element e : elements)
+              exec.execute(() -> process(e));
+      }
+      ```
+
+      The same idea applies to recursive algorithms: when each step's work doesn't depend on the results of sibling
+      steps, submit the subproblems as tasks.
+
+  - type: choice
+    prompt: A parallel puzzle solver explores moves concurrently and should stop at the first solution. How does it hand the answer back?
+    options:
+      - text: Through a value-bearing latch — the first solver to find an answer sets it once; the caller waits on it
+        correct: true
+      - text: Every solver returns its result through a shared `ArrayList`
+        feedback: Unsynchronized, and the caller still wouldn't know when to stop waiting.
+    explanation: The solver also needs to stop when **no** solution exists — for example by counting active tasks and setting the latch to null at zero.
+
+  - type: blank
+    prompt: Override the hook that runs after each task.
+    template: "protected void [[afterExecute]](Runnable r, Throwable t) { ... }"
+    code: true

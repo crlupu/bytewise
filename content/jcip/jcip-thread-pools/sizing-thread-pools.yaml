@@ -1,0 +1,56 @@
+title: Sizing thread pools
+summary: Too big wastes memory and CPU on switching; too small leaves processors idle. The right size depends on the work.
+duration: 5
+tags: [java, concurrency, thread pools, pool sizing, cpu-bound, io-bound]
+sources:
+  - { book: jcip, ref: "§8.2, Sizing Thread Pools" }
+steps:
+  - type: explanation
+    title: It depends on the tasks
+    body: |
+      Pool size is rarely hard-coded; compute it from the machine (`Runtime.getRuntime().availableProcessors()`) and the
+      nature of the work.
+
+      - **Compute-intensive** tasks: about N<sub>cpu</sub> + 1 threads. The extra one fills in when a thread pauses for
+        a page fault or similar.
+      - Tasks that **wait** — on I/O or other blocking operations — need more threads, since each spends part of its
+        time not using a CPU.
+
+      > N<sub>threads</sub> = N<sub>cpu</sub> × U<sub>cpu</sub> × (1 + W/C)
+
+      where U is the target CPU utilisation (0–1) and W/C is the ratio of wait time to compute time.
+
+  - type: predict
+    prompt: |
+      An 8-core machine runs tasks that spend 90 ms waiting on a database for every 10 ms of computing.
+      Aiming for full CPU utilisation, about how many threads should the pool have?
+    answer: ["80", "about 80", "~80"]
+    wrong:
+      - answer: "8"
+        feedback: That's right for pure computation. These tasks spend 90% of their time waiting.
+      - answer: "9"
+        feedback: N + 1 is the rule for CPU-bound work. These tasks mostly wait.
+      - answer: "72"
+        feedback: Close — the formula multiplies by (1 + W/C), which is 10 here.
+    hints:
+      - W/C = 90 ÷ 10 = 9.
+      - 8 × 1 × (1 + 9).
+    explanation: 8 × 1 × (1 + 90/10) = 80 threads.
+
+  - type: predict
+    prompt: Same tasks, but you only want the CPUs **50%** busy, to leave headroom. How many threads?
+    answer: ["40"]
+    explanation: 8 × 0.5 × 10 = 40.
+
+  - type: choice
+    prompt: The tasks share a JDBC connection pool of 10 connections. Does a pool of 80 threads still make sense?
+    options:
+      - text: No — at most 10 tasks can use the database at once; other resources cap the useful pool size too
+        correct: true
+      - text: Yes, CPU is all that matters
+        feedback: Memory, file handles, sockets and database connections all limit how much concurrency helps.
+
+  - type: blank
+    prompt: Find the number of processors at run time.
+    template: "int nCpus = Runtime.getRuntime().[[availableProcessors]]();"
+    code: true

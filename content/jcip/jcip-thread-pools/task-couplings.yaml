@@ -1,0 +1,56 @@
+title: Tasks and execution policies
+summary: Some tasks can't run safely in just any pool — dependent tasks can deadlock a bounded one.
+duration: 5
+tags: [java, concurrency, thread pools, thread starvation deadlock, long-running tasks, threadlocal]
+sources:
+  - { book: jcip, ref: "§8.1, Implicit Couplings Between Tasks and Execution Policies" }
+steps:
+  - type: explanation
+    title: Not all tasks are interchangeable
+    body: |
+      The Executor framework decouples submission from execution — but some tasks quietly depend on a particular
+      execution policy:
+
+      - **dependent tasks**, which wait for other tasks in the same pool;
+      - tasks that rely on **thread confinement**, and are only safe in a single-threaded executor;
+      - **response-time-sensitive** tasks, which suffer behind long-running ones;
+      - tasks that use **`ThreadLocal`**, which assume something about thread reuse.
+
+  - type: widget
+    widget: locks
+    prompt: |
+      A pool has **one** thread. Task A is running in it and submits task B, then waits for B's result. B sits in the
+      queue, waiting for a free thread. Model it: the pool thread is lock **P**, and B's result is lock **R**, which A
+      can only take once B has released it. **Find the deadlock.**
+    config:
+      threads:
+        - { name: Task A, ops: [lock P, submit B, lock R, use result, unlock R, unlock P] }
+        - { name: Task B, ops: [lock R, lock P, compute, unlock P, unlock R] }
+    goal:
+      deadlock: true
+    hints:
+      - Let Task B hold R (its result isn't ready) and Task A hold the only thread, P.
+    explanation: |
+      A holds the only thread and waits for B; B waits for a thread. That's **thread starvation deadlock** — no locks
+      in your code, yet nothing can ever move again.
+
+  - type: choice
+    prompt: How do you avoid thread starvation deadlock with dependent tasks?
+    options:
+      - text: Use an unbounded pool for them, or make the pool big enough for all the tasks that may wait on each other — and document the dependency
+        correct: true
+      - text: Use a single-threaded executor
+        feedback: That's the worst case — any dependent task deadlocks.
+
+  - type: choice
+    prompt: A pool mixes 50 ms requests with occasional 5-minute reports. What happens when several reports arrive at once?
+    options:
+      - text: They can tie up every thread, so short requests queue for minutes
+        correct: true
+      - text: Nothing — the pool schedules fairly
+        feedback: A pool thread runs a task to completion; it doesn't preempt long tasks.
+    explanation: Use timed waits instead of unbounded blocking, and consider separate pools for different kinds of work.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Whenever you submit to an Executor tasks that are not [[independent]], be aware of the possibility of thread [[starvation]] deadlock."

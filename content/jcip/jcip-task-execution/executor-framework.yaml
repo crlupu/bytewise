@@ -1,0 +1,67 @@
+title: The Executor framework
+summary: Separate submitting a task from executing it, and choose an execution policy to fit.
+duration: 6
+tags: [java, concurrency, executor, thread pool, executorservice, shutdown, scheduled]
+sources:
+  - { book: jcip, ref: "§6.2, The Executor Framework" }
+steps:
+  - type: explanation
+    title: Decoupling submission from execution
+    body: |
+      ```java
+      public interface Executor { void execute(Runnable command); }
+      ```
+
+      One method — and a big idea. Code that submits tasks doesn't decide which thread runs them, when, or how many at
+      once. That's the executor's **execution policy**, and you can change it in one place.
+
+      ```java
+      private static final Executor exec = Executors.newFixedThreadPool(100);
+      ...
+      exec.execute(() -> handleRequest(connection));
+      ```
+
+  - type: match
+    prompt: Match each factory to the pool it builds.
+    pairs:
+      - left: "`newFixedThreadPool(n)`"
+        right: Up to n threads; extra tasks wait in a queue
+      - left: "`newCachedThreadPool()`"
+        right: Grows without limit, reusing idle threads
+      - left: "`newSingleThreadExecutor()`"
+        right: One thread; tasks run one at a time, in order
+      - left: "`newScheduledThreadPool(n)`"
+        right: Runs tasks after a delay or periodically
+
+  - type: explanation
+    title: Lifecycle
+    body: |
+      An `ExecutorService` has three states — **running**, **shutting down** and **terminated** — and methods to move
+      between them:
+
+      - `shutdown()` starts a graceful shutdown: no new tasks, but already-submitted ones finish.
+      - `shutdownNow()` attempts to cancel running tasks and returns the ones never started.
+      - `awaitTermination(timeout, unit)` waits for termination.
+
+      Tasks submitted after shutdown are handed to the **rejected execution handler**.
+
+  - type: choice
+    prompt: A program creates an `ExecutorService` but never shuts it down. What happens when `main` returns?
+    options:
+      - text: The JVM keeps running, because the pool's non-daemon threads are still alive
+        correct: true
+      - text: The JVM exits normally
+        feedback: The JVM exits only when all non-daemon threads have finished — and idle pool threads never do.
+
+  - type: choice
+    prompt: Why prefer `ScheduledThreadPoolExecutor` over the old `java.util.Timer`?
+    options:
+      - text: A Timer has one thread, so a long task delays others; and an exception in one task kills the Timer for good
+        correct: true
+      - text: Timer is deprecated and removed
+        feedback: It's still there — it's just poor at both timing accuracy and failure handling.
+
+  - type: blank
+    prompt: Start a graceful shutdown.
+    template: "exec.[[shutdown]](); exec.awaitTermination(30, TimeUnit.SECONDS);"
+    code: true

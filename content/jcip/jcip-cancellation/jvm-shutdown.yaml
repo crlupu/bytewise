@@ -1,0 +1,51 @@
+title: JVM shutdown
+summary: Shutdown hooks, daemon threads and finalizers — what runs, and what doesn't, when the JVM exits.
+duration: 5
+tags: [java, concurrency, shutdown hooks, daemon threads, finalizers, jvm]
+sources:
+  - { book: jcip, ref: "§7.4, JVM Shutdown" }
+steps:
+  - type: match
+    prompt: Match each way the JVM can stop.
+    pairs:
+      - left: Orderly shutdown
+        right: The last non-daemon thread ends, `System.exit` is called, or the process receives SIGINT (Ctrl-C)
+      - left: Abrupt shutdown
+        right: "`Runtime.halt` is called, or the OS kills the process — no hooks run"
+
+  - type: explanation
+    title: Shutdown hooks
+    body: |
+      In an orderly shutdown, the JVM starts all registered **shutdown hooks** — unstarted threads registered with
+      `Runtime.addShutdownHook` — **concurrently**, in no particular order.
+
+      ```java
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+          try { LogService.this.stop(); } catch (InterruptedException ignored) {}
+      }));
+      ```
+
+      Hooks must be thread-safe, must not assume anything about other services' state, and must finish quickly — they
+      delay the JVM's exit.
+
+  - type: choice
+    prompt: Two independent services each register a hook. One hook closes a log file the other hook writes to. What's the risk?
+    options:
+      - text: Hooks run concurrently, so one may close the file while the other still needs it
+        correct: true
+      - text: None — hooks run in registration order
+        feedback: There's no ordering guarantee between hooks.
+    explanation: A common fix is a single hook that shuts services down in a deliberate order.
+
+  - type: choice
+    prompt: What happens to **daemon** threads when the JVM exits?
+    options:
+      - text: They're abandoned — no `finally` blocks run, and stacks aren't unwound
+        correct: true
+      - text: They finish their current task first
+        feedback: The JVM doesn't wait for daemon threads at all.
+    explanation: Use daemon threads sparingly, and never for tasks that perform I/O or must clean up.
+
+  - type: blank
+    prompt: Complete the advice on finalizers.
+    template: "Avoid [[finalizers]]: in most cases `finally` blocks and explicit close methods manage resources better."

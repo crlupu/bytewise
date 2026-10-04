@@ -1,0 +1,59 @@
+title: "After the book: virtual threads"
+summary: Java 21's virtual threads (JEP 444) make thread-per-task affordable again for I/O-bound work.
+duration: 6
+tags: [java, concurrency, virtual threads, jep 444, loom, thread per task]
+sources:
+  - { book: jcip, ref: "Follow-up to Chapters 6 and 8 — see JEP 444" }
+steps:
+  - type: explanation
+    title: Cheap threads
+    body: |
+      JCIP's advice — bound your threads with a pool — comes from platform threads being expensive: each is an OS
+      thread with a large stack. **Virtual threads**, final in Java 21, are scheduled by the JVM instead. Thousands or
+      millions are fine.
+
+      When a virtual thread blocks on I/O, the JVM unmounts it from its **carrier** (a platform thread in a small
+      fork-join pool) and runs another one there. Blocking becomes cheap.
+
+      ```java
+      try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+          for (Request r : requests) exec.submit(() -> handle(r));
+      }
+      ```
+
+  - type: choice
+    prompt: Which workload benefits most from virtual threads?
+    options:
+      - text: Thousands of concurrent requests that each spend most of their time waiting on I/O
+        correct: true
+      - text: Number-crunching that keeps every core busy
+        feedback: CPU-bound work still needs one runnable thread per core; virtual threads don't add CPUs.
+
+  - type: choice
+    prompt: Should you pool virtual threads?
+    options:
+      - text: No — they're cheap to create; create one per task and let it end
+        correct: true
+      - text: Yes, like platform threads
+        feedback: Pooling exists to amortise expensive creation. Virtual threads aren't expensive.
+    explanation: To limit access to a scarce resource, like a database, use a `Semaphore` — not a small pool.
+
+  - type: choice
+    prompt: Which of the book's lessons still apply unchanged to virtual threads?
+    options:
+      - text: Thread safety, visibility, atomicity and the memory model — they're still threads sharing memory
+        correct: true
+      - text: None — virtual threads are a different model
+        feedback: Data races, deadlocks and visibility work exactly as before.
+
+  - type: explanation
+    title: Pinning
+    body: |
+      In Java 21, a virtual thread that blocks while inside a `synchronized` block (or a native call) **pins** its
+      carrier: the carrier can't run other virtual threads until it unblocks. With few carriers, heavy pinning loses the
+      benefit. Using `ReentrantLock` around blocking I/O avoided it; Java 24 (JEP 491) removed pinning for `synchronized`.
+
+  - type: blank
+    prompt: Create an executor that starts a new virtual thread per task.
+    template: "var exec = Executors.[[newVirtualThreadPerTaskExecutor]]();"
+    code: true

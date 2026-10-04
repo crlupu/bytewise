@@ -1,0 +1,65 @@
+title: Cancellation and interruption
+summary: Java has no safe way to stop a thread — only cooperative cancellation, and interruption is the best mechanism for it.
+duration: 6
+tags: [java, concurrency, cancellation, interruption, interruption policy]
+sources:
+  - { book: jcip, ref: "§7.1.1–7.1.3, Task Cancellation and Interruption" }
+steps:
+  - type: explanation
+    title: A cancellation flag
+    body: |
+      The simplest cancellation: a `volatile boolean cancelled` that the task checks periodically.
+
+      ```java
+      public void run() {
+          BigInteger p = BigInteger.ONE;
+          while (!cancelled) {
+              p = p.nextProbablePrime();
+              synchronized (this) { primes.add(p); }
+          }
+      }
+      ```
+
+      It works — as long as the task never **blocks**.
+
+  - type: predict
+    prompt: A producer checks a `cancelled` flag in its loop, but spends its time blocked in `queue.put(p)` because the queue is full and the consumer has stopped. You set `cancelled = true`. What happens?
+    options:
+      - text: Nothing — the producer stays blocked in `put` and never gets back to the flag check
+        correct: true
+      - text: It notices the flag immediately
+        feedback: A thread blocked in `put` isn't checking anything.
+    explanation: That's why interruption is a better mechanism — blocking library methods respond to it.
+
+  - type: explanation
+    title: Interruption
+    body: |
+      Each thread has a boolean **interrupted status**. `t.interrupt()` sets it. Blocking methods like `sleep`, `wait`
+      and `BlockingQueue.put` notice, clear the status and throw `InterruptedException`.
+
+      Interrupting doesn't stop a thread; it delivers a message: "please stop what you're doing, at the next convenient
+      point". **Interruption is usually the most sensible way to implement cancellation.**
+
+  - type: match
+    prompt: Match each `Thread` method to what it does.
+    pairs:
+      - left: "`t.interrupt()`"
+        right: Sets thread t's interrupted status
+      - left: "`t.isInterrupted()`"
+        right: Reads thread t's status without changing it
+      - left: "`Thread.interrupted()`"
+        right: Reads **and clears** the current thread's status
+
+  - type: choice
+    prompt: Your task runs in a pool thread it doesn't own. It catches `InterruptedException`. What must it do?
+    options:
+      - text: Propagate it, or restore the status — the pool's interruption policy needs to see it
+        correct: true
+      - text: Swallow it and carry on — the task is the one being interrupted
+        feedback: The interrupt might be for the *thread*, for instance to shut the pool down.
+    explanation: Only code that implements a thread's **interruption policy** — usually its owner — may swallow an interrupt.
+
+  - type: blank
+    prompt: Loop until interrupted.
+    template: "while (!Thread.currentThread().[[isInterrupted]]()) queue.put(p = p.nextProbablePrime());"
+    code: true

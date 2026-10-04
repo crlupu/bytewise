@@ -1,0 +1,58 @@
+title: Handling abnormal thread termination
+summary: A RuntimeException silently kills the thread it's thrown in — unless something is watching.
+duration: 5
+tags: [java, concurrency, exceptions, uncaughtexceptionhandler, thread pools]
+sources:
+  - { book: jcip, ref: "§7.3, Handling Abnormal Thread Termination" }
+steps:
+  - type: explanation
+    title: Thread leakage
+    body: |
+      When a thread dies from an uncaught exception, its stack trace goes to the console — which nobody may be watching —
+      and the thread is gone. In a GUI, the event thread dies and the app freezes; in a pool, capacity silently shrinks.
+
+      Code that calls unknown code (like tasks in a pool) should be suspicious of it:
+
+      ```java
+      public void run() {
+          Throwable thrown = null;
+          try {
+              while (!isInterrupted()) runTask(getTaskFromWorkQueue());
+          } catch (Throwable e) {
+              thrown = e;
+          } finally {
+              threadExited(this, thrown);   // tell the owner, who may replace this thread
+          }
+      }
+      ```
+
+  - type: choice
+    prompt: What does `Thread.UncaughtExceptionHandler` provide?
+    options:
+      - text: A hook that's called when a thread is about to die from an uncaught exception — typically to log it
+        correct: true
+      - text: A way to stop exceptions from killing the thread
+        feedback: The thread still dies; the handler just gets to report it.
+    explanation: Set a handler via a `ThreadFactory` so every pool thread has one.
+
+  - type: predict
+    prompt: A task submitted with `executor.submit(task)` throws a `RuntimeException`. Does the uncaught exception handler see it?
+    options:
+      - text: No — `submit` wraps the task, and the exception is stored in the `Future`, rethrown from `get` as `ExecutionException`
+        correct: true
+      - text: Yes, just as with `execute`
+        feedback: Only tasks run with `execute` reach the handler.
+    explanation: If nobody ever calls `get`, the exception disappears without a trace.
+
+  - type: match
+    prompt: Match each submission method to where a task's exception goes.
+    pairs:
+      - left: "`execute(runnable)`"
+        right: The thread's uncaught exception handler
+      - left: "`submit(callable)`"
+        right: The returned Future — thrown by `get` as `ExecutionException`
+
+  - type: blank
+    prompt: Install a handler for a thread.
+    template: "t.[[setUncaughtExceptionHandler]]((thread, e) -> log.severe(\"Thread \" + thread + \" died: \" + e));"
+    code: true
