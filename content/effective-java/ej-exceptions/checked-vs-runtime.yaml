@@ -1,0 +1,49 @@
+title: Checked or runtime exceptions?
+summary: Checked for conditions the caller can recover from; runtime for programming errors.
+duration: 5
+tags: [java, effective java, exceptions, checked exceptions, runtime exceptions, errors]
+sources:
+  - { book: effective-java, ref: "Item 70" }
+steps:
+  - type: match
+    prompt: Match each kind of throwable to when it's used.
+    pairs:
+      - left: Checked exception
+        right: The caller can reasonably be expected to recover
+      - left: Runtime exception
+        right: A programming error — a precondition violation
+      - left: Error
+        right: Reserved for the JVM — resource exhaustion, invariant failures
+
+  - type: choice
+    prompt: Which is the right kind for each? "The array index was out of range."
+    options:
+      - text: Runtime exception — the caller broke the contract
+        correct: true
+      - text: Checked exception
+        feedback: No sensible caller would catch and recover from its own off-by-one error.
+
+  - type: choice
+    prompt: A payment fails because the account has insufficient funds. Which kind of exception fits?
+    options:
+      - text: Checked — the caller can recover, for example by asking for a different card
+        correct: true
+      - text: Error
+        feedback: Errors are for the JVM, never for application conditions.
+    explanation: A checked exception forces the caller to handle — or knowingly propagate — the condition.
+
+  - type: choice
+    prompt: Should you define your own subclasses of `Error`?
+    options:
+      - text: No — all unchecked throwables you implement should subclass `RuntimeException`
+        correct: true
+      - text: Yes, for very serious problems
+        feedback: Errors are by convention the JVM's. Never throw `AssertionError` as a signal, either, except for "can't happen".
+
+  - type: choice
+    prompt: The insufficient-funds exception is caught. What should the exception class offer?
+    options:
+      - text: Accessor methods with recovery information — like the shortfall amount — so callers don't parse the message
+        correct: true
+      - text: Just a good message
+        feedback: A message is for humans; methods are for code that recovers.

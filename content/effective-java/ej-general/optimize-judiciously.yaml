@@ -1,0 +1,46 @@
+title: Optimize judiciously
+summary: Write good programs first; measure before and after every optimization; but don't paint yourself into a slow design.
+duration: 5
+tags: [java, effective java, performance, optimization, profiling, benchmarking]
+sources:
+  - { book: effective-java, ref: "Item 67" }
+steps:
+  - type: explanation
+    title: Good programs, not fast ones
+    body: |
+      Premature optimization trades clarity — and often correctness — for speed you may not need. Strive to write
+      **good** programs: well-structured, with information hidden behind clean module boundaries. If one later turns
+      out to be too slow, a good architecture lets you optimize the part that matters without touching the rest.
+
+  - type: choice
+    prompt: Which design decisions are hard to undo for performance later, so deserve thought up front?
+    options:
+      - text: Public APIs — a mutable type that forces defensive copying, or a class where an interface would do
+        correct: true
+      - text: Wire protocols between components
+        correct: true
+      - text: Persistent data formats
+        correct: true
+      - text: The body of a private method
+        feedback: That can be rewritten freely later — the definition of "optimize when needed".
+
+  - type: order
+    prompt: Put the steps of a sound optimization in order.
+    items:
+      - Write a clear, well-designed program
+      - Measure, and find out whether performance is actually a problem
+      - Profile to find where the time really goes
+      - Change the hot spot, then measure again to confirm the gain
+    explanation: Programmers are famously bad at guessing where time goes. Measure; don't guess.
+
+  - type: choice
+    prompt: A microbenchmark shows a 2× gain. Is the optimization proven?
+    options:
+      - text: Not necessarily — JIT effects make naive benchmarks misleading; use a framework like JMH and test the real workload
+        correct: true
+      - text: Yes, numbers don't lie
+    explanation: And results can differ between JVM versions, hardware and platforms.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "[[Measure]] performance before and after each attempted optimization."

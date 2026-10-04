@@ -1,0 +1,51 @@
+title: Don't ignore exceptions
+summary: An empty catch block defeats the purpose of exceptions — like turning off a fire alarm.
+duration: 3
+tags: [java, effective java, exceptions, catch, logging]
+sources:
+  - { book: effective-java, ref: "Item 77" }
+steps:
+  - type: explanation
+    title: The empty catch block
+    body: |
+      ```java
+      try {
+          ...
+      } catch (SomeException e) {
+      }
+      ```
+
+      An exception is a signal that something needs attention. Swallowing it means the program carries on in an unknown
+      state — and may fail much later, far from the cause, with no clue left behind.
+
+  - type: choice
+    prompt: When is ignoring an exception acceptable?
+    options:
+      - text: Occasionally — closing a `FileInputStream` you only read from, for instance — with a comment saying why
+        correct: true
+      - text: Whenever the exception seems unlikely
+        feedback: Unlikely exceptions are exactly the ones that are hard to diagnose when they do happen.
+
+  - type: blank
+    prompt: The conventional way to show it's deliberate.
+    template: |
+      } catch (TimeoutException [[ignored]]) {
+          // Use default: minimal coloring is desirable, not required
+      }
+    code: true
+    explanation: Name the variable `ignored` and explain in a comment — and consider logging it.
+
+  - type: choice
+    prompt: Does this advice apply to unchecked exceptions too?
+    options:
+      - text: Yes — checked or unchecked, an ignored exception lets the program fail silently
+        correct: true
+      - text: No, only checked
+    explanation: Simply letting an exception propagate is better than ignoring it — at least the program fails fast with a trace.
+
+  - type: choice
+    prompt: "What's the minimum you should do with an exception you can't handle locally?"
+    options:
+      - text: Let it propagate, or translate it — so someone up the stack sees it
+        correct: true
+      - text: Catch it and print nothing

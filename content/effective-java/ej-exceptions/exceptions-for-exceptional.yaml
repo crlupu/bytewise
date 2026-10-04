@@ -1,0 +1,52 @@
+title: Exceptions only for exceptional conditions
+summary: Never use exceptions for ordinary control flow — and don't design APIs that force clients to.
+duration: 4
+tags: [java, effective java, exceptions, control flow, api design]
+sources:
+  - { book: effective-java, ref: "Item 69" }
+steps:
+  - type: explanation
+    title: Clever, and wrong
+    body: |
+      ```java
+      try {
+          int i = 0;
+          while (true) range[i++].climb();
+      } catch (ArrayIndexOutOfBoundsException e) {
+      }
+      ```
+
+      The idea: the JVM checks bounds anyway, so skip the "redundant" check and catch the exception at the end.
+
+  - type: choice
+    prompt: What's wrong with that reasoning?
+    options:
+      - text: Exception handling is slow and blocks JVM optimizations — and the code is obscure
+        correct: true
+      - text: It can hide a real bug — an out-of-bounds error inside `climb()` would be swallowed too
+        correct: true
+      - text: It doesn't work at all
+        feedback: It works — that's what makes it tempting. It's slower and buggier than the plain loop.
+    explanation: "The standard idiom `for (Mountain m : range) m.climb();` is clearer and faster."
+
+  - type: match
+    prompt: An API's method can only be called in a certain state. Match each design to how clients use it.
+    pairs:
+      - left: A state-testing method, like `Iterator.hasNext`
+        right: Check first, then call — `while (i.hasNext()) i.next()`
+      - left: An empty optional or distinguished return value
+        right: Call, then inspect what came back
+      - left: Neither — only an exception
+        right: Clients are forced to use exceptions for control flow
+
+  - type: choice
+    prompt: When is an optional or distinguished return value better than a state-testing method?
+    options:
+      - text: When the object is accessed concurrently, since state may change between the test and the call
+        correct: true
+      - text: Always
+        feedback: State-testing methods are more readable when there's no concurrency issue.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "A well-designed API must not force its clients to use [[exceptions]] for ordinary control [[flow]]."

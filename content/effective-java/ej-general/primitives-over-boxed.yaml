@@ -1,0 +1,63 @@
+title: Prefer primitives to boxed primitives
+summary: Boxed types have identity, can be null, and cost allocations — three ways to get surprises.
+duration: 5
+tags: [java, effective java, autoboxing, primitives, integer, nullpointerexception]
+sources:
+  - { book: effective-java, ref: "Item 61" }
+steps:
+  - type: match
+    prompt: Match each difference between `int` and `Integer`.
+    pairs:
+      - left: Identity
+        right: Two `Integer`s can hold the same value yet be different objects
+      - left: "Null"
+        right: An `Integer` can be null; an `int` always has a value
+      - left: Performance
+        right: "`int` needs no allocation; `Integer` may"
+
+  - type: predict
+    prompt: What does `naturalOrder.compare(new Integer(42), new Integer(42))` return?
+    code: |
+      Comparator<Integer> naturalOrder =
+          (i, j) -> (i < j) ? -1 : (i == j ? 0 : 1);
+    language: java
+    answer: ["1"]
+    wrong:
+      - answer: "0"
+        feedback: "`i < j` unboxes, but `i == j` compares two *references*. They're different objects."
+    hints:
+      - Which operators unbox, and which compare references?
+    explanation: "1 — it says the first is greater. Applying `==` to boxed primitives is almost always wrong. Use `Comparator.naturalOrder()`."
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      public class Unbelievable {
+          static Integer i;
+          public static void main(String[] args) {
+              if (i == 42) System.out.println("Unbelievable");
+          }
+      }
+    language: java
+    options:
+      - text: It throws `NullPointerException`
+        correct: true
+      - text: It prints nothing
+        feedback: Comparing an `Integer` with an `int` unboxes `i` — and `i` is null.
+      - text: It doesn't compile
+    explanation: A boxed field's default is null, not 0. Mixing boxed and primitive types in one expression auto-unboxes.
+
+  - type: choice
+    prompt: When must you use boxed primitives?
+    options:
+      - text: As elements, keys and values in collections, and as type arguments
+        correct: true
+      - text: Reflective method invocations
+        correct: true
+      - text: For loop counters
+        feedback: Use `int` — boxing a counter only adds cost.
+    explanation: Java doesn't (yet) allow primitives as type arguments, so `List<Integer>` it is.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Autoboxing reduces the verbosity, but not the [[danger]], of using boxed primitives."

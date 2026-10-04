@@ -1,0 +1,52 @@
+title: Know and use the libraries
+summary: Library code is written by experts, tested by millions, and improves without you lifting a finger.
+duration: 5
+tags: [java, effective java, libraries, random, standard library]
+sources:
+  - { book: effective-java, ref: "Item 59" }
+steps:
+  - type: explanation
+    title: A tempting random number
+    body: |
+      ```java
+      static Random rnd = new Random();
+      static int random(int n) { return Math.abs(rnd.nextInt()) % n; }
+      ```
+
+      Short and plausible — and it has three flaws.
+
+  - type: choice
+    prompt: Which of these are real flaws of that method?
+    options:
+      - text: If n is a small power of two, the sequence repeats after a short period
+        correct: true
+      - text: If n isn't a power of two, some numbers come up more often than others
+        correct: true
+      - text: It can return a negative number, because `Math.abs(Integer.MIN_VALUE)` is still negative
+        correct: true
+      - text: It's too slow
+    explanation: Fixing all three needs some number theory. Or you could just call the library.
+
+  - type: blank
+    prompt: The library way, in modern Java.
+    template: "int r = ThreadLocalRandom.[[current]]().nextInt(n);"
+    code: true
+    explanation: "`ThreadLocalRandom` is fast and high-quality for most uses; for fork-join pools and parallel streams use `SplittableRandom`."
+
+  - type: predict
+    prompt: "What does `Math.abs(Integer.MIN_VALUE)` return?"
+    options:
+      - text: "`-2147483648` — `Integer.MIN_VALUE` itself"
+        correct: true
+      - text: "`2147483648`"
+        feedback: That doesn't fit in an `int` — the largest is 2147483647.
+      - text: "`2147483647`"
+    explanation: Two's complement has one more negative number than positive ones, so negating the smallest overflows back to itself.
+
+  - type: choice
+    prompt: What should every programmer know well?
+    options:
+      - text: The basics of `java.lang`, `java.util` and `java.io` — and keep up with each release's additions
+        correct: true
+      - text: The source code of the whole JDK
+    explanation: Example payoff — Java 9's `InputStream.transferTo` turned a copy loop into one line.

@@ -1,0 +1,50 @@
+title: Avoid unnecessary checked exceptions
+summary: A checked exception the caller can't do anything about is just a burden — especially in streams.
+duration: 4
+tags: [java, effective java, checked exceptions, optional, streams, api design]
+sources:
+  - { book: effective-java, ref: "Item 71" }
+steps:
+  - type: explanation
+    title: A burden on every caller
+    body: |
+      Checked exceptions force callers to handle them, which is good when the caller can act. When it can't, every call
+      site ends up with boilerplate like:
+
+      ```java
+      } catch (TheCheckedException e) {
+          throw new AssertionError(); // Can't happen!
+      }
+      ```
+
+      And methods throwing checked exceptions can't be used directly in streams, since the standard functional
+      interfaces don't declare any.
+
+  - type: choice
+    prompt: When is a checked exception justified?
+    options:
+      - text: When correct use of the API can't prevent the condition, and the caller can take useful action
+        correct: true
+      - text: Whenever something can go wrong
+        feedback: Then nearly every method would throw one.
+
+  - type: match
+    prompt: Match each alternative to a checked exception with how it works.
+    pairs:
+      - left: Return an empty optional
+        right: The caller checks for absence — but gets no extra information about why
+      - left: Split into a state-testing method plus an unchecked exception
+        right: "`if (obj.actionPermitted(args)) obj.action(args); else ...`"
+      - left: Throw an unchecked exception
+        right: Appropriate when the caller can't recover anyway
+
+  - type: choice
+    prompt: Why does a *single* checked exception in a method cost more than adding a second one?
+    options:
+      - text: The first forces a try block on every caller and stops use in streams; a second adds only another catch
+        correct: true
+      - text: It doesn't — each costs the same
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "If callers can't [[recover]], throw an [[unchecked]] exception."

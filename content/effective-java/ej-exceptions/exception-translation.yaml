@@ -1,0 +1,52 @@
+title: Throw exceptions appropriate to the abstraction
+summary: Translate lower-level exceptions into ones that make sense at your level — chaining the cause.
+duration: 4
+tags: [java, effective java, exceptions, exception translation, chaining, abstraction]
+sources:
+  - { book: effective-java, ref: "Item 73" }
+steps:
+  - type: explanation
+    title: Leaky exceptions
+    body: |
+      A method that propagates a low-level exception — a `SQLException` from a `UserRepository.findByName`, say — exposes
+      implementation details and pollutes the API: switch storage and the exceptions change, breaking clients.
+
+      **Exception translation**: catch it and throw one that fits your abstraction.
+
+      ```java
+      try {
+          ... // use lower-level abstraction
+      } catch (LowerLevelException e) {
+          throw new HigherLevelException(..., e);   // chaining
+      }
+      ```
+
+  - type: blank
+    prompt: Chain the cause so it isn't lost.
+    template: "throw new HigherLevelException(\"Lookup failed for \" + name, [[e]]);"
+    code: true
+    explanation: The cause appears in the stack trace and is available via `getCause()`.
+
+  - type: choice
+    prompt: "`AbstractSequentialList.get` catches `NoSuchElementException` from its iterator. What does it throw instead?"
+    options:
+      - text: "`IndexOutOfBoundsException` — what a `List.get` caller expects"
+        correct: true
+      - text: The iterator's `NoSuchElementException`
+        feedback: That's an iterator concept leaking out of a list method.
+
+  - type: choice
+    prompt: What's even better than translating exceptions?
+    options:
+      - text: Avoiding them — check parameters before passing them down so the lower layer succeeds
+        correct: true
+      - text: Catching and logging everything
+        feedback: That hides problems from callers who might handle them.
+    explanation: When avoidance is impossible, the next best is often having the higher layer work around the failure, logging it.
+
+  - type: choice
+    prompt: Is exception translation always better than propagation?
+    options:
+      - text: No — it shouldn't be overused; propagation is fine when the lower-level exception makes sense to callers
+        correct: true
+      - text: Yes, always wrap

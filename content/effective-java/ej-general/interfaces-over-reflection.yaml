@@ -1,0 +1,50 @@
+title: Prefer interfaces to reflection
+summary: Use reflection only to create objects — then talk to them through an interface known at compile time.
+duration: 4
+tags: [java, effective java, reflection, interfaces, compile-time checking]
+sources:
+  - { book: effective-java, ref: "Item 65" }
+steps:
+  - type: explanation
+    title: Powerful, at a price
+    body: |
+      `java.lang.reflect` lets you work with classes you don't know at compile time: look up constructors, methods and
+      fields, and invoke them. That power comes with costs.
+
+  - type: choice
+    prompt: What do you give up with reflection?
+    options:
+      - text: Compile-time type checking — including checked-exception checking
+        correct: true
+      - text: Readable code — reflective code is clumsy and verbose
+        correct: true
+      - text: Performance — reflective calls are much slower
+        correct: true
+      - text: The ability to call public methods
+        feedback: Reflection can call them; it's just less safe and slower.
+
+  - type: explanation
+    title: The safe middle ground
+    body: |
+      Create instances reflectively, then use them through an interface or superclass:
+
+      ```java
+      Class<? extends Set<String>> cl = (Class<? extends Set<String>>) Class.forName(args[0]);
+      Constructor<? extends Set<String>> cons = cl.getDeclaredConstructor();
+      Set<String> s = cons.newInstance();
+      s.addAll(Arrays.asList(args).subList(1, args.length));
+      ```
+
+      Everything after construction is ordinary, checked code against `Set`.
+
+  - type: choice
+    prompt: Where is reflection the right tool?
+    options:
+      - text: Code that must work with classes unknown at compile time — service providers, dependency injection, testing frameworks
+        correct: true
+      - text: Calling methods of classes you already compile against
+    explanation: Even there, access instances through interfaces whenever you can.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Create instances [[reflectively]], and access them normally via their [[interface]] or superclass."

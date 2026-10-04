@@ -1,0 +1,45 @@
+title: Avoid strings where other types fit
+summary: Strings are poor substitutes for numbers, enums, aggregates and capabilities.
+duration: 4
+tags: [java, effective java, strings, types, api design]
+sources:
+  - { book: effective-java, ref: "Item 62" }
+steps:
+  - type: explanation
+    title: Stringly typed
+    body: |
+      Strings are designed to represent text. Because they're so convenient, they get used for everything else too —
+      and code becomes "stringly typed": slow, error-prone, and impossible for the compiler to check.
+
+  - type: match
+    prompt: Match each misuse of strings to the better type.
+    pairs:
+      - left: A number read from a file, kept as `"42"`
+        right: "`int`, `BigInteger`, or another numeric type"
+      - left: "`\"YES\"` / `\"NO\"` answers"
+        right: An enum or a boolean
+      - left: "`className + \"#\" + i.next()` as one key"
+        right: A small private static class with two fields
+      - left: A shared string used as a thread-local key
+        right: An unforgeable key object, like `ThreadLocal<T>`
+
+  - type: choice
+    prompt: What's wrong with representing a composite key as `className + "#" + i.next()`?
+    options:
+      - text: If the `#` appears in a field, parsing breaks; access requires parsing; and you get no `equals`, `toString` or `compareTo` of your own
+        correct: true
+      - text: Strings can't be used as map keys
+    explanation: A small record holding both values does it properly.
+
+  - type: choice
+    prompt: Why are strings bad *capabilities* — say, keys in a shared namespace of thread-local variables?
+    options:
+      - text: Two clients can independently pick the same string and unintentionally share a variable — or a malicious one can guess it
+        correct: true
+      - text: Strings are too long
+    explanation: An object key is unforgeable; only code holding the reference can use it.
+
+  - type: blank
+    prompt: Replace the stringly typed key.
+    template: "private [[record]] ClassAndIndex(String className, int index) {}"
+    code: true

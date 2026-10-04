@@ -1,0 +1,54 @@
+title: The cost of string concatenation
+summary: Repeated + in a loop is quadratic — use a StringBuilder.
+duration: 4
+tags: [java, effective java, strings, stringbuilder, performance]
+sources:
+  - { book: effective-java, ref: "Item 63" }
+steps:
+  - type: explanation
+    title: Quadratic time
+    body: |
+      ```java
+      public String statement() {
+          String result = "";
+          for (int i = 0; i < numItems(); i++)
+              result += lineForItem(i);
+          return result;
+      }
+      ```
+
+      Strings are immutable, so each `+=` copies everything built so far into a new string.
+
+  - type: predict
+    prompt: The number of items doubles. Roughly how much longer does `statement()` take?
+    options:
+      - text: About four times longer
+        correct: true
+      - text: About twice as long
+        feedback: Each step copies all previous characters, so total work grows with the *square* of n.
+      - text: The same
+    explanation: Concatenating n strings with `+` takes time quadratic in n.
+
+  - type: blank
+    prompt: The linear-time version.
+    template: |
+      StringBuilder b = new [[StringBuilder]](numItems() * LINE_WIDTH);
+      for (int i = 0; i < numItems(); i++) b.[[append]](lineForItem(i));
+      return b.toString();
+    code: true
+
+  - type: choice
+    prompt: Is `String s = "Hello, " + name + "!";` a problem?
+    options:
+      - text: No — a single statement concatenating a few strings is fine
+        correct: true
+      - text: Yes — always use StringBuilder
+        feedback: The compiler handles a single expression efficiently. The problem is repeated concatenation in a loop.
+
+  - type: choice
+    prompt: Why preallocate the StringBuilder's capacity?
+    options:
+      - text: It avoids repeated internal array growth when the final size is roughly known
+        correct: true
+      - text: It's required
+    explanation: Even without it, the builder version is dramatically faster for large n.

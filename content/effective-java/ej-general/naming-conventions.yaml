@@ -1,0 +1,58 @@
+title: Naming conventions
+summary: Typographical and grammatical conventions every Java programmer reads fluently.
+duration: 5
+tags: [java, effective java, naming, conventions, style]
+sources:
+  - { book: effective-java, ref: "Item 68" }
+steps:
+  - type: match
+    prompt: Match each identifier type to its typographical convention.
+    pairs:
+      - left: Package
+        right: "`com.google.common.collect` — lowercase, dot-separated"
+      - left: Class or interface
+        right: "`FutureTask` — each word capitalized"
+      - left: Method or field
+        right: "`ensureCapacity` — first letter lowercase"
+      - left: Constant field
+        right: "`MIN_VALUE` — uppercase with underscores"
+      - left: Type parameter
+        right: "`T`, `E`, `K`, `V` — a single capital letter"
+
+  - type: match
+    prompt: Match each type-parameter letter to its usual meaning.
+    pairs:
+      - left: "`E`"
+        right: Element type of a collection
+      - left: "`K` and `V`"
+        right: Key and value types of a map
+      - left: "`X`"
+        right: Exception type
+      - left: "`R`"
+        right: Return type of a function
+
+  - type: match
+    prompt: Match each grammatical method-name pattern to its meaning.
+    pairs:
+      - left: "`isEmpty`, `hasSiblings`"
+        right: Returns a boolean
+      - left: "`toString`, `toArray`"
+        right: Converts to an independent object of another type
+      - left: "`asList`"
+        right: Returns a view of the same object as another type
+      - left: "`intValue`"
+        right: Returns the primitive value of the object
+
+  - type: choice
+    prompt: "Which is the conventional name for a method returning a boolean?"
+    options:
+      - text: "`isDigit`"
+        correct: true
+      - text: "`digitCheck`"
+        feedback: Boolean methods usually start with `is` or, less often, `has`.
+
+  - type: blank
+    prompt: Name a constant conventionally.
+    template: "static final int [[MAX_RETRIES]] = 3;"
+    code: true
+    explanation: Constants are static final fields whose values are immutable.

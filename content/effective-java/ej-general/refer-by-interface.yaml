@@ -1,0 +1,50 @@
+title: Refer to objects by their interfaces
+summary: Declare variables, parameters and return types with interfaces, so the implementation can change freely.
+duration: 4
+tags: [java, effective java, interfaces, flexibility, collections]
+sources:
+  - { book: effective-java, ref: "Item 64" }
+steps:
+  - type: choice
+    prompt: Which declaration is better?
+    options:
+      - text: "`Set<Son> sonSet = new LinkedHashSet<>();`"
+        correct: true
+      - text: "`LinkedHashSet<Son> sonSet = new LinkedHashSet<>();`"
+        feedback: Using the class as the type ties all code that touches `sonSet` to that implementation.
+    explanation: If an appropriate interface type exists, use it for variables, fields, parameters and return values.
+
+  - type: explanation
+    title: Switching implementations
+    body: |
+      Declared as a `Set`, switching to a `HashSet` is a one-word change at the constructor:
+
+      ```java
+      Set<Son> sonSet = new HashSet<>();
+      ```
+
+      The only caution: if the original implementation offered some special behaviour the code relies on — like
+      `LinkedHashSet`'s iteration order — the new one must provide it too, and that should be documented.
+
+  - type: match
+    prompt: When is it fine to use a class as the type? Match each case.
+    pairs:
+      - left: Value classes like `String` and `BigInteger`
+        right: There's no interface to use, and they're rarely implemented in multiple ways
+      - left: A class-based framework's types, like `java.io.OutputStream`
+        right: Use the most general (often abstract) base class
+      - left: A class with extra methods you need, like `PriorityQueue.comparator()`
+        right: Use the class — but only where you actually need those methods
+
+  - type: blank
+    prompt: Accept the interface type.
+    template: "static void printAll([[List]]<String> items)"
+    code: true
+
+  - type: choice
+    prompt: No appropriate interface exists. What then?
+    options:
+      - text: Use the least specific class in the hierarchy that provides what you need
+        correct: true
+      - text: Create an interface just for this
+        feedback: Only if it represents a real abstraction worth having.

@@ -1,0 +1,44 @@
+title: Use native methods judiciously
+summary: Calling C through JNI is rarely worth it for speed — and always costs safety and portability.
+duration: 3
+tags: [java, effective java, jni, native methods, performance, portability]
+sources:
+  - { book: effective-java, ref: "Item 66" }
+steps:
+  - type: explanation
+    title: Native methods
+    body: |
+      The Java Native Interface lets Java call methods written in C or C++. Historically they served three purposes:
+      access to platform-specific facilities, access to existing native libraries, and writing performance-critical code.
+
+  - type: choice
+    prompt: Is writing native code to speed up Java usually a good idea today?
+    options:
+      - text: Rarely — the JVM is fast enough that native code seldom pays off, and the boundary crossing has its own cost
+        correct: true
+      - text: Yes — C is always faster
+        feedback: JIT-compiled Java often matches it, and JNI calls add overhead.
+
+  - type: choice
+    prompt: Which are real disadvantages of native methods?
+    options:
+      - text: Memory-safety bugs come back — native code isn't protected from them
+        correct: true
+      - text: They're platform-dependent and harder to debug
+        correct: true
+      - text: The garbage collector can't track native memory
+        correct: true
+      - text: They can't be called from Java
+    explanation: Even glue code between Java and native code is tedious and error-prone.
+
+  - type: choice
+    prompt: "A legitimate modern use?"
+    options:
+      - text: Using an established native library with no Java equivalent
+        correct: true
+      - text: Making a for loop faster
+    explanation: Even then, minimise and thoroughly test the native code. (Recent Java's Foreign Function & Memory API is a safer route than JNI.)
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Think twice before using native methods; a single bug in native code can [[corrupt]] your entire application."

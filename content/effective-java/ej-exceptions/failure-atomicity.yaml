@@ -1,0 +1,52 @@
+title: Strive for failure atomicity
+summary: A failed method call should leave the object as it was before the call.
+duration: 5
+tags: [java, effective java, exceptions, failure atomicity, immutability, robustness]
+sources:
+  - { book: effective-java, ref: "Item 76" }
+steps:
+  - type: explanation
+    title: All or nothing
+    body: |
+      A **failure-atomic** method leaves its object in the state it was in before the call, if it throws. The caller can
+      then recover and carry on using the object.
+
+  - type: match
+    prompt: Match each technique for achieving failure atomicity to an example.
+    pairs:
+      - left: Use immutable objects
+        right: A failed operation simply doesn't create a new object
+      - left: Check parameters before changing anything
+        right: "`Stack.pop` throws `EmptyStackException` before decrementing `size`"
+      - left: Order the work so failures happen before modification
+        right: "`TreeMap.put` compares the key — which can fail — before inserting"
+      - left: Work on a temporary copy, then swap it in
+        right: Sorting copies a list into an array, sorts the array, then writes back
+
+  - type: predict
+    prompt: "If `pop` didn't check for emptiness first, what would happen on an empty stack?"
+    code: |
+      public Object pop() {
+          // if (size == 0) throw new EmptyStackException();
+          Object result = elements[--size];
+          elements[size] = null;
+          return result;
+      }
+    language: java
+    options:
+      - text: "`size` becomes -1 before the array access throws — leaving the stack corrupted for later calls"
+        correct: true
+      - text: It returns null and the stack is fine
+    explanation: "The `ArrayIndexOutOfBoundsException` is also inappropriate to the abstraction — callers expected a stack exception."
+
+  - type: choice
+    prompt: Is failure atomicity always worth achieving?
+    options:
+      - text: Not always — some operations make it impossible or too costly; then document the state the object is left in
+        correct: true
+      - text: Yes, at any cost
+    explanation: For example, objects modified concurrently without synchronization can't be guaranteed consistent after a `ConcurrentModificationException`.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Generally, a failed method invocation should leave the object in the state it was in [[before]] the invocation."

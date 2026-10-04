@@ -1,0 +1,56 @@
+title: Prefer for-each loops
+summary: No index or iterator to get wrong — especially in nested loops.
+duration: 4
+tags: [java, effective java, for-each, iterators, loops]
+sources:
+  - { book: effective-java, ref: "Item 58" }
+steps:
+  - type: predict
+    prompt: "`Face` is an enum with 6 values. How many lines does this print?"
+    code: |
+      Collection<Face> faces = EnumSet.allOf(Face.class);
+      for (Iterator<Face> i = faces.iterator(); i.hasNext(); )
+          for (Iterator<Face> j = faces.iterator(); j.hasNext(); )
+              System.out.println(i.next() + " " + j.next());
+    language: java
+    answer: ["6"]
+    wrong:
+      - answer: "36"
+        feedback: That was the intent. But `i.next()` is called inside the inner loop, once per inner iteration.
+    hints:
+      - How many times is `i.next()` called per pass of the inner loop?
+    explanation: It prints only the six "doubles" (ONE ONE … SIX SIX) — `i` advances along with `j`. With unequal collections, it would throw `NoSuchElementException`.
+
+  - type: blank
+    prompt: The for-each version, which can't make that mistake.
+    template: |
+      for ([[Face]] f1 : faces)
+          for (Face f2 : faces)
+              System.out.println(f1 + " " + f2);
+    code: true
+
+  - type: match
+    prompt: Where can't you use for-each? Match each case to its alternative.
+    pairs:
+      - left: Removing selected elements while iterating
+        right: "`Collection.removeIf`, or an explicit iterator's `remove`"
+      - left: Replacing elements of a list or array
+        right: A list iterator or array index, to set each element
+      - left: Iterating over several collections in lockstep
+        right: Explicit iterators or indexes, advanced together
+
+  - type: choice
+    prompt: What does for-each work on?
+    options:
+      - text: Arrays, and any object implementing `Iterable`
+        correct: true
+      - text: Only collections
+        feedback: Arrays and any `Iterable` work, including your own types.
+    explanation: If your type represents a group of elements, consider implementing `Iterable` even if you don't implement `Collection`.
+
+  - type: choice
+    prompt: Is for-each slower than an indexed loop over an array?
+    options:
+      - text: No — it compiles to essentially the same code
+        correct: true
+      - text: Yes, noticeably

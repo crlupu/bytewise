@@ -1,0 +1,53 @@
+title: Favor standard exceptions
+summary: Programmers already know IllegalArgumentException and friends — reuse them.
+duration: 5
+tags: [java, effective java, exceptions, illegalargumentexception, illegalstateexception]
+sources:
+  - { book: effective-java, ref: "Item 72" }
+steps:
+  - type: match
+    prompt: Match each standard exception to when it's thrown.
+    pairs:
+      - left: "`IllegalArgumentException`"
+        right: A non-null parameter value is inappropriate
+      - left: "`IllegalStateException`"
+        right: The object's state doesn't allow this call
+      - left: "`NullPointerException`"
+        right: A parameter is null where that's prohibited
+      - left: "`IndexOutOfBoundsException`"
+        right: An index parameter is out of range
+      - left: "`ConcurrentModificationException`"
+        right: Concurrent modification of an object has been detected where it's prohibited
+      - left: "`UnsupportedOperationException`"
+        right: The object doesn't support the method
+
+  - type: choice
+    prompt: "A deck of cards has `deal(int n)`. A caller asks for more cards than remain. IllegalArgumentException or IllegalStateException?"
+    options:
+      - text: Either can be argued; the rule — if *no* argument value would work, IllegalStateException; otherwise IllegalArgumentException
+        correct: true
+      - text: Always IllegalArgumentException
+    explanation: Here a smaller `n` would have worked, so IllegalArgumentException is the better fit.
+
+  - type: choice
+    prompt: Someone passes a negative number where only positives are allowed. Which exception?
+    options:
+      - text: "`IllegalArgumentException`"
+        correct: true
+      - text: "`NullPointerException`"
+      - text: "`RuntimeException`"
+        feedback: Never throw `Exception`, `RuntimeException`, `Throwable` or `Error` directly — they say nothing specific.
+
+  - type: choice
+    prompt: Why prefer standard exceptions?
+    options:
+      - text: Your API is easier to learn, and programs using it easier to read
+        correct: true
+      - text: Fewer classes mean a smaller memory footprint and faster loading
+        correct: true
+      - text: They have more detailed messages
+    explanation: You can also subclass a standard exception to add detail, as long as it stays meaningful.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Do not reuse `Exception`, `RuntimeException`, `Throwable` or `Error` [[directly]]."

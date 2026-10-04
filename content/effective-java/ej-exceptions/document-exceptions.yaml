@@ -1,0 +1,44 @@
+title: Document every exception
+summary: Use @throws for each exception, checked and unchecked — but declare only checked ones in the throws clause.
+duration: 4
+tags: [java, effective java, exceptions, javadoc, documentation]
+sources:
+  - { book: effective-java, ref: "Item 74" }
+steps:
+  - type: explanation
+    title: Part of the contract
+    body: |
+      The exceptions a method throws are part of what callers need to know to use it correctly:
+
+      - Declare **checked** exceptions individually, and document each with `@throws` and the conditions that cause it.
+      - **Document unchecked exceptions too** — they describe the method's preconditions — but don't list them in the
+        method's `throws` clause.
+
+  - type: choice
+    prompt: Why is `public void process() throws Exception` a bad declaration?
+    options:
+      - text: It tells callers nothing about what can go wrong, and hides any specific exception they could handle
+        correct: true
+      - text: It doesn't compile
+    explanation: Never declare `throws Exception` or `throws Throwable` (`main` is the one exception).
+
+  - type: choice
+    prompt: How do you tell checked from unchecked exceptions at a glance in good documentation?
+    options:
+      - text: Both have `@throws` tags, but only the checked ones appear in the `throws` clause
+        correct: true
+      - text: Unchecked exceptions aren't documented
+        feedback: They should be — they define preconditions.
+
+  - type: choice
+    prompt: Every method in a class throws `NullPointerException` for a null argument. Where should that be documented?
+    options:
+      - text: Once, in the class-level doc comment
+        correct: true
+      - text: In every method
+        feedback: Acceptable, but repetitive; the class comment is the place for shared rules.
+
+  - type: blank
+    prompt: Document an unchecked exception.
+    template: "@[[throws]] IllegalArgumentException if {@code n} is negative"
+    code: true

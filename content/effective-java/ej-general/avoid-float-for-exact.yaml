@@ -1,0 +1,59 @@
+title: Avoid float and double for exact answers
+summary: Binary floating point can't represent 0.1 exactly — never use it for money.
+duration: 5
+tags: [java, effective java, floating point, bigdecimal, money, precision]
+sources:
+  - { book: effective-java, ref: "Item 60" }
+steps:
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(1.03 - 0.42);
+    language: java
+    options:
+      - text: "`0.6100000000000001`"
+        correct: true
+      - text: "`0.61`"
+        feedback: "0.61 has no exact binary representation, so the result is the nearest double — which prints with a long tail."
+    explanation: "`float` and `double` do binary floating-point arithmetic, designed for fast approximate results over a huge range — not exact decimals."
+
+  - type: explanation
+    title: Buying candy
+    body: |
+      You have $1.00. Candies cost 10¢, 20¢, 30¢… Buy one of each, cheapest first, until you can't afford the next:
+
+      ```java
+      double funds = 1.00;
+      int itemsBought = 0;
+      for (double price = 0.10; funds >= price; price += 0.10) {
+          funds -= price;
+          itemsBought++;
+      }
+      ```
+
+  - type: predict
+    prompt: How many items does it buy?
+    answer: ["3", "three"]
+    wrong:
+      - answer: "4"
+        feedback: "That's the right answer on paper (10+20+30+40 = 100¢). After three purchases, `funds` is 0.3999999999999999 — just less than the 0.4 price."
+    explanation: Three, with $0.3999999999999999 left over. The rounding errors make the program wrong.
+
+  - type: match
+    prompt: Match each choice for money to its trade-off.
+    pairs:
+      - left: "`BigDecimal`"
+        right: Exact, with full control over rounding — but verbose and slower
+      - left: "`int` or `long` counting cents"
+        right: Fast and exact — but you track the decimal point yourself
+      - left: "`double`"
+        right: Fast — and wrong for money
+
+  - type: choice
+    prompt: How should you create a `BigDecimal` for 0.10?
+    options:
+      - text: "`new BigDecimal(\"0.10\")` — from a String"
+        correct: true
+      - text: "`new BigDecimal(0.10)`"
+        feedback: That captures the inexact double — 0.1000000000000000055511151231257827…
+    explanation: Use the String constructor, or `BigDecimal.valueOf(double)` which goes through the double's string form.

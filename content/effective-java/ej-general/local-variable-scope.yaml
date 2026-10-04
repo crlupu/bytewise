@@ -1,0 +1,53 @@
+title: Minimize the scope of local variables
+summary: Declare variables where they're first used — and prefer for loops, which keep their variables to themselves.
+duration: 4
+tags: [java, effective java, local variables, scope, loops, readability]
+sources:
+  - { book: effective-java, ref: "Item 57" }
+steps:
+  - type: explanation
+    title: Narrow scope, fewer bugs
+    body: |
+      The smaller a variable's scope, the easier the code is to read and the fewer chances to misuse it.
+
+      - **Declare a local variable where it's first used**, not at the top of a block.
+      - **Initialise it in its declaration** — if you can't yet, you probably declared it too early. (A `try` whose
+        result is needed after the block is the usual exception.)
+      - **Keep methods small and focused**, so variables for one activity don't linger into another.
+
+  - type: predict
+    prompt: How many times does `doSomethingElse` run, if `c2` has 5 elements?
+    code: |
+      Iterator<Element> i = c.iterator();
+      while (i.hasNext()) doSomething(i.next());
+
+      Iterator<Element> i2 = c2.iterator();
+      while (i.hasNext()) doSomethingElse(i2.next());   // copy-paste bug
+    language: java
+    answer: ["0", "zero", "none"]
+    wrong:
+      - answer: "5"
+        feedback: Look at the second loop's condition — it tests `i`, which is already exhausted.
+    explanation: Zero — the loop silently does nothing. No error, no warning; the bug can go unnoticed for a long time.
+
+  - type: choice
+    prompt: How would `for` loops have prevented that bug?
+    options:
+      - text: Each loop's iterator would be scoped to its own loop, so using `i` in the second loop wouldn't compile
+        correct: true
+      - text: "`for` loops check iterators automatically"
+    explanation: "`for (Iterator<Element> i = c.iterator(); i.hasNext(); )` — and in most cases, for-each is even better."
+
+  - type: blank
+    prompt: Complete the idiom that keeps a loop's bound in its own scope.
+    template: "for (int i = 0, [[n]] = expensiveComputation(); i < n; i++) { ... }"
+    code: true
+    explanation: The bound is computed once and can't leak out of the loop.
+
+  - type: choice
+    prompt: Where should `int total = 0;` go in a 60-line method that uses it only in the last 10 lines?
+    options:
+      - text: Just before those 10 lines — or better, extract them into their own method
+        correct: true
+      - text: At the top, so all declarations are together
+        feedback: That's a C89 habit; in Java it only widens the scope.

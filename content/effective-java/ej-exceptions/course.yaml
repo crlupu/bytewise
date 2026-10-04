@@ -1,0 +1,12 @@
+title: Exceptions
+summary: Effective Java, chapter 10 (Items 69–77) — when to throw what, and how to make failures informative and safe.
+lessons:
+  - exceptions-for-exceptional
+  - checked-vs-runtime
+  - unnecessary-checked
+  - standard-exceptions
+  - exception-translation
+  - document-exceptions
+  - failure-capture
+  - failure-atomicity
+  - dont-ignore-exceptions

@@ -1,0 +1,44 @@
+title: Failure-capture information in detail messages
+summary: An exception's message should contain the values that caused it — often it's all you'll have to diagnose a failure.
+duration: 4
+tags: [java, effective java, exceptions, debugging, detail message, logging]
+sources:
+  - { book: effective-java, ref: "Item 75" }
+steps:
+  - type: explanation
+    title: The only clue
+    body: |
+      When a program fails in production, the stack trace with its detail message may be the only information you get —
+      and reproducing the failure is often hard. The message should capture **the values of all parameters and fields
+      that contributed** to the exception.
+
+  - type: choice
+    prompt: Which message for an `IndexOutOfBoundsException` is most useful?
+    options:
+      - text: "`Lower bound: 0, Upper bound: 9, Index: 12`"
+        correct: true
+      - text: "`Index out of bounds`"
+        feedback: That repeats the exception's name and gives you nothing to work with.
+      - text: "`Something went wrong, please try again`"
+        feedback: That's a message for end users, not a diagnostic.
+
+  - type: choice
+    prompt: What must never go into a detail message?
+    options:
+      - text: Passwords, encryption keys and similar secrets
+        correct: true
+      - text: Parameter values
+        feedback: Those are exactly what should be there.
+    explanation: Stack traces get seen by many people in the course of diagnosing and fixing problems.
+
+  - type: choice
+    prompt: How can an exception class make good messages the default?
+    options:
+      - text: Take the failure-capture values as constructor parameters and build the message from them
+        correct: true
+      - text: Let each thrower write any string
+    explanation: Java 9 added an `IndexOutOfBoundsException(int index)` constructor in this spirit.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "Detail messages are for [[programmers]] diagnosing failures, not for end users; include the values that [[caused]] the failure."

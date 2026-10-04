@@ -1,0 +1,15 @@
+title: General programming
+summary: Effective Java, chapter 9 (Items 57–68) — local variables, loops, libraries, numbers, strings, interfaces and naming.
+lessons:
+  - local-variable-scope
+  - for-each-loops
+  - know-the-libraries
+  - avoid-float-for-exact
+  - primitives-over-boxed
+  - avoid-strings
+  - string-concatenation
+  - refer-by-interface
+  - interfaces-over-reflection
+  - native-methods
+  - optimize-judiciously
+  - naming-conventions
