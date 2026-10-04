@@ -14,5 +14,5 @@ export default async function CoursePage({ params }: { params: Promise<{ courseI
   const topic = cat.topics.find((t) => t.courses.some((c) => c.id === courseId));
   const course = topic?.courses.find((c) => c.id === courseId);
   if (!topic || !course) notFound();
-  return <CourseView course={course} topicTitle={topic.title} titles={lessonTitles(cat)} />;
+  return <CourseView course={course} topicTitle={topic.title} titles={lessonTitles(cat)} books={cat.books} />;
 }

@@ -1,0 +1,133 @@
+title: Architecture styles
+summary: Layered, modular monolith, microservices, event-driven — matching a style to the characteristics you need.
+duration: 9
+tags: [architecture, styles, monolith, modular monolith, microservices, event-driven, partitioning, quantum]
+sources:
+  - { book: fosa, ref: "Part II, Architecture Styles" }
+steps:
+  - type: explanation
+    title: Two big decisions
+    body: |
+      Every style answers two questions:
+
+      - **Partitioning**: is the code split by *technical* role (presentation, business, persistence layers) or by
+        *domain* (orders, payments, catalogue)?
+      - **Deployment**: is it one deployable unit (**monolithic**) or many (**distributed**)?
+
+      A **layered** architecture is technically partitioned and monolithic. A **modular monolith** is domain-partitioned
+      but still one deployable. **Microservices** are domain-partitioned *and* distributed.
+
+  - type: match
+    prompt: Match each style to its defining trait.
+    pairs:
+      - left: Layered
+        right: Technical layers, one deployable — simple to start, changes cut across every layer
+      - left: Modular monolith
+        right: Domain modules, one deployable — clear boundaries without a network between them
+      - left: Microkernel
+        right: A small core plus plug-ins for features
+      - left: Microservices
+        right: Small, independently deployed services, each owning its data
+      - left: Event-driven
+        right: Components react to events asynchronously instead of calling each other
+
+  - type: widget
+    widget: tradeoff
+    prompt: |
+      **A startup's first product.** Four developers, little money, and a need to ship features fast.
+      Requirements: simplicity at least **7**, cost at most **3**, deployability at least **5**.
+    config: &styles
+      metrics:
+        - { id: deployability, label: Deployability, start: 4, better: higher }
+        - { id: scalability, label: Scalability, start: 3, better: higher }
+        - { id: simplicity, label: Simplicity, start: 8, better: higher }
+        - { id: cost, label: Cost, start: 2, better: lower }
+      decisions:
+        - id: partitioning
+          label: Partitioning
+          options:
+            - id: layers
+              label: Technical layers
+              consequence: Easy to start. But every feature touches the UI, service and data layers at once.
+            - id: domain
+              label: Domain modules
+              effects: { deployability: 1 }
+              consequence: Code grouped by business capability; most changes stay inside one module.
+        - id: deployment
+          label: Deployment
+          options:
+            - id: single
+              label: One deployable
+              consequence: One build, one deploy, one database. Calls between parts are just method calls.
+            - id: services
+              label: Separate services
+              effects: { deployability: 4, scalability: 3, simplicity: -4, cost: 4 }
+              consequence: Each part deploys and scales on its own — at the price of networks, contracts and distributed data.
+        - id: communication
+          label: Communication
+          options:
+            - id: sync
+              label: Synchronous calls
+              consequence: Easy to follow, but the caller waits — and fails — with the callee.
+            - id: events
+              label: Asynchronous events
+              effects: { scalability: 2, deployability: 1, simplicity: -2, cost: 1 }
+              consequence: Components decouple in time and scale independently, but flows are harder to trace and debug.
+    goal:
+      require:
+        - { metric: simplicity, min: 7 }
+        - { metric: cost, max: 3 }
+        - { metric: deployability, min: 5 }
+    hints:
+      - Separate services blow the simplicity and cost budget.
+      - Of the monolithic options, which partitioning helps deployability?
+    explanation: |
+      A **modular monolith**: one deployable for simplicity and cost, domain modules for clean boundaries. If the
+      product succeeds, the modules are natural seams to split along later.
+
+  - type: widget
+    widget: tradeoff
+    prompt: |
+      **Five years later.** Twelve teams, traffic that spikes tenfold, and teams blocking each other's releases.
+      Now: scalability at least **7**, deployability at least **10**.
+    config: *styles
+    goal:
+      require:
+        - { metric: scalability, min: 7 }
+        - { metric: deployability, min: 10 }
+    hints:
+      - You'll need separate services — but split along which lines?
+    explanation: |
+      Domain-partitioned services with asynchronous events. Services split by *technical* layer would still need every
+      feature to change several services in lockstep — a distributed monolith.
+
+  - type: explanation
+    title: The architecture quantum
+    body: |
+      Richards and Ford's unit for this is the **architecture quantum**: an independently deployable artifact with high
+      functional cohesion, including whatever it needs synchronously — typically its database.
+
+      A monolith is one quantum, so it has **one** set of characteristics: the whole thing must be as scalable and as
+      available as its most demanding part. Microservices can have many quanta — each with characteristics of its own.
+
+  - type: choice
+    prompt: |
+      Ten "microservices" all read and write one shared database, and must be deployed together. How many architecture quanta is that?
+    options:
+      - text: One
+        correct: true
+      - text: Ten
+        feedback: They can't be deployed independently and they share a database — they behave as one unit.
+      - text: Eleven, counting the database
+    explanation: Calling them services doesn't make them independent. Shared data and lockstep deployment make it one quantum — a distributed monolith.
+
+  - type: choice
+    prompt: Which is the strongest reason to choose microservices?
+    options:
+      - text: Parts of the system need very different characteristics — scale, availability, release cadence
+        correct: true
+      - text: It's the modern default
+        feedback: Distribution has high costs; it should be bought for a reason.
+      - text: The codebase has become messy
+        feedback: A messy monolith split across a network becomes a messy distributed system. Modularise first.
+    explanation: Distribution pays off when different parts genuinely need different characteristics.

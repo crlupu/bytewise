@@ -1,0 +1,6 @@
+title: Stability patterns
+summary: How one slow dependency takes down a whole system, and the patterns that stop it — after Release It!
+lessons:
+  - cascading-failures
+  - id: circuit-breakers-and-bulkheads
+    requires: [cascading-failures]

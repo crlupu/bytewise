@@ -1,0 +1,107 @@
+title: Executors and thread pools
+summary: Separating what runs from how it runs — and sizing the pool for the work.
+duration: 8
+tags: [java, threads, executor, thread pool, futures, virtual threads]
+sources:
+  - { book: jcip, ref: "Chapter 6, Task Execution" }
+steps:
+  - type: explanation
+    title: Tasks, not threads
+    body: |
+      A server that starts a new `Thread` per request works until a traffic spike: thousands of threads each take
+      memory for a stack and compete for CPUs, and the machine falls over.
+
+      The `Executor` framework separates **task submission** from **task execution**:
+
+      ```java
+      ExecutorService pool = Executors.newFixedThreadPool(8);
+      Future<Report> f = pool.submit(() -> buildReport(id));
+      Report r = f.get();          // waits for the result
+      ```
+
+      You describe *what* to run; the executor decides *which thread* runs it and *when*.
+
+  - type: choice
+    prompt: Which are advantages of a thread pool over a thread per task?
+    options:
+      - text: Threads are reused, so the cost of creating them is paid once
+        correct: true
+      - text: The number of threads is bounded, so overload queues up instead of exhausting memory
+        correct: true
+      - text: Tasks run in the order they are submitted, always
+        feedback: A pool with several threads runs tasks concurrently; completion order isn't guaranteed.
+    explanation: Reuse and a bound on concurrency are the point. Ordering is a separate concern.
+
+  - type: match
+    prompt: Match each factory method to the pool it builds.
+    pairs:
+      - left: "`newFixedThreadPool(n)`"
+        right: Exactly n threads; extra tasks wait in a queue
+      - left: "`newCachedThreadPool()`"
+        right: Grows without limit, reusing idle threads
+      - left: "`newSingleThreadExecutor()`"
+        right: One thread; tasks run one after another
+      - left: "`newScheduledThreadPool(n)`"
+        right: Runs tasks after a delay or periodically
+
+  - type: explanation
+    title: Sizing the pool
+    body: |
+      For **CPU-bound** work, more threads than cores just adds context switching: about *N*<sub>cpu</sub> + 1 threads
+      keeps every core busy.
+
+      For work that **waits** (on a database, the network), threads sit idle part of the time, so you want more:
+
+      > threads ≈ N<sub>cpu</sub> × utilisation × (1 + wait time ÷ compute time)
+
+  - type: predict
+    prompt: |
+      An 8-core machine runs tasks that spend 90 ms waiting on a database for every 10 ms of computing.
+      Aiming for full CPU utilisation, about how many threads should the pool have?
+    answer: ["80", "about 80", "~80"]
+    wrong:
+      - answer: "8"
+        feedback: That's right for pure computation. These tasks spend 90% of their time waiting.
+      - answer: "9"
+        feedback: N + 1 is the rule for CPU-bound work. These tasks mostly wait.
+      - answer: "72"
+        feedback: Close — remember the formula multiplies by (1 + wait ÷ compute), which is 10 here.
+    hints:
+      - Wait ÷ compute = 90 ÷ 10 = 9.
+      - 8 × (1 + 9).
+    explanation: 8 × 1 × (1 + 90/10) = 80 threads.
+
+  - type: choice
+    prompt: How do you stop an `ExecutorService` cleanly?
+    options:
+      - text: Call `shutdown()`, then `awaitTermination(...)`; call `shutdownNow()` only if it doesn't finish in time
+        correct: true
+      - text: Let the JVM exit — the pool's threads will stop on their own
+        feedback: Pool threads are non-daemon by default, so they keep the JVM alive.
+      - text: Call `Thread.stop()` on each worker
+        feedback: Deprecated and unsafe — it can leave objects half-updated.
+    explanation: "`shutdown` stops accepting tasks and lets queued ones finish; `shutdownNow` interrupts running ones."
+
+  - type: explanation
+    title: Virtual threads
+    body: |
+      Since Java 21, **virtual threads** (JEP 444) change the arithmetic for waiting-heavy work. They're cheap
+      enough — a few hundred bytes until they need more — to create one per task, even millions:
+
+      ```java
+      try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
+          ids.forEach(id -> exec.submit(() -> fetch(id)));
+      }
+      ```
+
+      When a virtual thread blocks on I/O, it frees its carrier OS thread for another. The pool-sizing formula
+      matters much less; limiting access to the *database* (with a semaphore or connection pool) still matters.
+
+  - type: choice
+    prompt: For which workload do virtual threads help most?
+    options:
+      - text: Thousands of concurrent requests that mostly wait on I/O
+        correct: true
+      - text: Number-crunching that keeps every core at 100%
+        feedback: CPU-bound work still needs one runnable thread per core; virtual threads don't add cores.
+    explanation: Virtual threads make waiting cheap. They don't make computing faster.

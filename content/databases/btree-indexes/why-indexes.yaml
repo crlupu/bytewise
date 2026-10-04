@@ -2,6 +2,8 @@ title: Why indexes exist
 summary: From scanning every row to finding one in three page reads.
 duration: 6
 tags: [databases, indexes, b-tree, sql, performance]
+sources:
+  - { book: sql-performance-explained, ref: "Chapter 1, Anatomy of an Index" }
 steps:
   - type: explanation
     title: Finding one row in ten million

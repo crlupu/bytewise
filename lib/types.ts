@@ -63,6 +63,11 @@ export type WidgetStep = ExerciseBase & {
 export type ExerciseStep = ChoiceStep | PredictStep | OrderStep | MatchStep | BlankStep | WidgetStep;
 export type Step = ExplanationStep | ExerciseStep;
 
+export type Book = { id: string; title: string; authors: string; edition?: string; year: number; url?: string };
+
+/** A book a lesson draws on, and where in it to read more. */
+export type SourceRef = { book: string; ref: string };
+
 export type LessonMeta = {
   id: string;
   courseId: string;
@@ -73,6 +78,7 @@ export type LessonMeta = {
   summary: string;
   duration: number;
   tags: string[];
+  sources: SourceRef[];
   /** Keys of prerequisite lessons. */
   requires: string[];
   steps: number;
@@ -86,6 +92,6 @@ export type Lesson = LessonMeta & { body: Step[] };
 
 export type CourseMeta = { id: string; topicId: string; title: string; summary: string; lessons: LessonMeta[] };
 export type TopicMeta = { id: string; title: string; summary: string; courses: CourseMeta[] };
-export type Catalog = { topics: TopicMeta[] };
+export type Catalog = { topics: TopicMeta[]; books: Record<string, Book> };
 
 export const isExercise = (s: Step): s is ExerciseStep => s.type !== "explanation";

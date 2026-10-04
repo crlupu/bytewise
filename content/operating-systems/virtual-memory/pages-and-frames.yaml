@@ -2,6 +2,8 @@ title: Pages and frames
 summary: How every address your program uses is translated, and what a page fault really is.
 duration: 6
 tags: [operating systems, virtual memory, paging, page fault, tlb]
+sources:
+  - { book: ostep, ref: "Chapters 18–19, Paging and TLBs" }
 steps:
   - type: explanation
     title: Every process gets its own address space

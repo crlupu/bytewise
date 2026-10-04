@@ -1,0 +1,92 @@
+title: Architecture characteristics
+summary: The "-ilities" a system must have, how to find them in the requirements, and why fewer is better.
+duration: 8
+tags: [architecture, characteristics, quality attributes, ilities, trade-offs, requirements]
+sources:
+  - { book: fosa, ref: "Chapters 4–5, Architecture Characteristics" }
+steps:
+  - type: explanation
+    title: What the domain doesn't say
+    body: |
+      Requirements say what a system does: take orders, send invoices. **Architecture characteristics** say how well
+      it must do it — the qualities that shape its structure:
+
+      - they're about something **other than the domain** (performance, not "calculate tax");
+      - they **influence the structure** of the design (scaling needs might force separate deployables);
+      - they're **critical** to the application's success.
+
+      Richards and Ford's first law: **everything in software architecture is a trade-off.** Their second: **why is more
+      important than how.**
+
+  - type: match
+    prompt: Match each characteristic to the category it belongs to.
+    pairs:
+      - left: Scalability
+        right: Operational — how the system runs under load
+      - left: Maintainability
+        right: Structural — how the code is organised and changed
+      - left: Security
+        right: Cross-cutting — applies across the whole system
+      - left: Availability
+        right: Operational — how much of the time it works
+
+  - type: choice
+    prompt: Stakeholders say "we need to beat competitors to market with new features". Which characteristics does that imply?
+    options:
+      - text: Agility — how easily the system changes
+        correct: true
+      - text: Testability and deployability — confidence and speed in shipping
+        correct: true
+      - text: Elastic scalability
+        feedback: That's driven by bursty load, not by delivery speed.
+    hints:
+      - What lets a team ship changes quickly and safely?
+    explanation: |
+      Business goals rarely name "-ilities" directly. Translating "time to market" into agility, testability and
+      deployability is the architect's job.
+
+  - type: match
+    prompt: Match each business concern to the characteristics it usually translates into.
+    pairs:
+      - left: Mergers and acquisitions
+        right: Interoperability, extensibility, standards
+      - left: User satisfaction
+        right: Performance, availability, fault tolerance
+      - left: Tight budget and timeline
+        right: Simplicity, feasibility
+      - left: Black Friday traffic spikes
+        right: Elasticity, scalability
+
+  - type: explanation
+    title: Choose few
+    body: |
+      Each characteristic you support adds complexity, and many pull against each other — more security usually
+      means less performance; more availability, more cost.
+
+      So the advice is to pick the **fewest** that matter — often the top three — rather than wishing for all of them.
+      The goal isn't the best architecture. It's the **least worst**: the one whose trade-offs hurt least for *this* system.
+
+  - type: choice
+    prompt: A team lists 14 required characteristics, all marked "high priority". What's the problem?
+    options:
+      - text: They conflict and each adds complexity; without priorities, the design can't trade one for another
+        correct: true
+      - text: Nothing — more characteristics means a better system
+        feedback: A design that tries to maximise everything ends up good at nothing and hard to change.
+      - text: Fourteen is too few
+    explanation: Prioritising is what makes trade-offs possible. If everything is top priority, nothing is.
+
+  - type: blank
+    prompt: Complete Richards and Ford's two laws.
+    template: "Everything in software architecture is a [[trade-off|tradeoff]]. [[Why]] is more important than how."
+
+  - type: choice
+    prompt: Where does "the system must be up 99.9% of the time" belong?
+    options:
+      - text: It's an architecture characteristic — availability — with a measurable target
+        correct: true
+      - text: It's a domain requirement
+        feedback: It doesn't describe any business behaviour; it describes a quality of the whole system.
+      - text: It's an implementation detail
+        feedback: It shapes structure — redundancy, failover, deployment — so it's architectural.
+    explanation: Characteristics are most useful when they're measurable — 99.9% is about 43 minutes of downtime a month.

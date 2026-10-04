@@ -3,19 +3,30 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ChevronIcon, PlayIcon } from "@/components/icons";
+import { ChevronIcon, PlayIcon, ReadIcon } from "@/components/icons";
+import { booksOf } from "@/components/Books";
 import { Confirm, Meter, PageHead, STATUS_LABEL, StatusMark, plural } from "@/components/ui";
 import { formatDay } from "@/lib/dates";
 import { progress, useProgress } from "@/lib/progress";
 import { courseProgress, lessonStatus, lessonSteps } from "@/lib/status";
-import type { CourseMeta, LessonMeta } from "@/lib/types";
+import type { Book, CourseMeta, LessonMeta } from "@/lib/types";
 
 /**
  * A course: its lessons in order, each locked, available, in progress or
  * completed. A locked lesson still opens, after a word about what it builds on.
  * Edit reveals the resets.
  */
-export function CourseView({ course, topicTitle, titles }: { course: CourseMeta; topicTitle: string; titles: Record<string, string> }) {
+export function CourseView({
+  course,
+  topicTitle,
+  titles,
+  books,
+}: {
+  course: CourseMeta;
+  topicTitle: string;
+  titles: Record<string, string>;
+  books: Record<string, Book>;
+}) {
   const p = useProgress();
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -42,6 +53,20 @@ export function CourseView({ course, topicTitle, titles }: { course: CourseMeta;
         </span>
         <span>about {minutes} min</span>
       </div>
+      {(() => {
+        const used = booksOf(course.lessons.map((l) => l.sources), books);
+        return used.length ? (
+          <div className="course-books" aria-label="Drawn from">
+            {used.map((b) => (
+              <span key={b.id} className="pill">
+                <ReadIcon aria-hidden style={{ color: "var(--accent)" }} />
+                <i>{b.title}</i>&nbsp;· {b.authors.split(/,|&/)[0].trim()}
+                {/[,&]/.test(b.authors) ? " et al." : ""}
+              </span>
+            ))}
+          </div>
+        ) : null;
+      })()}
 
       <section>
         <ul className="list">
@@ -72,6 +97,16 @@ export function CourseView({ course, topicTitle, titles }: { course: CourseMeta;
                     <span className="sr-only">{STATUS_LABEL[status]}. </span>
                     {meta}
                   </span>
+                  {l.sources.slice(0, 1).map((src) =>
+                    books[src.book] ? (
+                      <span key={src.book} className="book-ref">
+                        <ReadIcon aria-hidden />
+                        <span>
+                          <i>{books[src.book].title}</i> — {src.ref}
+                        </span>
+                      </span>
+                    ) : null,
+                  )}
                 </span>
               </>
             );

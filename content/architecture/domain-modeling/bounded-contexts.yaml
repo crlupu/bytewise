@@ -1,0 +1,84 @@
+title: Ubiquitous language and bounded contexts
+summary: Why one model can't fit a whole business, and how to draw and connect the boundaries.
+duration: 9
+tags: [architecture, ddd, domain-driven design, bounded context, ubiquitous language, subdomains, anticorruption layer]
+sources:
+  - { book: learning-ddd, ref: "Chapters 1–4, Strategic Design" }
+steps:
+  - type: explanation
+    title: Speak the business's language
+    body: |
+      Many bugs are translation errors: the business means one thing, the code models another. Domain-driven design
+      answers with a **ubiquitous language** — one precise vocabulary, shared by domain experts and engineers, and used
+      unchanged in conversations, documents, tests and code.
+
+      If the experts say *policy*, the class is `Policy` — not `InsuranceContractRecord`.
+
+  - type: choice
+    prompt: In a CRM, Marketing calls someone a **lead** once they download a whitepaper. Sales calls someone a lead only after a qualifying call. What should the model do?
+    options:
+      - text: Accept that "lead" means different things in the two areas, and give each area its own model
+        correct: true
+      - text: Agree one company-wide definition and make both departments use it
+        feedback: The departments genuinely work differently; forcing one meaning makes the model wrong for at least one of them.
+      - text: Add fields so one `Lead` class can serve both meanings
+        feedback: That's how "god objects" are born — a class full of fields each department ignores.
+    explanation: A language is only ubiquitous **within a boundary**. That boundary is a **bounded context**.
+
+  - type: explanation
+    title: Bounded contexts
+    body: |
+      A **bounded context** is the boundary inside which a model and its language are consistent. Across boundaries, the
+      same word may mean different things — and that's fine, because each model only has to be right for its own context.
+
+      Bounded contexts are also natural units of ownership: ideally one team per context, and often one service per
+      context — but the boundary is about **meaning** first, deployment second.
+
+  - type: match
+    prompt: Match each kind of subdomain to how to treat it.
+    pairs:
+      - left: Core subdomain
+        right: What makes the company different — build in-house, invest the best people
+      - left: Supporting subdomain
+        right: Needed, but no competitive edge — build simply, or outsource
+      - left: Generic subdomain
+        right: Solved problems everyone has, like auth or payments — buy or adopt
+    explanation: Where you invest design effort follows from which kind of subdomain you're in.
+
+  - type: match
+    prompt: Match each integration pattern between bounded contexts to its description.
+    pairs:
+      - left: Partnership
+        right: Two teams coordinate changes together, as equals
+      - left: Shared kernel
+        right: Two contexts share a small, jointly owned part of the model
+      - left: Conformist
+        right: The downstream team simply adopts the upstream model as it is
+      - left: Anticorruption layer
+        right: The downstream team translates the upstream model into its own
+      - left: Open-host service
+        right: The upstream publishes a stable public protocol for all consumers
+
+  - type: choice
+    prompt: Your core subdomain must consume data from a messy legacy system you can't change. Which pattern protects your model?
+    options:
+      - text: An anticorruption layer
+        correct: true
+      - text: Conformist
+        feedback: Then the legacy system's mess becomes your core model's mess.
+      - text: Shared kernel
+        feedback: That needs joint ownership — you can't change the legacy system.
+    explanation: Translate at the boundary, so the legacy concepts never leak into the model that matters most.
+
+  - type: blank
+    prompt: Complete the definition.
+    template: "A bounded context is the boundary within which a [[ubiquitous]] language — and the [[model]] it describes — stays consistent."
+
+  - type: choice
+    prompt: Should every entity get its own bounded context — and its own microservice?
+    options:
+      - text: No — a context holds a whole consistent model; splitting finer scatters one model across many services
+        correct: true
+      - text: Yes — the smaller the context, the cleaner the design
+        feedback: Too-fine boundaries turn simple in-model operations into distributed transactions.
+    explanation: Bounded contexts are about coherent models, not the smallest possible units.

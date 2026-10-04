@@ -2282,3 +2282,168 @@ dialog.sheet::backdrop {
   background: var(--danger-soft);
   color: var(--danger);
 }
+
+/* ---- Books ---- */
+.sources {
+  inline-size: 100%;
+  max-inline-size: 28rem;
+  text-align: start;
+}
+.sources__icon {
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  color: var(--accent);
+}
+.sources__title {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.3;
+}
+.book-ref {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  margin-block-start: 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.book-ref svg {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  color: var(--accent);
+}
+.book-ref i {
+  color: var(--foreground);
+}
+.course-books {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-block-start: 0.75rem;
+}
+.course-books .pill {
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 0.25rem 0.625rem;
+}
+.course-books .pill i {
+  font-weight: 600;
+}
+
+/* Scheduler */
+.gantt {
+  overflow-x: auto;
+}
+.gantt__row,
+.gantt__axis {
+  display: grid;
+  gap: 1px;
+  min-inline-size: 18rem;
+}
+.gantt__cell {
+  block-size: 2rem;
+  display: flex;
+  align-items: center;
+  padding-inline-start: 3px;
+  background: var(--surface-secondary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  overflow: visible;
+  white-space: nowrap;
+}
+.gantt__cell:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.gantt__cell:last-child {
+  border-radius: 0 6px 6px 0;
+}
+.gantt__cell.is-future {
+  background: transparent;
+  box-shadow: inset 0 0 0 0.5px var(--separator);
+}
+.gantt__cell.is-now {
+  box-shadow: inset 0 -3px 0 var(--foreground);
+}
+.gantt__axis span {
+  font-family: var(--font-figure);
+  font-size: 0.6875rem;
+  color: var(--muted);
+  overflow: visible;
+  white-space: nowrap;
+}
+.sched-table {
+  margin-block-start: 0.875rem;
+  overflow-x: auto;
+}
+.sched-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-figure);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+}
+.sched-table th,
+.sched-table td {
+  padding: 0.375rem 0.5rem;
+  text-align: end;
+  border-block-end: 0.5px solid var(--separator);
+}
+.sched-table thead th {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.sched-table tbody th,
+.sched-table tfoot th,
+.sched-table thead th:first-child {
+  text-align: start;
+}
+.sched-table tr.is-running {
+  background: var(--accent-soft);
+}
+.sched-table tfoot {
+  font-weight: 700;
+}
+
+/* Congestion window */
+.cwnd {
+  overflow-x: auto;
+}
+.cwnd svg {
+  display: block;
+}
+.cwnd__grid {
+  stroke: var(--separator);
+}
+.cwnd__bar {
+  fill: var(--accent-soft-strong);
+}
+.cwnd__bar.is-now {
+  fill: var(--accent);
+}
+.cwnd__val {
+  fill: var(--foreground);
+  font-family: var(--font-figure);
+  font-size: 12px;
+  font-weight: 700;
+}
+.cwnd__axis {
+  fill: var(--muted);
+  font-family: var(--font-figure);
+  font-size: 11px;
+}
+.cwnd__event {
+  fill: var(--warning);
+  font-size: 10px;
+  font-weight: 700;
+}
+.cwnd__ssthresh {
+  fill: none;
+  stroke: var(--warning-mark);
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}

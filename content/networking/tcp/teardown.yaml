@@ -2,6 +2,8 @@ title: Closing a connection
 summary: Four segments, half-closes, and why TIME_WAIT hangs around.
 duration: 7
 tags: [networking, tcp, fin, teardown, time_wait, close_wait]
+sources:
+  - { book: kurose-ross, ref: "§3.5.6, TCP Connection Management" }
 steps:
   - type: explanation
     title: Each direction closes on its own

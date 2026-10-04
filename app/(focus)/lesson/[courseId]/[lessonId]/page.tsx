@@ -14,5 +14,5 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
   const course = cat.topics.flatMap((t) => t.courses).find((c) => c.id === courseId);
   if (!lesson || !course) notFound();
   const i = course.lessons.findIndex((l) => l.id === lessonId);
-  return <LessonPlayer lesson={lesson} courseTitle={course.title} next={course.lessons[i + 1] ?? null} />;
+  return <LessonPlayer lesson={lesson} courseTitle={course.title} next={course.lessons[i + 1] ?? null} books={cat.books} />;
 }

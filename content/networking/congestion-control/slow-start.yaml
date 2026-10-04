@@ -1,0 +1,97 @@
+title: Slow start and congestion avoidance
+summary: How a TCP sender probes for bandwidth — exponentially, then carefully.
+duration: 8
+tags: [networking, tcp, congestion control, cwnd, slow start, ssthresh, congestion avoidance]
+sources:
+  - { book: kurose-ross, ref: "§3.6–3.7, Congestion Control" }
+steps:
+  - type: explanation
+    title: Nobody tells the sender how fast to go
+    body: |
+      Flow control stops a sender overrunning the *receiver*. **Congestion control** stops senders overrunning the
+      *network* — routers whose queues fill up and drop packets.
+
+      No router tells TCP the right speed. The sender has to infer it: an ACK means "that got through", a lost segment
+      means "too much". It keeps a **congestion window**, `cwnd`: how many unacknowledged segments it may have in flight.
+      Roughly, it sends `cwnd` segments per round-trip time (RTT).
+
+  - type: explanation
+    title: Two phases
+    body: |
+      - **Slow start**: begin with `cwnd` = 1 segment, and add one for every ACK — which **doubles** `cwnd` each RTT.
+        "Slow" only because it starts at 1.
+      - When `cwnd` reaches the **slow-start threshold**, `ssthresh`, switch to **congestion avoidance**: add just
+        **one** segment per RTT.
+
+      Exponential growth finds the right neighbourhood fast; linear growth then probes gently for any extra capacity.
+
+  - type: widget
+    widget: congestion
+    prompt: |
+      `ssthresh` starts at 8. Play rounds where everything is acknowledged — **All ACKed**, or Step forward —
+      until the window reaches **12**.
+    config:
+      variant: reno
+      ssthresh: 8
+    goal:
+      cwndAtLeast: 12
+    question:
+      prompt: In which round did the window stop doubling?
+      options:
+        - text: Round 4, when it reached 8 — the threshold
+          correct: true
+        - text: Round 2
+        - text: It never stopped doubling
+          feedback: Look at the bars after 8 — 9, 10, 11, 12.
+    explanation: 1, 2, 4, 8 — doubling — then 9, 10, 11, 12, one more per round once `cwnd` reached `ssthresh`.
+
+  - type: predict
+    prompt: "`cwnd` starts at 1 and `ssthresh` is 64. How many RTTs of slow start until `cwnd` is 32?"
+    answer: ["5", "five"]
+    wrong:
+      - answer: "6"
+        feedback: Count the doublings — 1→2 is the first RTT.
+      - answer: "32"
+        feedback: That would be linear growth. Slow start doubles.
+      - answer: "4"
+        feedback: Four doublings of 1 give 16.
+    hints:
+      - 1 → 2 → 4 → 8 → 16 → 32.
+    explanation: 2⁵ = 32, so five round trips.
+
+  - type: choice
+    prompt: Why does TCP switch from doubling to adding one at `ssthresh`?
+    options:
+      - text: "`ssthresh` marks roughly where congestion happened last time, so the sender approaches it carefully"
+        correct: true
+      - text: The receiver's buffer is full at that point
+        feedback: That's flow control — the receive window — a separate limit.
+      - text: Doubling past a threshold would overflow the sequence numbers
+    explanation: "`ssthresh` is set from the window at the last loss — the sender's memory of where trouble began."
+
+  - type: match
+    prompt: Match each term to its meaning.
+    pairs:
+      - left: cwnd
+        right: How many unacknowledged segments the sender allows itself
+      - left: ssthresh
+        right: The window size where slow start hands over to congestion avoidance
+      - left: Slow start
+        right: Window doubles every round trip
+      - left: Congestion avoidance
+        right: Window grows by one segment every round trip
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Below ssthresh the window [[doubles]] each RTT; at or above it, the window grows by [[one|1]] segment each RTT."
+
+  - type: choice
+    prompt: A sender's effective window is the smaller of `cwnd` and what else?
+    options:
+      - text: The receive window advertised by the other side
+        correct: true
+      - text: ssthresh
+        feedback: ssthresh only decides how `cwnd` grows; it isn't a cap on sending.
+      - text: The MSS
+        feedback: The MSS is the size of one segment, the unit the window is counted in.
+    explanation: The network's limit (`cwnd`) and the receiver's limit (`rwnd`) both apply; the smaller wins.

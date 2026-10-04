@@ -1,0 +1,89 @@
+title: When an index stops working
+summary: Functions, LIKE and type conversions that quietly turn an index lookup into a scan.
+duration: 8
+tags: [databases, sql, indexes, function-based index, like, case-insensitive, sargable]
+sources:
+  - { book: sql-performance-explained, ref: "Chapter 2, The Where Clause — Functions and LIKE" }
+steps:
+  - type: explanation
+    title: The index stores the column, not your expression
+    body: |
+      An index on `last_name` holds the values of `last_name`, sorted. Now look at this search:
+
+      ```sql
+      SELECT * FROM employees WHERE UPPER(last_name) = 'WINAND';
+      ```
+
+      To the database, `UPPER(last_name)` is a **different value** from `last_name`. The index isn't sorted by it, so
+      it can't be used to jump to the right place — the query reads everything.
+
+  - type: choice
+    prompt: "There's an index on `last_name`. How do you make case-insensitive search by `UPPER(last_name)` use an index?"
+    options:
+      - text: Create an index on the expression itself — `CREATE INDEX ... ON employees (UPPER(last_name))`
+        correct: true
+      - text: Nothing — the optimizer will apply `UPPER` to the existing index
+        feedback: The index is sorted by the original values; `UPPER` can reorder them.
+      - text: Wrap the search value in `UPPER` too
+        feedback: The search value isn't the problem. The function on the *column* is.
+    explanation: |
+      A **function-based** (or expression) index stores `UPPER(last_name)` already computed and sorted.
+      The query must then use exactly the same expression.
+
+  - type: choice
+    prompt: Which of these can use a plain index on `sale_date`?
+    options:
+      - text: "`WHERE sale_date >= '2026-10-04' AND sale_date < '2026-10-05'`"
+        correct: true
+      - text: "`WHERE CAST(sale_date AS DATE) = '2026-10-04'`"
+        feedback: A function on the column hides it from the index — even a harmless-looking cast.
+      - text: "`WHERE EXTRACT(YEAR FROM sale_date) = 2026`"
+        feedback: Rewrite it as a range on `sale_date` itself instead.
+    hints:
+      - Leave the column bare, and move the work to the other side of the comparison.
+    explanation: |
+      Express conditions as a range on the **bare column**. That's what "sargable" (search-argument-able) means.
+
+  - type: explanation
+    title: LIKE and where the wildcard sits
+    body: |
+      `LIKE` uses an index only as far as its first wildcard:
+
+      | Pattern | What the index can do |
+      |---|---|
+      | `'WIN%'` | Jump to *WIN*, read until it stops matching |
+      | `'W%ND'` | Jump to *W* — then check every name starting with W |
+      | `'%AND'` | Nothing — the match could start anywhere |
+
+      The characters **before** the first wildcard narrow the scan; everything after is just a filter.
+
+  - type: order
+    prompt: Order these patterns from most selective index use to least.
+    items:
+      - "`LIKE 'WINAND%'`"
+      - "`LIKE 'WIN%'`"
+      - "`LIKE 'W%'`"
+      - "`LIKE '%NAND'`"
+    explanation: The longer the prefix before the first `%`, the narrower the slice of the index that has to be read.
+
+  - type: predict
+    prompt: "`phone` is a `VARCHAR` column with an index. Why might `WHERE phone = 4155550100` (a number, no quotes) ignore the index?"
+    options:
+      - text: The database converts every `phone` value to a number to compare it — a function on the column
+        correct: true
+      - text: Numbers can't be compared with strings
+        feedback: Many databases allow it — by converting implicitly, which is the problem.
+      - text: Indexes don't work on long values
+    explanation: An implicit conversion is a hidden function on the column. Compare with a value of the column's own type — `'4155550100'`.
+
+  - type: match
+    prompt: Match each slow condition to its index-friendly rewrite.
+    pairs:
+      - left: "`UPPER(name) = 'ADA'`"
+        right: An index on `UPPER(name)`
+      - left: "`YEAR(created) = 2026`"
+        right: "`created >= '2026-01-01' AND created < '2027-01-01'`"
+      - left: "`price * 1.2 > 100`"
+        right: "`price > 100 / 1.2`"
+      - left: "`code = 42` on a text column"
+        right: "`code = '42'`"

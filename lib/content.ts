@@ -4,8 +4,8 @@ import YAML from "yaml";
 import { Marked } from "marked";
 import { createHighlighter, type Highlighter } from "shiki";
 import type { z } from "zod";
-import { CourseFile, LessonFile, STEP_SCHEMAS, TopicFile, type RawStep } from "@/lib/schema";
-import type { Catalog, CourseMeta, Html, Lesson, LessonMeta, Option, Step, TopicMeta } from "@/lib/types";
+import { BooksFile, CourseFile, LessonFile, STEP_SCHEMAS, TopicFile, type RawStep } from "@/lib/schema";
+import type { Book, Catalog, CourseMeta, Html, Lesson, LessonMeta, Option, Step, TopicMeta } from "@/lib/types";
 
 /**
  * Reads every file under content/, validates it and renders it.
@@ -211,6 +211,14 @@ async function load(): Promise<Loaded> {
   const entryIndex = new Map<string, number>();
   const declared = new Set<string>();
 
+  const booksFile = path.join(ROOT, "books.yaml");
+  const books: Record<string, Book> = {};
+  if (fs.existsSync(booksFile)) {
+    const bp = BooksFile.safeParse(readYaml(booksFile, problems) ?? {});
+    if (bp.success) for (const [bid, b] of Object.entries(bp.data)) books[bid] = { id: bid, ...b };
+    else problems.push(...issues(booksFile, bp.error));
+  }
+
   const topicDirs = fs
     .readdirSync(ROOT, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -263,6 +271,10 @@ async function load(): Promise<Loaded> {
           problems.push(...issues(lessonFile, lp.error));
           return;
         }
+        lp.data.sources.forEach((src, si) => {
+          if (!books[src.book])
+            problems.push(`${rel(lessonFile)}: sources[${si}].book: no book "${src.book}" in ${rel(booksFile)}`);
+        });
         const key = `${courseId}/${lessonId}`;
         const steps: RawStep[] = [];
         const ids = new Set<string>();
@@ -297,6 +309,7 @@ async function load(): Promise<Loaded> {
           summary: lp.data.summary,
           duration: lp.data.duration,
           tags: lp.data.tags,
+          sources: lp.data.sources,
           requires: requires.map((q) => (q.includes("/") ? q : `${courseId}/${q}`)),
           steps: body.length,
           stepKeys: body.map((s) => s.key),
@@ -322,7 +335,7 @@ async function load(): Promise<Loaded> {
 
   if (problems.length) throw new ContentError(problems);
   topics.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-  return { catalog: { topics }, lessons };
+  return { catalog: { topics, books }, lessons };
 }
 
 export async function getCatalog(): Promise<Catalog> {

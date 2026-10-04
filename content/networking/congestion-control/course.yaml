@@ -1,0 +1,7 @@
+title: TCP congestion control
+summary: How TCP finds out how fast it can send, round-trip by round-trip — after Kurose & Ross.
+lessons:
+  - id: slow-start
+    requires: [tcp/handshake]
+  - id: tahoe-and-reno
+    requires: [slow-start]

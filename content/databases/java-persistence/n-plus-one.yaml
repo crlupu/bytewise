@@ -1,0 +1,106 @@
+title: The N+1 query problem
+summary: How lazy loading turns one page of results into hundreds of queries, and the fetch strategies that fix it.
+duration: 8
+tags: [databases, java, jpa, hibernate, n+1, lazy loading, join fetch]
+sources:
+  - { book: hpjp, ref: "Part II, Fetching" }
+steps:
+  - type: explanation
+    title: One query, then one per row
+    body: |
+      With JPA, a `Post` has many `PostComment`s. Load the posts, then touch each one's comments:
+
+      ```java
+      List<Post> posts = em.createQuery("select p from Post p", Post.class)
+                           .setMaxResults(50)
+                           .getResultList();
+      for (Post p : posts) {
+          log(p.getTitle(), p.getComments().size());
+      }
+      ```
+
+      The comments are **lazy**: Hibernate loads them only when first used. So the loop issues one more `SELECT`
+      for every post.
+
+  - type: predict
+    prompt: How many SQL queries does that code run, if there are 50 posts?
+    answer: ["51", "fifty-one"]
+    wrong:
+      - answer: "1"
+        feedback: The first query loads only the posts. The comments are lazy.
+      - answer: "50"
+        feedback: Don't forget the query that loaded the posts in the first place.
+      - answer: "2"
+        feedback: That's what a well-fetched version would do. Lazy loading goes post by post.
+    hints:
+      - One for the list, then one each time `getComments()` is used.
+    explanation: 1 + 50 = 51 — hence the name **N+1**. Each is a network round trip, so the cost grows with the page size.
+
+  - type: choice
+    prompt: Why is N+1 so easy to miss?
+    options:
+      - text: The code looks like plain object navigation; the queries are hidden behind getters
+        correct: true
+      - text: It only happens in production databases
+        feedback: It happens everywhere — but a test with three rows doesn't make it slow.
+      - text: JDBC drivers hide it from the logs
+        feedback: Logging SQL (or counting statements in tests) shows it clearly.
+    explanation: |
+      With small test data it's invisible. Log SQL in development, and consider asserting statement counts in
+      integration tests.
+
+  - type: explanation
+    title: Fetch what you need, in one go
+    body: |
+      Tell the query up front that you need the comments:
+
+      ```java
+      select distinct p
+      from Post p
+      left join fetch p.comments
+      where p.id in :ids
+      ```
+
+      Other tools for the same job:
+
+      - an **entity graph** naming the associations to fetch for one use case;
+      - **batch fetching** (`@BatchSize` or `hibernate.default_batch_fetch_size`): load lazy collections for many parents with `IN (...)`;
+      - a **DTO projection**: select only the columns the screen shows, straight into a plain object.
+
+  - type: match
+    prompt: Match each fix to what it does.
+    pairs:
+      - left: "`JOIN FETCH`"
+        right: Loads the parents and their children in the same query
+      - left: Batch fetching
+        right: Loads children for many parents at once with `IN (...)`
+      - left: DTO projection
+        right: Selects just the needed columns into a read-only object
+      - left: Entity graph
+        right: Declares per use case which associations to load eagerly
+
+  - type: choice
+    prompt: Should you fix N+1 by mapping the association as `FetchType.EAGER`?
+    options:
+      - text: No — then every query that loads a post pays for its comments, needed or not
+        correct: true
+      - text: Yes — eager loading always uses a join
+        feedback: Eager associations are often loaded with extra secondary queries — a new N+1 in every query.
+    explanation: |
+      Mihalcea's advice: keep associations **lazy** in the mapping, and decide what to fetch **per query**.
+      Fetching is a query-time decision.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Map associations as [[LAZY|lazy]], and fetch what a use case needs in the [[query]] itself."
+
+  - type: choice
+    prompt: A `join fetch` of a one-to-many plus pagination (`setMaxResults`) is a known trap. Why?
+    options:
+      - text: The join multiplies parent rows, so the limit can't be applied in SQL — Hibernate fetches everything and pages in memory
+        correct: true
+      - text: "`join fetch` doesn't support `where` clauses"
+      - text: Pagination makes lazy loading eager
+    explanation: |
+      Hibernate warns about it ("firstResult/maxResults specified with collection fetch; applying in memory").
+      Page over the parent ids first, then fetch their children for just those ids.

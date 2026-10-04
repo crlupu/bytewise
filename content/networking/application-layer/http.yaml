@@ -1,0 +1,95 @@
+title: HTTP and round trips
+summary: Persistent connections, conditional requests, and why HTTP/2 and HTTP/3 exist.
+duration: 9
+tags: [networking, http, persistent connections, rtt, caching, http2, http3, quic]
+sources:
+  - { book: kurose-ross, ref: "§2.2, The Web and HTTP" }
+steps:
+  - type: explanation
+    title: Requests ride on TCP
+    body: |
+      HTTP is request–response: the client sends `GET /index.html`, the server replies with a status line,
+      headers and the body. Under it is a TCP connection — and setting one up costs a round trip (RTT) before
+      the request can even be sent.
+
+      So fetching one small object over a **new** connection takes about **2 RTTs**: one for the handshake, one
+      for the request and response.
+
+  - type: predict
+    prompt: |
+      A page is one HTML file plus 10 images, all small. With **non-persistent** connections — a new TCP connection
+      per object, fetched one after another — about how many RTTs does it take?
+    answer: ["22", "22 rtt", "22 rtts"]
+    wrong:
+      - answer: "11"
+        feedback: That counts one RTT per object. Each also needs its own handshake.
+      - answer: "12"
+        feedback: That's the persistent-connection answer — try it next.
+    hints:
+      - 11 objects, 2 RTTs each.
+    explanation: 11 objects × 2 RTTs = 22.
+
+  - type: predict
+    prompt: Same page, but with one **persistent** connection (HTTP/1.1's default), requests sent one at a time. About how many RTTs?
+    answer: ["12", "12 rtt", "12 rtts"]
+    wrong:
+      - answer: "11"
+        feedback: Don't forget the one handshake at the start.
+      - answer: "22"
+        feedback: With a persistent connection, the handshake happens only once.
+    hints:
+      - One handshake, then one RTT per object.
+    explanation: 1 RTT for the handshake + 11 request–response round trips = 12.
+
+  - type: match
+    prompt: Match each status code to its meaning.
+    pairs:
+      - left: "200 OK"
+        right: Here's what you asked for
+      - left: "301 Moved Permanently"
+        right: It's at a different URL now — use that from now on
+      - left: "304 Not Modified"
+        right: Your cached copy is still good
+      - left: "404 Not Found"
+        right: There's nothing at this URL
+      - left: "503 Service Unavailable"
+        right: The server can't handle it right now — try later
+
+  - type: explanation
+    title: Conditional GET
+    body: |
+      A cache — a browser's, or a proxy's — may hold a copy that might be stale. Instead of downloading it again, it asks:
+
+      ```http
+      GET /logo.png HTTP/1.1
+      If-Modified-Since: Sat, 03 Oct 2026 09:00:00 GMT
+      ```
+
+      (or `If-None-Match` with an `ETag`). If nothing changed, the server answers **304 Not Modified** with no body —
+      a round trip, but no download.
+
+  - type: choice
+    prompt: HTTP/1.1 sends requests on a connection one at a time. A slow response blocks everything queued behind it. What did HTTP/2 change?
+    options:
+      - text: It multiplexes many requests as interleaved streams over one connection
+        correct: true
+      - text: It switched from TCP to UDP
+        feedback: That's HTTP/3, which runs over QUIC on UDP.
+      - text: It removed headers
+        feedback: It compresses them (HPACK); they're still there.
+    explanation: Multiplexing removes HTTP-level head-of-line blocking. One lost TCP segment still stalls every stream, though…
+
+  - type: choice
+    prompt: "…which is why HTTP/3 runs over QUIC, on UDP. What does that buy?"
+    options:
+      - text: A lost packet stalls only its own stream, and connection setup is combined with TLS in fewer round trips
+        correct: true
+      - text: UDP never loses packets
+        feedback: QUIC does its own loss recovery — per stream, which is the point.
+      - text: It removes the need for encryption
+        feedback: QUIC always encrypts.
+    explanation: QUIC moves reliability up into user space, per stream, removing TCP's head-of-line blocking.
+
+  - type: blank
+    prompt: Complete the summary.
+    template: "Fetching one object over a new TCP connection takes about [[2|two]] RTTs; a [[persistent]] connection saves the handshake for every object after the first."

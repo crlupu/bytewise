@@ -1,0 +1,5 @@
+title: The application layer
+summary: What happens before the first TCP segment — names, then requests — after Kurose & Ross.
+lessons:
+  - dns
+  - http

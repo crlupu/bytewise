@@ -2,6 +2,8 @@ title: Locks with synchronized
 summary: How an intrinsic lock turns read-add-write into one step, and what it does and doesn't protect.
 duration: 8
 tags: [java, threads, synchronized, locks, monitor, atomic]
+sources:
+  - { book: jcip, ref: "Chapter 2, Thread Safety — Locking" }
 steps:
   - type: explanation
     title: Every object has a lock

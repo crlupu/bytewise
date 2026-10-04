@@ -1,0 +1,98 @@
+title: Batching writes
+summary: Sending many statements in one round trip — and the ID strategy that silently turns it off.
+duration: 7
+tags: [databases, java, jdbc, batching, hibernate, identity, sequence, round trips]
+sources:
+  - { book: hpjp, ref: "Part I, Batch Updates; Part II, Identifiers" }
+steps:
+  - type: explanation
+    title: Round trips are the cost
+    body: |
+      Inserting 1,000 rows one statement at a time means 1,000 trips to the database and back. Even at 0.5 ms each,
+      that's half a second spent mostly waiting on the network.
+
+      JDBC can **batch** them: queue many executions of one prepared statement, and send them together.
+
+      ```java
+      PreparedStatement ps = conn.prepareStatement("insert into post (id, title) values (?, ?)");
+      for (Post p : posts) {
+          ps.setLong(1, p.id());
+          ps.setString(2, p.title());
+          ps.addBatch();
+      }
+      ps.executeBatch();
+      ```
+
+  - type: predict
+    prompt: |
+      You insert 1,000 rows with a batch size of 50. About how many round trips to the database does that take?
+    answer: ["20", "twenty"]
+    wrong:
+      - answer: "1000"
+        feedback: That's without batching. Each batch carries 50 statements.
+      - answer: "50"
+        feedback: 50 is the size of each batch, not the number of them.
+    hints:
+      - 1,000 ÷ 50.
+    explanation: 1,000 ÷ 50 = 20 round trips instead of 1,000.
+
+  - type: explanation
+    title: Turning it on in Hibernate
+    body: |
+      Hibernate batches only when told to:
+
+      ```properties
+      hibernate.jdbc.batch_size=50
+      hibernate.order_inserts=true
+      hibernate.order_updates=true
+      ```
+
+      Ordering groups statements for the same table together, so a batch isn't broken every time the flush
+      alternates between `post` and `post_comment`.
+
+  - type: choice
+    prompt: |
+      Batching is configured, but entities use `@GeneratedValue(strategy = IDENTITY)`. The SQL log still shows one
+      insert per round trip. Why?
+    options:
+      - text: With IDENTITY, the id is only known after the row is inserted, so Hibernate must execute each insert immediately
+        correct: true
+      - text: IDENTITY columns can't be inserted with prepared statements
+        feedback: They can — but Hibernate needs each generated id back right away to manage the entity.
+      - text: Batching only works for updates
+        feedback: Inserts batch well — with an id strategy that allows it.
+    explanation: |
+      The persistence context identifies entities by id, so with IDENTITY each `persist` forces an insert.
+      Use a **sequence** (with an optimizer like `pooled`) to get ids ahead of time and keep batching.
+
+  - type: match
+    prompt: Match each id strategy to how it interacts with batching.
+    pairs:
+      - left: "`IDENTITY`"
+        right: Disables insert batching — the id comes back from each insert
+      - left: "`SEQUENCE` with a pooled optimizer"
+        right: Batches well — ids are allocated in blocks ahead of time
+      - left: "`TABLE`"
+        right: Works anywhere, but contends on a row lock — the slowest option
+      - left: Assigned (app-generated, e.g. UUID)
+        right: Batches, since the id is known before insert
+
+  - type: order
+    prompt: Put the steps of a batched flush in order.
+    items:
+      - Entities are persisted; Hibernate assigns ids from the sequence pool
+      - At flush, inserts are sorted so statements for one table sit together
+      - Each table's inserts are added to a JDBC batch
+      - The batch is sent when it reaches the batch size, or at the end of the flush
+
+  - type: choice
+    prompt: You must load and update 100,000 rows in one job. Besides batching, what keeps memory in check?
+    options:
+      - text: Flush and clear the persistence context every batch-size entities
+        correct: true
+      - text: Increase the batch size to 100,000
+        feedback: The persistence context still holds every entity in memory — and a giant batch is slow too.
+      - text: Use `FetchType.EAGER`
+    explanation: |
+      `em.flush(); em.clear();` every N entities sends the batch and lets the processed entities be garbage collected.
+      For bulk changes that need no entity logic, a single `UPDATE ... WHERE` is better still.

@@ -2,6 +2,8 @@ title: The three-way handshake
 summary: SYN, SYN-ACK, ACK — what each segment carries and why it takes three.
 duration: 8
 tags: [networking, tcp, handshake, syn, sequence numbers]
+sources:
+  - { book: kurose-ross, ref: "§3.5.6, TCP Connection Management" }
 steps:
   - type: explanation
     title: Agreeing where to start counting

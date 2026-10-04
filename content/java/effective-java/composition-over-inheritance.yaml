@@ -1,0 +1,99 @@
+title: Composition over inheritance
+summary: How extending a class you don't own can break in ways you can't see, and the forwarding wrapper that doesn't.
+duration: 7
+tags: [java, effective java, inheritance, composition, decorator, fragile base class]
+sources:
+  - { book: effective-java, ref: "Item 18" }
+steps:
+  - type: explanation
+    title: Inheritance breaks encapsulation
+    body: |
+      A subclass depends on **how** its superclass is implemented, not just on what it promises. When the superclass
+      changes — or calls its own methods in a way you didn't expect — the subclass can break without a line of it changing.
+
+      Here's a set that counts how many elements were ever added to it:
+
+      ```java
+      class InstrumentedHashSet<E> extends HashSet<E> {
+          int addCount = 0;
+          @Override public boolean add(E e) { addCount++; return super.add(e); }
+          @Override public boolean addAll(Collection<? extends E> c) {
+              addCount += c.size();
+              return super.addAll(c);
+          }
+      }
+      ```
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      InstrumentedHashSet<String> s = new InstrumentedHashSet<>();
+      s.addAll(List.of("Snap", "Crackle", "Pop"));
+      System.out.println(s.addCount);
+    language: java
+    answer: ["6"]
+    wrong:
+      - answer: "3"
+        feedback: "`HashSet.addAll` is implemented by calling `add` for each element — and `add` is overridden."
+    hints:
+      - How might `HashSet.addAll` be implemented internally?
+    explanation: |
+      6. `addAll` adds 3, then `super.addAll` calls the overridden `add` three times, adding 3 more. The subclass
+      relied on an implementation detail it couldn't see.
+
+  - type: choice
+    prompt: How should the subclass be fixed?
+    options:
+      - text: Don't extend `HashSet`; wrap a `Set` and forward calls to it
+        correct: true
+      - text: Stop overriding `addAll`
+        feedback: That works today, but only because of how `HashSet.addAll` happens to be written — a future release could change it.
+      - text: Subtract `c.size()` in `addAll` after calling `super`
+        feedback: Same fragility, in reverse.
+    explanation: Fixes that depend on the superclass's internals are just new fragile bets.
+
+  - type: explanation
+    title: Composition and forwarding
+    body: |
+      Give the new class a **private field** holding an instance of the existing class, and have each method
+      **forward** to it:
+
+      ```java
+      class InstrumentedSet<E> extends ForwardingSet<E> {
+          int addCount = 0;
+          InstrumentedSet(Set<E> s) { super(s); }
+          @Override public boolean add(E e) { addCount++; return super.add(e); }
+          @Override public boolean addAll(Collection<? extends E> c) {
+              addCount += c.size();
+              return super.addAll(c);
+          }
+      }
+      ```
+
+      `ForwardingSet` holds a `Set` and passes every call straight through. Now `addAll` reaches the *inner* set,
+      whose own `add` isn't ours — so nothing is counted twice. And it works with any `Set`: `new InstrumentedSet<>(new TreeSet<>())`.
+
+  - type: match
+    prompt: Match each term to its meaning.
+    pairs:
+      - left: Composition
+        right: The new class holds an instance of the existing one in a field
+      - left: Forwarding
+        right: Each method calls the same method on the held instance
+      - left: Wrapper (decorator)
+        right: A class that adds behavior around another instance of the same interface
+      - left: Fragile base class
+        right: A superclass change silently breaking subclasses
+
+  - type: choice
+    prompt: When is inheritance the right tool?
+    options:
+      - text: When B truly *is an* A, and A was designed and documented for extension
+        correct: true
+      - text: Whenever B needs most of A's methods
+        feedback: That's what forwarding gives you, without inheriting A's implementation details.
+      - text: Whenever it saves code
+        feedback: The saved lines are paid back later in fragility.
+    explanation: |
+      Inheritance is safe inside a package under one team's control, or for classes explicitly designed for it.
+      Across package boundaries, prefer composition.

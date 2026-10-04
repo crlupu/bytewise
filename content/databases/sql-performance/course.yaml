@@ -1,0 +1,7 @@
+title: SQL performance
+summary: How the WHERE clause decides whether an index helps — after Markus Winand's SQL Performance Explained.
+lessons:
+  - id: concatenated-indexes
+    requires: [btree-indexes/why-indexes]
+  - id: indexes-and-functions
+    requires: [concatenated-indexes]

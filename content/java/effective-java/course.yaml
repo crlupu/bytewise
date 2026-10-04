@@ -1,0 +1,9 @@
+title: Effective Java essentials
+summary: Bloch's best-known items — object creation, equality, immutability and composition — as exercises.
+lessons:
+  - creating-objects
+  - id: equals-and-hashcode
+    requires: [java-core/string-equality]
+  - immutability
+  - id: composition-over-inheritance
+    requires: [immutability]

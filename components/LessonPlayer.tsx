@@ -6,14 +6,25 @@ import { CloseIcon, DoneIcon, StreakIcon, TimeIcon, TrophyIcon } from "@/compone
 import { StepView } from "@/components/steps/StepView";
 import { plural } from "@/components/ui";
 import { progress, streak, useHydrated, useProgress } from "@/lib/progress";
-import type { Lesson, LessonMeta } from "@/lib/types";
+import type { Book, Lesson, LessonMeta } from "@/lib/types";
+import { SourceList } from "@/components/Books";
 
 /**
  * A lesson, one step at a time. The bar along the top closes the lesson
  * and shows where you are; the position is saved on every move, so leaving
  * part-way and coming back resumes at the same step.
  */
-export function LessonPlayer({ lesson, courseTitle, next }: { lesson: Lesson; courseTitle: string; next: LessonMeta | null }) {
+export function LessonPlayer({
+  lesson,
+  courseTitle,
+  next,
+  books,
+}: {
+  lesson: Lesson;
+  courseTitle: string;
+  next: LessonMeta | null;
+  books: Record<string, Book>;
+}) {
   const hydrated = useHydrated();
   const p = useProgress();
   const [index, setIndex] = useState<number | null>(null);
@@ -89,12 +100,12 @@ export function LessonPlayer({ lesson, courseTitle, next }: { lesson: Lesson; co
         />
       )}
 
-      {finished && <Complete lesson={lesson} next={next} minutes={Math.max(1, Math.round((Date.now() - startedAt) / 60000))} />}
+      {finished && <Complete lesson={lesson} next={next} books={books} minutes={Math.max(1, Math.round((Date.now() - startedAt) / 60000))} />}
     </div>
   );
 }
 
-function Complete({ lesson, next, minutes }: { lesson: Lesson; next: LessonMeta | null; minutes: number }) {
+function Complete({ lesson, next, minutes, books }: { lesson: Lesson; next: LessonMeta | null; minutes: number; books: Record<string, Book> }) {
   const p = useProgress();
   const rec = p.lessons[lesson.key];
   const share = Math.round((rec?.firstTryShare ?? 0) * 100);
@@ -134,6 +145,7 @@ function Complete({ lesson, next, minutes }: { lesson: Lesson; next: LessonMeta 
               {plural(lesson.exercises.length, "exercise")} added to your review queue.
             </p>
           )}
+          <SourceList sources={lesson.sources} books={books} />
         </div>
       </div>
       <footer className="player__foot bar-material">

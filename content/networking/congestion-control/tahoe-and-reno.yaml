@@ -1,0 +1,110 @@
+title: Reacting to loss — Tahoe and Reno
+summary: Timeouts, triple duplicate ACKs, fast recovery, and the sawtooth they draw.
+duration: 9
+tags: [networking, tcp, congestion control, reno, tahoe, fast retransmit, fast recovery, aimd]
+sources:
+  - { book: kurose-ross, ref: "§3.7, TCP Congestion Control" }
+steps:
+  - type: explanation
+    title: Two kinds of loss signal
+    body: |
+      A sender learns of a loss in one of two ways:
+
+      - **Timeout** — no ACK arrives at all. Serious: maybe nothing is getting through.
+      - **Three duplicate ACKs** — the receiver keeps acknowledging the same byte because one segment is missing but
+        later ones are arriving. Milder: the network is still delivering. The sender resends the missing segment at
+        once (**fast retransmit**) rather than waiting for a timeout.
+
+      Either way, `ssthresh` becomes **half** the current window.
+
+  - type: widget
+    widget: congestion
+    prompt: |
+      **TCP Reno.** Grow the window to 12, then end a round with **3 duplicate ACKs**.
+    config:
+      variant: reno
+      ssthresh: 8
+    goal:
+      cwndAtLeast: 12
+      events: [dupack]
+    question:
+      prompt: What was the window in the round after the duplicate ACKs?
+      options:
+        - text: "1"
+          feedback: That's Tahoe's — or anyone's after a timeout. Reno is gentler with duplicate ACKs.
+        - text: "6"
+          feedback: That's the new ssthresh. Reno then adds 3 for the three segments the duplicate ACKs show have left the network.
+        - text: "9"
+          correct: true
+    hints:
+      - Play All ACKed until the bar reads 12, then press 3 duplicate ACKs.
+    explanation: |
+      ssthresh = 12 ÷ 2 = 6, and Reno's **fast recovery** sets cwnd = ssthresh + 3 = 9, then continues in congestion
+      avoidance. No return to slow start.
+
+  - type: widget
+    widget: congestion
+    prompt: |
+      Now switch to **Tahoe** — Reno's predecessor — and do the same: grow to 12, then 3 duplicate ACKs.
+    config:
+      variant: reno
+      ssthresh: 8
+      switchable: true
+    goal:
+      variant: tahoe
+      cwndAtLeast: 12
+      events: [dupack]
+    question:
+      prompt: How did Tahoe react?
+      options:
+        - text: It dropped the window to 1 and went back to slow start
+          correct: true
+        - text: It halved the window
+          feedback: It halved ssthresh — the window itself went all the way down.
+    explanation: Tahoe treats every loss like a timeout. Reno distinguishes the milder signal and recovers faster.
+
+  - type: match
+    prompt: Match each event to what Reno does.
+    pairs:
+      - left: Every ACK in slow start
+        right: Window grows by one segment (doubling per RTT)
+      - left: A round in congestion avoidance
+        right: Window grows by one segment
+      - left: Three duplicate ACKs
+        right: ssthresh halves; window becomes ssthresh + 3; fast recovery
+      - left: Timeout
+        right: ssthresh halves; window drops to 1; slow start again
+
+  - type: explanation
+    title: Additive increase, multiplicative decrease
+    body: |
+      Ignore slow start, and steady-state Reno does two things: **add one** segment per RTT while all is well, and
+      **halve** the window on loss. That's **AIMD**, and it draws TCP's signature **sawtooth**.
+
+      AIMD has a remarkable property: two connections sharing a bottleneck converge towards an **equal share** of it.
+      Each adds the same amount; but halving takes more from the one with the bigger window.
+
+  - type: choice
+    prompt: Why multiplicative decrease, rather than subtracting one segment on loss?
+    options:
+      - text: Backing off hard relieves congestion quickly, and is what makes competing flows converge to fairness
+        correct: true
+      - text: Halving is cheaper to compute
+        feedback: Arithmetic cost is irrelevant at network timescales.
+      - text: The RFCs just happen to say so
+    explanation: Gentle increase plus sharp decrease is what keeps the shared network stable.
+
+  - type: widget
+    widget: congestion
+    prompt: |
+      Draw a **sawtooth**: with Reno, let the window grow and take a few losses by **3 duplicate ACKs**, then end with a **timeout** — at least 12 rounds in all.
+    config:
+      variant: reno
+      ssthresh: 8
+      maxRounds: 28
+    goal:
+      rounds: 12
+      events: [dupack, timeout]
+    hints:
+      - Mix All ACKed with 3 duplicate ACKs a few times, then press Timeout.
+    explanation: The teeth are AIMD; the cliff at the timeout is the sender starting over from one segment.

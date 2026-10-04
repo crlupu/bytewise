@@ -1,0 +1,86 @@
+title: The multi-level feedback queue
+summary: A scheduler that learns from the past which jobs are interactive — and the rules that keep it fair.
+duration: 8
+tags: [operating systems, scheduling, mlfq, priority, starvation, gaming, priority boost]
+sources:
+  - { book: ostep, ref: "Chapter 8, Scheduling: The Multi-Level Feedback Queue" }
+steps:
+  - type: explanation
+    title: Learning from behaviour
+    body: |
+      We'd like STCF's turnaround and round robin's response, without knowing job lengths. The **multi-level feedback
+      queue** (MLFQ) gets close by watching what jobs actually do.
+
+      It keeps several queues, each a **priority level**. The two basic rules:
+
+      1. A job in a higher queue runs before any job in a lower one.
+      2. Jobs in the same queue take turns, round robin.
+
+      The trick is how jobs **move** between queues.
+
+  - type: order
+    prompt: Follow a long, CPU-hungry job through MLFQ. Put its life in order.
+    items:
+      - It enters at the highest priority, like every new job
+      - It uses up its time allotment at that level
+      - It is moved down one queue
+      - It keeps sinking until it runs at the lowest priority
+    explanation: The scheduler assumes every job might be short; jobs that prove otherwise drift down.
+
+  - type: choice
+    prompt: An editor waits for keystrokes, running for a millisecond each time. Where does it stay?
+    options:
+      - text: Near the top — it never uses up its allotment, so it isn't demoted
+        correct: true
+      - text: At the bottom — it has been in the system the longest
+        feedback: MLFQ judges by CPU use, not age.
+    explanation: Interactive jobs stay high and get the CPU quickly when they need it — good response time without being told they're interactive.
+
+  - type: explanation
+    title: Two problems, two more rules
+    body: |
+      With only those rules, MLFQ can be broken:
+
+      - **Starvation**: if interactive jobs keep arriving, long jobs at the bottom may never run.
+      - **Gaming**: a job could do a tiny bit of I/O just before its slice ends, give up the CPU, and stay at the top forever.
+
+      The fixes:
+
+      - **Priority boost**: every so often (period *S*), move every job back to the top queue.
+      - **Accounting**: count the *total* CPU used at a level, however it's split up. Once the allotment is used, demote — whether or not the job gave up the CPU early.
+
+  - type: match
+    prompt: Match each rule to the problem it solves.
+    pairs:
+      - left: New jobs start at the top
+        right: Short jobs finish quickly without being identified in advance
+      - left: Demote after using the allotment
+        right: Long CPU-bound jobs stop hogging high priority
+      - left: Periodic priority boost
+        right: Starvation of jobs at the bottom
+      - left: Count total CPU use at a level
+        right: Gaming the scheduler with well-timed I/O
+
+  - type: choice
+    prompt: A job does compute-heavy work for a minute, then becomes interactive. Without the priority boost, what happens?
+    options:
+      - text: It stays at the bottom, so its new interactive phase gets poor response
+        correct: true
+      - text: It rises back up as soon as it starts doing I/O
+        feedback: Basic MLFQ only moves jobs down. The boost is what lets them come back.
+    explanation: The boost also handles jobs that change behaviour, not just starvation.
+
+  - type: blank
+    prompt: Complete the summary.
+    template: "MLFQ uses a job's [[past|history]] behaviour to predict its [[future]] behaviour."
+
+  - type: choice
+    prompt: How should the time slice vary across the queues?
+    options:
+      - text: Short slices at high priority, longer slices at low priority
+        correct: true
+      - text: The same slice everywhere
+        feedback: That works, but misses an easy win.
+      - text: Long slices at high priority
+        feedback: High queues hold interactive jobs that need quick turns; long slices would slow their response.
+    explanation: Interactive jobs at the top switch quickly; CPU-bound jobs at the bottom get longer slices and less switching overhead.

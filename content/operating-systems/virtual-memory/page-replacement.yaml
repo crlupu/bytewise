@@ -2,6 +2,8 @@ title: Page replacement
 summary: FIFO, LRU and the optimal policy, played out on the same reference string.
 duration: 9
 tags: [operating systems, page replacement, fifo, lru, belady, clock]
+sources:
+  - { book: ostep, ref: "Chapter 22, Beyond Physical Memory: Policies" }
 steps:
   - type: explanation
     title: Who gets evicted?

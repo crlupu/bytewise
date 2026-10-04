@@ -1,0 +1,100 @@
+title: Isolation levels and their anomalies
+summary: Dirty reads, non-repeatable reads, phantoms and lost updates — which level allows which.
+duration: 9
+tags: [databases, transactions, isolation, acid, read committed, repeatable read, serializable, snapshot isolation]
+sources:
+  - { book: database-internals, ref: "Chapter 5, Transaction Processing and Recovery — Isolation" }
+steps:
+  - type: explanation
+    title: The I in ACID
+    body: |
+      **Isolation** promises that concurrent transactions don't interfere. Full isolation — **serializability** —
+      means the result is the same as running them one at a time in some order.
+
+      That costs throughput, so databases offer weaker levels. Each weaker level permits certain **anomalies**:
+      situations a transaction can observe that couldn't happen if it ran alone.
+
+  - type: match
+    prompt: Match each anomaly to what happens.
+    pairs:
+      - left: Dirty read
+        right: Reading another transaction's write before it commits
+      - left: Non-repeatable read
+        right: Reading the same row twice and getting different values
+      - left: Phantom read
+        right: Re-running a range query and getting new rows
+      - left: Lost update
+        right: Two read-modify-write cycles where one silently overwrites the other
+
+  - type: choice
+    prompt: |
+      T1 runs `UPDATE accounts SET balance = 0 WHERE id = 1`, but hasn't committed. T2 reads account 1 and sees 0.
+      T1 then rolls back. What did T2 experience?
+    options:
+      - text: A dirty read
+        correct: true
+      - text: A phantom read
+        feedback: Phantoms are about new *rows* matching a range. Here, one row's uncommitted value was read.
+      - text: A lost update
+        feedback: Nobody's write was overwritten — T2 read a value that never officially existed.
+    explanation: T2 acted on a balance that was rolled back — it never existed in any committed state.
+
+  - type: explanation
+    title: The standard levels
+    body: |
+      | Level | Dirty read | Non-repeatable read | Phantom |
+      |---|---|---|---|
+      | Read uncommitted | possible | possible | possible |
+      | Read committed | — | possible | possible |
+      | Repeatable read | — | — | possible |
+      | Serializable | — | — | — |
+
+      Real databases differ from the table. Many implement "repeatable read" as **snapshot isolation** (each transaction
+      reads from a consistent snapshot), which also stops phantoms in reads — but allows **write skew**, which
+      serializability forbids.
+
+  - type: choice
+    prompt: "At **read committed**, which of these can still happen?"
+    options:
+      - text: Non-repeatable reads
+        correct: true
+      - text: Phantom reads
+        correct: true
+      - text: Dirty reads
+        feedback: Read committed exists precisely to rule these out.
+    explanation: Read committed only promises that what you read was committed — not that it stays the same.
+
+  - type: predict
+    prompt: |
+      Two transactions both read a counter as 10, add one, and write it back — at read committed, with plain
+      `SELECT` then `UPDATE ... SET n = 11`. What's the final value?
+    answer: ["11"]
+    wrong:
+      - answer: "12"
+        feedback: Each transaction writes the value *it computed* from its own read of 10.
+    explanation: |
+      11 — a **lost update**, the same race as `count++` in Java, now between transactions. Fixes: an atomic
+      `UPDATE ... SET n = n + 1`, `SELECT ... FOR UPDATE`, optimistic locking with a version column, or a stricter level.
+
+  - type: choice
+    prompt: |
+      Two doctors are on call; the rule is at least one must be. Each, in their own transaction, checks "two are on call"
+      and takes themselves off. Under snapshot isolation both commit — no one is on call. What is this anomaly?
+    options:
+      - text: Write skew
+        correct: true
+      - text: Dirty read
+        feedback: Both read committed data from their snapshots.
+      - text: Lost update
+        feedback: They updated *different* rows, so neither overwrote the other.
+    explanation: |
+      **Write skew**: each transaction's read was true when made, but their writes together broke an invariant
+      spanning several rows. Serializable isolation (or explicit locks on the rows read) prevents it.
+
+  - type: order
+    prompt: Order the levels from weakest to strongest.
+    items:
+      - Read uncommitted
+      - Read committed
+      - Repeatable read
+      - Serializable

@@ -1,0 +1,5 @@
+title: Transactions and recovery
+summary: Isolation levels, the anomalies they allow, and the log that survives a crash — after Database Internals.
+lessons:
+  - isolation-anomalies
+  - write-ahead-log

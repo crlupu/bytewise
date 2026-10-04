@@ -2,6 +2,8 @@ title: Inserting into a B-tree
 summary: Watch nodes fill, split and push keys upward — and the tree grow only at the root.
 duration: 9
 tags: [databases, b-tree, insert, split, balanced tree]
+sources:
+  - { book: database-internals, ref: "Chapter 2, B-Tree Basics" }
 steps:
   - type: explanation
     title: The rules

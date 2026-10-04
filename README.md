@@ -38,12 +38,31 @@ repository's **Settings → Pages**, set **Source** to **GitHub Actions**.
 | Light/dark/system theme, reduced motion (FR-41–42) | `lib/settings.ts`, `SettingsView.tsx` |
 
 Widgets, one or more per topic: thread interleaving (Java), B-tree insert and search
-(databases), page replacement — FIFO/LRU/OPT (operating systems), TCP handshake and
-teardown (networking), trade-off scenarios (architecture).
+(databases), CPU scheduling — FIFO/SJF/STCF/RR — and page replacement — FIFO/LRU/OPT
+(operating systems), TCP handshake and teardown and the congestion window (networking),
+trade-off scenarios (architecture).
+
+## Content and the books behind it
+
+34 lessons in 16 courses. Most courses follow a standard book; each lesson names the
+chapter or item it teaches in `sources`, shown on the course page, on the lesson's
+completion screen and in Search's Library. The lessons are written fresh — the books
+are where to go for the full treatment.
+
+| Topic | Books |
+|---|---|
+| Java | *Effective Java* (Bloch), *Java Concurrency in Practice* (Goetz et al.) |
+| Databases | *SQL Performance Explained* (Winand), *High-Performance Java Persistence* (Mihalcea), *Database Internals* (Petrov) |
+| Operating systems | *Operating Systems: Three Easy Pieces* (Arpaci-Dusseau) |
+| Networking | *Computer Networking: A Top-Down Approach* (Kurose & Ross) |
+| Architecture | *Fundamentals of Software Architecture* (Richards & Ford), *Release It!* (Nygard), *Learning Domain-Driven Design* (Khononov) |
+
+Books are declared once in `content/books.yaml`; a lesson cites one with
+`sources: [{ book: effective-java, ref: "Item 17" }]`, and the build rejects unknown ids.
 
 The open questions were settled as the requirements assumed: predict-the-output compares
 against authored answers, progress is per device with export/import as the bridge, and
-v1 ships one course per topic (two for Java).
+every topic has several courses (see below).
 
 ## Writing lessons
 
@@ -64,6 +83,8 @@ title: Race conditions
 summary: One line shown in lists and search.
 duration: 8               # minutes
 tags: [java, threads]
+sources:                  # optional; ids from content/books.yaml
+  - { book: jcip, ref: "Chapter 2, Thread Safety" }
 steps:                    # 5 to 15
   - type: explanation
     title: Optional heading
@@ -92,6 +113,8 @@ Widget configs and goals:
 | `btree` | `order` (3–6), `initial`, `sequence`, `custom`, `search` | `height`, `splits`, `contains`, `found` |
 | `paging` | `reference`, `frames`, `frameChoices`, `algorithms` (FIFO, LRU, OPT) | `algorithm`, `frames` (and played to the end) |
 | `tcp` | `start` (closed/established), `teardown`, `clientIsn`, `serverIsn` | `client`, `server` (TCP states) |
+| `scheduler` | `jobs: [{ name, arrival, burst }]`, `algorithms` (FIFO, SJF, STCF, RR), `quantum`, `quantumChoices` | `algorithm`, `quantum`, `avgTurnaroundAtMost`, `avgResponseAtMost` (and played to the end) |
+| `congestion` | `variant` (reno/tahoe), `ssthresh`, `switchable`, `maxRounds` | `rounds`, `cwndAtLeast`, `events` (dupack, timeout), `variant` |
 | `tradeoff` | `metrics: [{ id, label, start, better }]`, `decisions: [{ id, label, options: [{ id, label, effects, consequence }] }]` | `require: [{ metric, min, max }]` |
 
 A mistake stops the build (and shows in `npm run dev`) with every problem found, each

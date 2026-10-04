@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronIcon, SearchIcon } from "@/components/icons";
+import { ChevronIcon, ReadIcon, SearchIcon } from "@/components/icons";
 import { PageHead, StatusMark, plural } from "@/components/ui";
 import { useProgress } from "@/lib/progress";
 import { lessonStatus, lessonSteps } from "@/lib/status";
@@ -29,6 +29,13 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
       ),
     [catalog],
   );
+  const library = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const a of all) for (const src of new Set(a.lesson.sources.map((x) => x.book))) count.set(src, (count.get(src) ?? 0) + 1);
+    return [...count]
+      .filter(([id]) => catalog.books[id])
+      .map(([id, n]) => ({ book: catalog.books[id], count: n }));
+  }, [all, catalog.books]);
   const tags = useMemo(() => [...new Set(all.flatMap((a) => a.lesson.tags))].sort(), [all]);
 
   const hits: Hit[] = terms.length
@@ -37,7 +44,11 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
           const title = a.lesson.title.toLowerCase();
           const summary = a.lesson.summary.toLowerCase();
           const tagText = a.lesson.tags.join(" ").toLowerCase();
-          const context = `${a.course} ${a.topic}`.toLowerCase();
+          // Books count as context: searching "Effective Java" finds every lesson drawn from it.
+          const bookText = a.lesson.sources
+            .map((src) => (catalog.books[src.book] ? `${catalog.books[src.book].title} ${catalog.books[src.book].authors} ${src.ref}` : ""))
+            .join(" ");
+          const context = `${a.course} ${a.topic} ${bookText}`.toLowerCase();
           let score = 0;
           for (const t of terms) {
             const s = (title.includes(t) ? 4 : 0) + (tagText.includes(t) ? 3 : 0) + (summary.includes(t) ? 2 : 0) + (context.includes(t) ? 1 : 0);
@@ -60,16 +71,41 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
       </label>
 
       {!terms.length ? (
-        <section>
-          <h2 className="group-label">Tags</h2>
-          <div className="chip-row">
-            {tags.map((t) => (
-              <button key={t} type="button" className="choice-chip" onClick={() => setQ(t)}>
-                {t}
-              </button>
-            ))}
-          </div>
-        </section>
+        <>
+          <section>
+            <h2 className="group-label">Tags</h2>
+            <div className="chip-row">
+              {tags.map((t) => (
+                <button key={t} type="button" className="choice-chip" onClick={() => setQ(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </section>
+          {library.length > 0 && (
+            <section>
+              <h2 className="group-label">Library — the books behind the lessons</h2>
+              <ul className="list">
+                {library.map(({ book, count }) => (
+                  <li key={book.id}>
+                    <button type="button" className="list-row list-row--icon" onClick={() => setQ(book.title)}>
+                      <ReadIcon className="sources__icon" aria-hidden />
+                      <span className="list-row__body">
+                        <span className="sources__title">{book.title}</span>
+                        <span className="list-row__meta" style={{ display: "block" }}>
+                          {book.authors}
+                          {book.edition ? `, ${book.edition}` : ""} · {book.year}
+                        </span>
+                      </span>
+                      <span className="list-row__end figure">{plural(count, "lesson")}</span>
+                      <ChevronIcon className="chevron" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       ) : hits.length ? (
         <section>
           <h2 className="group-label">{plural(hits.length, "lesson")}</h2>

@@ -1,0 +1,95 @@
+title: Minimize mutability
+summary: The five rules that make a class immutable, and why immutable objects are simpler and safer.
+duration: 8
+tags: [java, effective java, immutability, final, defensive copy, thread safety]
+sources:
+  - { book: effective-java, ref: "Item 17" }
+steps:
+  - type: explanation
+    title: Objects that never change
+    body: |
+      An **immutable** object's state is fixed when it's created: `String`, `Integer`, `BigDecimal`, `LocalDate`.
+      Bloch's rules for writing one:
+
+      1. Don't provide methods that modify state (no setters).
+      2. Make sure the class can't be extended — make it `final`, or give it private constructors and static factories.
+      3. Make all fields `final`.
+      4. Make all fields `private`.
+      5. Make sure no one else can reach a mutable component — copy mutable inputs on the way in and out.
+
+      "Change" becomes "return a new object": `bigDecimal.add(x)` leaves the original alone.
+
+  - type: choice
+    prompt: Which of these are advantages of immutable objects?
+    options:
+      - text: They are thread-safe without any synchronization
+        correct: true
+      - text: They can be shared and cached freely
+        correct: true
+      - text: They make good keys in maps and elements of sets
+        correct: true
+      - text: They never cost extra allocation
+        feedback: The opposite — every "change" creates a new object. That's their main cost.
+    explanation: |
+      An object with one state can't be seen half-changed, can't be corrupted by a caller, and never moves buckets in
+      a `HashSet`. The price is a new object for each distinct value.
+
+  - type: predict
+    prompt: "`Period` stores the two `Date`s it was given in `private final` fields and has no setters. What does this print?"
+    code: |
+      Date start = new Date(0);
+      Date end = new Date(1000);
+      Period p = new Period(start, end);
+      end.setTime(0);
+      System.out.println(p.end().getTime());
+    language: java
+    answer: ["0"]
+    wrong:
+      - answer: "1000"
+        feedback: "`Period` kept a reference to the caller's `Date` — and `Date` is mutable."
+    hints:
+      - "`final` stops the field pointing elsewhere. Does it stop the `Date` itself changing?"
+    explanation: |
+      `final` freezes the reference, not the object. The caller still holds the same `Date` and changed it.
+      This is why rule 5 exists.
+
+  - type: blank
+    prompt: Fix the constructor with a defensive copy.
+    template: "this.end = new [[Date]](end.getTime());"
+    code: true
+    hints:
+      - Make a fresh object from the incoming value.
+    explanation: |
+      Copy first, then validate the copy — and in an accessor return `new Date(end.getTime())` too.
+      Better still in modern Java: use `Instant`, which is immutable.
+
+  - type: order
+    prompt: Put a defensive constructor's work in order.
+    items:
+      - Copy each mutable parameter
+      - Validate the copies, not the originals
+      - Assign the copies to the private final fields
+    explanation: Validating the copies closes the window in which another thread could change an original after it was checked.
+
+  - type: choice
+    prompt: "`String` is immutable, so building a long string with `+=` in a loop is slow. What's the standard remedy?"
+    options:
+      - text: Use the mutable companion class, `StringBuilder`, then call `toString()` once
+        correct: true
+      - text: Make `String` mutable
+        feedback: Every map key and cached constant would become unsafe.
+      - text: Use `String.concat` instead of `+`
+        feedback: It still makes a new `String` per step.
+    explanation: A **mutable companion** for multi-step work is the usual answer to immutability's performance cost.
+
+  - type: match
+    prompt: Match each rule to the mistake it prevents.
+    pairs:
+      - left: Make the class `final`
+        right: A subclass adding setters and breaking the guarantee
+      - left: Make fields `private final`
+        right: Code outside the class reassigning a field
+      - left: Copy mutable inputs
+        right: The caller changing your state through a reference they kept
+      - left: Copy mutable outputs
+        right: The caller changing your state through a getter's result

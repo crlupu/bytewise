@@ -1,0 +1,120 @@
+title: FIFO, SJF and STCF
+summary: Three schedulers, one metric — and the convoy effect that makes the simplest one slow.
+duration: 9
+tags: [operating systems, scheduling, fifo, sjf, stcf, turnaround, convoy effect, preemption]
+sources:
+  - { book: ostep, ref: "Chapter 7, Scheduling: Introduction" }
+steps:
+  - type: explanation
+    title: Measuring a scheduler
+    body: |
+      The scheduler decides which ready job runs next. To compare policies we need a metric. Start with
+      **turnaround time**:
+
+      > turnaround = time the job completes − time it arrived
+
+      We'll average it over all jobs. And we'll start with simplifying assumptions, relaxing them one by one:
+      every job runs for a known length, uses only the CPU (no I/O), and runs to completion once started.
+
+  - type: widget
+    widget: scheduler
+    prompt: |
+      **FIFO** runs jobs in arrival order. Three jobs arrive together, each needing 10 ticks.
+      Play the schedule to the end.
+    config:
+      jobs:
+        - { name: A, arrival: 0, burst: 10 }
+        - { name: B, arrival: 0, burst: 10 }
+        - { name: C, arrival: 0, burst: 10 }
+      algorithms: [FIFO]
+    goal:
+      algorithm: FIFO
+    question:
+      prompt: What's the average turnaround?
+      options:
+        - text: "10"
+          feedback: That's only A's. B finishes at 20 and C at 30.
+        - text: "20"
+          correct: true
+        - text: "30"
+          feedback: That's C's alone.
+    explanation: (10 + 20 + 30) ÷ 3 = 20. With equal jobs, FIFO is perfectly reasonable.
+
+  - type: widget
+    widget: scheduler
+    prompt: |
+      Now job A is long — 30 ticks — and B and C need only 5 each. All arrive at time 0, A first.
+      Compare **FIFO** with **SJF** (shortest job first), and get the average turnaround to **20 or less**.
+    config:
+      jobs:
+        - { name: A, arrival: 0, burst: 30 }
+        - { name: B, arrival: 0, burst: 5 }
+        - { name: C, arrival: 0, burst: 5 }
+      algorithms: [FIFO, SJF]
+    goal:
+      avgTurnaroundAtMost: 20
+    question:
+      prompt: Why is FIFO so much worse here?
+      options:
+        - text: The short jobs wait behind the long one
+          correct: true
+        - text: FIFO wastes CPU time between jobs
+          feedback: The CPU is busy the whole time under both policies. Only the order differs.
+    hints:
+      - Switch to SJF, then play it through.
+    explanation: |
+      FIFO averages 35; SJF, 18.3. Short jobs stuck behind a long one is the **convoy effect** — like a queue at
+      the till behind someone with a full trolley.
+
+  - type: choice
+    prompt: SJF minimises average turnaround when all jobs arrive together. What happens if A arrives at 0 and the short jobs arrive at 4?
+    options:
+      - text: SJF has already started A and, being non-preemptive, must finish it — the convoy returns
+        correct: true
+      - text: SJF switches to the short jobs at time 4
+        feedback: That needs preemption — stopping a running job. Plain SJF doesn't do that.
+    explanation: Relax the "all arrive together" assumption and SJF loses its advantage.
+
+  - type: widget
+    widget: scheduler
+    prompt: |
+      A needs 20 ticks and arrives at 0; B and C need 4 each and arrive at 4. Try SJF, then **STCF** —
+      *shortest time-to-completion first*, which may preempt the running job. Get the average turnaround to **15 or less**.
+    config:
+      jobs:
+        - { name: A, arrival: 0, burst: 20 }
+        - { name: B, arrival: 4, burst: 4 }
+        - { name: C, arrival: 4, burst: 4 }
+      algorithms: [SJF, STCF]
+    goal:
+      avgTurnaroundAtMost: 15
+    hints:
+      - When B and C arrive, A still has 16 ticks to go. Who has the least work left?
+    explanation: |
+      SJF averages 21.3; STCF, 13.3. At time 4 STCF sees A needs 16 more and B needs 4, so it preempts A.
+      STCF is also called *preemptive SJF* or *shortest remaining time first*.
+
+  - type: match
+    prompt: Match each policy to how it chooses.
+    pairs:
+      - left: FIFO
+        right: Whoever arrived first, run to completion
+      - left: SJF
+        right: The shortest job among those waiting, run to completion
+      - left: STCF
+        right: The job with the least work left — even if that means stopping the current one
+
+  - type: blank
+    prompt: Complete the definition.
+    template: "Turnaround time is the time a job [[completes|finishes]] minus the time it [[arrived]]."
+
+  - type: choice
+    prompt: STCF looks ideal. What assumption does it still lean on that real systems can't meet?
+    options:
+      - text: That the scheduler knows how long each job will run
+        correct: true
+      - text: That jobs never arrive at the same time
+        feedback: Simultaneous arrivals are fine — ties are broken somehow.
+    explanation: |
+      An OS doesn't know job lengths in advance. And turnaround isn't the only thing users care about — the next
+      lesson's metric, response time, changes the picture again.

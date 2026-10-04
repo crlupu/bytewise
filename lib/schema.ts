@@ -25,6 +25,24 @@ export const TopicFile = z
   })
   .strict();
 
+/** content/books.yaml: the books lessons draw on, by id. */
+export const BooksFile = z.record(
+  id,
+  z
+    .object({
+      title: z.string().min(1),
+      authors: z.string().min(1),
+      edition: z.string().optional(),
+      year: z.number().int(),
+      /** Where to get it, or read it if it's free. */
+      url: z.string().url().optional(),
+    })
+    .strict(),
+);
+
+/** A lesson's debt to a book: which one, and where in it to read more. */
+const Source = z.object({ book: id, ref: z.string().min(1) }).strict();
+
 export const CourseFile = z
   .object({
     title: z.string().min(1),
@@ -200,6 +218,9 @@ export const LessonFile = z
     /** Estimated minutes. */
     duration: z.number().int().min(1).max(30),
     tags: z.array(z.string()).default([]),
+    /** Books the lesson's ideas come from. The lesson is written fresh; these
+     * say where the full treatment lives. */
+    sources: z.array(Source).default([]),
     /** Each step is checked against its own type's schema by lib/content.ts. */
     steps: z
       .array(z.object({ type: z.enum(Object.keys(STEP_SCHEMAS) as [StepType, ...StepType[]]) }).passthrough())
@@ -208,6 +229,7 @@ export const LessonFile = z
   })
   .strict();
 
+export type BooksFileT = z.infer<typeof BooksFile>;
 export type TopicFileT = z.infer<typeof TopicFile>;
 export type CourseFileT = z.infer<typeof CourseFile>;
 export type LessonFileT = z.infer<typeof LessonFile>;

@@ -1,0 +1,111 @@
+title: Round robin and response time
+summary: Why interactive systems slice time, and how the slice length trades responsiveness for overhead.
+duration: 8
+tags: [operating systems, scheduling, round robin, response time, time slice, context switch]
+sources:
+  - { book: ostep, ref: "Chapter 7, Scheduling: Introduction — Round Robin" }
+steps:
+  - type: explanation
+    title: A new metric
+    body: |
+      With people at keyboards, a second metric matters: **response time** — how long until a job first gets to run.
+
+      > response = time the job first runs − time it arrived
+
+      STCF is great for turnaround and poor for response: with three equal jobs, the third waits for the other two to
+      finish entirely before it does anything at all.
+
+      **Round robin** (RR) runs each job for a **time slice**, then switches to the next job in the queue.
+
+  - type: widget
+    widget: scheduler
+    prompt: |
+      Three jobs of 5 ticks arrive together. Compare SJF with **round robin** using a slice of 1, and get the average
+      response time to **1 or less**.
+    config:
+      jobs:
+        - { name: A, arrival: 0, burst: 5 }
+        - { name: B, arrival: 0, burst: 5 }
+        - { name: C, arrival: 0, burst: 5 }
+      algorithms: [SJF, RR]
+      quantum: 1
+    goal:
+      algorithm: RR
+      avgResponseAtMost: 1
+    question:
+      prompt: How does RR's average turnaround compare with SJF's?
+      options:
+        - text: Worse — 14 against 10
+          correct: true
+        - text: Better — 10 against 14
+          feedback: Check the averages row for each policy.
+        - text: The same
+    explanation: |
+      RR: response 1, turnaround 14. SJF: response 5, turnaround 10. Spreading the CPU evenly makes every job wait
+      longer to *finish* — the trade-off at the heart of scheduling.
+
+  - type: widget
+    widget: scheduler
+    prompt: |
+      Same jobs. Try slices of 1, 2 and 5 under round robin, and finish on a slice of **5**.
+    config:
+      jobs:
+        - { name: A, arrival: 0, burst: 5 }
+        - { name: B, arrival: 0, burst: 5 }
+        - { name: C, arrival: 0, burst: 5 }
+      algorithms: [RR]
+      quantum: 1
+      quantumChoices: [1, 2, 5]
+    goal:
+      algorithm: RR
+      quantum: 5
+    question:
+      prompt: With a slice of 5, round robin behaves exactly like which policy here?
+      options:
+        - text: FIFO
+          correct: true
+        - text: Round robin with a slice of 1
+          feedback: Look at the timeline — no job is interrupted at all.
+        - text: Nothing else — it's still round robin
+          feedback: Look at the timeline. Each job's slice is long enough to finish it.
+    explanation: A slice at least as long as every job means no job is ever interrupted — round robin turns into FIFO.
+
+  - type: explanation
+    title: Choosing the slice
+    body: |
+      A shorter slice improves response time, but every switch costs something: saving and restoring registers,
+      and — worse — losing warm caches, TLB entries and branch predictors.
+
+      If a switch costs 1 ms and the slice is 10 ms, about 10% of the CPU goes on switching. A 100 ms slice cuts that
+      to 1% but makes interactive jobs wait longer. The slice should be long enough to **amortize** the switch, and no longer.
+
+  - type: predict
+    prompt: A context switch costs 1 ms. With a 4 ms slice, roughly what share of time goes to switching?
+    answer: ["20%", "20", "0.2", "1/5"]
+    wrong:
+      - answer: "25%"
+        feedback: Each cycle is 4 ms of work plus 1 ms of switching — 5 ms in all.
+    hints:
+      - Out of every 5 ms, how many are spent switching?
+    explanation: 1 ms out of every 5 ms — 20%. That's why slices are usually 10 ms or more.
+
+  - type: match
+    prompt: Match each change to its effect.
+    pairs:
+      - left: Shorter time slice
+        right: Better response time, more switching overhead
+      - left: Longer time slice
+        right: Less overhead, slower response
+      - left: Slice longer than every job
+        right: Round robin becomes FIFO
+      - left: STCF instead of RR
+        right: Better turnaround, worse response
+
+  - type: choice
+    prompt: Neither SJF/STCF nor RR is best on both metrics. What does a real OS need, to get the best of both?
+    options:
+      - text: A way to *learn* which jobs are short or interactive from how they behave
+        correct: true
+      - text: A faster CPU
+        feedback: Both metrics scale with speed, but the trade-off between them remains.
+    explanation: That's exactly what the multi-level feedback queue does — next lesson.

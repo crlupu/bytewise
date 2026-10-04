@@ -1,6 +1,10 @@
 title: Concurrency fundamentals
-summary: What goes wrong when threads share data, and how locks put it right.
+summary: What goes wrong when threads share data, and how to put it right — after Java Concurrency in Practice.
 lessons:
   - race-conditions
   - id: synchronized
+    requires: [race-conditions]
+  - id: visibility
+    requires: [synchronized]
+  - id: executors
     requires: [race-conditions]

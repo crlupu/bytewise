@@ -1,0 +1,144 @@
+title: Circuit breakers and bulkheads
+summary: Timeouts, circuit breakers, bulkheads and backoff — combining them so one failure stays one failure.
+duration: 9
+tags: [architecture, resilience, circuit breaker, bulkhead, timeouts, retries, backoff, stability patterns]
+sources:
+  - { book: release-it, ref: "Chapter 5, Stability Patterns" }
+steps:
+  - type: explanation
+    title: The circuit breaker
+    body: |
+      A timeout bounds each call. But if a dependency is down, every caller still waits the full timeout, on every call.
+
+      A **circuit breaker** wraps the integration point and counts failures:
+
+      - **Closed** — calls pass through. Too many failures **trip** it open.
+      - **Open** — calls fail **immediately**, without touching the dependency.
+      - **Half-open** — after a cool-down, a trial call is let through. Success closes the breaker; failure opens it again.
+
+      Like the one in your house: it stops a fault from doing more damage, and can be reset.
+
+  - type: order
+    prompt: Put a breaker's life through an outage in order.
+    items:
+      - Closed — calls succeed normally
+      - Failures cross the threshold; the breaker opens
+      - Open — callers fail fast; the dependency gets no traffic
+      - The cool-down ends; the breaker goes half-open and lets a trial call through
+      - The trial call succeeds; the breaker closes again
+    explanation: Failing fast protects your threads; sending no traffic gives the dependency room to recover.
+
+  - type: choice
+    prompt: What should callers do when the breaker is open?
+    options:
+      - text: Return a fallback — cached data, a default, or a clear "unavailable" — quickly
+        correct: true
+      - text: Keep retrying until it closes
+        feedback: That's the load the breaker exists to stop.
+      - text: Wait for it to close before answering
+        feedback: Then threads block again — the problem the breaker solves.
+    explanation: An open breaker is a design decision about **degraded behaviour**, not just an error.
+
+  - type: explanation
+    title: Bulkheads and backoff
+    body: |
+      **Bulkheads**, like a ship's watertight compartments, split resources so a flood stays local: give each dependency
+      its **own** thread pool or connection pool. If the recommendations service hangs, it can exhaust only its own
+      pool, and checkout keeps working.
+
+      **Retries** need care. Immediate retries multiply load on a service that's already struggling — a *retry storm*.
+      Retry only idempotent calls, a few times, with **exponential backoff** and **jitter** so callers don't retry in lockstep.
+
+  - type: widget
+    widget: tradeoff
+    prompt: |
+      **Checkout calls a recommendations service, which has started hanging.** Configure the call so that the outage
+      spreads no further than **2**, the struggling service sees load of at most **3**, and complexity stays at **7** or under.
+    config:
+      metrics:
+        - { id: spread, label: Outage spread, start: 9, better: lower }
+        - { id: load, label: Load on failing service, start: 5, better: lower }
+        - { id: recovery, label: Time to recover, start: 8, better: lower }
+        - { id: complexity, label: Complexity, start: 1, better: lower }
+      decisions:
+        - id: timeout
+          label: Timeout
+          options:
+            - id: none
+              label: None
+              consequence: Threads wait as long as the dependency does. The pool drains in seconds.
+            - id: long
+              label: 30 seconds
+              effects: { spread: -1, recovery: -1, complexity: 1 }
+              consequence: Threads come back eventually — but 30 s per call still drains a busy pool.
+            - id: short
+              label: 2 seconds
+              effects: { spread: -4, recovery: -2, complexity: 1 }
+              consequence: A hung call costs at most 2 s of a thread. Callers see a quick error instead of a hang.
+        - id: breaker
+          label: Circuit breaker
+          options:
+            - id: none
+              label: None
+              consequence: Every request still tries the broken service and waits out the timeout.
+            - id: breaker
+              label: Breaker with fallback
+              effects: { spread: -2, load: -3, recovery: -3, complexity: 2 }
+              consequence: After a few failures, calls fail fast with a fallback, and the service gets breathing room.
+        - id: bulkhead
+          label: Thread pools
+          options:
+            - id: shared
+              label: One shared pool
+              consequence: A hang in recommendations can starve checkout's own work.
+            - id: separate
+              label: A pool per dependency
+              effects: { spread: -3, complexity: 2 }
+              consequence: Recommendations can only exhaust its own pool; checkout carries on.
+        - id: retries
+          label: Retries
+          options:
+            - id: none
+              label: No retries
+              consequence: Simple. A transient blip shows up as an error.
+            - id: immediate
+              label: 3 immediate retries
+              effects: { load: 4, recovery: 2, complexity: 1 }
+              consequence: Every failing call becomes four. The struggling service gets hammered — a retry storm.
+            - id: backoff
+              label: 3 retries, backoff + jitter
+              effects: { load: 1, recovery: -1, complexity: 1 }
+              consequence: Transient errors are absorbed, spaced out so retries don't arrive in waves.
+    goal:
+      require:
+        - { metric: spread, max: 2 }
+        - { metric: load, max: 3 }
+        - { metric: complexity, max: 7 }
+    hints:
+      - Spread needs a short timeout *and* isolation.
+      - Load needs something that stops calls reaching the failing service.
+    explanation: |
+      Short timeout + breaker + bulkhead, with no retries or careful ones. Each pattern covers a gap the others
+      leave — which is why Nygard presents them together.
+
+  - type: match
+    prompt: Match each pattern to the failure it contains.
+    pairs:
+      - left: Timeout
+        right: A call that never returns holding a thread forever
+      - left: Circuit breaker
+        right: Repeatedly calling a dependency that is known to be down
+      - left: Bulkhead
+        right: One dependency's failure exhausting resources everyone shares
+      - left: Backoff with jitter
+        right: Synchronized retries arriving in waves
+
+  - type: choice
+    prompt: Which calls are safe to retry automatically?
+    options:
+      - text: Idempotent ones — repeating them has the same effect as doing them once, like a GET or a PUT of a full value
+        correct: true
+      - text: Any call that timed out
+        feedback: A timed-out "charge the card" may have succeeded. Retrying could charge twice.
+      - text: Only calls that returned 200
+    explanation: For non-idempotent operations, use an idempotency key so the server can recognise a repeat.

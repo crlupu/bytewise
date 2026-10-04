@@ -1,0 +1,48 @@
+# The books lessons draw on. Lessons are written fresh; a lesson's `sources`
+# point to the chapter or item that covers the idea in full.
+
+effective-java:
+  title: Effective Java
+  authors: Joshua Bloch
+  edition: 3rd ed.
+  year: 2018
+jcip:
+  title: Java Concurrency in Practice
+  authors: Brian Goetz, Tim Peierls, Joshua Bloch, Joseph Bowbeer, David Holmes & Doug Lea
+  year: 2006
+sql-performance-explained:
+  title: SQL Performance Explained
+  authors: Markus Winand
+  year: 2012
+  url: https://use-the-index-luke.com/
+hpjp:
+  title: High-Performance Java Persistence
+  authors: Vlad Mihalcea
+  year: 2016
+database-internals:
+  title: Database Internals
+  authors: Alex Petrov
+  year: 2019
+ostep:
+  title: "Operating Systems: Three Easy Pieces"
+  authors: Remzi H. Arpaci-Dusseau & Andrea C. Arpaci-Dusseau
+  year: 2018
+  url: https://pages.cs.wisc.edu/~remzi/OSTEP/
+kurose-ross:
+  title: "Computer Networking: A Top-Down Approach"
+  authors: James F. Kurose & Keith W. Ross
+  edition: 8th ed.
+  year: 2021
+fosa:
+  title: Fundamentals of Software Architecture
+  authors: Mark Richards & Neal Ford
+  year: 2020
+release-it:
+  title: Release It!
+  authors: Michael T. Nygard
+  edition: 2nd ed.
+  year: 2018
+learning-ddd:
+  title: Learning Domain-Driven Design
+  authors: Vlad Khononov
+  year: 2021

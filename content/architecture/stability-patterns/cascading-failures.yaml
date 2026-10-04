@@ -1,0 +1,81 @@
+title: How one slow service takes everything down
+summary: Integration points, blocked threads and cascading failures — and why slow is worse than down.
+duration: 8
+tags: [architecture, resilience, stability, cascading failure, integration points, timeouts, thread pools]
+sources:
+  - { book: release-it, ref: "Chapter 4, Stability Antipatterns" }
+steps:
+  - type: explanation
+    title: Integration points
+    body: |
+      Every call to another system — a database, a payment provider, another team's service — is an **integration point**,
+      and Nygard counts them as the number-one killer of systems. Each one can fail in many ways: refuse connections,
+      return errors, return garbage… or simply **never answer**.
+
+      The last is the worst. A dependency that's *down* fails fast. A dependency that's *slow* holds your resources
+      while you wait.
+
+  - type: predict
+    prompt: |
+      Your service handles requests on a pool of **200** threads. A dependency starts hanging — no response, no error —
+      and your code has no timeout. **20** requests per second need that dependency. About how many seconds until every
+      thread is stuck?
+    answer: ["10", "ten", "10 seconds"]
+    wrong:
+      - answer: "200"
+        feedback: Threads are consumed at 20 a second, not one.
+      - answer: "20"
+        feedback: 20 is the arrival rate. How long until 200 threads are used up at that rate?
+    hints:
+      - Each request holds one thread forever; 20 arrive every second.
+    explanation: |
+      200 ÷ 20 = 10 seconds. After that, your service can't answer *anything* — even requests that never touch the
+      broken dependency. Your callers then start waiting on you.
+
+  - type: order
+    prompt: Put the steps of a cascading failure in order.
+    items:
+      - A downstream dependency becomes slow
+      - Your threads block waiting on it, without a timeout
+      - Your thread pool is exhausted; you stop responding to everything
+      - Your callers' threads block waiting on you
+      - The failure spreads up through every layer that calls you
+    explanation: A **cascading failure** jumps from one layer to the next through blocked threads — the crack spreads up.
+
+  - type: match
+    prompt: Match each antipattern to its description.
+    pairs:
+      - left: Integration point
+        right: Any call out to another system — each one a way to fail
+      - left: Blocked threads
+        right: Threads stuck waiting on a resource that never answers
+      - left: Cascading failure
+        right: A failure in one layer causing failures in the layers that call it
+      - left: Unbounded result set
+        right: A query that returns far more rows than expected and exhausts memory
+
+  - type: choice
+    prompt: Which single change most directly stops the 10-second exhaustion above?
+    options:
+      - text: A timeout on the call to the dependency
+        correct: true
+      - text: A bigger thread pool
+        feedback: 400 threads only buys 20 seconds instead of 10. The leak is still there.
+      - text: Retrying the call when it fails
+        feedback: The call doesn't fail — it hangs. And retries add load to a dependency that's already struggling.
+    explanation: |
+      A **timeout** turns "wait forever" into "fail after a bounded time", so blocked threads come back. Every integration
+      point needs one.
+
+  - type: blank
+    prompt: Complete Nygard's warning.
+    template: "A [[slow]] response is worse than no response, because it ties up [[resources|threads]] in the caller."
+
+  - type: choice
+    prompt: Why don't integration-point failures show up in most test suites?
+    options:
+      - text: Tests stub dependencies to respond quickly and correctly; production dependencies hang, reset connections and return nonsense
+        correct: true
+      - text: They only happen with high traffic
+        feedback: Traffic makes them worse, but a hung connection blocks a thread at any load.
+    explanation: Nygard recommends a **test harness** — a fake dependency that misbehaves on purpose — to see how your code copes.

@@ -1,0 +1,6 @@
+title: Architecture fundamentals
+summary: Naming the qualities a system needs, and the styles that deliver them — after Richards & Ford.
+lessons:
+  - architecture-characteristics
+  - id: architecture-styles
+    requires: [architecture-characteristics]

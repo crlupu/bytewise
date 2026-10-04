@@ -1,0 +1,85 @@
+title: The write-ahead log
+summary: How a database survives a crash mid-transaction — log first, pages later, replay on restart.
+duration: 8
+tags: [databases, durability, wal, recovery, checkpoint, redo, undo, aries]
+sources:
+  - { book: database-internals, ref: "Chapter 5, Transaction Processing and Recovery — Recovery" }
+steps:
+  - type: explanation
+    title: Pages live in memory
+    body: |
+      A database changes data in **pages** cached in memory (the buffer pool) and writes them back to disk later —
+      writing every page on every change would be far too slow.
+
+      So what happens if the power fails after a transaction commits but before its pages reach disk? Or after
+      half of an uncommitted transaction's pages *did* reach disk?
+
+      The answer is a **write-ahead log** (WAL): an append-only file of every change, written to disk **before** the
+      changed pages are.
+
+  - type: order
+    prompt: Put the life of a committed update in order.
+    items:
+      - The page is changed in the buffer pool
+      - A log record describing the change is appended to the WAL buffer
+      - On commit, the WAL is flushed to disk (fsync), and only then is commit acknowledged
+      - Later, the dirty page is written back to its place on disk
+    explanation: The log hits disk before the page does, and before the client hears "committed".
+
+  - type: choice
+    prompt: Why is flushing the log on commit much cheaper than flushing the changed pages?
+    options:
+      - text: The log is written sequentially at the end of one file; pages are scattered across the disk
+        correct: true
+      - text: Log records are compressed
+        feedback: They may be, but the big win is sequential vs random writes.
+      - text: The log isn't really flushed
+        feedback: It must be — that's what makes commit durable.
+    explanation: Sequential appends are fast on every kind of storage. Random page writes can wait and be combined.
+
+  - type: explanation
+    title: Redo and undo
+    body: |
+      After a crash, recovery reads the log:
+
+      - **Redo**: replay changes of committed transactions whose pages may not have reached disk.
+      - **Undo**: roll back changes of transactions that never committed but whose pages may have.
+
+      The classic algorithm, **ARIES**, does it in three passes: *analysis* (what was in flight), *redo* (repeat
+      history, bringing the database back to the moment of the crash), then *undo* (roll back the losers).
+
+  - type: match
+    prompt: Match each term to its meaning.
+    pairs:
+      - left: Redo
+        right: Reapply logged changes of committed transactions
+      - left: Undo
+        right: Reverse changes of transactions that didn't commit
+      - left: Checkpoint
+        right: A marker that bounds how far back recovery must read
+      - left: Force at commit
+        right: Flushing the log — not the pages — before acknowledging
+
+  - type: choice
+    prompt: The database lets dirty pages of **uncommitted** transactions be written to disk (a "steal" policy). What does recovery need because of that?
+    options:
+      - text: Undo
+        correct: true
+      - text: Redo
+        feedback: Redo is needed because committed pages may *not* have been written (a "no-force" policy).
+      - text: Nothing extra
+    explanation: |
+      Steal → undo, no-force → redo. Most databases choose steal/no-force for speed, so they need both — which is what ARIES provides.
+
+  - type: blank
+    prompt: Complete the rule that gives the log its name.
+    template: "A change must be recorded in the [[log]] on disk before the changed [[page]] is written to disk."
+
+  - type: choice
+    prompt: Without checkpoints, what would happen to recovery time?
+    options:
+      - text: It would grow without limit, since recovery would have to replay the log from the very beginning
+        correct: true
+      - text: It would be the same — checkpoints only save disk space
+        feedback: They also let the old log be discarded — but the main gain is starting recovery from a recent point.
+    explanation: A checkpoint records which pages were dirty and which transactions were active, so recovery can start near it.

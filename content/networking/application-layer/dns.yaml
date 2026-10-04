@@ -1,0 +1,86 @@
+title: How DNS finds an address
+summary: Root, TLD and authoritative servers, recursive resolvers, records and caching.
+duration: 8
+tags: [networking, dns, resolver, ttl, caching, records, application layer]
+sources:
+  - { book: kurose-ross, ref: "§2.4, DNS — The Internet's Directory Service" }
+steps:
+  - type: explanation
+    title: A distributed directory
+    body: |
+      Before your browser opens a TCP connection to `www.example.com`, it needs an IP address. The **Domain Name System**
+      maps names to addresses — and no single server could hold the whole map or survive the load. So DNS is a
+      **hierarchy**:
+
+      - **Root** servers know where the servers for each top-level domain are.
+      - **TLD** servers (for `.com`, `.org`, `.ro`…) know each domain's **authoritative** servers.
+      - **Authoritative** servers hold the actual records for their domain.
+
+      Your device asks a **local resolver** (your ISP's, or one like 1.1.1.1), which does the legwork.
+
+  - type: order
+    prompt: The resolver's cache is empty. Put the lookup of `www.example.com` in order.
+    items:
+      - Your device asks the local resolver for www.example.com
+      - The resolver asks a root server, which refers it to the .com TLD servers
+      - The resolver asks a .com server, which refers it to example.com's authoritative servers
+      - The resolver asks the authoritative server, which returns the address
+      - The resolver caches the answer and returns it to your device
+    explanation: Your device makes one **recursive** query; the resolver makes a chain of **iterative** ones.
+
+  - type: match
+    prompt: Match each record type to what it holds.
+    pairs:
+      - left: A
+        right: An IPv4 address for a name
+      - left: AAAA
+        right: An IPv6 address for a name
+      - left: CNAME
+        right: Another name this one is an alias for
+      - left: MX
+        right: The mail server for a domain
+      - left: NS
+        right: The authoritative name server for a domain
+
+  - type: choice
+    prompt: In practice, most lookups never reach a root server. Why?
+    options:
+      - text: Resolvers cache answers, including the TLD servers' addresses, for each record's TTL
+        correct: true
+      - text: Root servers only answer other root servers
+      - text: Browsers ship with a list of every domain's address
+    explanation: Caching is what makes DNS fast and keeps load off the top of the hierarchy.
+
+  - type: explanation
+    title: TTL — the cost of caching
+    body: |
+      Every record carries a **TTL** (time to live, in seconds): how long resolvers may cache it.
+
+      A long TTL means fewer lookups and faster answers — but if you change the record, some users keep the old
+      answer until their cached copy expires. Before migrating a service to a new address, teams **lower the TTL**
+      days in advance, so the switch takes effect quickly.
+
+  - type: predict
+    prompt: |
+      A record has a TTL of 3,600. You change the address at 12:00. A resolver cached the old answer at 11:50.
+      Until about when may its users still get the old address?
+    answer: ["12:50", "12.50"]
+    wrong:
+      - answer: "13:00"
+        feedback: The hour counts from when the resolver *cached* the answer, not from when you changed it.
+      - answer: "12:00"
+        feedback: Resolvers don't learn about the change — they wait for their copy to expire.
+    hints:
+      - 3,600 seconds is an hour, starting from 11:50.
+    explanation: The cached copy expires an hour after it was fetched — 12:50.
+
+  - type: choice
+    prompt: DNS queries usually travel over UDP, not TCP. Why?
+    options:
+      - text: A query and its answer usually fit in one packet each, so a connection handshake would double the latency
+        correct: true
+      - text: UDP is more reliable than TCP
+        feedback: The reverse — DNS clients simply retry if an answer doesn't come.
+      - text: TCP isn't allowed on port 53
+        feedback: It is, and it's used for large answers and zone transfers.
+    explanation: One round trip instead of two. Encrypted DNS (DoH, DoT) trades some of that for privacy.

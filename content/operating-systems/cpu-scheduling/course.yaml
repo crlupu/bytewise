@@ -1,0 +1,8 @@
+title: CPU scheduling
+summary: Which job runs next, and how that choice trades turnaround for response — after OSTEP.
+lessons:
+  - fifo-sjf-stcf
+  - id: round-robin
+    requires: [fifo-sjf-stcf]
+  - id: mlfq
+    requires: [round-robin]

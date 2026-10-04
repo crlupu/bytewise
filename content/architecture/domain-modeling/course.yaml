@@ -1,0 +1,4 @@
+title: Domain modeling
+summary: Drawing boundaries around meaning — ubiquitous language and bounded contexts — after Vlad Khononov.
+lessons:
+  - bounded-contexts

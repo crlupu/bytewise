@@ -1,0 +1,101 @@
+title: Multi-column indexes
+summary: Why column order in a concatenated index decides which queries it can serve.
+duration: 8
+tags: [databases, sql, indexes, concatenated index, composite index, column order, range]
+sources:
+  - { book: sql-performance-explained, ref: "Chapter 2, The Where Clause — Concatenated Keys and Ranges" }
+steps:
+  - type: explanation
+    title: Sorted by the first column, then the next
+    body: |
+      An index on several columns — a **concatenated** (or composite) index — is sorted like a phone book:
+      by the first column, and only within equal first values, by the second.
+
+      ```sql
+      CREATE INDEX emp_sub_id ON employees (subsidiary_id, employee_id);
+      ```
+
+      | subsidiary_id | employee_id |
+      |---|---|
+      | 10 | 3 |
+      | 10 | 17 |
+      | 20 | 1 |
+      | 20 | 9 |
+
+      The tree can jump straight to `subsidiary_id = 20`. But the `employee_id` values are only sorted *inside*
+      each subsidiary — across the whole index they jump around.
+
+  - type: choice
+    prompt: "With an index on `(subsidiary_id, employee_id)`, which `WHERE` clauses can use it to find rows directly?"
+    options:
+      - text: "`WHERE subsidiary_id = 20`"
+        correct: true
+      - text: "`WHERE subsidiary_id = 20 AND employee_id = 9`"
+        correct: true
+      - text: "`WHERE employee_id = 9`"
+        feedback: Employee 9 could be in any subsidiary, so the database would have to read the whole index (or the table).
+    hints:
+      - Can you find everyone called *Sarah* quickly in a phone book sorted by surname?
+    explanation: An index serves queries on a **leading** prefix of its columns — the first column, the first two, and so on.
+
+  - type: predict
+    prompt: |
+      Most queries filter on `employee_id` alone; a few filter on both columns. Which single index serves them all?
+    options:
+      - text: "`(employee_id, subsidiary_id)`"
+        correct: true
+      - text: "`(subsidiary_id, employee_id)`"
+        feedback: Queries on `employee_id` alone can't use it — it isn't the leading column.
+      - text: "`(employee_id)` and `(subsidiary_id)` as two separate indexes"
+        feedback: That works, but costs two indexes to maintain where one would do.
+    explanation: Put the column that is queried on its own first. One well-ordered index often replaces several.
+
+  - type: explanation
+    title: Equality first, ranges last
+    body: |
+      Ranges change the picture. Take:
+
+      ```sql
+      SELECT * FROM employees
+       WHERE date_of_birth BETWEEN '1971-01-01' AND '1971-01-09'
+         AND subsidiary_id = 27;
+      ```
+
+      With `(date_of_birth, subsidiary_id)`, the range on the first column covers nine days of births across **every**
+      subsidiary; the database walks all of them, checking `subsidiary_id` as it goes.
+
+      With `(subsidiary_id, date_of_birth)`, it jumps to subsidiary 27 and reads only that subsidiary's births in the range.
+
+  - type: choice
+    prompt: Which index serves that query best?
+    options:
+      - text: "`(subsidiary_id, date_of_birth)`"
+        correct: true
+      - text: "`(date_of_birth, subsidiary_id)`"
+        feedback: The range on the leading column means scanning every subsidiary's entries for those dates.
+    explanation: Index for **equality first, then for ranges.** Columns after a range can only filter, not narrow the scan.
+
+  - type: match
+    prompt: Match each part of the search to its role.
+    pairs:
+      - left: Access predicate
+        right: Narrows where the index scan starts and stops
+      - left: Index filter predicate
+        right: Checked on each index entry during the scan, without narrowing it
+      - left: Table-level filter
+        right: Checked only after fetching the row from the table
+      - left: Leading column
+        right: The first column of a concatenated index
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "A concatenated index can only be used for a [[leading|left]] subset of its columns, and range conditions should come [[last]]."
+
+  - type: choice
+    prompt: Why not simply index every column combination you might ever query?
+    options:
+      - text: Every index slows down inserts, updates and deletes, and takes space
+        correct: true
+      - text: Databases allow only one index per table
+        feedback: Most allow many. The cost is in maintenance, not in a limit.
+    explanation: Aim for the fewest indexes that serve your real queries — choosing column order well is how.

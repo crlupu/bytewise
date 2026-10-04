@@ -1,0 +1,6 @@
+title: Java persistence performance
+summary: The round trips your ORM makes behind your back, and how to cut them — after Vlad Mihalcea.
+lessons:
+  - n-plus-one
+  - id: jdbc-batching
+    requires: [n-plus-one]
