@@ -1,0 +1,53 @@
+title: Hot fields and alternatives to exclusive locks
+summary: Avoid fields every operation touches, prefer concurrent structures and atomics, and don't pool objects to save allocation.
+duration: 5
+tags: [java, concurrency, performance, hot fields, atomic, read-write lock, object pooling]
+sources:
+  - { book: jcip, ref: "§11.4.4–11.6, Hot Fields; Alternatives to Exclusive Locks; Object Pooling" }
+steps:
+  - type: explanation
+    title: Hot fields
+    body: |
+      A hash map that keeps an exact element count makes `size()` instant — but every `put` and `remove` must update the
+      counter. The counter becomes a **hot field**: no matter how finely you stripe the buckets, every write contends on it.
+
+      `ConcurrentHashMap` avoids it by keeping a separate count per segment (or, today, per-cell counters summed on demand).
+
+  - type: match
+    prompt: Match each alternative to an exclusive lock with where it helps.
+    pairs:
+      - left: Concurrent collections
+        right: Shared maps, queues and lists with many concurrent users
+      - left: Read-write locks
+        right: Data read far more often than it's written
+      - left: Immutable objects
+        right: Shared data that can be replaced rather than modified
+      - left: Atomic variables
+        right: Hot counters, sequence generators, a single reference
+
+  - type: choice
+    prompt: A high-traffic counter is updated by many threads. Which is likely to scale best?
+    options:
+      - text: "`LongAdder` — it spreads updates across cells and sums them on read"
+        correct: true
+      - text: "`synchronized` increment"
+        feedback: Every update contends for the same lock.
+      - text: "`AtomicLong`"
+        feedback: Better than a lock, but under heavy contention all threads still CAS the same variable.
+    explanation: "`LongAdder` (Java 8) is the counter equivalent of striping."
+
+  - type: choice
+    prompt: Should you pool small objects to avoid allocation in concurrent code?
+    options:
+      - text: No — allocation is very cheap, and a synchronized pool adds contention that is far more expensive
+        correct: true
+      - text: Yes, always
+    explanation: Pool only genuinely expensive objects, like database connections.
+
+  - type: choice
+    prompt: How can you tell whether lock contention is limiting throughput?
+    options:
+      - text: The CPUs aren't fully busy under load — check utilisation, then use profilers or thread dumps to find the contended locks
+        correct: true
+      - text: Count the synchronized keywords in the code
+        feedback: Most synchronization is uncontended and harmless; measure where threads actually wait.

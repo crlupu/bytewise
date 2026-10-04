@@ -1,0 +1,55 @@
+title: Reducing lock contention
+summary: Hold locks for less time, split them, or stripe them — so fewer threads compete for the same lock.
+duration: 6
+tags: [java, concurrency, performance, lock contention, lock splitting, lock striping]
+sources:
+  - { book: jcip, ref: "§11.4.1–11.4.3, Narrowing Lock Scope; Lock Splitting; Lock Striping" }
+steps:
+  - type: explanation
+    title: Two factors
+    body: |
+      Contention for a lock depends on how **often** it's requested and how **long** it's held once acquired. If their
+      product is small enough, most requests are uncontended. So there are three ways to reduce contention:
+
+      - reduce the time locks are held;
+      - reduce how often they're requested;
+      - replace exclusive locks with mechanisms that allow more concurrency.
+
+  - type: choice
+    prompt: "`synchronized userLocationMatches(name, regexp)` builds a key string, looks it up in a map, then runs a regex match. Which part needs the lock?"
+    options:
+      - text: Only the map lookup — the string building and the regex match touch no shared state
+        correct: true
+      - text: The whole method
+        feedback: Holding the lock during the regex match makes every other thread wait for work that doesn't need protecting.
+    explanation: "**Narrowing lock scope** — get in, get out."
+
+  - type: explanation
+    title: Splitting and striping
+    body: |
+      **Lock splitting**: if one lock guards several independent variables, give each its own lock. A `ServerStatus`
+      tracking logged-in users and running queries in two sets can guard each set separately.
+
+      **Lock striping** splits further, over a variable-size set of independent objects. `ConcurrentHashMap` (in the
+      book's era) used 16 locks, each guarding 1/16 of the buckets: bucket *n* is guarded by lock *n* mod 16.
+
+  - type: predict
+    prompt: In a hash map striped with 16 locks, thread A updates bucket 3 and thread B updates bucket 19. Do they contend?
+    options:
+      - text: Yes — 19 mod 16 = 3, so both buckets share lock 3
+        correct: true
+      - text: No — different buckets, different locks
+        feedback: With 16 stripes, buckets 3 and 19 map to the same stripe.
+    explanation: Striping reduces contention by about the number of stripes, assuming keys spread evenly.
+
+  - type: choice
+    prompt: What's the cost of lock striping?
+    options:
+      - text: Operations that need the whole collection — resizing, `size()` done exactly — must acquire every stripe
+        correct: true
+      - text: Nothing
+    explanation: That's why exclusive access to a `ConcurrentHashMap` isn't offered.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "Lock splitting works when a lock guards several [[independent]] state variables."

@@ -1,0 +1,63 @@
+title: Performance, scalability and Amdahl's law
+summary: The serial fraction of a program caps its speed-up, no matter how many processors you add.
+duration: 6
+tags: [java, concurrency, performance, scalability, amdahl's law, speedup]
+sources:
+  - { book: jcip, ref: "§11.1–11.2, Thinking About Performance; Amdahl's Law" }
+steps:
+  - type: explanation
+    title: How fast versus how much
+    body: |
+      Performance has two faces:
+
+      - **how fast** — latency, service time;
+      - **how much** — capacity, throughput, **scalability**: how throughput improves as you add resources like CPUs.
+
+      Concurrent programs are usually designed for "how much". Many single-threaded tricks — caching, clever algorithms —
+      help "how fast" but can hurt scalability. And remember: make it right first, then make it fast — only if
+      measurement says it isn't fast enough.
+
+  - type: explanation
+    title: Amdahl's law
+    body: |
+      If a fraction **F** of a computation must run serially, then on **N** processors the best possible speed-up is:
+
+      > speedup ≤ 1 / (F + (1 − F) / N)
+
+      As N grows without limit, the speed-up approaches **1 / F**. Every program has some serial part — even if it's only
+      taking work from a shared queue.
+
+  - type: predict
+    prompt: 10% of a program is serial. What's the maximum speed-up on 10 processors? (Round to one decimal place.)
+    answer: ["5.3", "5.26", "5.263", "about 5.3"]
+    wrong:
+      - answer: "10"
+        feedback: That would need a 0% serial part.
+      - answer: "9"
+        feedback: Use the formula — 1 / (0.1 + 0.9 / 10).
+    hints:
+      - 1 / (0.1 + 0.09)
+    explanation: 1 / 0.19 ≈ 5.3 — barely half the ideal, with only 10% serial.
+
+  - type: predict
+    prompt: Same program, unlimited processors. What's the ceiling on its speed-up?
+    answer: ["10", "10x"]
+    hints:
+      - As N grows, (1 − F) / N approaches 0.
+    explanation: 1 / F = 1 / 0.1 = 10. No number of cores beats it.
+
+  - type: choice
+    prompt: Where do serial fractions hide in a "fully parallel" program?
+    options:
+      - text: Shared data structures — a single work queue, a synchronized collection, a counter every thread updates
+        correct: true
+      - text: Nowhere, if the tasks are independent
+        feedback: Coordination among them — fetching tasks, merging results — is serial.
+
+  - type: choice
+    prompt: "A `synchronizedList` work queue scales poorly as threads are added; a `ConcurrentLinkedQueue` scales much better. Why?"
+    options:
+      - text: The synchronized queue serialises every access behind one lock; the concurrent one lets only the actual pointer updates contend
+        correct: true
+      - text: The concurrent one uses less memory
+    explanation: Reducing the serialised fraction is what scalability work is about.

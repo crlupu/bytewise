@@ -1,0 +1,46 @@
+title: Testing performance — and its pitfalls
+summary: Garbage collection, JIT compilation, unrealistic workloads and dead-code elimination can all make benchmarks lie.
+duration: 5
+tags: [java, concurrency, benchmarking, jit, garbage collection, dead code elimination, jmh]
+sources:
+  - { book: jcip, ref: "§12.2–12.4, Testing for Performance; Avoiding Performance Testing Pitfalls" }
+steps:
+  - type: explanation
+    title: Measuring throughput
+    body: |
+      A performance test runs a realistic workload and measures end-to-end throughput or latency — and shows how it
+      changes with the number of threads, the buffer size, the pool size. Comparing implementations (say, a bounded
+      buffer against `ArrayBlockingQueue` and `LinkedBlockingQueue`) is often more useful than absolute numbers.
+
+  - type: match
+    prompt: Match each benchmarking pitfall to its effect.
+    pairs:
+      - left: Garbage collection
+        right: A collection that happens in one run but not another skews the timing
+      - left: Dynamic compilation
+        right: Early iterations run interpreted, then compiled — mixing both distorts results
+      - left: Unrealistic contention
+        right: Real tasks do other work between locks; a tight loop exaggerates contention
+      - left: Dead-code elimination
+        right: The compiler removes computation whose result is never used, timing nothing at all
+
+  - type: predict
+    prompt: A benchmark computes `fib(30)` in a loop but never uses the results. A new JVM makes it 1,000× faster. What happened?
+    options:
+      - text: The optimizer saw the result was unused and eliminated the computation
+        correct: true
+      - text: The new JVM is 1,000× faster
+        feedback: Real improvements are rarely that large; suspect the benchmark.
+    explanation: Make results observable cheaply — for example, compare a hash of the result with a random value, or use JMH's `Blackhole`.
+
+  - type: choice
+    prompt: How do you avoid measuring the JIT compiler at work?
+    options:
+      - text: Run long enough — or warm up first — so that compiled code dominates, and discard the warm-up
+        correct: true
+      - text: Run the test exactly once
+    explanation: "`-XX:+PrintCompilation` shows when compilation happens. JMH automates warm-up and many other pitfalls."
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "Run tests long enough that [[garbage]] collection and compilation happen many times, rather than once by chance."

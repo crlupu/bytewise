@@ -1,0 +1,56 @@
+title: Costs introduced by threads
+summary: Context switches, memory synchronization and blocking — and why uncontended locks are cheap but contended ones aren't.
+duration: 5
+tags: [java, concurrency, performance, context switch, contention, lock elision, escape analysis]
+sources:
+  - { book: jcip, ref: "§11.3, Costs Introduced by Threads" }
+steps:
+  - type: match
+    prompt: Match each cost to its cause.
+    pairs:
+      - left: Context switching
+        right: More runnable threads than CPUs — the OS swaps them, flushing caches and spending time in the scheduler
+      - left: Memory synchronization
+        right: Memory barriers flush and invalidate caches and stop reordering optimizations
+      - left: Blocking
+        right: A contended lock suspends a thread, costing two extra context switches
+
+  - type: explanation
+    title: Uncontended is cheap
+    body: |
+      Most synchronization is **uncontended** — only one thread wants the lock at a time — and modern JVMs make that
+      fast. They can even remove locking altogether:
+
+      - **lock elision**: if escape analysis shows an object never leaves its thread, its locks are dropped;
+      - **lock coarsening**: adjacent synchronized blocks on the same lock are merged.
+
+      ```java
+      public String getStoogeNames() {
+          List<String> stooges = new Vector<>();   // never escapes
+          stooges.add("Moe"); stooges.add("Larry"); stooges.add("Curly");
+          return stooges.toString();
+      }
+      ```
+
+  - type: choice
+    prompt: How many of the `Vector`'s lock acquisitions in `getStoogeNames` might a modern JIT perform?
+    options:
+      - text: Possibly none — the `Vector` never escapes the method, so its locks can be elided
+        correct: true
+      - text: Exactly four
+        feedback: That's what the source says, but escape analysis can remove them.
+    explanation: Don't worry much about the cost of uncontended synchronization. Worry about **contended** synchronization.
+
+  - type: choice
+    prompt: A contended lock can be waited for by spinning or by suspending the thread. Which is better?
+    options:
+      - text: Spinning for short waits, suspending for long ones — JVMs typically adapt, based on past wait times
+        correct: true
+      - text: Always spin
+        feedback: Long spins waste a whole CPU.
+      - text: Always suspend
+        feedback: For very short waits, two context switches cost more than spinning.
+
+  - type: blank
+    prompt: Complete the rule.
+    template: "Don't worry excessively about the cost of [[uncontended]] synchronization; focus your optimization efforts on areas where lock [[contention]] actually occurs."

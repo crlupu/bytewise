@@ -1,0 +1,55 @@
+title: Testing for correctness
+summary: Test blocking behaviour, safety under contention and resource use — and get the scheduler to explore more interleavings.
+duration: 6
+tags: [java, concurrency, testing, safety tests, interleavings, bounded buffer]
+sources:
+  - { book: jcip, ref: "§12.1, Testing for Correctness" }
+steps:
+  - type: explanation
+    title: What to test
+    body: |
+      Concurrent classes need the usual sequential tests — a new bounded buffer is empty, a full one is full — plus tests
+      of the properties that only appear with threads:
+
+      - **blocking**: `take` on an empty buffer really blocks, and unblocks when interrupted;
+      - **safety**: under heavy concurrent use, nothing is lost, duplicated or corrupted;
+      - **resource management**: nothing leaks — the buffer doesn't hold references to items it has handed out.
+
+  - type: order
+    prompt: Testing that `take` blocks on an empty buffer — put the steps in order.
+    items:
+      - Start a thread that calls `take` on the empty buffer, failing the test if `take` returns
+      - Sleep long enough for it to block
+      - Interrupt the thread
+      - Join it with a timeout, and assert it ended — by catching `InterruptedException`
+    explanation: Success is the thread finishing because it was interrupted, not because `take` returned.
+
+  - type: choice
+    prompt: How can a safety test check that N producers and consumers lost or duplicated nothing, without a lock that would hide the bugs?
+    options:
+      - text: Each producer sums a checksum of what it puts, each consumer of what it takes; compare the totals at the end
+        correct: true
+      - text: Collect every item into a shared synchronized list and compare
+        feedback: The synchronized list would serialise the test and could mask the race you're looking for.
+    explanation: Order-insensitive checksums let threads run fully concurrently.
+
+  - type: choice
+    prompt: How do you make sure all test threads really run at the same time?
+    options:
+      - text: Release them together with a `CountDownLatch` or `CyclicBarrier` start gate
+        correct: true
+      - text: Start them in a loop
+        feedback: Early threads may finish before later ones even start — little concurrency is actually tested.
+
+  - type: choice
+    prompt: How can a test increase the number of interleavings it explores?
+    options:
+      - text: Run more threads than CPUs, test on multiprocessors and different systems, and occasionally call `Thread.yield()` or `sleep(0)` at key points
+        correct: true
+      - text: Run the same test once on a fast machine
+        feedback: Concurrency bugs are probabilistic; you need many varied runs.
+    explanation: Static analysis tools — like FindBugs/SpotBugs' concurrency checks — complement testing.
+
+  - type: blank
+    prompt: Complete the advice.
+    template: "Concurrency bugs are low-probability events, so tests must run many [[iterations]] to have a chance of finding them."

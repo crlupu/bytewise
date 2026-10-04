@@ -1,0 +1,49 @@
+title: Starvation, poor responsiveness and livelock
+summary: Threads can fail to make progress without deadlocking — never running, running too slowly, or busily getting nowhere.
+duration: 5
+tags: [java, concurrency, liveness, starvation, livelock, thread priorities]
+sources:
+  - { book: jcip, ref: "§10.3, Other Liveness Hazards" }
+steps:
+  - type: match
+    prompt: Match each liveness hazard to its description.
+    pairs:
+      - left: Deadlock
+        right: Threads wait for each other forever, holding what the others need
+      - left: Starvation
+        right: A thread is perpetually denied a resource it needs — like CPU time
+      - left: Poor responsiveness
+        right: Things work, but users wait — long tasks compete with the UI thread
+      - left: Livelock
+        right: Threads aren't blocked, but keep repeating an operation that always fails
+
+  - type: choice
+    prompt: Is raising a thread's priority a good way to fix starvation?
+    options:
+      - text: No — priorities map to OS priorities differently on each platform; tweaking them usually causes more problems than it solves
+        correct: true
+      - text: Yes, it's the standard fix
+    explanation: "Avoid the temptation to use thread priorities, since they increase platform dependence and can cause liveness problems."
+
+  - type: explanation
+    title: Livelock
+    body: |
+      A message-processing system rolls back a transaction and puts a message back **at the head of the queue** when
+      processing fails. If the message can never succeed — a bug in the handler for that kind of message — it's
+      redelivered and fails forever: the **poison message** problem.
+
+      Livelock also strikes when threads respond to each other too politely, like two people stepping aside in a
+      corridor in the same direction, again and again.
+
+  - type: choice
+    prompt: Two threads with `tryLock` back-off keep retrying in exact lockstep, colliding every time. What's the remedy?
+    options:
+      - text: Introduce randomness into the retry delay, so they fall out of step
+        correct: true
+      - text: Retry immediately, faster
+        feedback: That keeps them perfectly in step.
+    explanation: Ethernet uses the same idea — randomised exponential back-off after collisions.
+
+  - type: blank
+    prompt: Complete the definition.
+    template: "Livelock is a failure of liveness where a thread, while not [[blocked]], still cannot make progress because it keeps retrying an operation that will always fail."

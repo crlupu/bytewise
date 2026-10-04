@@ -1,0 +1,68 @@
+title: Avoiding and diagnosing deadlocks
+summary: Fewer locks held at once, timed tryLock with back-off, and thread dumps when it happens anyway.
+duration: 6
+tags: [java, concurrency, deadlock, trylock, timeouts, thread dumps]
+sources:
+  - { book: jcip, ref: "§10.2, Avoiding and Diagnosing Deadlocks" }
+steps:
+  - type: explanation
+    title: A strategy
+    body: |
+      A program that never acquires more than one lock at a time can't have a lock-ordering deadlock. When multiple
+      locks are needed, make lock ordering part of the design:
+
+      1. identify where multiple locks could be acquired — keep those places few;
+      2. analyse them globally, so every thread takes locks in a consistent order;
+      3. use open calls wherever possible.
+
+  - type: explanation
+    title: Timed lock attempts
+    body: |
+      Explicit `Lock`s offer `tryLock(timeout, unit)`. Instead of waiting forever, a thread that can't get its second lock
+      **backs off** — releases what it holds — and tries again later, ideally after a random delay.
+
+      ```java
+      if (fromLock.tryLock()) {
+          try {
+              if (toLock.tryLock()) {
+                  try { ... } finally { toLock.unlock(); }
+              }
+          } finally { fromLock.unlock(); }
+      }
+      ```
+
+  - type: widget
+    widget: locks
+    prompt: |
+      Both threads take their first lock, then **try** the second. If it's taken, `trylock` releases everything the
+      thread holds and starts over. Run both to completion — even if you first steer them into a collision.
+    config:
+      threads:
+        - { name: T1, ops: [lock L, trylock R, transfer, unlock R, unlock L] }
+        - { name: T2, ops: [lock R, trylock L, transfer, unlock L, unlock R] }
+    goal:
+      finished: true
+    hints:
+      - If both try at once, both back off. Then let one thread get ahead before the other starts again.
+    explanation: Back-off turns a permanent deadlock into a temporary delay — at the risk of livelock if both keep retrying in step.
+
+  - type: choice
+    prompt: How do you find out which threads are deadlocked in a running JVM?
+    options:
+      - text: Take a thread dump (`jstack`, `jcmd <pid> Thread.print` or Ctrl-\ / Ctrl-Break) — it shows each thread's stack, the locks it holds and the lock it's waiting for, and reports deadlock cycles
+        correct: true
+      - text: Restart the JVM with more memory
+        feedback: Deadlocked threads don't need memory; they need different lock ordering.
+
+  - type: choice
+    prompt: Why do thread dumps show less for `ReentrantLock`s than for intrinsic locks in older JVMs?
+    options:
+      - text: Explicit locks were implemented in library code, so early JVMs couldn't associate them with stack frames
+        correct: true
+      - text: Explicit locks can't deadlock
+        feedback: They can, just as intrinsic locks can.
+
+  - type: blank
+    prompt: Try a lock, giving up after a timeout.
+    template: "if (lock.[[tryLock]](1, TimeUnit.SECONDS)) { try { ... } finally { lock.unlock(); } }"
+    code: true
