@@ -35,7 +35,13 @@ steps:
       int i = f.getFavorite(Integer.class);
       System.out.printf("%s %x%n", s, i);
     language: java
-    answer: ["Java cafebabe"]
+    options:
+      - text: "Java cafebabe"
+        correct: true
+      - text: "Java 3405691582"
+        feedback: "`%x` prints in hexadecimal."
+      - text: "A `ClassCastException`"
+        feedback: "`Class.cast` checks each value against its own type token, and both match."
     hints:
       - "`%x` prints an int in hex."
     explanation: Each value comes back with its own type, and no casts are needed in the client.

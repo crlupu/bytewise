@@ -33,10 +33,13 @@ steps:
 
   - type: predict
     prompt: How many items does it buy?
-    answer: ["3", "three"]
-    wrong:
-      - answer: "4"
+    options:
+      - text: "3"
+        correct: true
+      - text: "4"
         feedback: "That's the right answer on paper (10+20+30+40 = 100¢). After three purchases, `funds` is 0.3999999999999999 — just less than the 0.4 price."
+      - text: "2"
+        feedback: "The first three purchases succeed; it's the fourth that fails by a hair."
     explanation: Three, with $0.3999999999999999 left over. The rounding errors make the program wrong.
 
   - type: match

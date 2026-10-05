@@ -13,10 +13,13 @@ steps:
           for (Iterator<Face> j = faces.iterator(); j.hasNext(); )
               System.out.println(i.next() + " " + j.next());
     language: java
-    answer: ["6"]
-    wrong:
-      - answer: "36"
-        feedback: That was the intent. But `i.next()` is called inside the inner loop, once per inner iteration.
+    options:
+      - text: "6"
+        correct: true
+      - text: "36"
+        feedback: "That was the intent. But `i.next()` is called inside the inner loop, once per inner iteration."
+      - text: "It throws `NoSuchElementException`"
+        feedback: "Not with equal-sized collections — but it would if the outer one were shorter."
     hints:
       - How many times is `i.next()` called per pass of the inner loop?
     explanation: It prints only the six "doubles" (ONE ONE … SIX SIX) — `i` advances along with `j`. With unequal collections, it would throw `NoSuchElementException`.

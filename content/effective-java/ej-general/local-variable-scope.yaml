@@ -24,10 +24,13 @@ steps:
       Iterator<Element> i2 = c2.iterator();
       while (i.hasNext()) doSomethingElse(i2.next());   // copy-paste bug
     language: java
-    answer: ["0", "zero", "none"]
-    wrong:
-      - answer: "5"
-        feedback: Look at the second loop's condition — it tests `i`, which is already exhausted.
+    options:
+      - text: "0"
+        correct: true
+      - text: "5"
+        feedback: "Look at the second loop's condition — it tests `i`, which is already exhausted."
+      - text: "10"
+        feedback: "Look at the second loop's condition — it tests `i`."
     explanation: Zero — the loop silently does nothing. No error, no warning; the bug can go unnoticed for a long time.
 
   - type: choice

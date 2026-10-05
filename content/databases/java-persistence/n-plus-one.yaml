@@ -24,14 +24,15 @@ steps:
 
   - type: predict
     prompt: How many SQL queries does that code run, if there are 50 posts?
-    answer: ["51", "fifty-one"]
-    wrong:
-      - answer: "1"
-        feedback: The first query loads only the posts. The comments are lazy.
-      - answer: "50"
-        feedback: Don't forget the query that loaded the posts in the first place.
-      - answer: "2"
-        feedback: That's what a well-fetched version would do. Lazy loading goes post by post.
+    options:
+      - text: "51"
+        correct: true
+      - text: "1"
+        feedback: "The first query loads only the posts. The comments are lazy."
+      - text: "50"
+        feedback: "Don't forget the query that loaded the posts in the first place."
+      - text: "2"
+        feedback: "That's what a well-fetched version would do. Lazy loading goes post by post."
     hints:
       - One for the list, then one each time `getComments()` is used.
     explanation: 1 + 50 = 51 — hence the name **N+1**. Each is a network round trip, so the cost grows with the page size.

@@ -31,10 +31,13 @@ steps:
       s.addAll(List.of("Snap", "Crackle", "Pop"));
       System.out.println(s.addCount);
     language: java
-    answer: ["6"]
-    wrong:
-      - answer: "3"
+    options:
+      - text: "6"
+        correct: true
+      - text: "3"
         feedback: "`HashSet.addAll` is implemented by calling `add` for each element — and `add` is overridden."
+      - text: "0"
+        feedback: "Both `add` and `addAll` increment the counter."
     hints:
       - How might `HashSet.addAll` be implemented internally?
     explanation: |

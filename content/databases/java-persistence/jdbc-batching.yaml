@@ -26,12 +26,15 @@ steps:
   - type: predict
     prompt: |
       You insert 1,000 rows with a batch size of 50. About how many round trips to the database does that take?
-    answer: ["20", "twenty"]
-    wrong:
-      - answer: "1000"
-        feedback: That's without batching. Each batch carries 50 statements.
-      - answer: "50"
-        feedback: 50 is the size of each batch, not the number of them.
+    options:
+      - text: "20"
+        correct: true
+      - text: "1000"
+        feedback: "That's without batching. Each batch carries 50 statements."
+      - text: "50"
+        feedback: "50 is the size of each batch, not the number of them."
+      - text: "1"
+        feedback: "Each batch is one round trip, and 1,000 rows need 20 batches of 50."
     hints:
       - 1,000 ÷ 50.
     explanation: 1,000 ÷ 50 = 20 round trips instead of 1,000.

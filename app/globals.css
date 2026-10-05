@@ -2483,3 +2483,57 @@ dialog.sheet::backdrop {
   font-weight: 500;
   color: var(--muted);
 }
+
+/* Fill in the blank by tapping */
+.blank-slot {
+  display: inline-block;
+  min-block-size: 1.9em;
+  margin-inline: 0.125rem;
+  padding: 0 0.5rem;
+  border-radius: 6px 6px 2px 2px;
+  border-block-end: 2px solid var(--border-strong);
+  background: var(--default);
+  font: inherit;
+  line-height: 1.6;
+  vertical-align: baseline;
+  text-align: center;
+}
+.blank-slot.is-active {
+  border-block-end-color: var(--accent);
+  background: var(--accent-soft-strong);
+}
+.blank-slot.is-filled {
+  font-weight: 600;
+}
+.blank-slot.is-right {
+  border-block-end-color: var(--accent);
+  background: transparent;
+}
+.blank-slot.is-wrong {
+  border-block-end-color: var(--warning-mark);
+  background: var(--warning-soft);
+}
+.blank-slot:disabled {
+  cursor: default;
+}
+.word-bank {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: 1rem;
+}
+.word-bank__label {
+  inline-size: 100%;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.word-chip {
+  min-block-size: 2.75rem;
+  padding-inline: 1rem;
+}
+.word-chip--code {
+  font-family: var(--font-code);
+  font-size: 0.9375rem;
+}

@@ -47,7 +47,13 @@ steps:
       Stream.of("apple", "avocado", "banana")
             .collect(groupingBy(s -> s.charAt(0), counting()));
     language: java
-    answer: ["{a=2, b=1}", "a=2, b=1"]
+    options:
+      - text: "{a=2, b=1}"
+        correct: true
+      - text: "{a=[apple, avocado], b=[banana]}"
+        feedback: "That's `groupingBy` without the `counting()` downstream collector."
+      - text: "{a=1, b=1}"
+        feedback: "`counting()` counts every element in each group."
     hints:
       - Group by first letter, then count each group.
     explanation: "Two words start with `a`, one with `b`. (The map's iteration order isn't guaranteed in general.)"

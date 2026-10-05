@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { CheckIcon, DownIcon, GripIcon, UpIcon, WrongIcon } from "@/components/icons";
 import { Html } from "@/components/ui";
-import type { BlankStep, MatchStep, Option, OrderStep } from "@/lib/types";
+import type { BlankPart, BlankStep, MatchStep, Option, OrderStep } from "@/lib/types";
 
 export type Phase = "answering" | "wrong" | "correct";
 
@@ -273,51 +273,71 @@ export function MatchAnswer({
   );
 }
 
+/**
+ * Fill in the blank by tapping: choose a gap, then one of the words offered
+ * for it. Filling a gap moves on to the next empty one.
+ */
 export function BlankAnswer({
   step,
   value,
   onChange,
-  onSubmit,
   phase,
   right,
 }: {
   step: BlankStep;
   value: string[];
   onChange: (v: string[]) => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
   phase: Phase;
   right?: boolean[];
 }) {
+  const blanks = step.parts.filter((p): p is Extract<BlankPart, { answers: string[] }> => "answers" in p);
+  const [active, setActive] = useState(0);
+  const locked = phase === "correct";
+  const choose = (word: string) => {
+    const next = value.slice();
+    next[active] = word;
+    onChange(next);
+    const empty = blanks.findIndex((_, k) => k !== active && !next[k]);
+    if (empty >= 0) setActive(empty);
+  };
+  const current = blanks[active];
   let n = -1;
   return (
-    <div className={step.code ? "blank-text blank-text--code" : "blank-text"}>
-      {step.parts.map((p, i) => {
-        if ("text" in p) return p.html !== undefined ? <span key={i} dangerouslySetInnerHTML={{ __html: p.html }} /> : <span key={i}>{p.text}</span>;
-        n++;
-        const k = n;
-        const mark = phase !== "answering" && right ? (right[k] ? " is-right" : phase === "wrong" ? " is-wrong" : "") : "";
-        return (
-          <input
-            key={i}
-            className={`blank-input${mark}`}
-            aria-label={`Blank ${k + 1}`}
-            value={value[k] ?? ""}
-            size={Math.max(p.size, (value[k] ?? "").length) + 1}
-            autoComplete="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            readOnly={phase === "correct"}
-            onChange={(e) => {
-              const next = value.slice();
-              next[k] = e.target.value;
-              onChange(next);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onSubmit();
-            }}
-          />
-        );
-      })}
+    <div>
+      <div className={step.code ? "blank-text blank-text--code" : "blank-text"}>
+        {step.parts.map((p, i) => {
+          if ("text" in p) return p.html !== undefined ? <span key={i} dangerouslySetInnerHTML={{ __html: p.html }} /> : <span key={i}>{p.text}</span>;
+          n++;
+          const k = n;
+          const mark = phase !== "answering" && right ? (right[k] ? " is-right" : phase === "wrong" ? " is-wrong" : "") : "";
+          const filled = value[k];
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`blank-slot${filled ? " is-filled" : ""}${!locked && k === active ? " is-active" : ""}${mark}`}
+              aria-label={`Blank ${k + 1}${filled ? `: ${filled}` : ", empty"}`}
+              aria-pressed={k === active}
+              disabled={locked}
+              onClick={() => setActive(k)}
+              style={{ minInlineSize: `${Math.max(3, p.size) * 0.6 + 1}em` }}
+            >
+              {filled || "\u00a0"}
+            </button>
+          );
+        })}
+      </div>
+      {!locked && current?.choices && (
+        <div className="word-bank" role="group" aria-label={blanks.length > 1 ? `Choices for blank ${active + 1}` : "Choices"}>
+          {blanks.length > 1 && <span className="word-bank__label">Blank {active + 1}</span>}
+          {current.choices.map((w) => (
+            <button key={w} type="button" className={`choice-chip word-chip${step.code ? " word-chip--code" : ""}`} aria-pressed={value[active] === w} onClick={() => choose(w)}>
+              {w}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

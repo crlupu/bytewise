@@ -21,10 +21,13 @@ steps:
       Comparator<Integer> naturalOrder =
           (i, j) -> (i < j) ? -1 : (i == j ? 0 : 1);
     language: java
-    answer: ["1"]
-    wrong:
-      - answer: "0"
+    options:
+      - text: "1"
+        correct: true
+      - text: "0"
         feedback: "`i < j` unboxes, but `i == j` compares two *references*. They're different objects."
+      - text: "-1"
+        feedback: "`i < j` is false (they unbox to equal values)."
     hints:
       - Which operators unbox, and which compare references?
     explanation: "1 — it says the first is greater. Applying `==` to boxed primitives is almost always wrong. Use `Comparator.naturalOrder()`."

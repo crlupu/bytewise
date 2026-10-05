@@ -24,14 +24,15 @@ steps:
     prompt: |
       An 8-core machine runs tasks that spend 90 ms waiting on a database for every 10 ms of computing.
       Aiming for full CPU utilisation, about how many threads should the pool have?
-    answer: ["80", "about 80", "~80"]
-    wrong:
-      - answer: "8"
-        feedback: That's right for pure computation. These tasks spend 90% of their time waiting.
-      - answer: "9"
-        feedback: N + 1 is the rule for CPU-bound work. These tasks mostly wait.
-      - answer: "72"
-        feedback: Close — the formula multiplies by (1 + W/C), which is 10 here.
+    options:
+      - text: "80"
+        correct: true
+      - text: "8"
+        feedback: "That's right for pure computation. These tasks spend 90% of their time waiting."
+      - text: "9"
+        feedback: "N + 1 is the rule for CPU-bound work. These tasks mostly wait."
+      - text: "72"
+        feedback: "Close — the formula multiplies by (1 + W/C), which is 10 here."
     hints:
       - W/C = 90 ÷ 10 = 9.
       - 8 × 1 × (1 + 9).
@@ -39,7 +40,15 @@ steps:
 
   - type: predict
     prompt: Same tasks, but you only want the CPUs **50%** busy, to leave headroom. How many threads?
-    answer: ["40"]
+    options:
+      - text: "40"
+        correct: true
+      - text: "80"
+        feedback: "That's for 100% utilisation; halve it."
+      - text: "20"
+        feedback: "The formula is 8 × 0.5 × (1 + 9)."
+      - text: "4"
+        feedback: "That ignores the waiting time."
     explanation: 8 × 0.5 × 10 = 40.
 
   - type: choice

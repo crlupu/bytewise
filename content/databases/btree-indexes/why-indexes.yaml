@@ -45,12 +45,15 @@ steps:
     prompt: |
       Each B-tree node holds up to 500 keys, so it has up to about 500 children.
       **How many levels** are needed to index 100 million keys?
-    answer: ["3", "three"]
-    wrong:
-      - answer: "2"
-        feedback: Two levels reach about 500 × 500 = 250,000 keys. Not enough.
-      - answer: "4"
-        feedback: Close — but three levels already reach 500³ = 125 million.
+    options:
+      - text: "3"
+        correct: true
+      - text: "2"
+        feedback: "Two levels reach about 500 × 500 = 250,000 keys. Not enough."
+      - text: "4"
+        feedback: "Close — but three levels already reach 500³ = 125 million."
+      - text: "10"
+        feedback: "Three levels already reach 125 million keys."
     hints:
       - One level holds 500 keys; two levels hold about 500 × 500.
     explanation: "500³ = 125,000,000 ≥ 100 million, so three levels — three page reads to find any row."

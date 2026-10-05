@@ -20,7 +20,15 @@ steps:
 
   - type: predict
     prompt: What does `STYLE_BOLD | STYLE_UNDERLINE` evaluate to?
-    answer: ["5"]
+    options:
+      - text: "5"
+        correct: true
+      - text: "4"
+        feedback: "That's STYLE_UNDERLINE alone; `|` sets both bits."
+      - text: "1"
+        feedback: "That's STYLE_BOLD alone; `|` sets both bits."
+      - text: "3"
+        feedback: "That would be BOLD | ITALIC (1 | 2)."
     hints:
       - 1 | 4 in binary is 001 | 100.
     explanation: 101 in binary — 5. Readable to a computer, not to a person reading a log.

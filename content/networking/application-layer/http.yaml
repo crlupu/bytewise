@@ -19,24 +19,26 @@ steps:
     prompt: |
       A page is one HTML file plus 10 images, all small. With **non-persistent** connections — a new TCP connection
       per object, fetched one after another — about how many RTTs does it take?
-    answer: ["22", "22 rtt", "22 rtts"]
-    wrong:
-      - answer: "11"
-        feedback: That counts one RTT per object. Each also needs its own handshake.
-      - answer: "12"
-        feedback: That's the persistent-connection answer — try it next.
+    options:
+      - text: "22"
+        correct: true
+      - text: "11"
+        feedback: "That counts one RTT per object. Each also needs its own handshake."
+      - text: "12"
+        feedback: "That's the persistent-connection answer — try it next."
     hints:
       - 11 objects, 2 RTTs each.
     explanation: 11 objects × 2 RTTs = 22.
 
   - type: predict
     prompt: Same page, but with one **persistent** connection (HTTP/1.1's default), requests sent one at a time. About how many RTTs?
-    answer: ["12", "12 rtt", "12 rtts"]
-    wrong:
-      - answer: "11"
-        feedback: Don't forget the one handshake at the start.
-      - answer: "22"
-        feedback: With a persistent connection, the handshake happens only once.
+    options:
+      - text: "12"
+        correct: true
+      - text: "11"
+        feedback: "Don't forget the one handshake at the start."
+      - text: "22"
+        feedback: "With a persistent connection, the handshake happens only once."
     hints:
       - One handshake, then one RTT per object.
     explanation: 1 RTT for the handshake + 11 request–response round trips = 12.

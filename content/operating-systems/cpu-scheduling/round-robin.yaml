@@ -81,10 +81,13 @@ steps:
 
   - type: predict
     prompt: A context switch costs 1 ms. With a 4 ms slice, roughly what share of time goes to switching?
-    answer: ["20%", "20", "0.2", "1/5"]
-    wrong:
-      - answer: "25%"
-        feedback: Each cycle is 4 ms of work plus 1 ms of switching — 5 ms in all.
+    options:
+      - text: "20%"
+        correct: true
+      - text: "25%"
+        feedback: "Each cycle is 4 ms of work plus 1 ms of switching — 5 ms in all."
+      - text: "10%"
+        feedback: "Each cycle is 5 ms, of which 1 ms is switching."
     hints:
       - Out of every 5 ms, how many are spent switching?
     explanation: 1 ms out of every 5 ms — 20%. That's why slices are usually 10 ms or more.

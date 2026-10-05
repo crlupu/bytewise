@@ -21,12 +21,13 @@ steps:
 
   - type: predict
     prompt: Pages are 4 KiB (4,096 bytes). Which page number holds virtual address **9,000**?
-    answer: ["2", "page 2"]
-    wrong:
-      - answer: "3"
-        feedback: Pages are numbered from 0. Page 0 covers 0–4,095, page 1 covers 4,096–8,191…
-      - answer: "2.19"
-        feedback: Page numbers are whole — take the integer part of the division.
+    options:
+      - text: "2"
+        correct: true
+      - text: "3"
+        feedback: "Pages are numbered from 0. Page 0 covers 0–4,095, page 1 covers 4,096–8,191…"
+      - text: "2.19"
+        feedback: "Page numbers are whole — take the integer part of the division."
     hints:
       - Divide the address by the page size and drop the remainder.
     explanation: 9,000 ÷ 4,096 = 2 remainder 808, so it's page 2.
@@ -77,10 +78,11 @@ steps:
     prompt: |
       A process has **3 frames**, all empty to begin with. It touches pages in this order:
       **1, 2, 3, 1, 2, 3**. How many page faults happen?
-    answer: ["3", "three"]
-    wrong:
-      - answer: "6"
-        feedback: Once a page is in a frame, touching it again is a hit — and three frames hold all three pages.
-      - answer: "0"
-        feedback: The frames start empty, so the first touch of each page has to load it.
+    options:
+      - text: "3"
+        correct: true
+      - text: "6"
+        feedback: "Once a page is in a frame, touching it again is a hit — and three frames hold all three pages."
+      - text: "0"
+        feedback: "The frames start empty, so the first touch of each page has to load it."
     explanation: The first touch of each page faults; after that all three fit, so the rest are hits.

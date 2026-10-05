@@ -48,8 +48,11 @@ steps:
 
   - type: predict
     prompt: What does `Ensemble.TRIO.ordinal()` return?
-    answer: ["2"]
-    wrong:
-      - answer: "3"
-        feedback: Ordinals start at 0 — SOLO is 0.
+    options:
+      - text: "2"
+        correct: true
+      - text: "3"
+        feedback: "Ordinals start at 0 — SOLO is 0."
+      - text: "1"
+        feedback: "Ordinals start at 0, so DUET is 1 and TRIO is 2."
     explanation: SOLO 0, DUET 1, TRIO 2 — which is exactly why "+ 1" logic is so easy to get wrong.

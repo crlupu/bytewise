@@ -68,10 +68,15 @@ steps:
     prompt: |
       Two transactions both read a counter as 10, add one, and write it back — at read committed, with plain
       `SELECT` then `UPDATE ... SET n = 11`. What's the final value?
-    answer: ["11"]
-    wrong:
-      - answer: "12"
-        feedback: Each transaction writes the value *it computed* from its own read of 10.
+    options:
+      - text: "11"
+        correct: true
+      - text: "12"
+        feedback: "Each transaction writes the value *it computed* from its own read of 10."
+      - text: "10"
+        feedback: "Both transactions wrote 11; the value can't stay at 10."
+      - text: "The second transaction fails with an error"
+        feedback: "At read committed a plain write simply overwrites the first — silently."
     explanation: |
       11 — a **lost update**, the same race as `count++` in Java, now between transactions. Fixes: an atomic
       `UPDATE ... SET n = n + 1`, `SELECT ... FOR UPDATE`, optimistic locking with a version column, or a stricter level.

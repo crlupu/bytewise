@@ -47,14 +47,15 @@ steps:
 
   - type: predict
     prompt: "`cwnd` starts at 1 and `ssthresh` is 64. How many RTTs of slow start until `cwnd` is 32?"
-    answer: ["5", "five"]
-    wrong:
-      - answer: "6"
-        feedback: Count the doublings — 1→2 is the first RTT.
-      - answer: "32"
-        feedback: That would be linear growth. Slow start doubles.
-      - answer: "4"
-        feedback: Four doublings of 1 give 16.
+    options:
+      - text: "5"
+        correct: true
+      - text: "6"
+        feedback: "Count the doublings — 1→2 is the first RTT."
+      - text: "32"
+        feedback: "That would be linear growth. Slow start doubles."
+      - text: "4"
+        feedback: "Four doublings of 1 give 16."
     hints:
       - 1 → 2 → 4 → 8 → 16 → 32.
     explanation: 2⁵ = 32, so five round trips.

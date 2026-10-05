@@ -22,10 +22,13 @@ steps:
       names.put(new Point(1, 2), "home");
       System.out.println(names.get(new Point(1, 2)));
     language: java
-    answer: ["null"]
-    wrong:
-      - answer: "home"
-        feedback: The two `Point`s are equal, but their inherited hash codes differ, so `get` searches another bucket.
+    options:
+      - text: "null"
+        correct: true
+      - text: "home"
+        feedback: "The two `Point`s are equal, but their inherited hash codes differ, so `get` searches another bucket."
+      - text: "A `NullPointerException`"
+        feedback: "`get` returns null for a missing key; it doesn't throw."
     hints:
       - Which method does `HashMap.get` call first?
     explanation: Almost certainly `null`. (Occasionally the identity hashes collide — making the bug intermittent, which is worse.)

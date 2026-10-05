@@ -49,14 +49,15 @@ steps:
     prompt: |
       The client's ISN is **1000** and the server's is **5000**. What **acknowledgment number** does the server
       put in its SYN-ACK?
-    answer: ["1001", "ack=1001"]
-    wrong:
-      - answer: "1000"
-        feedback: An ACK names the *next* sequence number expected — and the SYN itself used up number 1000.
-      - answer: "5001"
-        feedback: That's what the client will acknowledge for the server. The server acknowledges the client's ISN.
-      - answer: "5000"
-        feedback: That's the server's own sequence number, not its acknowledgment.
+    options:
+      - text: "1001"
+        correct: true
+      - text: "1000"
+        feedback: "An ACK names the *next* sequence number expected — and the SYN itself used up number 1000."
+      - text: "5001"
+        feedback: "That's what the client will acknowledge for the server. The server acknowledges the client's ISN."
+      - text: "5000"
+        feedback: "That's the server's own sequence number, not its acknowledgment."
     hints:
       - The acknowledgment number is the next sequence number the receiver expects.
     explanation: The SYN flag counts as one byte of sequence space, so the next expected number is 1000 + 1.

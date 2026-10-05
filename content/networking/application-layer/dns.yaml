@@ -64,12 +64,13 @@ steps:
     prompt: |
       A record has a TTL of 3,600. You change the address at 12:00. A resolver cached the old answer at 11:50.
       Until about when may its users still get the old address?
-    answer: ["12:50", "12.50"]
-    wrong:
-      - answer: "13:00"
-        feedback: The hour counts from when the resolver *cached* the answer, not from when you changed it.
-      - answer: "12:00"
-        feedback: Resolvers don't learn about the change — they wait for their copy to expire.
+    options:
+      - text: "12:50"
+        correct: true
+      - text: "13:00"
+        feedback: "The hour counts from when the resolver *cached* the answer, not from when you changed it."
+      - text: "12:00"
+        feedback: "Resolvers don't learn about the change — they wait for their copy to expire."
     hints:
       - 3,600 seconds is an hour, starting from 11:50.
     explanation: The cached copy expires an hour after it was fetched — 12:50.

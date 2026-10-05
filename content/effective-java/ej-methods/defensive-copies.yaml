@@ -14,10 +14,13 @@ steps:
       end.setTime(0);
       System.out.println(p.end().getTime());
     language: java
-    answer: ["0"]
-    wrong:
-      - answer: "1000"
+    options:
+      - text: "0"
+        correct: true
+      - text: "1000"
         feedback: "`Period` kept a reference to the caller's `Date` — and `Date` is mutable."
+      - text: "It throws `IllegalArgumentException`"
+        feedback: "The constructor checked the dates before the caller changed one — nothing checks again."
     hints:
       - "`final` stops the field pointing elsewhere. Does it stop the `Date` itself changing?"
     explanation: The caller changed the period's internals — and now `end` isn't after `start`, breaking the invariant.

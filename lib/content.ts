@@ -98,6 +98,17 @@ function seeded(seed: string) {
   };
 }
 
+/** A seeded random order — possibly the identity, unlike `shuffled`. */
+function permutation(n: number, seed: string): number[] {
+  const rnd = seeded(seed);
+  const order = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
 function shuffled(n: number, seed: string): number[] {
   const rnd = seeded(seed);
   const order = Array.from({ length: n }, (_, i) => i);
@@ -126,8 +137,19 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
     feedback: raw.feedback ? r.block(raw.feedback) : undefined,
     hints: raw.hints.map(r.block),
   };
-  const options = (os: { text: string; correct: boolean; feedback?: string }[]): Option[] =>
-    os.map((o) => ({ html: r.inline(o.text), correct: o.correct, feedback: o.feedback ? r.block(o.feedback) : undefined }));
+  // Authors tend to write the right answer first, so options are shown in a
+  // seeded random order — or in ascending order when they're all numbers,
+  // which reads more naturally.
+  const options = (os: { text: string; correct: boolean; feedback?: string }[], seed = key): Option[] => {
+    const nums = os.map((o) => Number(o.text.replace(/[`%,]/g, "").trim()));
+    const order = nums.every((n) => Number.isFinite(n) && /\d/.test(String(n)))
+      ? os.map((_, i) => i).sort((a, b) => nums[a] - nums[b])
+      : permutation(os.length, seed);
+    return order.map((i) => {
+      const o = os[i];
+      return { html: r.inline(o.text), correct: o.correct, feedback: o.feedback ? r.block(o.feedback) : undefined };
+    });
+  };
 
   switch (raw.type) {
     case "choice":
@@ -184,7 +206,7 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
         question: raw.question
           ? {
               prompt: r.block(raw.question.prompt),
-              options: options(raw.question.options),
+              options: options(raw.question.options, `${key}:question`),
               multiple: raw.question.options.filter((o) => o.correct).length > 1,
             }
           : undefined,
@@ -341,6 +363,7 @@ async function load(): Promise<Loaded> {
       );
 
   if (problems.length) throw new ContentError(problems);
+  addBlankChoices(lessons);
   topics.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   return { catalog: { topics, books }, lessons };
 }
@@ -355,4 +378,49 @@ export async function getLesson(courseId: string, lessonId: string): Promise<Les
 
 export async function getAllLessons(): Promise<Lesson[]> {
   return [...(await loadContent()).lessons.values()];
+}
+
+/**
+ * Blanks are answered by tapping one of a few words rather than typing.
+ * The wrong choices are other blanks' answers — from the same course where
+ * possible, then the same topic, then anywhere — so they're plausible
+ * vocabulary, and code blanks draw on code while prose draws on prose.
+ */
+function addBlankChoices(lessons: Map<string, Lesson>) {
+  type Entry = { answer: string; course: string; topic: string; code: boolean };
+  const pool: Entry[] = [];
+  for (const l of lessons.values())
+    for (const s of l.body)
+      if (s.type === "blank")
+        for (const p of s.parts) if ("answers" in p) pool.push({ answer: p.answers[0], course: l.courseId, topic: l.topicId, code: s.code });
+
+  const norm = (x: string) => x.trim().toLowerCase();
+  for (const l of lessons.values())
+    for (const s of l.body) {
+      if (s.type !== "blank") continue;
+      s.parts.forEach((p, pi) => {
+        if (!("answers" in p)) return;
+        const accepted = new Set(p.answers.map(norm));
+        const seed = `${s.key}:${pi}`;
+        const picked: string[] = [];
+        const tiers = [
+          (e: Entry) => e.course === l.courseId && e.code === s.code,
+          (e: Entry) => e.topic === l.topicId && e.code === s.code,
+          (e: Entry) => e.code === s.code,
+          () => true,
+        ];
+        for (const [ti, tier] of tiers.entries()) {
+          const candidates = [...new Set(pool.filter(tier).map((e) => e.answer))].filter(
+            (a) => !accepted.has(norm(a)) && !picked.some((x) => norm(x) === norm(a)),
+          );
+          for (const i of permutation(candidates.length, `${seed}:${ti}`)) {
+            if (picked.length >= 3) break;
+            picked.push(candidates[i]);
+          }
+          if (picked.length >= 3) break;
+        }
+        const choices = [p.answers[0], ...picked];
+        p.choices = permutation(choices.length, seed).map((i) => choices[i]);
+      });
+    }
 }

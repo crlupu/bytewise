@@ -25,10 +25,13 @@ steps:
 
   - type: predict
     prompt: What does it print?
-    answer: ["260"]
-    wrong:
-      - answer: "26"
-        feedback: That's what the author intended. Look closely at the parameter type of `equals`.
+    options:
+      - text: "260"
+        correct: true
+      - text: "26"
+        feedback: "That's what the author intended. Look closely at the parameter type of `equals`."
+      - text: "52"
+        feedback: "Every one of the 260 objects is distinct to the set."
     hints:
       - "`HashSet` calls `equals(Object)`. Which method did `Bigram` define?"
     explanation: "`equals(Bigram)` **overloads** `equals(Object)` rather than overriding it, so the set uses identity — all 260 objects are distinct."

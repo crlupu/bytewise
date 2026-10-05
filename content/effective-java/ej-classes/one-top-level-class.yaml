@@ -24,10 +24,13 @@ steps:
 
   - type: predict
     prompt: You compile with `javac Main.java Utensil.java`. What does `Main` print?
-    answer: ["pancake"]
-    wrong:
-      - answer: "potpie"
+    options:
+      - text: "pancake"
+        correct: true
+      - text: "potpie"
         feedback: "`Utensil.java` is listed, so its definitions are compiled first — `Dessert.java` isn't even read."
+      - text: "A compile error: duplicate class"
+        feedback: "That happens with `javac Main.java Dessert.java`; with Utensil.java listed, Dessert.java is never read."
     hints:
       - When `Main` refers to `Utensil`, the compiler finds `Utensil.java`, which defines both classes.
     explanation: "`pancake`. With `javac Main.java Dessert.java`, compilation fails with duplicate classes; with `javac Dessert.java Main.java`, it prints `potpie`."

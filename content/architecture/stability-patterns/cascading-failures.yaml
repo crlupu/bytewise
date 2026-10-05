@@ -20,12 +20,15 @@ steps:
       Your service handles requests on a pool of **200** threads. A dependency starts hanging — no response, no error —
       and your code has no timeout. **20** requests per second need that dependency. About how many seconds until every
       thread is stuck?
-    answer: ["10", "ten", "10 seconds"]
-    wrong:
-      - answer: "200"
-        feedback: Threads are consumed at 20 a second, not one.
-      - answer: "20"
-        feedback: 20 is the arrival rate. How long until 200 threads are used up at that rate?
+    options:
+      - text: "10"
+        correct: true
+      - text: "200"
+        feedback: "Threads are consumed at 20 a second, not one."
+      - text: "20"
+        feedback: "20 is the arrival rate. How long until 200 threads are used up at that rate?"
+      - text: "5"
+        feedback: "Twice too fast — 200 threads at 20 a second last 10 seconds."
     hints:
       - Each request holds one thread forever; 20 arrive every second.
     explanation: |

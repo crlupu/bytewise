@@ -50,7 +50,7 @@ export type MatchStep = ExerciseBase & {
 };
 
 /** Text between blanks keeps its raw form; `html` is set when the template is prose, rendered as inline Markdown. */
-export type BlankPart = { text: string; html?: string } | { answers: string[]; size: number };
+export type BlankPart = { text: string; html?: string } | { answers: string[]; size: number; /** Words offered to tap, the right one among them. */ choices?: string[] };
 export type BlankStep = ExerciseBase & { type: "blank"; parts: BlankPart[]; code: boolean; caseSensitive: boolean };
 
 export type WidgetStep = ExerciseBase & {
