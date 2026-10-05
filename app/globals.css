@@ -2537,3 +2537,96 @@ dialog.sheet::backdrop {
   font-family: var(--font-code);
   font-size: 0.9375rem;
 }
+
+/* ---- Glossary terms (lib/glossary.ts, components/TermTips.tsx) ---- */
+
+.term {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.2em;
+  border-radius: 3px;
+  -webkit-tap-highlight-color: transparent;
+}
+.term:hover,
+.term[aria-expanded="true"] {
+  background: var(--accent-soft);
+  text-decoration-style: solid;
+}
+.term:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.term code {
+  text-decoration: inherit;
+}
+
+.term-tip {
+  position: fixed;
+  z-index: 100;
+  inline-size: min(20rem, calc(100vw - 32px));
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--r-control);
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: var(--lift-shadow);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  animation: term-tip-in var(--fast) var(--ease-out);
+}
+.term-tip p {
+  margin: 0;
+}
+.term-tip__term {
+  font-weight: 600;
+  margin-block-end: 0.25rem !important;
+}
+.term-tip__def code {
+  font-family: var(--font-code);
+  font-size: 0.875em;
+  padding: 0.05em 0.3em;
+  border-radius: var(--r-small);
+  background: var(--default);
+}
+.term-tip__src {
+  margin-block-start: 0.5rem !important;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+@keyframes term-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.term-tip--above {
+  animation-name: term-tip-in-above;
+}
+@keyframes term-tip-in-above {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.key-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.875rem;
+  margin: -0.25rem 0 1rem;
+  font-size: 0.9375rem;
+}
+.key-terms__label {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}

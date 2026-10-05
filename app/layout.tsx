@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { SettingsSync } from "@/components/SettingsSync";
+import { TermTips } from "@/components/TermTips";
 import { THEME_SCRIPT } from "@/lib/themeScript";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <SettingsSync />
         {children}
+        <TermTips />
       </body>
     </html>
   );

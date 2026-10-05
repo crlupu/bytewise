@@ -4,7 +4,8 @@ import YAML from "yaml";
 import { Marked } from "marked";
 import { createHighlighter, type Highlighter } from "shiki";
 import type { z } from "zod";
-import { BooksFile, CourseFile, LessonFile, STEP_SCHEMAS, TopicFile, type RawStep } from "@/lib/schema";
+import { BooksFile, CourseFile, GlossaryFile, LessonFile, STEP_SCHEMAS, TopicFile, type RawStep } from "@/lib/schema";
+import { makeAnnotator, type Annotator, type GlossaryEntry } from "@/lib/glossary";
 import type { Book, Catalog, CourseMeta, Html, Lesson, LessonMeta, Option, Step, TopicMeta } from "@/lib/types";
 
 /**
@@ -123,6 +124,40 @@ function shuffled(n: number, seed: string): number[] {
 }
 
 // ---- Steps ----
+
+/** Marks glossary terms: once per step, counting everything shown together. */
+function annotateStep(step: Step, { annotate, chip }: Annotator) {
+  const used = new Set<string>();
+  if (step.type === "explanation") {
+    step.body = annotate(step.body, used);
+    return;
+  }
+  step.prompt = annotate(step.prompt, used);
+  if (step.type === "widget" && step.question) step.question.prompt = annotate(step.question.prompt, used);
+  // Answers are buttons themselves, so terms in them can't be; they're listed
+  // under the question instead.
+  const answers: Html[] =
+    step.type === "match"
+      ? [...step.left, ...step.right]
+      : step.type === "order"
+        ? step.items
+        : step.type === "blank"
+          ? []
+          : ((step.type === "widget" ? step.question?.options : step.options) ?? []).map((o) => o.html);
+  if (step.type === "blank" && !step.code)
+    for (const p of step.parts) if ("text" in p && p.html) p.html = annotate(p.html, used);
+  const before = new Set(used);
+  answers.forEach((h) => annotate(h, used));
+  const key = [...used].filter((id) => !before.has(id));
+  if (key.length) step.terms = key.map(chip);
+  step.hints = step.hints.map((h) => annotate(h, used));
+  if (step.explanation) step.explanation = annotate(step.explanation, used);
+  // Only one piece of feedback shows at a time, so each gets its own count.
+  const alone = (html: Html) => annotate(html, new Set(used));
+  if (step.feedback) step.feedback = alone(step.feedback);
+  const opts = step.type === "widget" ? step.question?.options : "options" in step ? step.options : undefined;
+  for (const o of opts ?? []) if (o.feedback) o.feedback = alone(o.feedback);
+}
 
 function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): Step {
   const id = raw.id ?? `step-${index + 1}`;
@@ -248,6 +283,30 @@ async function load(): Promise<Loaded> {
     else problems.push(...issues(booksFile, bp.error));
   }
 
+  const glossaryFile = path.join(ROOT, "glossary.yaml");
+  const glossary: GlossaryEntry[] = [];
+  if (fs.existsSync(glossaryFile)) {
+    const gp = GlossaryFile.safeParse(readYaml(glossaryFile, problems) ?? {});
+    if (!gp.success) problems.push(...issues(glossaryFile, gp.error));
+    else {
+      const seen = new Map<string, string>();
+      for (const [group, entries] of Object.entries(gp.data)) {
+        if (group !== "general" && !books[group]) problems.push(`${rel(glossaryFile)}: ${group}: no such book in books.yaml`);
+        for (const e of entries) {
+          for (const name of [e.term, ...e.aliases]) {
+            const k = name.toLowerCase();
+            if (seen.has(k)) problems.push(`${rel(glossaryFile)}: "${name}" is listed under both ${seen.get(k)} and ${e.term}`);
+            seen.set(k, e.term);
+          }
+          glossary.push({ ...e, id: `${group}:${e.term}`, def: r.inline(e.def), book: group === "general" ? undefined : group });
+        }
+      }
+    }
+  }
+  // Each topic explains the terms of the books its lessons cite, so a term
+  // like "index" means a database index only in database lessons.
+  const glossaryBooks = new Map<string, Set<string>>();
+
   const topicDirs = fs
     .readdirSync(ROOT, { withFileTypes: true })
     .filter((d) => d.isDirectory())
@@ -266,6 +325,10 @@ async function load(): Promise<Loaded> {
     }
     const topic: TopicMeta = { id: topicId, title: tp.data.title, summary: tp.data.summary, courses: [] };
     order.set(topicId, tp.data.order);
+    glossaryBooks.set(topicId, new Set(["general", ...tp.data.glossary]));
+    tp.data.glossary.forEach((b, bi) => {
+      if (!books[b]) problems.push(`${rel(topicFile)}: glossary[${bi}]: no book "${b}" in ${rel(booksFile)}`);
+    });
 
     tp.data.courses.forEach((courseId, ci) => {
       const courseFile = path.join(ROOT, topicId, courseId, "course.yaml");
@@ -364,6 +427,14 @@ async function load(): Promise<Loaded> {
 
   if (problems.length) throw new ContentError(problems);
   addBlankChoices(lessons);
+  for (const l of lessons.values()) for (const src of l.sources) glossaryBooks.get(l.topicId)?.add(src.book);
+  const annotators = new Map<string, ReturnType<typeof makeAnnotator>>();
+  for (const l of lessons.values()) {
+    const scope = glossaryBooks.get(l.topicId) ?? new Set(["general"]);
+    if (!annotators.has(l.topicId))
+      annotators.set(l.topicId, makeAnnotator(glossary.filter((e) => scope.has(e.book ?? "general")), (b) => books[b]?.title));
+    l.body.forEach((s) => annotateStep(s, annotators.get(l.topicId)!));
+  }
   topics.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
   return { catalog: { topics, books }, lessons };
 }

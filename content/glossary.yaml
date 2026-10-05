@@ -1,0 +1,980 @@
+# Terms shown as tap-to-explain tooltips wherever they appear in a lesson.
+#
+# Grouped by the book they come from (`general` for none). Each entry:
+#   term     the name as it's usually written; matched case-insensitively, plurals too
+#   aliases  other spellings to match
+#   code     true → match only inside inline `code` (keywords and class names), case-sensitive
+#   def      one or two plain sentences; inline Markdown allowed
+#
+# The first mention of a term in each step gets the tooltip.
+
+effective-java:
+  - term: Telescoping constructor
+    aliases: [telescoping constructor pattern, telescopic constructor]
+    def: A chain of constructors, each adding one more optional parameter — `Pizza(size)`, `Pizza(size, cheese)`, `Pizza(size, cheese, ham)`… Hard to read and easy to call with arguments in the wrong order.
+  - term: JavaBeans pattern
+    aliases: [JavaBeans setters, JavaBean]
+    def: Create an object with a no-argument constructor, then call a setter for each field. Readable, but the object is in an inconsistent state mid-construction and can't be immutable.
+  - term: Builder pattern
+    aliases: [builder, builders]
+    def: A helper object that collects parameters through named, chainable methods and then calls `build()` to create the real object. Readable like setters, safe like constructors.
+  - term: Static factory method
+    aliases: [static factory, static factories, static factory methods]
+    def: A static method that returns an instance, like `Integer.valueOf(42)` or `List.of()`. Unlike a constructor it has a name, can return a cached object, and can return a subtype.
+  - term: Flyweight
+    def: Sharing one instance among all users of an equal value instead of making copies — e.g. `Boolean.TRUE`. Only safe for immutable objects.
+  - term: Service provider framework
+    def: A system where implementations register themselves and clients look them up through an API, e.g. JDBC drivers found by `DriverManager`. Built on static factories that return interface types.
+  - term: Singleton
+    def: A class that is instantiated exactly once. Usually a single-element `enum`, a `public static final` field, or a static factory returning one instance.
+  - term: Noninstantiable class
+    aliases: [utility class, noninstantiable]
+    def: A class of only static members, like `Math` or `Collections`. Gets a private constructor so no one can create an instance.
+  - term: Dependency injection
+    def: Passing an object the resources it needs — through its constructor, a factory or a builder — instead of having it create or look them up itself. Makes it flexible and testable.
+  - term: Memory leak
+    aliases: [memory leaks, unintentional object retention]
+    def: In Java, objects that are no longer needed but stay reachable — from a cache, a listener list, or a stale array slot — so the garbage collector can never free them.
+  - term: Obsolete reference
+    aliases: [obsolete references]
+    def: A reference to an object the program will never use again but that keeps it alive anyway, e.g. a popped element left in a stack's array.
+  - term: Finalizer
+    aliases: [finalizers, finalize]
+    def: A method (`finalize`) the garbage collector may call before reclaiming an object. Unpredictable, slow and dangerous; deprecated. Use `try`-with-resources instead.
+  - term: Cleaner
+    aliases: [cleaners]
+    def: 'The safer replacement for finalizers (`java.lang.ref.Cleaner`): runs a cleanup action after an object becomes unreachable. Still unpredictable — only a safety net.'
+  - term: Finalizer attack
+    def: A subclass whose finalizer saves a reference to a partly constructed object whose constructor threw, letting attackers use an object that should never have existed.
+  - term: try-with-resources
+    aliases: [try with resources]
+    def: '`try (var in = open()) { … }` — closes every resource declared in the parentheses automatically, in reverse order, even when an exception is thrown. Requires `AutoCloseable`.'
+  - term: Suppressed exception
+    aliases: [suppressed exceptions, suppressed]
+    def: An exception thrown while closing a resource after another exception already happened. `try`-with-resources keeps the first and attaches the others, retrievable with `getSuppressed()`.
+  - term: Equivalence relation
+    def: 'The rules `equals` must obey: reflexive (`x.equals(x)`), symmetric, transitive, consistent over time, and `x.equals(null)` is false.'
+  - term: Reflexive
+    def: Every value is equal to itself — `x.equals(x)` is true.
+  - term: Symmetric
+    aliases: [symmetry]
+    def: If `x.equals(y)` then `y.equals(x)`.
+  - term: Transitive
+    aliases: [transitivity]
+    def: If `x` equals `y` and `y` equals `z`, then `x` equals `z`.
+  - term: Liskov substitution principle
+    aliases: [Liskov substitution]
+    def: Anything true of a type should be true of its subtypes — a subclass instance must work wherever the superclass is expected.
+  - term: Value class
+    aliases: [value classes, value type]
+    def: A class whose instances represent a value, like `Integer` or `LocalDate`, where two instances with the same contents should be equal.
+  - term: Hash code
+    aliases: [hashCode, hash codes]
+    def: An `int` summary of an object used by hash tables to pick a bucket. Equal objects must have equal hash codes; unequal ones ideally differ.
+  - term: Lazy initialization
+    aliases: [lazily initialized, lazy init, lazily initialize]
+    def: Delaying computing a field until it is first needed. Saves work if it's never used, but needs care with threads.
+  - term: Natural ordering
+    def: The ordering defined by a class's `compareTo` method (from `Comparable`), used by sorting and by `TreeSet`/`TreeMap`.
+  - term: Consistent with equals
+    def: '`compareTo` returns 0 exactly when `equals` returns true. If not, sorted collections like `TreeSet` will disagree with `HashSet` about duplicates.'
+  - term: Information hiding
+    aliases: [encapsulation]
+    def: Keeping a component's internals private and exposing only a small API, so the internals can change without breaking anyone and parts can be built and tested separately.
+  - term: Accessor method
+    aliases: [accessor, accessors, getter, getters]
+    def: A method that returns the value of a field — the public way in, instead of making the field itself public.
+  - term: Immutable
+    aliases: [immutable class, immutable object, immutability, immutable objects, immutable classes]
+    def: An object whose state can't change after construction. Simple, thread-safe, freely shareable. Make fields `final` and `private`, provide no setters, and don't let the class be extended.
+  - term: Functional approach
+    def: Methods that return a new result instead of modifying the object, e.g. `a.plus(b)` returning a new value. Typical of immutable classes.
+  - term: Companion class
+    aliases: [mutable companion]
+    def: A mutable helper for an immutable class, used when building a value in many steps — `StringBuilder` for `String`.
+  - term: Composition
+    def: Building a class by giving it a private field holding another object and forwarding to it, rather than extending that object's class.
+  - term: Forwarding
+    aliases: [forwarding method, forwarding methods, forwarding class]
+    def: A method that simply calls the same method on a contained object and returns its result.
+  - term: Wrapper class
+    aliases: [wrapper classes]
+    def: A class that wraps another object of the same interface and adds behavior — the Decorator pattern.
+  - term: Decorator
+    aliases: [Decorator pattern]
+    def: Adding behavior to an object by wrapping it in another object with the same interface, e.g. `Collections.unmodifiableList(list)`.
+  - term: Fragile base class
+    aliases: [fragile base class problem]
+    def: When a subclass breaks because its superclass changes internally — e.g. one of its methods starts calling another overridable method.
+  - term: Self-use
+    aliases: [self-use of overridable methods]
+    def: A class calling its own overridable methods. Subclasses that override them can be surprised, so it must be documented.
+  - term: Implementation inheritance
+    def: Extending a class to reuse its code (`extends`), as opposed to implementing an interface. Breaks encapsulation across package boundaries.
+  - term: Skeletal implementation
+    aliases: [skeletal implementations, AbstractList, abstract skeletal implementation]
+    def: An abstract class that implements most of an interface in terms of a few primitive methods, like `AbstractList`. Combines the flexibility of interfaces with code reuse.
+  - term: Mixin
+    aliases: [mixins]
+    def: A type a class implements in addition to its primary type, to declare an optional behavior — `Comparable` is a mixin.
+  - term: Simulated multiple inheritance
+    def: A class implements an interface and forwards its methods to a private inner class that extends the skeletal implementation.
+  - term: Default method
+    aliases: [default methods]
+    def: An interface method with a body (`default`), available to every implementation unless overridden. Lets interfaces gain methods — but can break existing implementations.
+  - term: Constant interface
+    aliases: [constant interface pattern]
+    def: An interface with only constants, implemented to use them unqualified. An anti-pattern — use a utility class or enum and `import static`.
+  - term: Tagged class
+    aliases: [tagged classes]
+    def: One class with a "tag" field saying which kind of thing an instance is, plus a switch everywhere. Replace with a class hierarchy.
+  - term: Static member class
+    aliases: [static member classes, static nested class]
+    def: A nested class declared `static` — an ordinary class that happens to live inside another. Doesn't hold a reference to an outer instance.
+  - term: Inner class
+    aliases: [inner classes, nonstatic member class, nonstatic member classes]
+    def: A nested class without `static`. Each instance secretly holds a reference to its enclosing instance, which costs memory and can cause leaks.
+  - term: Anonymous class
+    aliases: [anonymous classes]
+    def: A class declared and instantiated in one expression, without a name. Mostly replaced by lambdas.
+  - term: Raw type
+    def: A generic type used without type arguments, like `List` instead of `List<String>`. Exists only for compatibility; loses all type safety.
+  - term: Unbounded wildcard
+    aliases: [unbounded wildcard type, unbounded wildcards]
+    def: '`List<?>` — a list of some unknown type. Safe to read as `Object`; you can''t add anything except `null`.'
+  - term: Unchecked warning
+    aliases: [unchecked warnings, unchecked cast]
+    def: The compiler saying it can't verify type safety at this point. Eliminate them, or prove safety and suppress with `@SuppressWarnings("unchecked")` on the smallest scope.
+  - term: Covariant
+    aliases: [covariance, covariant arrays]
+    def: If `Sub` is a subtype of `Super`, then `Sub[]` is a subtype of `Super[]`. Arrays are covariant; generics are not (they're invariant).
+  - term: Invariant (generics)
+    aliases: [invariant generics]
+    def: '`List<Sub>` is neither a subtype nor a supertype of `List<Super>`, even if `Sub` extends `Super`.'
+  - term: Reified
+    aliases: [reifiable, reification, reifiable type, non-reifiable]
+    def: Type information that exists at run time. Arrays know their element type; generic types don't — it's erased.
+  - term: Erasure
+    aliases: [type erasure, erased]
+    def: Generic type arguments are checked at compile time and then removed, so at run time a `List<String>` is just a `List`.
+  - term: Generic method
+    aliases: [generic methods]
+    def: A method with its own type parameters, declared before the return type — `static <E> Set<E> union(Set<E> a, Set<E> b)`.
+  - term: Type inference
+    def: The compiler working out type arguments for you, e.g. from the diamond `new ArrayList<>()` or a generic method's arguments.
+  - term: Recursive type bound
+    aliases: [recursive bound]
+    def: A type parameter bounded by an expression involving itself — `<E extends Comparable<E>>`, "any E that can be compared with itself".
+  - term: Bounded wildcard
+    aliases: [bounded wildcards, bounded wildcard type]
+    def: '`? extends T` (some subtype of T) or `? super T` (some supertype of T). Makes APIs accept more argument types.'
+  - term: PECS
+    def: '"Producer-extends, consumer-super": use `? extends T` for a parameter you read Ts from, `? super T` for one you put Ts into.'
+  - term: Heap pollution
+    def: A variable of a parameterized type refers to an object of a different type — possible with generic varargs, and causes a surprise `ClassCastException` later.
+  - term: Varargs
+    aliases: [variable arity]
+    def: A parameter like `int... nums` that accepts any number of arguments; the method receives them as an array.
+  - term: Typesafe heterogeneous container
+    aliases: [heterogeneous container]
+    def: A container keyed by `Class` objects, so each key can map to a value of its own type — `favorites.put(String.class, "Java")`.
+  - term: Type token
+    aliases: [class literal, type tokens]
+    def: A `Class` object like `String.class` passed around to convey type information at run time.
+  - term: int enum pattern
+    aliases: [int enum]
+    def: Declaring constants as `public static final int APPLE = 0;`. No type safety, no namespace, prints as numbers. Use an `enum`.
+  - term: Constant-specific method implementation
+    aliases: [constant-specific method, constant-specific methods, constant-specific class body]
+    def: Each enum constant overriding an abstract method with its own body, instead of a `switch` on `this`.
+  - term: Strategy enum
+    aliases: [strategy enum pattern]
+    def: An enum whose constants delegate part of their behavior to a nested enum chosen in the constructor, so related constants share code.
+  - term: Ordinal
+    aliases: [ordinal()]
+    def: An enum constant's position in its declaration, from `ordinal()`. Don't store meaning in it — reorder the constants and it changes.
+  - term: Bit field
+    aliases: [bit fields]
+    def: Combining `int` constants with bitwise OR to represent a set — `STYLE_BOLD | STYLE_ITALIC`. Replace with `EnumSet`.
+  - term: Marker interface
+    aliases: [marker interfaces]
+    def: An interface with no methods that marks a class as having a property, like `Serializable`. Unlike an annotation, it defines a type the compiler can check.
+  - term: Marker annotation
+    aliases: [marker annotations]
+    def: An annotation with no parameters that simply marks an element, like `@Test` or `@Override`.
+  - term: Functional interface
+    aliases: [functional interfaces]
+    def: An interface with exactly one abstract method, like `Runnable` or `Function<T,R>`. A lambda or method reference can implement it.
+  - term: Method reference
+    aliases: [method references]
+    def: A shorthand for a lambda that just calls a method — `Integer::parseInt` for `s -> Integer.parseInt(s)`.
+  - term: Side effect
+    aliases: [side effects, side-effect-free]
+    def: A function doing something besides computing its result — modifying state, printing, writing a field.
+  - term: Collector
+    aliases: [collectors]
+    def: A recipe for gathering stream elements into a result — `toList()`, `toMap(...)`, `groupingBy(...)`.
+  - term: Defensive copy
+    aliases: [defensive copies, defensively copy, copy defensively]
+    def: Copying a mutable argument when it comes in, or a mutable field when it goes out, so callers can't change your object's internals behind your back.
+  - term: TOCTOU
+    aliases: [time-of-check/time-of-use, window of vulnerability]
+    def: Time-of-check/time-of-use — another thread changes a value between when you validate it and when you use it. Defensive copies must be made before checking.
+  - term: Overloading
+    def: Several methods with the same name but different parameter types. Which one runs is decided at compile time from the static types.
+  - term: Overriding
+    def: A subclass redefining an inherited method. Which one runs is decided at run time from the object's actual class.
+  - term: Precondition
+    aliases: [preconditions]
+    def: What must be true when a method is called, e.g. "index must be non-negative". Check them at the start and throw if violated.
+  - term: Postcondition
+    aliases: [postconditions]
+    def: What a method guarantees is true when it returns.
+  - term: Boxed primitive
+    aliases: [boxed primitives, boxed type, boxed types]
+    def: The object version of a primitive — `Integer` for `int`. Has identity, can be `null`, and may cost an allocation.
+  - term: Autoboxing
+    aliases: [auto-unboxing, unboxing, autoboxed]
+    def: The compiler converting automatically between primitives and their boxed types — `int` ↔ `Integer`.
+  - term: Checked exception
+    aliases: [checked exceptions]
+    def: An exception the compiler forces you to catch or declare (`throws`), e.g. `IOException`. For conditions the caller can reasonably recover from.
+  - term: Unchecked exception
+    aliases: [unchecked exceptions, runtime exception, runtime exceptions]
+    def: A `RuntimeException` or `Error`, which needn't be declared. Signals a programming error, like a violated precondition.
+  - term: Exception translation
+    def: Catching a low-level exception and throwing one that fits the higher layer's abstraction — e.g. turning `SQLException` into `UserNotFoundException`.
+  - term: Exception chaining
+    aliases: [chained exception]
+    def: Passing the low-level exception as the "cause" of the higher-level one, so the stack trace shows both.
+  - term: Failure atomicity
+    aliases: [failure atomic, failure-atomic]
+    def: A failed method call leaves the object in the state it was in before the call.
+  - term: Detail message
+    aliases: [detail messages]
+    def: The string passed to an exception's constructor. Should include the values that caused the failure.
+  - term: Serialization
+    def: Java's built-in mechanism for turning objects into bytes and back. A source of security bugs — prefer JSON or protobuf.
+  - term: Deserialization
+    def: Turning a byte stream back into objects. Acts as a hidden constructor that attackers can feed any bytes to.
+  - term: Gadget chain
+    def: A sequence of ordinary methods in available classes that deserialization can be tricked into calling, adding up to an attack.
+  - term: serialVersionUID
+    code: true
+    def: A version number for a serializable class. If it changes, old serialized forms can no longer be read.
+  - term: Serialization proxy
+    aliases: [serialization proxy pattern]
+    def: Serializing a simple private nested class representing the logical state instead of the object itself, then rebuilding the real object through its public API.
+  - term: transient
+    code: true
+    def: Marks a field to be left out of the serialized form.
+  - term: readResolve
+    code: true
+    def: A serialization hook that lets a class replace the deserialized object with another, e.g. the one true singleton instance.
+  - term: Covariant return type
+    aliases: [covariant return types]
+    def: An overriding method may declare a more specific return type than the method it overrides.
+  - term: Static import
+    aliases: [import static, static imports]
+    def: '`import static java.lang.Math.PI;` — lets you use a class''s static members without the class name.'
+  - term: Optional
+    code: true
+    def: A container that holds either one value or nothing. Use as a return type for "might be absent" instead of `null`.
+
+jcip:
+  - term: Thread safety
+    aliases: [thread-safe, threadsafe, thread safe]
+    def: A class is thread-safe if it behaves correctly when used from multiple threads, however their execution is interleaved, with no extra synchronization by the caller.
+  - term: Race condition
+    def: When the correctness of a result depends on the lucky timing or interleaving of threads.
+  - term: Data race
+    aliases: [data races]
+    def: Two threads accessing the same variable, at least one writing, without synchronization ordering them. Results in stale or torn values.
+  - term: Check-then-act
+    def: A race where you check a condition and then act on it, but the condition may change in between — e.g. `if (!map.containsKey(k)) map.put(k, v)`.
+  - term: Read-modify-write
+    def: A race in operations like `count++`, which is really read, add one, write — another thread can update in between.
+  - term: Compound action
+    aliases: [compound actions]
+    def: A sequence of operations that must execute atomically to be correct, like check-then-act or read-modify-write.
+  - term: Atomic
+    aliases: [atomicity]
+    def: Happening as a single indivisible step — other threads see it either not started or completely done.
+  - term: Intrinsic lock
+    aliases: [intrinsic locks, monitor lock, monitor locks]
+    def: The lock built into every Java object, acquired by `synchronized`. Released automatically when the block exits, even by an exception.
+  - term: Reentrancy
+    def: A thread can reacquire a lock it already holds. Java's intrinsic locks and `ReentrantLock` are reentrant, so a synchronized method can call another one.
+  - term: Guarded by
+    aliases: ["@GuardedBy", GuardedBy]
+    def: The lock that must be held to access a variable. Every access — read or write — must hold the same lock.
+  - term: Invariant
+    aliases: [invariants, class invariant]
+    def: A condition that must always hold for an object to be valid, e.g. `lower <= upper`. Variables in the same invariant must be updated atomically.
+  - term: Liveness
+    aliases: [liveness failure, liveness hazard, liveness hazards]
+    def: '"Something good eventually happens." Deadlock, livelock and starvation are liveness failures.'
+  - term: Visibility
+    aliases: [memory visibility]
+    def: Whether a write by one thread is seen by another. Without synchronization there's no guarantee it ever will be.
+  - term: Stale data
+    aliases: [stale value, stale values]
+    def: An out-of-date value a thread sees because the latest write hasn't been made visible to it.
+  - term: volatile
+    code: true
+    def: A field modifier guaranteeing visibility — every read sees the most recent write — and ordering. Doesn't make compound actions like `count++` atomic.
+  - term: Volatile variable
+    aliases: [volatile variables, volatile field, volatile fields]
+    def: A field declared `volatile` — reads always see the latest write by any thread, but compound actions on it are still not atomic.
+  - term: Publication
+    def: Making an object available to code outside its current scope — storing it in a shared field, returning it, passing it to another class.
+  - term: Escape
+    def: An object published when it shouldn't be — for example before it's fully constructed.
+  - term: this escape
+    aliases: [this-escape, this reference escape]
+    def: Letting `this` be seen by other code during construction — e.g. registering a listener or starting a thread in the constructor.
+  - term: Thread confinement
+    aliases: [thread-confined]
+    def: Only one thread ever accesses the data, so it needs no synchronization.
+  - term: Stack confinement
+    aliases: [stack-confined]
+    def: The object is reachable only through local variables, which live on one thread's stack.
+  - term: ThreadLocal
+    code: true
+    def: Gives each thread its own independent copy of a variable.
+  - term: Effectively immutable
+    def: An object that is technically mutable but never modified after publication. Safe to use without locks once safely published.
+  - term: Safe publication
+    aliases: [safely published, safely publish]
+    def: 'Publishing an object so other threads see it fully constructed: via a static initializer, a `volatile` or `final` field, a lock, or a thread-safe collection.'
+  - term: Initialization safety
+    def: The guarantee that properly constructed objects' `final` fields are seen correctly by every thread, even without synchronization.
+  - term: Java monitor pattern
+    aliases: [monitor pattern]
+    def: Encapsulating all mutable state in an object and guarding it with the object's own intrinsic lock.
+  - term: Private lock
+    aliases: [private lock object]
+    def: A private object used as the lock, instead of `this`, so outside code can't acquire it and interfere.
+  - term: Delegation
+    aliases: [delegating thread safety, delegate thread safety]
+    def: Making a class thread-safe by building it from thread-safe parts. Only works if the parts are independent — no invariant links them.
+  - term: Client-side locking
+    def: A caller guarding compound actions on an object with the same lock the object itself uses. Fragile — depends on knowing that lock.
+  - term: Synchronization policy
+    def: The documented rules for how an object is made thread-safe — which lock guards which state.
+  - term: Synchronized collection
+    aliases: [synchronized collections, synchronized wrapper, synchronizedList]
+    def: '`Vector`, `Hashtable` and `Collections.synchronizedXxx` wrappers: every method holds one lock. Thread-safe per call, but compound actions still need client-side locking, and it doesn''t scale.'
+  - term: Concurrent collection
+    aliases: [concurrent collections]
+    def: Collections designed for concurrent access, like `ConcurrentHashMap` and `CopyOnWriteArrayList` — better scalability than synchronized collections.
+  - term: Fail-fast
+    aliases: [fail-fast iterator, fail-fast iterators]
+    def: An iterator that throws `ConcurrentModificationException` as soon as it notices the collection was modified during iteration.
+  - term: Weakly consistent
+    aliases: [weakly consistent iterator, weakly consistent iterators]
+    def: An iterator that tolerates concurrent modification — it may or may not reflect changes made after it was created, but never throws.
+  - term: Lock striping
+    def: Using several locks, each guarding a portion of the data — like `ConcurrentHashMap` once used 16 locks for different buckets.
+  - term: Lock splitting
+    def: Using separate locks for independent pieces of state that were previously guarded by one lock.
+  - term: Copy-on-write
+    aliases: [copy-on-write collection]
+    def: Every modification copies the whole underlying array. Great for read-mostly data like listener lists; iteration never needs locking.
+  - term: Producer-consumer
+    aliases: [producer-consumer pattern, producers and consumers]
+    def: Producers put work in a queue, consumers take it out — decoupling the rate of producing from the rate of consuming.
+  - term: Blocking queue
+    aliases: [blocking queues, BlockingQueue]
+    def: A queue whose `put` waits when full and `take` waits when empty — the backbone of producer-consumer designs.
+  - term: Bounded queue
+    aliases: [bounded queues, bounded buffer]
+    def: A queue with a fixed capacity. When full, producers block — natural back-pressure that stops them from running out of memory.
+  - term: Work stealing
+    def: Each worker has its own deque; an idle worker takes tasks from the tail of another's. Keeps all workers busy with little contention.
+  - term: Deque
+    aliases: [deques]
+    def: A double-ended queue — elements can be added or removed at either end.
+  - term: Synchronizer
+    aliases: [synchronizers]
+    def: An object that coordinates threads based on its state — latches, semaphores, barriers, blocking queues.
+  - term: Latch
+    aliases: [latches, CountDownLatch]
+    def: A gate that stays closed until a count reaches zero, then opens for good. Lets threads wait until a set of events has happened.
+  - term: Semaphore
+    aliases: [semaphores, counting semaphore]
+    def: Manages a fixed number of permits. `acquire` takes one (waiting if none are left), `release` gives one back. Used to bound how many threads use a resource.
+  - term: Barrier
+    aliases: [barriers, CyclicBarrier]
+    def: Makes a group of threads wait until all of them arrive, then releases them together. Reusable for step-by-step computations.
+  - term: Memoization
+    aliases: [memoize, memoizer, memoizing]
+    def: Caching the result of a function call so repeated calls with the same arguments return the cached result.
+  - term: Executor
+    aliases: [executors, Executor framework]
+    def: An object that runs submitted tasks, decoupling *what* to run from *how* — on which thread, when, in what order.
+  - term: Thread pool
+    aliases: [thread pools]
+    def: A set of worker threads that take tasks from a queue and run them, reusing threads instead of creating one per task.
+  - term: Execution policy
+    aliases: [execution policies]
+    def: The what, where, when and how of running tasks — how many at once, in what order, what to do when overloaded.
+  - term: Future
+    aliases: [futures]
+    def: A handle to a task's eventual result. `get()` waits for it; `cancel()` tries to stop the task.
+  - term: Callable
+    code: true
+    def: Like `Runnable`, but returns a result and can throw a checked exception.
+  - term: CompletionService
+    code: true
+    def: An `Executor` plus a `BlockingQueue` of finished tasks — take results in the order they complete.
+  - term: Cancellation
+    aliases: [cancellation policy]
+    def: Stopping a task before it finishes. In Java it's cooperative — the task must check and respond.
+  - term: Interruption
+    aliases: [interrupt status, interrupted status]
+    def: A request to a thread to stop what it's doing. It sets a flag; blocking methods respond by throwing `InterruptedException`. The thread decides how to react.
+  - term: Interruption policy
+    def: How a thread responds to an interrupt. Only the code that owns the thread should swallow one; everyone else should restore or propagate it.
+  - term: Poison pill
+    aliases: [poison pills]
+    def: A special object placed on a queue meaning "stop when you get to this".
+  - term: Daemon thread
+    aliases: [daemon threads]
+    def: A thread that doesn't stop the JVM from exiting. When only daemon threads remain, the JVM exits without running their `finally` blocks.
+  - term: Shutdown hook
+    aliases: [shutdown hooks]
+    def: A thread the JVM runs during an orderly shutdown, for cleanup.
+  - term: Saturation policy
+    aliases: [saturation policies, rejected execution, abort policy, caller-runs, caller runs]
+    def: What a thread pool does when its queue is full — abort with an exception, discard, or make the caller run the task itself (caller-runs).
+  - term: Thread starvation deadlock
+    def: Tasks in a pool wait on other tasks queued in the same pool, but every worker is busy waiting — nobody can make progress.
+  - term: Event dispatch thread
+    aliases: [event thread]
+    def: The single thread that handles all GUI events and drawing in Swing. All GUI work must run on it, and it must never block.
+  - term: Deadlock
+    aliases: [deadlocks, deadlocked]
+    def: Two or more threads each wait forever for a lock another holds — a cycle in the "waits for" graph.
+  - term: Lock ordering
+    aliases: [lock-ordering, lock order]
+    def: Always acquiring multiple locks in the same global order, which makes lock-ordering deadlocks impossible.
+  - term: Open call
+    aliases: [open calls]
+    def: Calling an alien method with no locks held. Makes deadlocks much easier to rule out.
+  - term: Alien method
+    aliases: [alien methods]
+    def: A method whose behavior you don't control — overridable methods, or methods of objects passed in. Calling one while holding a lock invites deadlock.
+  - term: Livelock
+    def: Threads aren't blocked but still make no progress — they keep reacting to each other and retrying, like two people stepping aside in a corridor.
+  - term: Starvation
+    def: A thread is perpetually denied access to a resource it needs, such as CPU time or a lock, so it can't progress.
+  - term: Contention
+    aliases: [lock contention]
+    def: Several threads wanting the same lock at once. Contended locks cost context switches and serialize work.
+  - term: Context switch
+    aliases: [context switches, context switching]
+    def: The CPU stops one thread and starts another, saving and restoring registers and disturbing caches. Costs thousands of cycles.
+  - term: Amdahl's law
+    def: The speed-up from N processors is at most 1 / (F + (1 − F) / N), where F is the serial fraction. With 10% serial, you can never go more than 10× faster.
+  - term: Scalability
+    def: How throughput improves as you add resources such as CPUs.
+  - term: Throughput
+    def: How much work gets done per unit of time.
+  - term: Latency
+    def: How long one piece of work takes from start to finish.
+  - term: Lock elision
+    def: The JIT removing locking altogether for a lock object that it proves can't be seen by other threads.
+  - term: Lock coarsening
+    def: The JIT merging adjacent `synchronized` blocks on the same lock into one, saving repeated acquire and release.
+  - term: Escape analysis
+    def: A JIT analysis that finds objects never leaving a method or thread, so it can stack-allocate them or drop their locks.
+  - term: Hot field
+    aliases: [hot fields]
+    def: A field every operation touches, such as a shared counter — a bottleneck for scalability.
+  - term: Object pooling
+    aliases: [object pool, object pools]
+    def: Reusing objects instead of allocating new ones. Rarely worth it on a modern JVM, and the pool itself becomes a point of contention.
+  - term: ReentrantLock
+    code: true
+    def: An explicit lock with the same semantics as `synchronized`, plus timed and interruptible acquisition, `tryLock`, fairness and multiple conditions. Must be unlocked in a `finally`.
+  - term: tryLock
+    code: true
+    def: Acquire the lock only if it's free (optionally waiting up to a timeout); otherwise return `false` so you can back off.
+  - term: Fair lock
+    aliases: [fair locks, unfair lock]
+    def: A lock that grants access in the order threads asked. Nonfair locks allow barging and are much faster.
+  - term: Read-write lock
+    aliases: [read-write locks, ReadWriteLock, ReentrantReadWriteLock]
+    def: Allows many readers at once, or a single writer. Pays off for read-mostly data.
+  - term: State-dependent
+    aliases: [state dependence, state-dependent methods]
+    def: An operation that can only proceed when the object is in a certain state, like `take` on a non-empty queue.
+  - term: Condition predicate
+    aliases: [condition predicates]
+    def: The test a thread waits on, like "the queue is not empty". Always re-check it in a loop after waking.
+  - term: Condition queue
+    aliases: [condition queues]
+    def: A set of threads waiting for some condition to become true. Each object's intrinsic lock has one, used by `wait`/`notify`.
+  - term: Condition
+    code: true
+    def: An explicit condition queue tied to a `Lock`, created with `lock.newCondition()`. A lock can have several, one per condition predicate.
+  - term: Spurious wakeup
+    aliases: [spurious wakeups, wakes spuriously]
+    def: A thread returns from `wait` without being notified. That's allowed, so `wait` must be called in a loop that re-checks the condition.
+  - term: Missed signal
+    aliases: [missed signals]
+    def: A thread starts waiting for a condition that already became true — and its notification was sent before it waited.
+  - term: wait
+    aliases: [wait()]
+    code: true
+    def: Releases the object's lock and suspends the thread until notified (or interrupted), then reacquires the lock before returning.
+  - term: notifyAll
+    aliases: [notifyAll()]
+    code: true
+    def: Wakes every thread waiting on this object's condition queue. Safer than `notify` when threads wait for different conditions.
+  - term: notify
+    aliases: [notify()]
+    code: true
+    def: Wakes one arbitrary thread waiting on this object's condition queue. Can wake the wrong one if waiters wait for different things.
+  - term: AbstractQueuedSynchronizer
+    aliases: [AQS]
+    def: The JDK framework under most synchronizers (`ReentrantLock`, `Semaphore`, `CountDownLatch`) — manages a state integer and a FIFO queue of waiting threads.
+  - term: Compare-and-swap
+    aliases: [CAS, compareAndSet, compare-and-set]
+    def: 'An atomic CPU instruction: "if the value is still X, set it to Y". Tells you whether it succeeded; on failure you usually retry.'
+  - term: Nonblocking algorithm
+    aliases: [nonblocking, non-blocking, nonblocking algorithms]
+    def: An algorithm where a thread's failure or suspension can't stop others from progressing. Built on CAS instead of locks.
+  - term: Lock-free
+    def: Some thread always makes progress, even though individual threads may have to retry.
+  - term: Treiber stack
+    def: A nonblocking stack that pushes and pops by CASing its top pointer.
+  - term: ABA problem
+    aliases: [ABA]
+    def: A value changes from A to B and back to A between your read and your CAS, so the CAS succeeds even though things changed. Fixed with a version stamp.
+  - term: Atomic variable
+    aliases: [atomic variables, AtomicInteger, AtomicReference, AtomicLong]
+    def: '"Better volatiles": classes like `AtomicInteger` with atomic compound operations such as `incrementAndGet` and `compareAndSet`.'
+  - term: Java Memory Model
+    aliases: [JMM, memory model]
+    def: The rules saying when a write by one thread is guaranteed to be visible to another, built on the happens-before relation.
+  - term: Happens-before
+    aliases: [happens before]
+    def: A guarantee between two actions — if A happens-before B, B sees everything A did. Created by unlocking then locking the same lock, writing then reading a volatile, starting or joining a thread, and so on.
+  - term: Reordering
+    def: The compiler, JIT or CPU executing operations in a different order than written. Allowed unless synchronization forbids it.
+  - term: Piggybacking
+    def: Getting visibility from an existing happens-before edge, like a `volatile` write, instead of adding your own synchronization.
+  - term: Double-checked locking
+    def: Checking a lazily initialized field without a lock, then again with the lock. Broken unless the field is `volatile`.
+  - term: Lazy initialization holder class
+    aliases: [holder class, initialization-on-demand holder, holder class idiom]
+    def: Putting a lazily initialized static field in a private nested class. The JVM initializes it on first use, thread-safely and with no locking.
+  - term: Virtual thread
+    aliases: [virtual threads]
+    def: A lightweight thread managed by the JVM rather than the OS (Java 21). Millions can exist; blocking one is cheap.
+  - term: Fork/join
+    aliases: [fork-join, ForkJoinPool]
+    def: Splitting a task into subtasks (fork), running them in parallel, and combining the results (join). The pool uses work stealing.
+
+sql-performance-explained:
+  - term: B-tree
+    aliases: [B-trees, b-tree index, btree, B+tree]
+    def: A balanced tree of sorted pages. Every lookup walks the same small number of levels from root to leaf, so it stays fast even for billions of rows.
+  - term: Index
+    def: A separate, sorted structure over some columns that points to the table's rows, so a query can find rows without reading the whole table.
+  - term: Leaf node
+    aliases: [leaf nodes, leaf pages, leaf level]
+    def: The bottom level of a B-tree, holding the index entries in order, linked to their neighbours.
+  - term: Tree traversal
+    def: Walking from the root of a B-tree down to the right leaf. Takes as many steps as the tree has levels — usually 3–5.
+  - term: Composite index
+    aliases: [composite indexes, concatenated index, multi-column index]
+    def: An index on several columns. Sorted by the first column, then the second within it, and so on — so column order matters.
+  - term: Leftmost prefix
+    aliases: [leading column, leading columns]
+    def: A composite index can only be searched using its first column(s), like a phone book sorted by last name, then first name.
+  - term: Index range scan
+    aliases: [range scan]
+    def: Finding the first matching entry in the index, then following the leaf nodes to read the rest.
+  - term: Full table scan
+    aliases: [table scan, full scan]
+    def: Reading every row of the table. Sometimes it's faster than an index, if most rows match.
+  - term: Covering index
+    aliases: [index-only scan]
+    def: An index that contains every column the query needs, so the table itself is never read.
+  - term: Function-based index
+    aliases: [expression index, function-based indexes]
+    def: An index on an expression, like `UPPER(last_name)`, so a query filtering on that expression can use it.
+  - term: Sargable
+    def: A condition the database can use an index for. Wrapping the indexed column in a function, like `YEAR(date) = 2026`, usually makes it non-sargable.
+  - term: Execution plan
+    aliases: [query plan, EXPLAIN]
+    def: The steps the database chose to run a query — which indexes, which joins, in what order. Look at it with `EXPLAIN`.
+  - term: Selectivity
+    def: The fraction of rows a condition matches. Highly selective conditions (few matches) benefit most from indexes.
+
+hpjp:
+  - term: N+1 query problem
+    aliases: [N+1, N+1 problem, N+1 queries]
+    def: Loading a list with one query, then running one more query per item to fetch its related data — N extra round trips where one join would do.
+  - term: Lazy loading
+    aliases: [lazy-loaded, lazily loaded, lazy association]
+    def: An ORM fetching related data only when it's first accessed. Convenient, but triggers hidden queries — the source of N+1 problems.
+  - term: Join fetch
+    aliases: [fetch join]
+    def: Telling the ORM to load an association in the same query with a SQL join, avoiding extra queries.
+  - term: Persistence context
+    def: The ORM's in-memory set of entities loaded in this unit of work; it tracks their changes and writes them back on flush.
+  - term: Batching
+    aliases: [JDBC batching]
+    def: Sending many statements to the database in one round trip instead of one each.
+  - term: Optimistic locking
+    aliases: [optimistic concurrency, optimistic concurrency control]
+    def: No locks while reading; on update, check a version column hasn't changed and fail if it has. Good when conflicts are rare.
+  - term: Pessimistic locking
+    def: Locking rows when reading them (`SELECT … FOR UPDATE`) so no one else can change them until you commit.
+  - term: Connection pool
+    aliases: [connection pooling, connection pools]
+    def: A set of open database connections reused across requests, because opening a connection is slow.
+
+database-internals:
+  - term: ACID
+    def: 'Atomicity (all or nothing), Consistency (constraints hold), Isolation (concurrent transactions don''t interfere), Durability (committed data survives crashes).'
+  - term: Transaction
+    aliases: [transactions]
+    def: A group of operations that succeed or fail together.
+  - term: Durability
+    def: Once a transaction commits, its changes survive a crash.
+  - term: Isolation level
+    aliases: [isolation levels]
+    def: How much concurrent transactions may see of each other's work — from read uncommitted to serializable.
+  - term: Read committed
+    def: An isolation level where you only see committed data, but rereading a row may give a different answer if someone committed in between.
+  - term: Repeatable read
+    def: An isolation level where rows you've read don't change under you for the rest of the transaction.
+  - term: Snapshot isolation
+    def: Each transaction reads from a consistent snapshot of the database as of its start; concurrent writes to the same row conflict.
+  - term: Serializable
+    aliases: [serializability]
+    def: The strongest isolation level — the outcome is as if transactions ran one at a time.
+  - term: Lost update
+    aliases: [lost updates]
+    def: Two transactions read the same value, both modify it, and the second write overwrites the first.
+  - term: Dirty read
+    aliases: [dirty reads]
+    def: Reading data another transaction has written but not yet committed.
+  - term: MVCC
+    aliases: [multi-version concurrency control, multiversion concurrency control]
+    def: Keeping several versions of each row so readers see a consistent snapshot without blocking writers.
+  - term: Write-ahead log
+    aliases: [WAL, write-ahead logging]
+    def: Recording every change in an append-only log, and forcing it to disk, before changing the data pages. After a crash, the log is replayed.
+  - term: Redo
+    aliases: [redo log, redo record]
+    def: Reapplying logged changes of committed transactions that may not have reached the data pages before a crash.
+  - term: Undo
+    aliases: [undo log, undo record, roll back, rollback]
+    def: Reverting changes made by transactions that hadn't committed when the system crashed.
+  - term: Checkpoint
+    aliases: [checkpoints, checkpointing]
+    def: Periodically flushing dirty pages and noting it in the log, so recovery only needs to replay the log from that point.
+  - term: ARIES
+    def: The classic recovery algorithm — analysis, redo (repeat history), then undo of uncommitted transactions — used by most databases.
+  - term: Page
+    def: The fixed-size block (often 4–16 KB) that a database reads and writes as a unit.
+  - term: Buffer pool
+    aliases: [page cache, buffer manager]
+    def: The database's in-memory cache of disk pages.
+  - term: Fanout
+    aliases: [fan-out, branching factor]
+    def: How many children each node of a tree has. High fanout means a shallow tree and fewer disk reads.
+  - term: Split
+    aliases: [node split, page split]
+    def: When a B-tree node is full, it is divided into two and the middle key moves up to the parent.
+
+ostep:
+  - term: Process
+    aliases: [processes]
+    def: A running program — its memory, registers and open files — that the OS schedules.
+  - term: Scheduler
+    aliases: [scheduling policy, CPU scheduler]
+    def: The part of the OS that decides which ready process runs next, and for how long.
+  - term: Turnaround time
+    aliases: [turnaround]
+    def: Time from when a job arrives until it completes.
+  - term: Response time
+    def: Time from when a job arrives until it first gets to run. What makes a system feel interactive.
+  - term: FIFO
+    aliases: [first in first out, FCFS, first-come first-served]
+    def: Run jobs in the order they arrive, each to completion.
+  - term: SJF
+    aliases: [shortest job first]
+    def: Run the shortest job first. Minimizes average turnaround if all jobs arrive at once.
+  - term: STCF
+    aliases: [shortest time-to-completion first, preemptive SJF]
+    def: When a new job arrives, run whichever job has the least time left, preempting if needed.
+  - term: Round robin
+    aliases: [round-robin]
+    def: Each ready job runs for one time slice, then goes to the back of the queue. Good response time, poor turnaround.
+  - term: Time slice
+    aliases: [quantum, time slices, scheduling quantum]
+    def: How long a job may run before the scheduler switches to another.
+  - term: Preemption
+    aliases: [preempted, preemptive]
+    def: The OS stopping a running job to run another, without waiting for it to finish or yield.
+  - term: Convoy effect
+    def: Short jobs stuck waiting behind one long job, like cars behind a truck.
+  - term: MLFQ
+    aliases: [multi-level feedback queue, multilevel feedback queue]
+    def: Several priority queues; jobs that use their whole time slice drop to a lower priority, so interactive jobs stay high. Periodic boosts prevent starvation.
+  - term: Priority boost
+    def: Periodically moving all jobs back to the top queue in MLFQ, so long-running jobs aren't starved.
+  - term: Virtual memory
+    aliases: [virtual address, virtual addresses, address space]
+    def: Each process sees its own private address space; the OS and hardware translate these addresses to physical memory.
+  - term: Paging
+    def: Dividing memory into fixed-size pages, mapped to physical frames by a page table.
+  - term: Page table
+    aliases: [page tables, page table entry, PTE]
+    def: The per-process map from virtual page numbers to physical frame numbers.
+  - term: Frame
+    aliases: [physical frame, page frame]
+    def: A fixed-size slot of physical memory that holds one page.
+  - term: TLB
+    aliases: [translation lookaside buffer, TLB miss, TLB hit]
+    def: A small hardware cache of recent address translations, so most memory accesses don't need to read the page table.
+  - term: Page fault
+    aliases: [page faults]
+    def: The program touches a page that isn't in physical memory, so the OS must load it from disk — thousands of times slower than a normal access.
+  - term: Page replacement
+    aliases: [replacement policy]
+    def: Choosing which page to throw out of memory when a new one must be loaded.
+  - term: LRU
+    aliases: [least recently used]
+    def: Evict the page that hasn't been used for the longest time. A good approximation of the optimal policy.
+  - term: Belady's optimal
+    aliases: [optimal policy]
+    def: Evict the page that will be used furthest in the future. Impossible in practice, but the yardstick for other policies.
+  - term: Working set
+    def: The pages a process is actively using. If it doesn't fit in memory, the system thrashes.
+  - term: Thrashing
+    def: The system spends almost all its time paging, because the running processes need more memory than there is.
+  - term: Mutex
+    aliases: [mutexes, mutual exclusion]
+    def: A lock that lets only one thread at a time into a critical section.
+  - term: Critical section
+    aliases: [critical sections]
+    def: Code that accesses shared state and must not be run by more than one thread at a time.
+  - term: Spin lock
+    aliases: [spinlock, busy-wait, busy waiting, busy-waiting]
+    def: A lock that waits by repeatedly checking in a loop. Wastes CPU unless the wait is very short.
+
+kurose-ross:
+  - term: TCP
+    def: The Internet's reliable, ordered byte-stream protocol. Sets up a connection, retransmits lost data, and controls its sending rate.
+  - term: UDP
+    def: A minimal transport protocol — sends individual datagrams with no connection, ordering or retransmission.
+  - term: RTT
+    aliases: [round-trip time, round trip time, round trip, round trips]
+    def: Round-trip time — how long it takes a packet to reach the other side and its reply to come back.
+  - term: Three-way handshake
+    aliases: [handshake, TCP handshake]
+    def: 'How TCP opens a connection: the client sends SYN, the server replies SYN-ACK, the client sends ACK. Costs one round trip.'
+  - term: SYN
+    def: The TCP flag that opens a connection and carries the initial sequence number.
+  - term: ACK
+    aliases: [ACKs, acknowledgement, acknowledgment, acknowledgements]
+    def: An acknowledgement — the receiver telling the sender which bytes it has received.
+  - term: FIN
+    def: The TCP flag that says "I've finished sending". Each side sends its own when closing.
+  - term: Sequence number
+    aliases: [sequence numbers]
+    def: The byte position of a segment's data in the stream. Lets the receiver reorder segments and spot gaps.
+  - term: Segment
+    def: A TCP packet — a header plus a piece of the byte stream.
+  - term: MSS
+    aliases: [maximum segment size]
+    def: Maximum segment size — the most data one TCP segment can carry, often about 1,460 bytes.
+  - term: TIME_WAIT
+    def: The state a TCP endpoint stays in after closing, for twice the maximum segment lifetime, so stray old packets can't confuse a new connection.
+  - term: CLOSE_WAIT
+    def: The state after receiving the other side's FIN but before your application calls close. Many of them usually mean a program forgot to close sockets.
+  - term: Flow control
+    aliases: [receive window, rwnd]
+    def: The receiver advertises how much buffer space it has left, so the sender doesn't overrun it.
+  - term: Congestion control
+    def: The sender limiting its rate so it doesn't overload the routers between it and the receiver.
+  - term: Congestion window
+    aliases: [cwnd]
+    def: How many unacknowledged bytes or segments TCP lets itself have in flight, based on its guess about the network's capacity.
+  - term: Slow start
+    def: TCP's start-up phase — the congestion window doubles every round trip until it reaches the threshold or a loss happens.
+  - term: ssthresh
+    aliases: [slow-start threshold]
+    def: The slow-start threshold — where TCP switches from doubling its window to growing it by one segment per round trip. Set to half the window on loss.
+  - term: Congestion avoidance
+    def: The phase after slow start where the window grows by one segment per round trip, probing gently for more bandwidth.
+  - term: AIMD
+    aliases: [additive increase, multiplicative decrease, additive-increase multiplicative-decrease]
+    def: Additive increase, multiplicative decrease — grow the window by one per round trip, halve it on loss. Makes competing flows converge to a fair share.
+  - term: Fast retransmit
+    def: Resending a segment as soon as three duplicate ACKs arrive, instead of waiting for the timeout.
+  - term: Fast recovery
+    def: After fast retransmit, Reno halves the window instead of dropping to 1, since duplicate ACKs show data is still flowing.
+  - term: Duplicate ACK
+    aliases: [duplicate ACKs, dup ACK, dup ACKs, triple duplicate ACK]
+    def: A repeat of the last acknowledgement, sent when a segment arrives out of order — a hint that an earlier one was lost.
+  - term: Tahoe
+    def: An early TCP version that, on any loss, drops its window to 1 and restarts slow start.
+  - term: Reno
+    def: TCP Reno — like Tahoe, but on three duplicate ACKs it halves its window (fast recovery) instead of dropping to 1.
+  - term: DNS
+    aliases: [Domain Name System]
+    def: The Internet's distributed directory that turns names like `example.com` into IP addresses.
+  - term: Resolver
+    aliases: [recursive resolver, local resolver]
+    def: The DNS server that does the lookup for you, querying root, TLD and authoritative servers and caching the answers.
+  - term: Authoritative server
+    aliases: [authoritative servers]
+    def: The DNS server that holds the real records for a domain.
+  - term: TLD
+    aliases: [top-level domain]
+    def: Top-level domain — `.com`, `.org`, `.ro`. TLD servers know which servers are authoritative for each domain under them.
+  - term: TTL
+    aliases: [time to live]
+    def: Time to live — how long, in seconds, a cached DNS answer may be reused before it must be looked up again.
+  - term: Persistent connection
+    aliases: [persistent connections, keep-alive]
+    def: Keeping a TCP connection open for several HTTP requests, saving a handshake for each.
+  - term: Head-of-line blocking
+    aliases: [head of line blocking]
+    def: One slow or lost item at the front of a queue holding up everything behind it.
+  - term: Multiplexing
+    def: Carrying several independent streams over one connection, interleaved.
+  - term: QUIC
+    def: A transport protocol over UDP, used by HTTP/3. Combines connection and TLS setup, and recovers lost packets per stream.
+  - term: Conditional GET
+    aliases: [conditional request, conditional requests]
+    def: An HTTP request with `If-Modified-Since` or `If-None-Match`, asking for the resource only if it has changed. Unchanged → `304 Not Modified`.
+  - term: CDN
+    aliases: [content delivery network]
+    def: A network of servers around the world holding copies of content, so users fetch it from somewhere nearby.
+
+fosa:
+  - term: Architecture characteristic
+    aliases: [architecture characteristics, quality attribute, quality attributes, -ilities, ilities]
+    def: A property the system must have besides its features — scalability, availability, performance, testability…
+  - term: Trade-off
+    aliases: [trade-offs]
+    def: Gaining one quality at the cost of another. In architecture there are no best answers, only trade-offs.
+  - term: Monolith
+    aliases: [monolithic]
+    def: A system deployed as one unit.
+  - term: Modular monolith
+    def: One deployable unit, internally split into modules with clear boundaries — usually aligned with business domains.
+  - term: Microservices
+    aliases: [microservice]
+    def: A system of small, independently deployable services, each owning its own data and a bounded context.
+  - term: Coupling
+    aliases: [loosely coupled, tightly coupled]
+    def: How much one part depends on another. Tightly coupled parts must change together.
+  - term: Cohesion
+    aliases: [cohesive]
+    def: How closely the contents of a module belong together.
+  - term: Architecture quantum
+    def: An independently deployable part of a system with its own set of architecture characteristics.
+  - term: Event-driven
+    aliases: [event-driven architecture]
+    def: Components communicate by publishing and reacting to events asynchronously, rather than calling each other directly.
+  - term: Fitness function
+    aliases: [fitness functions]
+    def: An automated check that the architecture still has a characteristic you care about, e.g. a test that fails on forbidden dependencies.
+
+release-it:
+  - term: Integration point
+    aliases: [integration points]
+    def: Any call to another system — a database, an API, a cache. Release It! calls them the number-one killer of systems.
+  - term: Cascading failure
+    aliases: [cascading failures]
+    def: A failure in one system spreading to its callers, often because their threads pile up waiting on it.
+  - term: Circuit breaker
+    aliases: [circuit breakers]
+    def: Wraps calls to another system. After too many failures it "opens" and fails fast without calling, then periodically lets a trial call through.
+  - term: Bulkhead
+    aliases: [bulkheads]
+    def: Partitioning resources — thread pools, connections, servers — so a failure in one part can't sink the whole ship.
+  - term: Fail fast
+    aliases: [fails fast, failing fast]
+    def: Rejecting a request right away when it can't succeed, rather than tying up resources waiting.
+  - term: Back-pressure
+    aliases: [backpressure]
+    def: A slow consumer pushing back on its producers — blocking them or rejecting work — instead of letting a queue grow without limit.
+  - term: Retry
+    def: Trying a failed call again. Needs limits and backoff, or retries multiply the load on a struggling system.
+  - term: Exponential backoff
+    def: Waiting longer after each failed retry — 1s, 2s, 4s… — usually with random jitter, so clients don't retry in lockstep.
+  - term: Stability pattern
+    aliases: [stability patterns]
+    def: Designs that stop failures spreading — timeouts, circuit breakers, bulkheads, fail fast, back-pressure.
+  - term: Steady state
+    def: A system that runs indefinitely without human intervention — logs rotate, data is purged, caches are bounded.
+
+learning-ddd:
+  - term: Domain-driven design
+    aliases: [DDD]
+    def: Designing software around the business domain, in close collaboration with domain experts and using their language.
+  - term: Ubiquitous language
+    def: One shared language between developers and domain experts, used in conversations, documents and the code itself.
+  - term: Bounded context
+    aliases: [bounded contexts]
+    def: A boundary within which a model and its language are consistent. The same word can mean different things in different contexts.
+  - term: Subdomain
+    aliases: [subdomains]
+    def: A part of the business. Core subdomains give competitive advantage, supporting ones are needed but simple, generic ones are solved problems.
+  - term: Core subdomain
+    aliases: [core subdomains]
+    def: The part of the business that sets the company apart — where to invest the best people and the most careful design.
+  - term: Anticorruption layer
+    aliases: [anti-corruption layer]
+    def: A translation layer that protects your model from another system's model, converting between the two at the boundary.
+  - term: Context map
+    aliases: [context mapping]
+    def: A diagram of bounded contexts and how their teams and models relate — partnership, customer–supplier, conformist and so on.
+  - term: Aggregate
+    aliases: [aggregates, aggregate root]
+    def: A cluster of objects treated as one unit for changes, with one root entity as the only entry point. Defines a consistency boundary.
+  - term: Entity
+    def: An object defined by its identity, which persists as its attributes change — a customer, an order.
+  - term: Value object
+    aliases: [value objects]
+    def: An object defined only by its attributes, with no identity — money, a date range. Usually immutable.
+  - term: Domain event
+    aliases: [domain events]
+    def: A record of something meaningful that happened in the business, named in the past tense — `OrderPlaced`.
+
+general:
+  - term: JIT
+    aliases: [JIT compiler, just-in-time]
+    def: The JVM's just-in-time compiler — turns frequently run bytecode into optimized machine code while the program runs.
+  - term: Garbage collection
+    aliases: [garbage collector, GC, garbage-collected]
+    def: The JVM automatically finding objects that are no longer reachable and reclaiming their memory.
+  - term: JMH
+    def: The Java Microbenchmark Harness — the standard tool for writing benchmarks that the JIT can't fool.
+  - term: Dead code elimination
+    def: The JIT removing code whose result is never used — which can make a naive benchmark measure nothing.
+  - term: Interning
+    def: Keeping one shared copy of each distinct string value, so equal literals are the same object.
+  - term: Identity
+    aliases: [object identity, reference equality]
+    def: Whether two references point to the very same object — what `==` compares for objects.
+  - term: Cache
+    def: Keeping copies of data somewhere faster to reach, to avoid recomputing or refetching it.
+  - term: Idempotent
+    aliases: [idempotency, idempotence]
+    def: Doing it twice has the same effect as doing it once — what makes retries safe.
+  - term: Timeout
+    aliases: [retransmission timeout]
+    def: Giving up on waiting after a set time. In TCP, a retransmission timeout is the strongest sign of congestion.

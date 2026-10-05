@@ -16,6 +16,8 @@ type ExerciseBase = {
   explanation?: Html;
   feedback?: Html;
   hints: Html[];
+  /** Glossary terms used in the answers, as buttons to show under the question. */
+  terms?: Html[];
 };
 
 export type ExplanationStep = { type: "explanation"; id: string; key: string; title?: string; body: Html };

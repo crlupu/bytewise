@@ -279,6 +279,14 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
             {Kind.label}
           </p>
           <Html className="step__prompt prose" html={step.prompt} />
+          {step.terms && (
+            <p className="key-terms">
+              <span className="key-terms__label">Key terms</span>
+              {step.terms.map((t, i) => (
+                <span key={i} dangerouslySetInnerHTML={{ __html: t }} />
+              ))}
+            </p>
+          )}
           {(step.type === "choice" || step.type === "predict") && step.code && <Html className="step__code" html={step.code} />}
           {step.type === "widget" && widgetGoal !== undefined && (
             <p className="goal-line">

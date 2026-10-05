@@ -69,6 +69,25 @@ threads). Each lesson has a short explanation and practice exercises.
 Books are declared once in `content/books.yaml`; a lesson cites one with
 `sources: [{ book: effective-java, ref: "Item 17" }]`, and the build rejects unknown ids.
 
+### Glossary tooltips
+
+`content/glossary.yaml` defines the books' terms (telescoping constructor, happens-before,
+ssthresh…), grouped by book. At build time the first mention of each term in a step's text
+becomes a dotted-underlined button; tap or hover it for the definition. Terms that appear
+only in answers (which are buttons themselves) are listed as *Key terms* under the question.
+A topic explains the terms of the books its lessons cite, plus any listed under `glossary:`
+in its `topic.yaml`, so "index" means a database index only in database lessons.
+
+```yaml
+effective-java:
+  - term: Telescoping constructor
+    aliases: [telescopic constructor]   # plurals match automatically
+    def: A chain of constructors, each adding one more optional parameter…
+  - term: transient
+    code: true                          # only match inside `inline code`, case-sensitive
+    def: Marks a field to be left out of the serialized form.
+```
+
 The open questions were settled as the requirements assumed: predict-the-output compares
 against authored answers, progress is per device with export/import as the bridge, and
 every topic has several courses (see below).

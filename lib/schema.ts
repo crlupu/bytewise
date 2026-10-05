@@ -22,6 +22,8 @@ export const TopicFile = z
     order: z.number().int(),
     /** The topic's courses, in the order they are shown. */
     courses: z.array(id).min(1),
+    /** Books whose glossary terms are explained here, besides the ones its lessons cite. */
+    glossary: z.array(id).default([]),
   })
   .strict();
 
@@ -239,6 +241,22 @@ export const LessonFile = z
       .max(15, "a lesson has 5 to 15 steps"),
   })
   .strict();
+
+/** content/glossary.yaml: terms grouped by book id (or "general"). */
+export const GlossaryFile = z.record(
+  id,
+  z.array(
+    z
+      .object({
+        term: z.string().min(1),
+        aliases: z.array(z.string().min(1)).default([]),
+        /** Only match inside inline code: keywords and class names. */
+        code: z.boolean().default(false),
+        def: md,
+      })
+      .strict(),
+  ),
+);
 
 export type BooksFileT = z.infer<typeof BooksFile>;
 export type TopicFileT = z.infer<typeof TopicFile>;
