@@ -6,22 +6,23 @@ sources:
   - { book: effective-java, ref: "Item 4" }
 steps:
   - type: explanation
-    title: Utility classes
+    title: Some classes are just static methods
     body: |
-      Some classes are just groups of static methods: `java.lang.Math`, `java.util.Arrays`, `Collections`.
-      Creating an instance makes no sense — but if you write no constructor at all, the compiler adds a public,
-      no-argument **default constructor**, and anyone can call `new Arrays()`.
+      `Math`, `Arrays` and `Collections` only group static methods.
+      An instance of them would be meaningless.
+      But with no constructor written, Java adds a public default one.
 
-      The fix is a private constructor:
+  - type: explanation
+    title: A private constructor blocks instances
+    body: |
+      Declare a private constructor, and no one outside can call it.
 
       ```java
-      public class UtilityClass {
-          // Suppress default constructor for noninstantiability
-          private UtilityClass() {
-              throw new AssertionError();
-          }
-      }
+      private UtilityClass() { throw new AssertionError(); }
       ```
+
+      The `AssertionError` catches accidental calls from inside.
+      As a side effect, the class can't be subclassed either.
 
   - type: choice
     prompt: Why not just make the utility class `abstract`?

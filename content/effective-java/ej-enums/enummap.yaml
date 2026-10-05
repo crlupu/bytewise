@@ -6,18 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 37" }
 steps:
   - type: explanation
-    title: Indexing arrays by ordinal
+    title: "Don't index arrays by ordinal"
     body: |
-      Group plants by life cycle (annual, perennial, biennial):
+      `array[e.ordinal()]` looks efficient.
+      But the compiler can't check the index.
+      Use the wrong one, and you silently get wrong data.
 
-      ```java
-      Set<Plant>[] plantsByLifeCycle = (Set<Plant>[]) new Set[LifeCycle.values().length];
-      for (Plant p : garden)
-          plantsByLifeCycle[p.lifeCycle.ordinal()].add(p);
-      ```
-
-      An unchecked cast, labels you must print by hand, and an `int` index the compiler can't check — use the wrong one
-      and you silently get the wrong data.
+  - type: explanation
+    title: EnumMap is safe and fast
+    body: |
+      `EnumMap` is a map keyed by enum constants.
+      Inside, it's an array indexed by ordinal.
+      So it's just as fast — with type safety.
+      For two-level lookups, nest `EnumMap`s.
 
   - type: blank
     prompt: The EnumMap version.

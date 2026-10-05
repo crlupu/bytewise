@@ -8,20 +8,15 @@ steps:
   - type: explanation
     title: An explicit lock
     body: |
+      `ReentrantLock` works like `synchronized`, with more options.
+
       ```java
-      Lock lock = new ReentrantLock();
-      ...
       lock.lock();
-      try {
-          // update object state
-      } finally {
-          lock.unlock();
-      }
+      try { /* update state */ }
+      finally { lock.unlock(); }
       ```
 
-      `ReentrantLock` gives the same mutual exclusion and memory-visibility guarantees as `synchronized`, and is reentrant
-      too. Why have it? Because intrinsic locking can't do some things: you can't interrupt a thread waiting for one,
-      or give up after a timeout, and it must be released in the same block where it was acquired.
+      Always unlock in `finally`.
 
   - type: choice
     prompt: What happens if you forget the `finally` and the code between `lock()` and `unlock()` throws?
@@ -31,6 +26,14 @@ steps:
       - text: The JVM releases it automatically, as with synchronized
         feedback: That's the safety net `synchronized` gives you and `Lock` doesn't.
     explanation: This is why explicit locks are more dangerous — a bug that's easy to miss in review.
+
+  - type: explanation
+    title: Ways to acquire
+    body: |
+      `lock()` waits as long as it takes.
+      `tryLock()` gives up at once if the lock is taken.
+      `tryLock(timeout)` waits up to a limit.
+      `lockInterruptibly()` can be interrupted while waiting.
 
   - type: match
     prompt: Match each acquisition method to its behaviour.
@@ -62,6 +65,13 @@ steps:
         correct: true
       - text: "`lock()`"
         feedback: It could wait indefinitely and blow the budget.
+
+  - type: explanation
+    title: Locks across scopes
+    body: |
+      `synchronized` must release in the same block.
+      An explicit lock can be released elsewhere.
+      That allows hand-over-hand locking along a list.
 
   - type: choice
     prompt: Why might you need hand-over-hand ("chained") locking, as when traversing a linked list?

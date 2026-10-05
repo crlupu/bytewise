@@ -6,24 +6,24 @@ sources:
   - { book: effective-java, ref: "Item 42" }
 steps:
   - type: explanation
-    title: From anonymous class to lambda
+    title: Lambdas are shorter
     body: |
+      An anonymous class needs a lot of ceremony.
+      A lambda says the same in one line.
+
       ```java
-      // Anonymous class
-      Collections.sort(words, new Comparator<String>() {
-          public int compare(String s1, String s2) {
-              return Integer.compare(s1.length(), s2.length());
-          }
-      });
-
-      // Lambda
-      Collections.sort(words, (s1, s2) -> Integer.compare(s1.length(), s2.length()));
-
-      // Better still
+      words.sort((s1, s2) -> Integer.compare(s1.length(), s2.length()));
       words.sort(comparingInt(String::length));
       ```
 
-      The compiler **infers** the parameter types from context. Omit them unless they make the code clearer.
+      The compiler infers the parameter types.
+
+  - type: explanation
+    title: Keep lambdas tiny
+    body: |
+      A lambda has no name and no docs.
+      So keep it to one line, three at most.
+      Enums can take lambdas for per-constant behaviour.
 
   - type: choice
     prompt: How long should a lambda be?
@@ -35,21 +35,11 @@ steps:
     explanation: If the computation isn't self-explanatory, it deserves a name.
 
   - type: explanation
-    title: Enums with lambdas
+    title: When to use an anonymous class
     body: |
-      Constant-specific behaviour can be passed as a lambda to the enum's constructor:
-
-      ```java
-      public enum Operation {
-          PLUS ("+", (x, y) -> x + y),
-          TIMES("*", (x, y) -> x * y);
-
-          private final String symbol;
-          private final DoubleBinaryOperator op;
-          Operation(String symbol, DoubleBinaryOperator op) { this.symbol = symbol; this.op = op; }
-          public double apply(double x, double y) { return op.applyAsDouble(x, y); }
-      }
-      ```
+      Lambdas only implement interfaces with one abstract method.
+      Inside a lambda, `this` is the enclosing object.
+      For anything else, use an anonymous class.
 
   - type: match
     prompt: Lambda or anonymous class?

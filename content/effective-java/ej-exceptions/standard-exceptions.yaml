@@ -5,6 +5,14 @@ tags: [java, effective java, exceptions, illegalargumentexception, illegalstatee
 sources:
   - { book: effective-java, ref: "Item 72" }
 steps:
+  - type: explanation
+    title: Reuse the standard exceptions
+    body: |
+      Java already has exceptions for common failures.
+      Bad argument: `IllegalArgumentException`.
+      Wrong state: `IllegalStateException`.
+      Unsupported call: `UnsupportedOperationException`.
+
   - type: match
     prompt: Match each standard exception to when it's thrown.
     pairs:
@@ -37,6 +45,13 @@ steps:
       - text: "`NullPointerException`"
       - text: "`RuntimeException`"
         feedback: Never throw `Exception`, `RuntimeException`, `Throwable` or `Error` directly — they say nothing specific.
+
+  - type: explanation
+    title: Why reuse them
+    body: |
+      Your API is easier to learn and read.
+      There are fewer classes to load.
+      Never throw plain `Exception` or `RuntimeException`.
 
   - type: choice
     prompt: Why prefer standard exceptions?

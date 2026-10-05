@@ -6,19 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 71" }
 steps:
   - type: explanation
-    title: A burden on every caller
+    title: Checked exceptions cost callers
     body: |
-      Checked exceptions force callers to handle them, which is good when the caller can act. When it can't, every call
-      site ends up with boilerplate like:
+      Every caller must catch or declare them.
+      Methods that throw them don't fit in streams.
+      If the caller can't act, it's just boilerplate.
 
-      ```java
-      } catch (TheCheckedException e) {
-          throw new AssertionError(); // Can't happen!
-      }
-      ```
-
-      And methods throwing checked exceptions can't be used directly in streams, since the standard functional
-      interfaces don't declare any.
+  - type: explanation
+    title: Alternatives
+    body: |
+      Return an empty `Optional`.
+      Or split the call: test the state, then act.
+      Or throw an unchecked exception.
 
   - type: choice
     prompt: When is a checked exception justified?

@@ -6,14 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 85" }
 steps:
   - type: explanation
-    title: A huge attack surface
+    title: Deserialization is dangerous
     body: |
-      `ObjectInputStream.readObject` can instantiate objects of almost any `Serializable` class on the classpath, and
-      runs their deserialization code as it goes. An attacker who controls the bytes chooses which classes and in what
-      shape.
-
-      Chains of innocent methods across many libraries can be strung together into exploits — so-called **gadget
-      chains** — and some have led to remote code execution in widely deployed systems.
+      `readObject` can create almost any class on the classpath.
+      Attackers chain innocent methods into exploits.
+      Small streams can even take forever to read.
 
   - type: choice
     prompt: Besides gadget chains, what else can a malicious stream do?
@@ -23,6 +20,13 @@ steps:
       - text: Nothing, as long as the classes are from the JDK
         feedback: Bombs can be built from JDK classes alone.
     explanation: A stream of about 5,700 bytes built from nested HashSets can keep `hashCode` computations running practically forever.
+
+  - type: explanation
+    title: Use something else
+    body: |
+      Use JSON or Protocol Buffers instead.
+      Never deserialize untrusted data.
+      If you must, allow-list the classes.
 
   - type: choice
     prompt: What's the best way to avoid serialization exploits?

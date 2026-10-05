@@ -6,20 +6,22 @@ sources:
   - { book: effective-java, ref: "Item 38" }
 steps:
   - type: explanation
-    title: Let clients add operations
+    title: "Enums can't extend enums"
     body: |
-      Enum types can't extend one another. Where extensibility is genuinely useful — like operation codes — define an
-      interface, and have the enum implement it:
+      Every enum already extends `java.lang.Enum`.
+      So you can't write `ExtendedOperation extends BasicOperation`.
+
+  - type: explanation
+    title: Share an interface instead
+    body: |
+      Define an interface, and let several enums implement it.
 
       ```java
-      public interface Operation { double apply(double x, double y); }
-
-      public enum BasicOperation implements Operation { PLUS, MINUS, TIMES, DIVIDE; ... }
-
-      public enum ExtendedOperation implements Operation { EXP, REMAINDER; ... }
+      enum BasicOperation implements Operation { PLUS, MINUS }
+      enum ExtendedOperation implements Operation { EXP }
       ```
 
-      Code written against `Operation` accepts both.
+      Code written for `Operation` accepts all of them.
 
   - type: choice
     prompt: Why can't `ExtendedOperation extends BasicOperation`?

@@ -6,13 +6,11 @@ sources:
   - { book: database-internals, ref: "Chapter 5, Transaction Processing and Recovery — Isolation" }
 steps:
   - type: explanation
-    title: The I in ACID
+    title: Isolation and its anomalies
     body: |
-      **Isolation** promises that concurrent transactions don't interfere. Full isolation — **serializability** —
-      means the result is the same as running them one at a time in some order.
-
-      That costs throughput, so databases offer weaker levels. Each weaker level permits certain **anomalies**:
-      situations a transaction can observe that couldn't happen if it ran alone.
+      Full isolation means transactions act as if run one at a time.
+      That's slow, so weaker levels exist.
+      Each allows some anomalies.
 
   - type: match
     prompt: Match each anomaly to what happens.
@@ -25,6 +23,16 @@ steps:
         right: Re-running a range query and getting new rows
       - left: Lost update
         right: Two read-modify-write cycles where one silently overwrites the other
+
+  - type: explanation
+    title: The standard levels
+    body: |
+      | Level | Dirty read | Non-repeatable read | Phantom |
+      |---|---|---|---|
+      | Read uncommitted | possible | possible | possible |
+      | Read committed | — | possible | possible |
+      | Repeatable read | — | — | possible |
+      | Serializable | — | — | — |
 
   - type: choice
     prompt: |
@@ -39,20 +47,6 @@ steps:
         feedback: Nobody's write was overwritten — T2 read a value that never officially existed.
     explanation: T2 acted on a balance that was rolled back — it never existed in any committed state.
 
-  - type: explanation
-    title: The standard levels
-    body: |
-      | Level | Dirty read | Non-repeatable read | Phantom |
-      |---|---|---|---|
-      | Read uncommitted | possible | possible | possible |
-      | Read committed | — | possible | possible |
-      | Repeatable read | — | — | possible |
-      | Serializable | — | — | — |
-
-      Real databases differ from the table. Many implement "repeatable read" as **snapshot isolation** (each transaction
-      reads from a consistent snapshot), which also stops phantoms in reads — but allows **write skew**, which
-      serializability forbids.
-
   - type: choice
     prompt: "At **read committed**, which of these can still happen?"
     options:
@@ -63,6 +57,13 @@ steps:
       - text: Dirty reads
         feedback: Read committed exists precisely to rule these out.
     explanation: Read committed only promises that what you read was committed — not that it stays the same.
+
+  - type: explanation
+    title: Real databases differ
+    body: |
+      Many use snapshot isolation for "repeatable read".
+      It stops phantoms, but allows write skew.
+      Lost updates still happen at read committed.
 
   - type: predict
     prompt: |

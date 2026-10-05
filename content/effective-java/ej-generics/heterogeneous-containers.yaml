@@ -6,24 +6,16 @@ sources:
   - { book: effective-java, ref: "Item 33" }
 steps:
   - type: explanation
-    title: Parameterize the key
+    title: One container, many types
     body: |
-      A `Set<E>` or `Map<K,V>` has a fixed number of type parameters. Sometimes you want more flexibility — a container
-      that holds a favourite instance of **any** class:
+      Key the map by `Class<T>`, a type token.
 
       ```java
-      public class Favorites {
-          private final Map<Class<?>, Object> favorites = new HashMap<>();
-          public <T> void putFavorite(Class<T> type, T instance) {
-              favorites.put(Objects.requireNonNull(type), type.cast(instance));
-          }
-          public <T> T getFavorite(Class<T> type) {
-              return type.cast(favorites.get(type));
-          }
-      }
+      public <T> void putFavorite(Class<T> type, T instance)
+      public <T> T getFavorite(Class<T> type)
       ```
 
-      `Class<T>` objects used like this are called **type tokens**.
+      Each key decides the type of its value.
 
   - type: predict
     prompt: What does this print?
@@ -45,6 +37,13 @@ steps:
     hints:
       - "`%x` prints an int in hex."
     explanation: Each value comes back with its own type, and no casts are needed in the client.
+
+  - type: explanation
+    title: Class.cast keeps it safe
+    body: |
+      `type.cast(obj)` is checked at run time.
+      There's no `List<String>.class`, though.
+      So only reifiable types work as keys.
 
   - type: choice
     prompt: Why does `getFavorite` call `type.cast(...)` instead of `(T) ...`?

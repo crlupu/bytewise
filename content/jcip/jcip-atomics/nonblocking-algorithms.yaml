@@ -6,22 +6,17 @@ sources:
   - { book: jcip, ref: "§15.4, Nonblocking Algorithms" }
 steps:
   - type: explanation
-    title: Lock-free and wait-free
+    title: No thread can block another
     body: |
-      An algorithm is **nonblocking** if the failure or suspension of any thread can't cause another thread to fail or be
-      suspended. It's **lock-free** if, at each step, *some* thread can make progress.
-
-      The simplest example is a stack — **Treiber's algorithm**:
+      Nonblocking: one slow thread can't stop the others.
+      Lock-free: some thread always makes progress.
+      Treiber's stack pushes with a CAS loop:
 
       ```java
-      public void push(E item) {
-          Node<E> newHead = new Node<>(item);
-          Node<E> oldHead;
-          do {
-              oldHead = top.get();
-              newHead.next = oldHead;
-          } while (!top.compareAndSet(oldHead, newHead));
-      }
+      do {
+          oldHead = top.get();
+          newHead.next = oldHead;
+      } while (!top.compareAndSet(oldHead, newHead));
       ```
 
   - type: order
@@ -32,6 +27,13 @@ steps:
       - CAS the top from `oldHead` to `newHead`
       - If the CAS failed, another thread changed the top — start over
     explanation: The whole operation is a single CAS on one reference, so there's never a half-done state for others to see.
+
+  - type: explanation
+    title: Queues are harder
+    body: |
+      A stack changes one reference.
+      A queue must change two: the last node and the tail.
+      One CAS can't do both.
 
   - type: choice
     prompt: Why is a linked queue harder than a stack?
@@ -45,12 +47,9 @@ steps:
   - type: explanation
     title: The ABA problem
     body: |
-      CAS asks "is the value still V?". But a value can change from **A** to **B** and back to **A** while you weren't
-      looking. If your algorithm cares whether anything happened — for example, because a node was removed and reused —
-      CAS can't tell.
-
-      The fix is to compare a reference **plus a version number**, incremented on each update. Java provides
-      `AtomicStampedReference` (reference + int stamp) and `AtomicMarkableReference` (reference + boolean).
+      A value can change from A to B and back to A.
+      CAS can't tell anything happened.
+      Add a version number, as `AtomicStampedReference` does.
 
   - type: choice
     prompt: Why is ABA rarely a problem in Java's own nonblocking collections?

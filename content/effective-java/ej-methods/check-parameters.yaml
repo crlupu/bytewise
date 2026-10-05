@@ -6,21 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 49" }
 steps:
   - type: explanation
-    title: Fail at the door
+    title: Check arguments first
     body: |
-      Most methods have restrictions on their parameters: indexes must be non-negative, references non-null. Check them
-      at the start of the method and throw at once. Otherwise the method may fail later with a confusing exception —
-      or, worse, succeed and silently compute or store a wrong result, failing somewhere unrelated much later.
+      Most methods restrict their arguments.
+      Check them at the start and throw right away.
+      Otherwise the method fails later, far from the cause.
 
-      ```java
-      /**
-       * @throws ArithmeticException if m is less than or equal to 0
-       */
-      public BigInteger mod(BigInteger m) {
-          if (m.signum() <= 0) throw new ArithmeticException("Modulus <= 0: " + m);
-          ...
-      }
-      ```
+  - type: explanation
+    title: Built-in helpers
+    body: |
+      `Objects.requireNonNull(x, "x")` rejects null.
+      `Objects.checkIndex(i, n)` checks bounds.
+      Check stored parameters especially carefully.
 
   - type: match
     prompt: Match each built-in helper to its job.

@@ -6,10 +6,17 @@ sources:
   - { book: jcip, ref: "§5.6, Building an Efficient, Scalable Result Cache" }
 steps:
   - type: explanation
-    title: A memoizer
+    title: Caching expensive results
     body: |
-      `Computable<A, V>` computes a value from an argument, expensively. A **memoizer** wraps it and caches results.
-      The challenge: make it both thread-safe and scalable.
+      A memoizer wraps an expensive function and caches results.
+      The goal: thread-safe, and still fast under load.
+
+  - type: explanation
+    title: Cache futures, not values
+    body: |
+      Put a `Future` in the map before computing.
+      Other threads find it and wait for the result.
+      `putIfAbsent` makes sure only one future wins.
 
   - type: match
     prompt: Match each version to its problem.
@@ -23,29 +30,6 @@ steps:
       - left: "`ConcurrentHashMap` of `Future`s with atomic `putIfAbsent`"
         right: None of the above — each value is computed once
 
-  - type: explanation
-    title: The final version
-    body: |
-      ```java
-      public V compute(A arg) throws InterruptedException {
-          while (true) {
-              Future<V> f = cache.get(arg);
-              if (f == null) {
-                  FutureTask<V> ft = new FutureTask<>(() -> c.compute(arg));
-                  f = cache.putIfAbsent(arg, ft);
-                  if (f == null) { f = ft; ft.run(); }
-              }
-              try {
-                  return f.get();
-              } catch (CancellationException e) {
-                  cache.remove(arg, f);
-              } catch (ExecutionException e) {
-                  throw launderThrowable(e.getCause());
-              }
-          }
-      }
-      ```
-
   - type: choice
     prompt: Why cache `Future`s instead of results?
     options:
@@ -53,6 +37,12 @@ steps:
         correct: true
       - text: Futures take less memory
     explanation: The map records "computation started", not just "computation finished".
+
+  - type: explanation
+    title: Clean up failures
+    body: |
+      Remove cancelled futures, or the cache keeps bad results.
+      A real cache also needs expiry and eviction.
 
   - type: choice
     prompt: Why does the final version remove a cancelled future from the cache?

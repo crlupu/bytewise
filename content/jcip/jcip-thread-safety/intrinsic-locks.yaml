@@ -8,18 +8,14 @@ steps:
   - type: explanation
     title: Every object has a lock
     body: |
-      Every Java object carries an **intrinsic lock** (also called a *monitor*). A `synchronized`
-      method takes the lock of `this` before it runs and releases it when it returns:
+      `synchronized` takes the object's built-in lock.
 
       ```java
-      class Counter {
-          private int count = 0;
-          synchronized void increment() { count++; }
-      }
+      synchronized void increment() { count++; }
       ```
 
-      Only one thread can hold a lock at a time. A second thread that reaches the method **blocks**
-      until the first releases it. So the read-add-write can no longer be interleaved.
+      Only one thread can hold it at a time.
+      Others block until it's released.
 
   - type: widget
     widget: threads
@@ -59,20 +55,11 @@ steps:
         feedback: There is no global lock — that would make every program single-threaded.
 
   - type: explanation
-    title: Locks belong to objects
+    title: The lock belongs to the object
     body: |
-      Because the lock is the object's, two threads working on **different** objects don't block each other:
-
-      ```java
-      Counter a = new Counter();
-      Counter b = new Counter();
-      // Thread 1 calls a.increment(); thread 2 calls b.increment().
-      // They take different locks and run in parallel.
-      ```
-
-      That's usually what you want. But it means a lock only protects data that every thread
-      reaches **through the same lock**. A `static` field shared by all instances needs a lock all
-      of them share — `static synchronized`, or a `synchronized (Counter.class)` block.
+      Two different objects have two different locks.
+      Threads using them don't block each other.
+      Shared static data needs a shared lock, like `Counter.class`.
 
   - type: choice
     prompt: |
@@ -92,18 +79,11 @@ steps:
       makes them atomic together.
 
   - type: explanation
-    title: Without a lock
+    title: Atomics need no lock
     body: |
-      For a single counter, `java.util.concurrent.atomic.AtomicInteger` does the same job without blocking:
-
-      ```java
-      private final AtomicInteger count = new AtomicInteger();
-      void increment() { count.incrementAndGet(); }
-      ```
-
-      It uses the CPU's **compare-and-swap** instruction: "set it to 6 only if it's still 5", retrying if
-      another thread got there first. Use atomics for single variables; use locks when several fields
-      must change together.
+      `AtomicInteger.incrementAndGet()` updates one value safely.
+      It uses the CPU's compare-and-swap instruction.
+      Use locks when several fields must change together.
 
   - type: blank
     prompt: Complete the sentence.

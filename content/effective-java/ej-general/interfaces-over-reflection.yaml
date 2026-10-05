@@ -6,10 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 65" }
 steps:
   - type: explanation
-    title: Powerful, at a price
+    title: Reflection has costs
     body: |
-      `java.lang.reflect` lets you work with classes you don't know at compile time: look up constructors, methods and
-      fields, and invoke them. That power comes with costs.
+      Reflection can use classes unknown at compile time.
+      But you lose compile-time type checking.
+      The code is clumsy, and calls are slower.
 
   - type: choice
     prompt: What do you give up with reflection?
@@ -24,18 +25,17 @@ steps:
         feedback: Reflection can call them; it's just less safe and slower.
 
   - type: explanation
-    title: The safe middle ground
+    title: Create reflectively, use normally
     body: |
-      Create instances reflectively, then use them through an interface or superclass:
+      Use reflection only to create the object.
+      Then use it through an interface you know.
 
       ```java
-      Class<? extends Set<String>> cl = (Class<? extends Set<String>>) Class.forName(args[0]);
-      Constructor<? extends Set<String>> cons = cl.getDeclaredConstructor();
-      Set<String> s = cons.newInstance();
-      s.addAll(Arrays.asList(args).subList(1, args.length));
+      Set<String> s = cons.newInstance(); // reflective
+      s.addAll(names);                    // ordinary, checked
       ```
 
-      Everything after construction is ordinary, checked code against `Set`.
+      Frameworks and plugin systems work this way.
 
   - type: choice
     prompt: Where is reflection the right tool?

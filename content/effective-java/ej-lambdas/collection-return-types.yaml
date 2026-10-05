@@ -6,13 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 47" }
 steps:
   - type: explanation
-    title: Two kinds of caller
+    title: Callers loop or stream
     body: |
-      A method returning a sequence of elements has two kinds of callers: some want to iterate with `for`, some want to
-      run a stream pipeline.
-
-      `Stream` doesn't extend `Iterable`, so a returned stream can't be used in a for-each loop without an awkward
-      adapter. `Collection`, on the other hand, extends `Iterable` **and** has a `stream()` method.
+      Some callers want a `for` loop.
+      Others want a stream pipeline.
+      `Stream` isn't `Iterable`, so it can't be used in for-each.
 
   - type: predict
     prompt: Does this compile?
@@ -25,6 +23,13 @@ steps:
       - text: Yes
         feedback: For-each requires an array or an `Iterable`.
     explanation: "Workaround: `for (ProcessHandle ph : (Iterable<ProcessHandle>) ProcessHandle.allProcesses()::iterator)` — legal, but ugly."
+
+  - type: explanation
+    title: Return a Collection
+    body: |
+      A `Collection` is `Iterable` and has `stream()`.
+      So it serves both kinds of caller.
+      For huge sequences, write a collection that computes elements on demand.
 
   - type: choice
     prompt: What's the best return type for a public method returning a sequence?

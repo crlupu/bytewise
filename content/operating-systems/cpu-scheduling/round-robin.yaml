@@ -6,16 +6,11 @@ sources:
   - { book: ostep, ref: "Chapter 7, Scheduling: Introduction — Round Robin" }
 steps:
   - type: explanation
-    title: A new metric
+    title: Response time
     body: |
-      With people at keyboards, a second metric matters: **response time** — how long until a job first gets to run.
-
-      > response = time the job first runs − time it arrived
-
-      STCF is great for turnaround and poor for response: with three equal jobs, the third waits for the other two to
-      finish entirely before it does anything at all.
-
-      **Round robin** (RR) runs each job for a **time slice**, then switches to the next job in the queue.
+      Response time = first run − arrival.
+      It's what makes a system feel interactive.
+      Round robin gives each job a short time slice in turn.
 
   - type: widget
     widget: scheduler
@@ -73,11 +68,9 @@ steps:
   - type: explanation
     title: Choosing the slice
     body: |
-      A shorter slice improves response time, but every switch costs something: saving and restoring registers,
-      and — worse — losing warm caches, TLB entries and branch predictors.
-
-      If a switch costs 1 ms and the slice is 10 ms, about 10% of the CPU goes on switching. A 100 ms slice cuts that
-      to 1% but makes interactive jobs wait longer. The slice should be long enough to **amortize** the switch, and no longer.
+      Short slices improve response time.
+      But each switch costs time and warm caches.
+      Make the slice long enough to amortize the switch.
 
   - type: predict
     prompt: A context switch costs 1 ms. With a 4 ms slice, roughly what share of time goes to switching?

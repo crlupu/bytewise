@@ -2630,3 +2630,8 @@ dialog.sheet::backdrop {
   font-size: 0.8125rem;
   font-weight: 600;
 }
+
+/* Idea slides: one short sentence per paragraph, set close together. */
+.slide > p + p {
+  margin-block-start: 0.5rem;
+}

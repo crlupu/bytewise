@@ -4,19 +4,11 @@ duration: 9
 tags: [architecture, caching, trade-offs, consistency, latency, cdn]
 steps:
   - type: explanation
-    title: There is no free speed
+    title: "There's no free speed"
     body: |
-      You run the **product catalogue** for a shop. 95% of requests are reads of product pages, and they're
-      slow because every one goes to the database.
-
-      You have a few levers — a cache, read replicas, a CDN — and each one improves some qualities while
-      hurting others:
-
-      - **Latency**: how long a page takes (lower is better);
-      - **Staleness**: how out of date a price might be (lower is better);
-      - **Cost** and **complexity**: what you pay in money and in moving parts.
-
-      Architecture is choosing which costs you can live with, for *this* system.
+      A product catalogue gets 95% reads, all hitting the database.
+      Caches, replicas and CDNs speed it up.
+      Each costs freshness, money or complexity.
 
   - type: widget
     widget: tradeoff
@@ -76,6 +68,13 @@ steps:
       A cache alone gets you there. Adding replicas or a CDN on top would buy a little more speed at the price of
       staleness you'd then have to manage. More than one design passes — that's normal.
 
+  - type: explanation
+    title: Cache-aside
+    body: |
+      Check the cache first.
+      On a miss, read the database and fill the cache.
+      A TTL limits how stale entries get.
+
   - type: choice
     prompt: How does **cache-aside** work?
     options:
@@ -117,13 +116,12 @@ steps:
         right: Fastest for distant users; hardest to invalidate
 
   - type: explanation
-    title: Two hard things
+    title: Cache stampedes
     body: |
-      > There are only two hard things in computer science: cache invalidation and naming things. — Phil Karlton
-
-      One failure mode worth knowing by name: a **cache stampede** (or *thundering herd*). A popular entry expires,
-      and a thousand requests all miss at the same moment, all query the database, and all write the same value back.
-      The database, which the cache was protecting, takes the full load at once.
+      A popular entry expires.
+      A thousand requests miss at once and hit the database.
+      Let one request recompute it.
+      Add random jitter to expiry times.
 
   - type: choice
     prompt: Which of these reduce the risk of a cache stampede?

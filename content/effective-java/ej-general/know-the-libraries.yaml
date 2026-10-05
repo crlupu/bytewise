@@ -6,14 +6,17 @@ sources:
   - { book: effective-java, ref: "Item 59" }
 steps:
   - type: explanation
-    title: A tempting random number
+    title: Homemade code hides flaws
     body: |
+      This random number method looks fine:
+
       ```java
-      static Random rnd = new Random();
-      static int random(int n) { return Math.abs(rnd.nextInt()) % n; }
+      static int random(int n) {
+          return Math.abs(rnd.nextInt()) % n;
+      }
       ```
 
-      Short and plausible — and it has three flaws.
+      It is biased, repeats quickly, and can return negatives.
 
   - type: choice
     prompt: Which of these are real flaws of that method?
@@ -26,6 +29,14 @@ steps:
         correct: true
       - text: It's too slow
     explanation: Fixing all three needs some number theory. Or you could just call the library.
+
+  - type: explanation
+    title: The libraries are tested
+    body: |
+      Experts wrote and tuned the standard libraries.
+      Millions of programs have tested them.
+      Know `java.lang`, `java.util` and `java.io` well.
+      Check each release for new additions.
 
   - type: blank
     prompt: The library way, in modern Java.

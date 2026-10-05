@@ -8,12 +8,10 @@ steps:
   - type: explanation
     title: What to test
     body: |
-      Concurrent classes need the usual sequential tests — a new bounded buffer is empty, a full one is full — plus tests
-      of the properties that only appear with threads:
-
-      - **blocking**: `take` on an empty buffer really blocks, and unblocks when interrupted;
-      - **safety**: under heavy concurrent use, nothing is lost, duplicated or corrupted;
-      - **resource management**: nothing leaks — the buffer doesn't hold references to items it has handed out.
+      Normal behaviour, like a full buffer reporting full.
+      Blocking: `take` on an empty buffer really waits.
+      Safety: nothing lost or duplicated under load.
+      Resources: nothing leaks.
 
   - type: order
     prompt: Testing that `take` blocks on an empty buffer — put the steps in order.
@@ -23,6 +21,14 @@ steps:
       - Interrupt the thread
       - Join it with a timeout, and assert it ended — by catching `InterruptedException`
     explanation: Success is the thread finishing because it was interrupted, not because `take` returned.
+
+  - type: explanation
+    title: Test without hiding bugs
+    body: |
+      Compare checksums of what was put and taken.
+      Start all threads together with a latch.
+      Use more threads than CPUs to get more interleavings.
+      Run many iterations. Bugs are rare.
 
   - type: choice
     prompt: How can a safety test check that N producers and consumers lost or duplicated nothing, without a lock that would hide the bugs?

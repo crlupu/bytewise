@@ -6,21 +6,22 @@ sources:
   - { book: effective-java, ref: "Item 29" }
 steps:
   - type: explanation
-    title: Generify a class
+    title: Generic classes remove casts
     body: |
-      An `Object`-based stack forces casts on every client, and those casts can fail at run time:
+      An `Object` stack makes every client cast.
 
       ```java
-      public class Stack {
-          private Object[] elements;
-          public void push(Object e) { ... }
-          public Object pop() { ... }
-      }
-      String s = (String) stack.pop();
+      String s = (String) stack.pop(); // may fail at run time
       ```
 
-      Adding a type parameter — `Stack<E>` — moves the checking to compile time. The first snag: you can't create
-      an array of a non-reifiable type, so `new E[16]` doesn't compile.
+      `Stack<E>` moves that check to compile time.
+
+  - type: explanation
+    title: The array problem
+    body: |
+      You can't write `new E[16]`.
+      Either cast an `Object[]` to `E[]` once.
+      Or keep an `Object[]` and cast each element you read.
 
   - type: match
     prompt: Match each fix for the `E[]` problem to its trade-off.
@@ -35,6 +36,12 @@ steps:
     prompt: Declare the generic stack.
     template: "public class Stack<[[E]]> { public void push([[E]] e) { ... } public E pop() { ... } }"
     code: true
+
+  - type: explanation
+    title: Bounds and limits
+    body: |
+      Type arguments must be reference types: `Stack<Integer>`, not `Stack<int>`.
+      `<E extends Delayed>` allows only subtypes of `Delayed`.
 
   - type: choice
     prompt: Can you create a `Stack<int>`?

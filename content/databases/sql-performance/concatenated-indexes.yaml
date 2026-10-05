@@ -6,10 +6,10 @@ sources:
   - { book: sql-performance-explained, ref: "Chapter 2, The Where Clause — Concatenated Keys and Ranges" }
 steps:
   - type: explanation
-    title: Sorted by the first column, then the next
+    title: Sorted like a phone book
     body: |
-      An index on several columns — a **concatenated** (or composite) index — is sorted like a phone book:
-      by the first column, and only within equal first values, by the second.
+      A multi-column index sorts by the first column.
+      Then by the second, within equal first values.
 
       ```sql
       CREATE INDEX emp_sub_id ON employees (subsidiary_id, employee_id);
@@ -22,8 +22,7 @@ steps:
       | 20 | 1 |
       | 20 | 9 |
 
-      The tree can jump straight to `subsidiary_id = 20`. But the `employee_id` values are only sorted *inside*
-      each subsidiary — across the whole index they jump around.
+      `employee_id` alone is not sorted across the index.
 
   - type: choice
     prompt: "With an index on `(subsidiary_id, employee_id)`, which `WHERE` clauses can use it to find rows directly?"
@@ -53,7 +52,7 @@ steps:
   - type: explanation
     title: Equality first, ranges last
     body: |
-      Ranges change the picture. Take:
+      This query has a range and an equality:
 
       ```sql
       SELECT * FROM employees
@@ -61,10 +60,8 @@ steps:
          AND subsidiary_id = 27;
       ```
 
-      With `(date_of_birth, subsidiary_id)`, the range on the first column covers nine days of births across **every**
-      subsidiary; the database walks all of them, checking `subsidiary_id` as it goes.
-
-      With `(subsidiary_id, date_of_birth)`, it jumps to subsidiary 27 and reads only that subsidiary's births in the range.
+      Put the equality column first.
+      Then the range reads only one subsidiary's rows.
 
   - type: choice
     prompt: Which index serves that query best?
@@ -74,6 +71,13 @@ steps:
       - text: "`(date_of_birth, subsidiary_id)`"
         feedback: The range on the leading column means scanning every subsidiary's entries for those dates.
     explanation: Index for **equality first, then for ranges.** Columns after a range can only filter, not narrow the scan.
+
+  - type: explanation
+    title: Use leading columns
+    body: |
+      An index helps only through its leading columns.
+      Every extra index slows down writes.
+      So choose column order to serve many queries.
 
   - type: match
     prompt: Match each part of the search to its role.

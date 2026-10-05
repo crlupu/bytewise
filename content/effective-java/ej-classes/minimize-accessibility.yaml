@@ -6,12 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 15" }
 steps:
   - type: explanation
-    title: Information hiding
+    title: Hide everything you can
     body: |
-      A well-designed component hides its internals and exposes only its API. Hidden parts can be changed, optimised or
-      replaced without breaking anyone; exposed parts are a promise you keep forever.
-
-      The rule of thumb: **make each class or member as inaccessible as possible.**
+      Hidden internals can change without breaking anyone.
+      Everything public is a promise you keep forever.
+      So make each class and member as inaccessible as possible.
 
   - type: order
     prompt: Order the access levels from most restrictive to least.
@@ -20,6 +19,14 @@ steps:
       - package-private (no modifier) — any class in the same package
       - "`protected` — the package, plus subclasses anywhere"
       - "`public` — everywhere"
+
+  - type: explanation
+    title: Watch for leaks through fields
+    body: |
+      A `public static final` array is still mutable.
+      Anyone can change its elements.
+      Return a copy, or an unmodifiable list, instead.
+      Public instance fields also make a class unsafe for threads.
 
   - type: predict
     prompt: What's the flaw here?

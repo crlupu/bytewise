@@ -6,27 +6,23 @@ sources:
   - { book: jcip, ref: "§10.1.3–10.1.5, Deadlocks Between Cooperating Objects; Open Calls; Resource Deadlocks" }
 steps:
   - type: explanation
-    title: Hidden lock acquisition
+    title: Hidden second locks
     body: |
-      A taxi tracking system has `Taxi` and `Dispatcher` objects:
+      Each method takes one lock, then calls the other object:
 
       ```java
       class Taxi {
-          public synchronized void setLocation(Point location) {
-              this.location = location;
-              if (location.equals(destination))
-                  dispatcher.notifyAvailable(this);   // takes the Dispatcher lock
+          synchronized void setLocation(Point loc) {
+              this.location = loc;
+              if (loc.equals(destination)) dispatcher.notifyAvailable(this);
           }
       }
       class Dispatcher {
-          public synchronized Image getImage() {
-              for (Taxi t : taxis) image.drawMarker(t.getLocation());   // takes each Taxi lock
-              ...
+          synchronized Image getImage() {
+              for (Taxi t : taxis) image.drawMarker(t.getLocation());
           }
       }
       ```
-
-      No method obviously takes two locks — but each calls into the other while holding its own.
 
   - type: widget
     widget: locks
@@ -42,21 +38,11 @@ steps:
     explanation: The same lock-ordering deadlock — but spread across two classes, so neither class's author could see it.
 
   - type: explanation
-    title: Open calls
+    title: Call out without locks
     body: |
-      Calling a method with **no locks held** is an **open call**. Restructure so the synchronized blocks only guard
-      shared state, and calls to other objects happen outside them:
-
-      ```java
-      public void setLocation(Point location) {
-          boolean reachedDestination;
-          synchronized (this) {
-              this.location = location;
-              reachedDestination = location.equals(destination);
-          }
-          if (reachedDestination) dispatcher.notifyAvailable(this);
-      }
-      ```
+      An open call is a call made with no locks held.
+      Update your state inside the lock.
+      Call other objects after releasing it.
 
   - type: widget
     widget: locks
@@ -68,6 +54,12 @@ steps:
     goal:
       finished: true
     explanation: No thread ever holds two locks at once, so no cycle of waiting can form.
+
+  - type: explanation
+    title: Resources deadlock too
+    body: |
+      Pools of connections can deadlock like locks.
+      Two threads, two pools, opposite orders.
 
   - type: choice
     prompt: Two threads each need connections from two different database pools of size 1, and take them in opposite orders. What can happen?

@@ -6,14 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 57" }
 steps:
   - type: explanation
-    title: Narrow scope, fewer bugs
+    title: Keep variables close to their use
     body: |
-      The smaller a variable's scope, the easier the code is to read and the fewer chances to misuse it.
+      Declare a variable where you first need it.
+      Initialize it in the declaration.
+      The less code can see it, the fewer chances to misuse it.
 
-      - **Declare a local variable where it's first used**, not at the top of a block.
-      - **Initialise it in its declaration** — if you can't yet, you probably declared it too early. (A `try` whose
-        result is needed after the block is the usual exception.)
-      - **Keep methods small and focused**, so variables for one activity don't linger into another.
+  - type: explanation
+    title: Loops limit scope
+    body: |
+      A `for` loop's variable exists only inside the loop.
+      Copy-paste a loop and reuse a name by mistake, and it won't compile.
+      A `while` loop's iterator lives on after the loop.
 
   - type: predict
     prompt: How many times does `doSomethingElse` run, if `c2` has 5 elements?

@@ -6,10 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 76" }
 steps:
   - type: explanation
-    title: All or nothing
+    title: Fail without damage
     body: |
-      A **failure-atomic** method leaves its object in the state it was in before the call, if it throws. The caller can
-      then recover and carry on using the object.
+      A failure-atomic method leaves the object unchanged when it throws.
+      The caller can recover and keep using it.
+
+  - type: explanation
+    title: Ways to stay atomic
+    body: |
+      Use immutable objects.
+      Check arguments before changing anything.
+      Or work on a copy, then swap it in.
+      If you can't, document the state left behind.
 
   - type: match
     prompt: Match each technique for achieving failure atomicity to an example.

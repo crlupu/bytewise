@@ -6,18 +6,23 @@ sources:
   - { book: effective-java, ref: "Item 1" }
 steps:
   - type: explanation
-    title: Constructors have limits
+    title: Constructors have fixed rules
     body: |
-      A constructor always has the class's name, always creates a new object, and always returns exactly that class.
-      A **static factory method** — an ordinary static method that returns an instance — has none of those limits:
+      A constructor always has the class's name.
+      It always creates a new object.
+      And it always returns exactly that class.
+
+  - type: explanation
+    title: Static factories are more flexible
+    body: |
+      A static factory is a static method that returns an instance.
 
       ```java
-      Boolean.valueOf(true);             // returns a shared instance; no allocation
-      List.of(1, 2, 3);                  // returns some List implementation
-      BigInteger.probablePrime(64, rnd); // a name that says what you get
+      Boolean.valueOf(true);   // reuses a shared object
+      List.of(1, 2, 3);        // returns some List implementation
       ```
 
-      The advice: *consider* a static factory before reaching for a public constructor.
+      It can have a clear name, reuse objects, and return a subtype.
 
   - type: choice
     prompt: Which of these can a static factory method do that a constructor can't?
@@ -47,6 +52,13 @@ steps:
       - text: "`false`"
         feedback: "`valueOf` doesn't create objects — it returns one of two shared constants."
     explanation: "`Boolean.valueOf` returns `Boolean.TRUE` or `Boolean.FALSE`, so both variables hold the very same object."
+
+  - type: explanation
+    title: Names and costs
+    body: |
+      Factories use conventional names: `from`, `of`, `valueOf`, `getInstance`.
+      Without a public constructor, the class can't be subclassed.
+      Factories are also harder to spot in the API docs.
 
   - type: match
     prompt: Match each conventional factory name to what it signals.

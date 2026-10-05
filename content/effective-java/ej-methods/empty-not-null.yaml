@@ -6,19 +6,17 @@ sources:
   - { book: effective-java, ref: "Item 54" }
 steps:
   - type: explanation
-    title: Null as "nothing"
+    title: null forces checks everywhere
     body: |
-      ```java
-      /** @return a list of cheeses in stock, or null if none */
-      public List<Cheese> getCheeses() {
-          return cheesesInStock.isEmpty() ? null : new ArrayList<>(cheesesInStock);
-      }
+      Returning `null` for "nothing" means every caller must check.
+      Forget once, and it crashes on the rare empty case.
 
-      List<Cheese> cheeses = shop.getCheeses();
-      if (cheeses != null && cheeses.contains(Cheese.STILTON)) ...
-      ```
-
-      Every caller needs the null check. Forget it once and the code works for months — until the shop runs out of cheese.
+  - type: explanation
+    title: Return empty instead
+    body: |
+      An empty list or array works everywhere.
+      A loop over it just runs zero times.
+      Share one immutable empty instance if allocation worries you.
 
   - type: choice
     prompt: The usual argument for returning null is that it avoids allocating an empty list. Why doesn't it hold?

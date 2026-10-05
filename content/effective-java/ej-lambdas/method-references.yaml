@@ -6,17 +6,22 @@ sources:
   - { book: effective-java, ref: "Item 43" }
 steps:
   - type: explanation
-    title: Even more concise
+    title: Method references are shorter still
     body: |
-      Counting words in a map:
+      If a lambda just calls a method, name the method.
 
       ```java
       map.merge(key, 1, (count, incr) -> count + incr);
       map.merge(key, 1, Integer::sum);
       ```
 
-      The parameters `count` and `incr` add nothing — `Integer.sum` already says "add two ints". A **method reference**
-      is often shorter and clearer than the lambda it replaces.
+  - type: explanation
+    title: Five kinds
+    body: |
+      Static: `Integer::parseInt`.
+      Bound: `Instant.now()::isAfter`.
+      Unbound: `String::toLowerCase`.
+      Constructors: `TreeMap::new`, `int[]::new`.
 
   - type: match
     prompt: Match each kind of method reference to an example.
@@ -36,6 +41,13 @@ steps:
     prompt: Replace `s -> s.toLowerCase()` with a method reference.
     template: "words.stream().map([[String::toLowerCase]])"
     code: true
+
+  - type: explanation
+    title: Pick whichever is clearer
+    body: |
+      Sometimes the lambda is shorter and reads better.
+      Use whichever is clearer.
+      A long lambda should become a named method.
 
   - type: choice
     prompt: "Inside a class called `GoshThisClassNameIsHumongous`, which is clearer: `service.execute(GoshThisClassNameIsHumongous::action)` or `service.execute(() -> action())`?"

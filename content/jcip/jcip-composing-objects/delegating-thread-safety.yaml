@@ -6,22 +6,15 @@ sources:
   - { book: jcip, ref: "§4.3, Delegating Thread Safety" }
 steps:
   - type: explanation
-    title: Let the parts do the work
+    title: Let thread-safe parts do the work
     body: |
-      A class can sometimes get thread safety for free by **delegating** it to thread-safe components:
+      A class built from thread-safe parts may need no locks.
 
       ```java
-      public class DelegatingVehicleTracker {
-          private final ConcurrentMap<String, Point> locations;   // Point is immutable
-          public Point getLocation(String id) { return locations.get(id); }
-          public void setLocation(String id, int x, int y) {
-              if (locations.replace(id, new Point(x, y)) == null)
-                  throw new IllegalArgumentException("invalid vehicle name: " + id);
-          }
-      }
+      private final ConcurrentMap<String, Point> locations; // Point is immutable
       ```
 
-      No locks in sight: the concurrent map and the immutable points carry it.
+      The concurrent map and immutable points carry the safety.
 
   - type: choice
     prompt: A class has two **independent** thread-safe state variables — keyboard listeners and mouse listeners, each a `CopyOnWriteArrayList`. Is the class thread-safe?
@@ -30,6 +23,13 @@ steps:
         correct: true
       - text: No — it needs a lock over both
         feedback: Nothing relates the two lists, so there's no invariant to protect.
+
+  - type: explanation
+    title: Only if the parts are independent
+    body: |
+      Two safe parts can still break a shared invariant.
+      `lower` and `upper` can each be atomic, yet end up `lower > upper`.
+      Linked variables need one lock around both.
 
   - type: predict
     prompt: |

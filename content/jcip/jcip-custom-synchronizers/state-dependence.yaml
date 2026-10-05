@@ -6,24 +6,28 @@ sources:
   - { book: jcip, ref: "§14.1, Managing State Dependence" }
 steps:
   - type: explanation
-    title: Blocking until it's possible
+    title: "Wait until it's possible"
     body: |
-      A bounded buffer's `take` has a **state-based precondition**: the buffer must not be empty. In concurrent code
-      another thread can make it true later, so `take` can **wait** instead of failing.
+      `take` on a bounded buffer needs it to be non-empty.
+      Another thread may add something soon.
+      So `take` can wait instead of failing.
 
-      The pattern, in pseudocode:
+  - type: explanation
+    title: Condition queues
+    body: |
+      Any object can be a condition queue.
+      `wait` releases its lock and sleeps until woken.
 
-      ```
-      acquire lock on object state
-      while (precondition does not hold) {
-          release lock
-          wait until precondition might hold
-          optionally fail if interrupted or timeout expires
-          reacquire lock
+      ```java
+      public synchronized V take() throws InterruptedException {
+          while (isEmpty()) wait();
+          V v = doTake();
+          notifyAll();
+          return v;
       }
-      perform action
-      release lock
       ```
+
+      You must hold the lock to call `wait`.
 
   - type: match
     prompt: Match each bounded-buffer design to its problem.
@@ -34,21 +38,6 @@ steps:
         right: Too short a sleep wastes CPU; too long adds latency
       - left: A condition queue (`wait` and `notifyAll`)
         right: The thread sleeps until woken — efficient and responsive
-
-  - type: explanation
-    title: Condition queues
-    body: |
-      Every Java object can act as a **condition queue**: `wait`, `notify` and `notifyAll` on it. `wait` atomically
-      releases the object's lock and suspends the thread; when woken, the thread reacquires the lock before returning.
-
-      ```java
-      public synchronized V take() throws InterruptedException {
-          while (isEmpty()) wait();
-          V v = doTake();
-          notifyAll();
-          return v;
-      }
-      ```
 
   - type: choice
     prompt: Why must `wait` be called while holding the object's lock?

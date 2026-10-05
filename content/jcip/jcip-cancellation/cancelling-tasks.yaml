@@ -6,25 +6,24 @@ sources:
   - { book: jcip, ref: "§7.1.4–7.1.7, Example: Timed Run; Cancellation via Future" }
 steps:
   - type: explanation
-    title: Cancelling via Future
+    title: Cancel through the Future
     body: |
-      Interrupting a pool thread directly is wrong: you don't know which task it's running by then. Cancel through the
-      task's `Future` instead:
+      Don't interrupt a pool thread directly.
+      It may be running some other task by then.
+      Call `future.cancel(true)` instead.
+
+  - type: explanation
+    title: A timed run
+    body: |
+      Submit the task, then wait with a timeout.
 
       ```java
-      public static void timedRun(Runnable r, long timeout, TimeUnit unit) throws InterruptedException {
-          Future<?> task = taskExec.submit(r);
-          try {
-              task.get(timeout, unit);
-          } catch (TimeoutException e) {
-              // task will be cancelled below
-          } catch (ExecutionException e) {
-              throw launderThrowable(e.getCause());   // rethrow the task's exception
-          } finally {
-              task.cancel(true);   // harmless if already finished
-          }
-      }
+      Future<?> task = taskExec.submit(r);
+      try { task.get(timeout, unit); }
+      finally { task.cancel(true); }
       ```
+
+      Cancelling a finished task does nothing.
 
   - type: choice
     prompt: What does `cancel(true)` do if the task is running?
@@ -35,6 +34,13 @@ steps:
         feedback: Nothing stops a thread immediately; it delivers an interrupt.
       - text: Nothing
         feedback: "`cancel(false)` does nothing to a running task; `cancel(true)` interrupts it."
+
+  - type: explanation
+    title: Some blocking ignores interrupts
+    body: |
+      Socket reads ignore interrupts. Close the socket instead.
+      Waiting for a `synchronized` lock can't be interrupted.
+      A custom `Future` can wrap the right kind of cancel.
 
   - type: match
     prompt: Some blocking doesn't respond to interruption. Match each to the workaround.
@@ -47,13 +53,6 @@ steps:
         right: Interruption itself closes the channel and throws `ClosedByInterruptException`
       - left: "`Selector.select`"
         right: Call `wakeup` or close the selector
-
-  - type: explanation
-    title: Encapsulating non-standard cancellation
-    body: |
-      A task that owns a socket can override how it's cancelled. `ThreadPoolExecutor` builds the `Future` for each task
-      through `newTaskFor`, so a custom task can return a future whose `cancel` also closes the socket before calling
-      `super.cancel`.
 
   - type: choice
     prompt: Why put the cancel in `finally` in `timedRun`?

@@ -8,23 +8,20 @@ steps:
   - type: explanation
     title: One lock, several conditions
     body: |
-      An intrinsic lock has exactly one condition queue, shared by all predicates. With `Lock`, you can create as many
-      `Condition`s as you need:
+      An intrinsic lock has one condition queue.
+      A `Lock` can create one `Condition` per predicate:
 
       ```java
-      private final Lock lock = new ReentrantLock();
       private final Condition notFull  = lock.newCondition();
       private final Condition notEmpty = lock.newCondition();
-
-      public void put(T x) throws InterruptedException {
-          lock.lock();
-          try {
-              while (count == items.length) notFull.await();
-              items[tail] = x; ...; ++count;
-              notEmpty.signal();
-          } finally { lock.unlock(); }
-      }
       ```
+
+  - type: explanation
+    title: Separate waiters, safe signals
+    body: |
+      Producers wait on `notFull`. Consumers wait on `notEmpty`.
+      Each `signal` wakes the right kind of thread.
+      Use `await` and `signal`, never `wait` and `notify`, on a `Condition`.
 
   - type: choice
     prompt: Why is `signal` safe here, when `notify` wasn't with intrinsic condition queues?

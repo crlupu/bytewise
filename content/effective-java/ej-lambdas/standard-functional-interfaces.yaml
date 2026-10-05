@@ -6,10 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 44" }
 steps:
   - type: explanation
-    title: Six to remember
+    title: Six basic interfaces
     body: |
-      `java.util.function` has 43 interfaces, but most are variations of six basic ones. If you know these, you can
-      work out the rest.
+      `java.util.function` has 43 interfaces.
+      Most are variations of six.
+      Know these six, and you can work out the rest.
 
   - type: match
     prompt: Match each interface to its function signature.
@@ -26,6 +27,14 @@ steps:
         right: "`T get()`"
       - left: "`Consumer<T>`"
         right: "`void accept(T t)`"
+
+  - type: explanation
+    title: Prefer the standard ones
+    body: |
+      Use a standard interface when one fits.
+      Write your own only for a good name, a contract or default methods.
+      Mark it `@FunctionalInterface`.
+      Don't overload methods on different lambda types.
 
   - type: choice
     prompt: Which interface fits `String::isEmpty`?

@@ -8,13 +8,9 @@ steps:
   - type: explanation
     title: Measuring a scheduler
     body: |
-      The scheduler decides which ready job runs next. To compare policies we need a metric. Start with
-      **turnaround time**:
-
-      > turnaround = time the job completes − time it arrived
-
-      We'll average it over all jobs. And we'll start with simplifying assumptions, relaxing them one by one:
-      every job runs for a known length, uses only the CPU (no I/O), and runs to completion once started.
+      The scheduler picks which ready job runs next.
+      Turnaround time = completion time − arrival time.
+      For now, assume we know how long each job runs.
 
   - type: widget
     widget: scheduler
@@ -39,6 +35,13 @@ steps:
         - text: "30"
           feedback: That's C's alone.
     explanation: (10 + 20 + 30) ÷ 3 = 20. With equal jobs, FIFO is perfectly reasonable.
+
+  - type: explanation
+    title: Short jobs first
+    body: |
+      FIFO lets a long job hold up short ones.
+      SJF runs the shortest job first.
+      That minimizes average turnaround, if all arrive together.
 
   - type: widget
     widget: scheduler
@@ -74,6 +77,13 @@ steps:
       - text: SJF switches to the short jobs at time 4
         feedback: That needs preemption — stopping a running job. Plain SJF doesn't do that.
     explanation: Relax the "all arrive together" assumption and SJF loses its advantage.
+
+  - type: explanation
+    title: Preemption
+    body: |
+      STCF can stop the running job for a shorter one.
+      It handles late arrivals well.
+      But it still needs to know job lengths in advance.
 
   - type: widget
     widget: scheduler

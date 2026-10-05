@@ -5,6 +5,12 @@ tags: [java, effective java, tostring, debugging, logging]
 sources:
   - { book: effective-java, ref: "Item 12" }
 steps:
+  - type: explanation
+    title: The default toString is useless
+    body: |
+      By default you get the class name and a hex hash.
+      `PhoneNumber@163b91` tells you nothing.
+
   - type: predict
     prompt: "`PhoneNumber` doesn't override `toString`. What does `System.out.println(new PhoneNumber(707, 867, 5309))` print?"
     options:
@@ -16,18 +22,12 @@ steps:
     explanation: "`Object.toString` gives the class name, `@`, and the hash code in hex — rarely useful."
 
   - type: explanation
-    title: Return the interesting information
+    title: Show the interesting state
     body: |
-      `toString` is called whenever your object meets string concatenation, `println`, `assert` messages, loggers and
-      debuggers. Return all the interesting information the object holds, concisely:
-
-      ```java
-      @Override public String toString() {
-          return String.format("%03d-%03d-%04d", areaCode, prefix, lineNum);
-      }
-      ```
-
-      Records, and many IDEs, generate a decent one for you.
+      `toString` appears in logs, debuggers and error messages.
+      Return the object's important values, concisely.
+      Also provide getters for those values.
+      Otherwise clients will parse your string.
 
   - type: choice
     prompt: Should you document the exact format of `toString`'s output?

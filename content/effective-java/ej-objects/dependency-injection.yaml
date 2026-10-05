@@ -6,36 +6,32 @@ sources:
   - { book: effective-java, ref: "Item 5" }
 steps:
   - type: explanation
-    title: Hardwired resources
+    title: Hardwired resources are rigid
     body: |
-      A spell checker depends on a dictionary. Hardwiring it looks like this:
+      A spell checker needs a dictionary.
+      If it creates its own, it's stuck with that one.
 
       ```java
-      public class SpellChecker {
-          private static final Lexicon dictionary = new EnglishDictionary();
-          private SpellChecker() {}
-          public static boolean isValid(String word) { ... }
-      }
+      private static final Lexicon dictionary = new EnglishDictionary();
       ```
 
-      Now every spell checker uses English, forever — and tests can't substitute a small test dictionary.
+      Every spell checker is English, forever.
+      Tests can't swap in a small fake dictionary.
 
   - type: explanation
-    title: Pass it in
+    title: Pass the resource in
     body: |
-      **Dependency injection**: hand the resource to the constructor.
+      Dependency injection means handing the resource to the constructor.
 
       ```java
-      public class SpellChecker {
-          private final Lexicon dictionary;
-          public SpellChecker(Lexicon dictionary) {
-              this.dictionary = Objects.requireNonNull(dictionary);
-          }
+      public SpellChecker(Lexicon dictionary) {
+          this.dictionary = Objects.requireNonNull(dictionary);
       }
       ```
 
-      One class now works with any dictionary, the dependency is visible in the signature, and the object can still be
-      immutable. Frameworks like Spring or Guice automate the wiring in big systems, but the pattern is just this.
+      One class now works with any dictionary.
+      The dependency shows in the signature.
+      Frameworks like Spring just automate this wiring.
 
   - type: choice
     prompt: Which are benefits of injecting the dictionary?

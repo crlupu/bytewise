@@ -6,11 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 86" }
 steps:
   - type: explanation
-    title: Two words, lasting costs
+    title: Serializable is a commitment
     body: |
-      Making a class serializable can be as simple as adding `implements Serializable`. But once a class is released
-      with a serialized form, that form becomes part of its exported API — including, with the default form, its
-      private fields.
+      Adding `implements Serializable` is easy.
+      But the serialized form becomes part of your API.
+      Even private fields get frozen.
+
+  - type: explanation
+    title: Real costs
+    body: |
+      The class gets harder to change.
+      Deserialization adds a hidden constructor and security holes.
+      Every release must read old forms.
+      Declare a `serialVersionUID` explicitly.
 
   - type: choice
     prompt: Which are real costs of implementing `Serializable`?

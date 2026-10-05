@@ -6,27 +6,25 @@ sources:
   - { book: effective-java, ref: "Item 3" }
 steps:
   - type: explanation
-    title: Exactly one instance
+    title: Three ways to make a singleton
     body: |
-      A **singleton** is a class instantiated exactly once. There are three common ways:
+      A singleton is a class with exactly one instance.
 
       ```java
-      // 1. Public final field
-      public class Elvis {
-          public static final Elvis INSTANCE = new Elvis();
-          private Elvis() {}
-      }
-
-      // 2. Static factory
-      public class Elvis {
-          private static final Elvis INSTANCE = new Elvis();
-          private Elvis() {}
-          public static Elvis getInstance() { return INSTANCE; }
-      }
-
-      // 3. Single-element enum
-      public enum Elvis { INSTANCE; }
+      public static final Elvis INSTANCE = new Elvis();   // field
+      public static Elvis getInstance() { return INSTANCE; } // factory
+      public enum Elvis { INSTANCE; }                      // enum
       ```
+
+      All three hide or avoid a public constructor.
+
+  - type: explanation
+    title: The enum is the safest
+    body: |
+      Reflection can call a private constructor.
+      Deserialization can create a second copy.
+      A single-element enum is protected from both, for free.
+      The factory version keeps one option open: you can drop the singleton later.
 
   - type: choice
     prompt: With approaches 1 and 2, which can still create a second instance?

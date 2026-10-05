@@ -8,16 +8,14 @@ steps:
   - type: explanation
     title: Unsafe publication
     body: |
+      This lazy getter has no synchronization:
+
       ```java
-      private static Resource resource;
-      public static Resource getInstance() {
-          if (resource == null) resource = new Resource();   // unsafe publication
-          return resource;
-      }
+      if (resource == null) resource = new Resource();
+      return resource;
       ```
 
-      Besides the race, there's a subtler problem: writing the reference and writing the object's fields aren't ordered
-      by happens-before for another thread. It may see a non-null `resource` whose fields still hold their default values.
+      Another thread may see the reference before the fields.
 
   - type: choice
     prompt: In unsafe publication, what can a second thread see?
@@ -30,19 +28,9 @@ steps:
   - type: explanation
     title: Double-checked locking
     body: |
-      ```java
-      public static Resource getInstance() {
-          if (resource == null) {
-              synchronized (DoubleCheckedLocking.class) {
-                  if (resource == null) resource = new Resource();
-              }
-          }
-          return resource;
-      }
-      ```
-
-      The unsynchronized first check was meant to avoid locking in the common case — but it reads `resource` without
-      happens-before, so it can see a partially constructed object.
+      It checks without a lock, then again with one.
+      The first check can see a half-built object.
+      It's broken unless the field is `volatile`.
 
   - type: choice
     prompt: How do you fix double-checked locking under the Java 5 memory model?
@@ -52,6 +40,13 @@ steps:
       - text: Add a third check
         feedback: More unsynchronized checks don't add a happens-before edge.
     explanation: It works — but the lazy initialization holder class idiom is simpler and at least as fast.
+
+  - type: explanation
+    title: Use the holder idiom
+    body: |
+      A static field in a private nested class.
+      The JVM initializes it lazily and safely.
+      No locking on access.
 
   - type: blank
     prompt: The lazy initialization holder class idiom.

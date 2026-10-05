@@ -6,17 +6,12 @@ sources:
   - { book: kurose-ross, ref: "§3.5.6, TCP Connection Management" }
 steps:
   - type: explanation
-    title: Agreeing where to start counting
+    title: Agree where counting starts
     body: |
-      TCP gives you a reliable, ordered byte stream over a network that loses, duplicates and reorders packets.
-      It does that by **numbering every byte**. Each side picks a random starting number — its
-      **initial sequence number (ISN)** — and the other side must learn it before any data flows.
-
-      Opening a connection is that exchange:
-
-      1. the client sends a **SYN** carrying its ISN;
-      2. the server answers with **SYN-ACK**: its own ISN, and an acknowledgment of the client's;
-      3. the client sends an **ACK** of the server's ISN.
+      TCP numbers every byte it sends.
+      Each side picks a random initial sequence number.
+      SYN, then SYN-ACK, then ACK.
+      Now both sides know both numbers.
 
   - type: order
     prompt: Put the opening of a TCP connection in order.
@@ -44,6 +39,13 @@ steps:
       - The server can only answer a SYN it has received.
     explanation: |
       Look at the numbers on each arrow: SYN seq=1000; SYN-ACK seq=5000 ack=1001; ACK seq=1001 ack=5001.
+
+  - type: explanation
+    title: Acknowledge the next byte
+    body: |
+      An ACK names the next byte expected.
+      A SYN uses up one sequence number.
+      So the reply acknowledges ISN + 1.
 
   - type: predict
     prompt: |
@@ -92,11 +94,8 @@ steps:
         right: Handshake finished; data can flow
 
   - type: explanation
-    title: In the real world
+    title: SYN floods and cookies
     body: |
-      A server keeps a little state for each half-open connection in SYN_RECEIVED. A **SYN flood** sends
-      huge numbers of SYNs and never completes them, filling that table.
-
-      The usual defence is **SYN cookies**: the server encodes the connection's details into its ISN and keeps
-      *no* state until the final ACK comes back carrying that number + 1. The handshake's arithmetic doubles
-      as a defence.
+      Attackers send SYNs and never finish the handshake.
+      Half-open connections fill the server's table.
+      SYN cookies store nothing until the final ACK arrives.

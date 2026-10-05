@@ -5,6 +5,13 @@ tags: [java, effective java, autoboxing, primitives, integer, nullpointerexcepti
 sources:
   - { book: effective-java, ref: "Item 61" }
 steps:
+  - type: explanation
+    title: int and Integer differ
+    body: |
+      `Integer` objects have identity: equal values can be different objects.
+      An `Integer` can be `null`.
+      An `int` costs no allocation.
+
   - type: match
     prompt: Match each difference between `int` and `Integer`.
     pairs:
@@ -14,6 +21,13 @@ steps:
         right: An `Integer` can be null; an `int` always has a value
       - left: Performance
         right: "`int` needs no allocation; `Integer` may"
+
+  - type: explanation
+    title: Boxing causes surprises
+    body: |
+      `==` on two `Integer`s compares references, not values.
+      Unboxing a `null` throws `NullPointerException`.
+      Use boxed types only where you must, like in collections.
 
   - type: predict
     prompt: What does `naturalOrder.compare(new Integer(42), new Integer(42))` return?

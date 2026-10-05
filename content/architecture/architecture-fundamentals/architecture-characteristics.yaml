@@ -6,17 +6,19 @@ sources:
   - { book: fosa, ref: "Chapters 4–5, Architecture Characteristics" }
 steps:
   - type: explanation
-    title: What the domain doesn't say
+    title: How well, not what
     body: |
-      Requirements say what a system does: take orders, send invoices. **Architecture characteristics** say how well
-      it must do it — the qualities that shape its structure:
+      Requirements say what a system does.
+      Architecture characteristics say how well it must do it.
+      Performance, availability, security, scalability.
+      They shape the structure of the whole system.
 
-      - they're about something **other than the domain** (performance, not "calculate tax");
-      - they **influence the structure** of the design (scaling needs might force separate deployables);
-      - they're **critical** to the application's success.
-
-      Richards and Ford's first law: **everything in software architecture is a trade-off.** Their second: **why is more
-      important than how.**
+  - type: explanation
+    title: Translate business needs
+    body: |
+      "Fast to market" means agility and deployability.
+      "Black Friday spikes" means elasticity.
+      Ask why, then name the characteristic.
 
   - type: match
     prompt: Match each characteristic to the category it belongs to.
@@ -60,11 +62,10 @@ steps:
   - type: explanation
     title: Choose few
     body: |
-      Each characteristic you support adds complexity, and many pull against each other — more security usually
-      means less performance; more availability, more cost.
-
-      So the advice is to pick the **fewest** that matter — often the top three — rather than wishing for all of them.
-      The goal isn't the best architecture. It's the **least worst**: the one whose trade-offs hurt least for *this* system.
+      Every characteristic adds complexity.
+      Many pull against each other.
+      Pick the few that matter most.
+      Everything is a trade-off.
 
   - type: choice
     prompt: A team lists 14 required characteristics, all marked "high priority". What's the problem?

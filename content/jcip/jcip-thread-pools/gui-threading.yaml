@@ -6,13 +6,18 @@ sources:
   - { book: jcip, ref: "Chapter 9, GUI Applications" }
 steps:
   - type: explanation
-    title: Why GUIs are single-threaded
+    title: GUIs use one thread
     body: |
-      Nearly every GUI toolkit — Swing, SWT, Android, Cocoa — confines its components to a single **event thread**.
-      Attempts at multithreaded toolkits kept running into deadlocks: input events flow *up* from the OS to the
-      application, while application actions flow *down* to the OS — the classic recipe for inconsistent lock ordering.
+      Almost every GUI toolkit uses a single event thread.
+      Multithreaded toolkits kept deadlocking.
+      So all UI state belongs to that one thread.
 
-      Thread confinement sidesteps it. All UI state belongs to the event thread.
+  - type: explanation
+    title: Keep the event thread free
+    body: |
+      Long work on the event thread freezes the window.
+      Run it in the background instead.
+      Hand results back with `invokeLater`.
 
   - type: choice
     prompt: A button handler downloads a 2 GB file. What does the user see?

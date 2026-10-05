@@ -6,25 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 9" }
 steps:
   - type: explanation
-    title: try-finally gets ugly
+    title: try-finally is fragile
     body: |
-      ```java
-      static void copy(String src, String dst) throws IOException {
-          InputStream in = new FileInputStream(src);
-          try {
-              OutputStream out = new FileOutputStream(dst);
-              try {
-                  in.transferTo(out);
-              } finally {
-                  out.close();
-              }
-          } finally {
-              in.close();
-          }
-      }
-      ```
-
-      It's verbose — and it has a subtler flaw.
+      Closing resources in `finally` gets deeply nested with two of them.
+      Worse, if `close` throws, it hides the original exception.
+      The real cause of the failure is lost.
 
   - type: choice
     prompt: The disk fails. `read` throws, and then `close` in the `finally` throws too. Which exception does the caller see?
@@ -38,19 +24,19 @@ steps:
     explanation: The first exception — the one explaining what went wrong — is the one that vanishes.
 
   - type: explanation
-    title: try-with-resources
+    title: try-with-resources closes for you
     body: |
+      Declare resources in the `try` header.
+
       ```java
-      static void copy(String src, String dst) throws IOException {
-          try (InputStream in = new FileInputStream(src);
-               OutputStream out = new FileOutputStream(dst)) {
-              in.transferTo(out);
-          }
+      try (var in = new FileInputStream(src);
+           var out = new FileOutputStream(dst)) {
+          in.transferTo(out);
       }
       ```
 
-      Resources are closed automatically, in **reverse order**. If closing throws while another exception is in flight,
-      the close exception is **suppressed**: attached to the original, retrievable with `getSuppressed()`.
+      They close automatically, in reverse order.
+      A failing `close` is kept as a suppressed exception, not lost.
 
   - type: order
     prompt: The body throws. Put what happens in order.

@@ -6,16 +6,18 @@ sources:
   - { book: database-internals, ref: "Chapter 5, Transaction Processing and Recovery — Recovery" }
 steps:
   - type: explanation
-    title: Pages live in memory
+    title: Pages are written late
     body: |
-      A database changes data in **pages** cached in memory (the buffer pool) and writes them back to disk later —
-      writing every page on every change would be far too slow.
+      Changes happen to pages in memory first.
+      They're written to disk much later.
+      A crash in between could lose or half-apply data.
 
-      So what happens if the power fails after a transaction commits but before its pages reach disk? Or after
-      half of an uncommitted transaction's pages *did* reach disk?
-
-      The answer is a **write-ahead log** (WAL): an append-only file of every change, written to disk **before** the
-      changed pages are.
+  - type: explanation
+    title: Log first
+    body: |
+      Every change is appended to the write-ahead log.
+      On commit, the log is flushed to disk.
+      Sequential log writes are much cheaper than scattered pages.
 
   - type: order
     prompt: Put the life of a committed update in order.
@@ -38,15 +40,11 @@ steps:
     explanation: Sequential appends are fast on every kind of storage. Random page writes can wait and be combined.
 
   - type: explanation
-    title: Redo and undo
+    title: Recovery replays the log
     body: |
-      After a crash, recovery reads the log:
-
-      - **Redo**: replay changes of committed transactions whose pages may not have reached disk.
-      - **Undo**: roll back changes of transactions that never committed but whose pages may have.
-
-      The classic algorithm, **ARIES**, does it in three passes: *analysis* (what was in flight), *redo* (repeat
-      history, bringing the database back to the moment of the crash), then *undo* (roll back the losers).
+      Redo: reapply committed changes that missed the disk.
+      Undo: reverse uncommitted changes that reached it.
+      Checkpoints limit how far back recovery must read.
 
   - type: match
     prompt: Match each term to its meaning.

@@ -8,22 +8,18 @@ steps:
   - type: explanation
     title: The deadly embrace
     body: |
-      ```java
-      public class LeftRightDeadlock {
-          private final Object left = new Object();
-          private final Object right = new Object();
+      Two methods take the same two locks in opposite orders:
 
-          public void leftRight() {
-              synchronized (left) { synchronized (right) { doSomething(); } }
-          }
-          public void rightLeft() {
-              synchronized (right) { synchronized (left) { doSomethingElse(); } }
-          }
+      ```java
+      public void leftRight() {
+          synchronized (left) { synchronized (right) { doSomething(); } }
+      }
+      public void rightLeft() {
+          synchronized (right) { synchronized (left) { doSomethingElse(); } }
       }
       ```
 
-      Each method is fine on its own. Called concurrently, they can **deadlock**: each thread holds one lock and waits
-      forever for the other.
+      Each thread can grab one lock and wait forever for the other.
 
   - type: widget
     widget: locks
@@ -40,6 +36,12 @@ steps:
       - Let each thread take its first lock before either takes its second.
     explanation: T1 holds L and wants R; T2 holds R and wants L. Neither can ever proceed.
 
+  - type: explanation
+    title: One global order
+    body: |
+      If every thread takes locks in the same order, no cycle can form.
+      So no deadlock.
+
   - type: widget
     widget: locks
     prompt: |
@@ -54,20 +56,11 @@ steps:
     explanation: With a global lock order, whoever gets L first also gets R; the other waits for L without holding anything.
 
   - type: explanation
-    title: Dynamic lock order
+    title: Order can hide in arguments
     body: |
-      Sometimes the order depends on the arguments:
-
-      ```java
-      public void transferMoney(Account from, Account to, DollarAmount amount) {
-          synchronized (from) {
-              synchronized (to) { ... }
-          }
-      }
-      ```
-
-      `transferMoney(a, b, 10)` and `transferMoney(b, a, 20)` at the same time take the same two locks in opposite
-      orders — the same deadlock, hidden behind parameters.
+      `transferMoney(a, b)` locks `a`, then `b`.
+      `transferMoney(b, a)` locks `b`, then `a`.
+      Fix it by ordering locks by a unique key, like the account number.
 
   - type: choice
     prompt: How can `transferMoney` impose a consistent order?

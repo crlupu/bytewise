@@ -6,11 +6,19 @@ sources:
   - { book: jcip, ref: "§12.2–12.4, Testing for Performance; Avoiding Performance Testing Pitfalls" }
 steps:
   - type: explanation
-    title: Measuring throughput
+    title: Measure realistic workloads
     body: |
-      A performance test runs a realistic workload and measures end-to-end throughput or latency — and shows how it
-      changes with the number of threads, the buffer size, the pool size. Comparing implementations (say, a bounded
-      buffer against `ArrayBlockingQueue` and `LinkedBlockingQueue`) is often more useful than absolute numbers.
+      Measure throughput and latency end to end.
+      See how they change with threads and buffer sizes.
+      Comparing implementations is often most useful.
+
+  - type: explanation
+    title: Benchmarks lie easily
+    body: |
+      Garbage collection skews single runs.
+      Early iterations run before the JIT compiles.
+      Unused results get optimized away entirely.
+      Warm up, run long, and use every result.
 
   - type: match
     prompt: Match each benchmarking pitfall to its effect.

@@ -6,11 +6,11 @@ sources:
   - { book: jcip, ref: "§4.4, Adding Functionality to Existing Thread-safe Classes" }
 steps:
   - type: explanation
-    title: Put-if-absent
+    title: Adding put-if-absent
     body: |
-      You need a thread-safe list with an atomic **put-if-absent**: check whether an element is present, and add it if
-      not — with no other thread able to add it in between. The safest option is to modify the original class.
-      When you can't, there are three others.
+      Put-if-absent must check and add as one atomic step.
+      The safest place is the original class.
+      If you can't change it, you can extend it, lock from outside, or wrap it.
 
   - type: predict
     prompt: Is this helper's `putIfAbsent` atomic?
@@ -32,6 +32,12 @@ steps:
         feedback: Synchronized on the wrong lock. Another thread calling `list.add` doesn't take the `ListHelper` lock.
     explanation: An illusion of synchronization — the classic client-side locking mistake.
 
+  - type: explanation
+    title: Use the right lock
+    body: |
+      Client-side locking must use the object's own lock.
+      Locking your helper instead protects nothing.
+
   - type: blank
     prompt: Fix it by locking the lock the list actually uses.
     template: |
@@ -44,6 +50,13 @@ steps:
       }
     code: true
     explanation: "`Collections.synchronizedList` documents that it locks on the wrapper — so clients can join in."
+
+  - type: explanation
+    title: Wrapping is the most robust
+    body: |
+      A wrapper has its own lock and its own rules.
+      It doesn't depend on how the inner list locks.
+      The extra layer of locking costs very little.
 
   - type: match
     prompt: Match each approach to its weakness.

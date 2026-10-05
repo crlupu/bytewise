@@ -6,21 +6,14 @@ sources:
   - { book: jcip, ref: "§13.5, Read-write Locks" }
 steps:
   - type: explanation
-    title: Readers don't conflict
+    title: Readers can share
     body: |
-      Mutual exclusion is conservative: it stops readers from overlapping with each other, though reads alone can't
-      interfere. A `ReadWriteLock` has two locks: any number of threads may hold the **read** lock at once, but the
-      **write** lock is exclusive.
+      Reads don't interfere with each other.
+      A read-write lock lets many readers in at once.
+      A writer gets exclusive access.
 
       ```java
-      public V get(Object key) {
-          r.lock();
-          try { return map.get(key); } finally { r.unlock(); }
-      }
-      public V put(K key, V value) {
-          w.lock();
-          try { return map.put(key, value); } finally { w.unlock(); }
-      }
+      r.lock(); try { return map.get(key); } finally { r.unlock(); }
       ```
 
   - type: match
@@ -32,6 +25,13 @@ steps:
         right: It waits until both readers release
       - left: A thread wants the read lock; a writer holds the write lock
         right: It waits until the writer releases
+
+  - type: explanation
+    title: When it pays off
+    body: |
+      Data must be read far more than written.
+      Reads must take long enough to matter.
+      A read lock can't be upgraded to a write lock.
 
   - type: choice
     prompt: When does a read-write lock beat a plain lock?

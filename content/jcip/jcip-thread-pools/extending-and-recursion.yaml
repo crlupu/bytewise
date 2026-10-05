@@ -6,15 +6,12 @@ sources:
   - { book: jcip, ref: "§8.4–8.5, Extending ThreadPoolExecutor; Parallelizing Recursive Algorithms" }
 steps:
   - type: explanation
-    title: Hooks
+    title: Pools have hooks
     body: |
-      `ThreadPoolExecutor` is designed for extension. Subclasses can override:
-
-      - `beforeExecute(Thread t, Runnable r)` — called before each task, in the thread that will run it;
-      - `afterExecute(Runnable r, Throwable t)` — called after each task, whether it succeeded or threw;
-      - `terminated()` — called once when the pool has shut down.
-
-      A timing pool records the start time in a `ThreadLocal` in `beforeExecute` and logs the elapsed time in `afterExecute`.
+      `beforeExecute` runs before each task.
+      `afterExecute` runs after it, even if it threw.
+      `terminated` runs once at shutdown.
+      They're handy for timing and logging.
 
   - type: choice
     prompt: Why use a `ThreadLocal` to pass the start time from `beforeExecute` to `afterExecute`?
@@ -25,19 +22,16 @@ steps:
     explanation: It's a natural use of thread confinement.
 
   - type: explanation
-    title: Loops into tasks
+    title: Turn loops into tasks
     body: |
-      If the iterations of a loop are independent, and each does significant work, they can run in parallel:
+      Independent loop iterations can run as separate tasks.
 
       ```java
-      void processInParallel(Executor exec, List<Element> elements) {
-          for (final Element e : elements)
-              exec.execute(() -> process(e));
-      }
+      for (Element e : elements)
+          exec.execute(() -> process(e));
       ```
 
-      The same idea applies to recursive algorithms: when each step's work doesn't depend on the results of sibling
-      steps, submit the subproblems as tasks.
+      The same works for independent branches of recursion.
 
   - type: choice
     prompt: A parallel puzzle solver explores moves concurrently and should stop at the first solution. How does it hand the answer back?

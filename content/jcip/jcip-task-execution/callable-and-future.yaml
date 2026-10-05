@@ -6,18 +6,18 @@ sources:
   - { book: jcip, ref: "§6.3, Finding Exploitable Parallelism" }
 steps:
   - type: explanation
-    title: Results from tasks
+    title: Callable returns a result
     body: |
-      `Runnable` can't return a value or throw a checked exception. `Callable<V>` can. Submitting one to an
-      `ExecutorService` returns a `Future<V>`: a handle to a computation that may not have finished.
+      A `Callable` returns a value and can throw.
+      Submitting one gives you a `Future`.
+      `get()` waits for the result only when you need it.
 
-      A page renderer can download images in the background while rendering text:
-
-      ```java
-      Future<List<ImageData>> future = executor.submit(() -> downloadAll(imageInfos));
-      renderText(source);
-      List<ImageData> images = future.get();   // waits only if needed
-      ```
+  - type: explanation
+    title: Parallelism needs balanced tasks
+    body: |
+      Two tasks of 1 s and 10 s gain little in parallel.
+      Split the work into many similar tasks instead.
+      A `CompletionService` hands back results as each finishes.
 
   - type: choice
     prompt: Rendering text takes 1 s; downloading all images takes 10 s. How much does the background download save?
@@ -30,17 +30,10 @@ steps:
     explanation: The real payoff comes from many independent, similar tasks — one per image, rendered as each arrives.
 
   - type: explanation
-    title: CompletionService
+    title: Time budgets
     body: |
-      With one task per image, you want results **as they complete**, not in submission order. A `CompletionService`
-      combines an executor with a blocking queue of finished futures:
-
-      ```java
-      CompletionService<ImageData> cs = new ExecutorCompletionService<>(executor);
-      for (ImageInfo info : infos) cs.submit(info::downloadImage);
-      renderText(source);
-      for (int i = 0; i < infos.size(); i++) renderImage(cs.take().get());
-      ```
+      `get(timeout)` stops waiting after a deadline.
+      Then cancel the task, so it stops using resources.
 
   - type: match
     prompt: Match each tool to its use.

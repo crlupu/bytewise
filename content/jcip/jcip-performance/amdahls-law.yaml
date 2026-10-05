@@ -8,24 +8,18 @@ steps:
   - type: explanation
     title: How fast versus how much
     body: |
-      Performance has two faces:
-
-      - **how fast** — latency, service time;
-      - **how much** — capacity, throughput, **scalability**: how throughput improves as you add resources like CPUs.
-
-      Concurrent programs are usually designed for "how much". Many single-threaded tricks — caching, clever algorithms —
-      help "how fast" but can hurt scalability. And remember: make it right first, then make it fast — only if
-      measurement says it isn't fast enough.
+      Latency is how fast one request finishes.
+      Scalability is how much more you handle with more CPUs.
+      Concurrent programs usually aim for scalability.
+      Make it right first. Optimize only after measuring.
 
   - type: explanation
-    title: Amdahl's law
+    title: "Amdahl's law"
     body: |
-      If a fraction **F** of a computation must run serially, then on **N** processors the best possible speed-up is:
-
-      > speedup ≤ 1 / (F + (1 − F) / N)
-
-      As N grows without limit, the speed-up approaches **1 / F**. Every program has some serial part — even if it's only
-      taking work from a shared queue.
+      Some part of every program runs serially.
+      That part limits the speed-up.
+      With serial fraction F on N CPUs: speedup ≤ 1 / (F + (1 − F) / N).
+      However many CPUs you add, it never beats 1 / F.
 
   - type: predict
     prompt: 10% of a program is serial. What's the maximum speed-up on 10 processors? (Round to one decimal place.)
@@ -54,6 +48,13 @@ steps:
     hints:
       - As N grows, (1 − F) / N approaches 0.
     explanation: 1 / F = 1 / 0.1 = 10. No number of cores beats it.
+
+  - type: explanation
+    title: Serial parts hide in shared data
+    body: |
+      A shared queue or counter makes threads take turns.
+      A single lock turns parallel work serial.
+      Concurrent data structures shrink that serial part.
 
   - type: choice
     prompt: Where do serial fractions hide in a "fully parallel" program?

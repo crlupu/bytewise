@@ -6,20 +6,22 @@ sources:
   - { book: effective-java, ref: "Item 55" }
 steps:
   - type: explanation
-    title: A result that might not exist
+    title: "Optional says \"maybe none\""
     body: |
-      Before Java 8, a method with no value to return either threw or returned null. `Optional<T>` is a third choice:
-      an immutable container holding one value or nothing.
+      `Optional<T>` holds one value, or nothing.
+      Returning it tells callers to handle the empty case.
 
       ```java
-      public static <E extends Comparable<E>> Optional<E> max(Collection<E> c) {
-          if (c.isEmpty()) return Optional.empty();
-          ...
-          return Optional.of(result);
-      }
+      if (c.isEmpty()) return Optional.empty();
+      return Optional.of(result);
       ```
 
-      The return type itself tells the caller to deal with the empty case.
+  - type: explanation
+    title: Using an Optional
+    body: |
+      `orElse` gives a default.
+      `orElseThrow` throws instead.
+      `map` transforms the value if it's there.
 
   - type: match
     prompt: Match each way of using an optional to its behaviour.
@@ -32,6 +34,13 @@ steps:
         right: The value, or a chosen exception
       - left: "`opt.map(String::length)`"
         right: An optional of the transformed value, if present
+
+  - type: explanation
+    title: Where Optional fits
+    body: |
+      Use it as a return type for "maybe no result".
+      Never return `null` from a method returning `Optional`.
+      Don't put optionals in collections or fields.
 
   - type: choice
     prompt: Which of these are good uses of `Optional`?

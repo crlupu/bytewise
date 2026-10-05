@@ -8,14 +8,10 @@ steps:
   - type: explanation
     title: Two big decisions
     body: |
-      Every style answers two questions:
-
-      - **Partitioning**: is the code split by *technical* role (presentation, business, persistence layers) or by
-        *domain* (orders, payments, catalogue)?
-      - **Deployment**: is it one deployable unit (**monolithic**) or many (**distributed**)?
-
-      A **layered** architecture is technically partitioned and monolithic. A **modular monolith** is domain-partitioned
-      but still one deployable. **Microservices** are domain-partitioned *and* distributed.
+      Partition by technical layer, or by business domain?
+      Deploy as one unit, or many?
+      Layered: layers, one unit.
+      Microservices: domains, many units.
 
   - type: match
     prompt: Match each style to its defining trait.
@@ -104,11 +100,10 @@ steps:
   - type: explanation
     title: The architecture quantum
     body: |
-      Richards and Ford's unit for this is the **architecture quantum**: an independently deployable artifact with high
-      functional cohesion, including whatever it needs synchronously — typically its database.
-
-      A monolith is one quantum, so it has **one** set of characteristics: the whole thing must be as scalable and as
-      available as its most demanding part. Microservices can have many quanta — each with characteristics of its own.
+      A quantum is an independently deployable part, with its data.
+      A monolith is one quantum, with one set of characteristics.
+      Services sharing one database are still one quantum.
+      Choose microservices when parts need different characteristics.
 
   - type: choice
     prompt: |

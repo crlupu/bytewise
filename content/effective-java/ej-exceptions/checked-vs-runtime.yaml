@@ -5,6 +5,13 @@ tags: [java, effective java, exceptions, checked exceptions, runtime exceptions,
 sources:
   - { book: effective-java, ref: "Item 70" }
 steps:
+  - type: explanation
+    title: Three kinds of throwable
+    body: |
+      Checked exceptions: the caller can recover.
+      Runtime exceptions: a programming error.
+      Errors: belong to the JVM. Don't create your own.
+
   - type: match
     prompt: Match each kind of throwable to when it's used.
     pairs:
@@ -14,6 +21,13 @@ steps:
         right: A programming error — a precondition violation
       - left: Error
         right: Reserved for the JVM — resource exhaustion, invariant failures
+
+  - type: explanation
+    title: Pick by who can act
+    body: |
+      A bad index is the caller's bug — unchecked.
+      Insufficient funds can be handled — checked.
+      Give exceptions methods that help recovery, like the shortfall.
 
   - type: choice
     prompt: Which is the right kind for each? "The array index was out of range."

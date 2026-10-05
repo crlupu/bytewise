@@ -6,10 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 62" }
 steps:
   - type: explanation
-    title: Stringly typed
+    title: Strings are for text
     body: |
-      Strings are designed to represent text. Because they're so convenient, they get used for everything else too —
-      and code becomes "stringly typed": slow, error-prone, and impossible for the compiler to check.
+      Strings are so handy that they get used for everything.
+      Numbers, flags, enums and keys end up as text.
+      The compiler can't check any of it.
+
+  - type: explanation
+    title: Use the right type
+    body: |
+      Numbers belong in numeric types.
+      Yes/no answers belong in a boolean or an enum.
+      Combined keys belong in a small record.
+      A string key can be guessed or reused by accident.
 
   - type: match
     prompt: Match each misuse of strings to the better type.

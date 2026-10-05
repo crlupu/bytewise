@@ -6,25 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 56" }
 steps:
   - type: explanation
-    title: Document the contract
+    title: Document every public element
     body: |
-      To document an API properly, precede **every exported** class, interface, constructor, method and field with a doc
-      comment. For a method, describe the contract with its client — **what** it does, not how:
+      Every exported class, method and field needs a doc comment.
+      Describe what a method does, not how.
+      Start with a one-sentence summary.
 
-      ```java
-      /**
-       * Returns the element at the specified position in this list.
-       *
-       * <p>This method is <i>not</i> guaranteed to run in constant time.
-       *
-       * @param  index index of element to return; must be
-       *         non-negative and less than the size of this list
-       * @return the element at the specified position in this list
-       * @throws IndexOutOfBoundsException if the index is out of range
-       *         ({@code index < 0 || index >= this.size()})
-       */
-      E get(int index);
-      ```
+  - type: explanation
+    title: Describe the contract
+    body: |
+      Preconditions: what must be true before a call.
+      Postconditions: what's true after.
+      Side effects, thread safety and exceptions.
 
   - type: match
     prompt: Match each tag to its purpose.

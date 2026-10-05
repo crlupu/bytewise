@@ -6,14 +6,23 @@ sources:
   - { book: jcip, ref: "§5.4, Blocking and Interruptible Methods" }
 steps:
   - type: explanation
-    title: Blocking methods
+    title: Blocking methods can be interrupted
     body: |
-      A thread may block — wait for I/O, for a lock, for `Thread.sleep` to end, for another thread's result. A method
-      that declares `throws InterruptedException` is a **blocking method**, and if it's interrupted it will try to stop
-      blocking early.
+      A method that throws `InterruptedException` may block.
+      Interrupting a thread asks it to stop waiting.
+      It's a request, not a command.
 
-      **Interruption** is cooperative: one thread can't force another to stop. It can only ask, by setting its interrupt
-      status; how the target responds is up to it.
+  - type: explanation
+    title: Never swallow an interrupt
+    body: |
+      Propagate `InterruptedException` if you can.
+      If you can't, restore the flag:
+
+      ```java
+      Thread.currentThread().interrupt();
+      ```
+
+      Catching the exception clears the flag otherwise.
 
   - type: choice
     prompt: Your code calls `queue.take()`, which throws `InterruptedException`. Which responses are acceptable?
@@ -43,6 +52,13 @@ steps:
         correct: true
       - text: It doesn't
         feedback: Methods that throw it clear the status first; that's why restoring it matters.
+
+  - type: explanation
+    title: Not everything is interruptible
+    body: |
+      `sleep`, `take` and `wait` respond to interrupts.
+      Waiting for a `synchronized` lock does not.
+      Neither does old-style socket I/O.
 
   - type: match
     prompt: Match each method to whether it responds to interruption.

@@ -6,17 +6,17 @@ sources:
   - { book: jcip, ref: "§5.1, Synchronized Collections" }
 steps:
   - type: explanation
-    title: Each call is safe; sequences aren't
+    title: Safe calls, unsafe sequences
     body: |
-      `Vector`, `Hashtable` and the `Collections.synchronizedXxx` wrappers make every public method synchronized.
-      Each call is atomic — but common **compound actions** made of several calls are not:
+      `Vector` and `Hashtable` synchronize each method.
+      But sequences of calls can still race:
 
       ```java
-      public static Object getLast(Vector list) {
+      static Object getLast(Vector list) {
           int lastIndex = list.size() - 1;
           return list.get(lastIndex);
       }
-      public static void deleteLast(Vector list) {
+      static void deleteLast(Vector list) {
           int lastIndex = list.size() - 1;
           list.remove(lastIndex);
       }
@@ -32,6 +32,12 @@ steps:
       - text: Nothing goes wrong — Vector is thread-safe
         feedback: Each method is; the pair of calls isn't.
 
+  - type: explanation
+    title: Lock the collection itself
+    body: |
+      Wrap compound actions in `synchronized (list)`.
+      That's the lock the collection's own methods use.
+
   - type: blank
     prompt: Make `getLast` atomic with client-side locking.
     template: |
@@ -45,10 +51,10 @@ steps:
   - type: explanation
     title: Iterators fail fast
     body: |
-      Iterating over a synchronized collection while another thread modifies it throws
-      `ConcurrentModificationException`: the iterator notices that the collection's modification count changed. It's
-      a best-effort warning, not a guarantee. Locking the collection for the whole loop prevents it — but holds the
-      lock for a long time. Cloning and iterating over the copy is the alternative.
+      Changing a collection during a loop throws `ConcurrentModificationException`.
+      Locking for the whole loop can take too long.
+      Copying first is the alternative.
+      Watch for hidden iteration, like `toString()`.
 
   - type: predict
     prompt: Where's the iteration in this code?

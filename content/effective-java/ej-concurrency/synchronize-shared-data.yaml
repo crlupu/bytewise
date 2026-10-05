@@ -5,6 +5,12 @@ tags: [java, effective java, concurrency, synchronized, volatile, atomic, visibi
 sources:
   - { book: effective-java, ref: "Item 78" }
 steps:
+  - type: explanation
+    title: Threads may never see your writes
+    body: |
+      Without synchronization, a write in one thread may stay invisible to another.
+      A loop waiting on a plain `boolean` flag might never stop.
+
   - type: predict
     prompt: How long does this program run?
     code: |
@@ -27,6 +33,14 @@ steps:
       - text: About one second
         feedback: Without synchronization, there's no guarantee the background thread ever sees the write — and the JIT may hoist the read out of the loop.
     explanation: "Fix it by synchronizing both the write *and* the read, or by declaring the field `volatile`."
+
+  - type: explanation
+    title: Synchronize reads and writes
+    body: |
+      Locking only the writer is not enough.
+      Both sides must use the same lock.
+      `volatile` gives visibility, but not atomicity.
+      So `count++` on a `volatile` is still a race.
 
   - type: choice
     prompt: The fix synchronizes the method that writes `stopRequested`, but not the one that reads it. Is that enough?
@@ -62,6 +76,13 @@ steps:
         right: Visibility only
       - left: "`AtomicLong`"
         right: Visibility and atomic read-modify-write on one variable
+
+  - type: explanation
+    title: "Better, don't share"
+    body: |
+      The simplest fix is to avoid shared mutable data.
+      Keep mutable data inside one thread.
+      Share only immutable objects.
 
   - type: choice
     prompt: What's the best way to avoid all these problems?

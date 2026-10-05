@@ -4,20 +4,18 @@ duration: 7
 tags: [java, strings, equality, interning, autoboxing]
 steps:
   - type: explanation
-    title: Two kinds of "equal"
+    title: Same object or same value?
     body: |
-      In Java, `==` on objects asks **"are these the same object?"** — it compares references.
-      `equals()` asks **"do these hold the same value?"** — whatever the class decides that means.
+      `==` asks: are these the same object?
+      `equals()` asks: do they hold the same value?
 
       ```java
       StringBuilder a = new StringBuilder("hi");
       StringBuilder b = new StringBuilder("hi");
-      a == b;        // false: two separate objects
-      a == a;        // true: the same object
+      a == b; // false: two separate objects
       ```
 
-      For strings, the difference is easy to miss, because `==` *sometimes* gives the answer you wanted.
-      Let's find out when.
+      With strings, `==` sometimes looks like it works.
 
   - type: predict
     prompt: What does this print?
@@ -63,24 +61,17 @@ steps:
       while `equals()` compares content and is `true`.
 
   - type: explanation
-    title: When the compiler joins strings for you
+    title: When the compiler joins strings
     body: |
-      Concatenating two **compile-time constants** is done by the compiler, so the result is a literal too —
-      and gets interned:
+      Constants joined at compile time become one shared literal.
 
       ```java
-      String s = "hel" + "lo";   // compiled as "hello"
-      ```
-
-      But if any part is only known at run time, the concatenation happens at run time and produces
-      a brand-new object:
-
-      ```java
+      String s = "hel" + "lo";   // the same object as "hello"
       String part = "hel";
-      String s = part + "lo";    // a new String, built while running
+      String t = part + "lo";    // a new object, built at run time
       ```
 
-      You can ask for the shared copy explicitly with `s.intern()`.
+      `intern()` returns the shared copy.
 
   - type: predict
     prompt: What does this print?
@@ -125,6 +116,13 @@ steps:
       Autoboxing calls `Integer.valueOf`, which returns cached objects for −128 to 127.
       127 hits the cache (same object); 128 doesn't (two objects). Compare boxed numbers with `equals()`,
       or unbox them first.
+
+  - type: explanation
+    title: Always compare with equals
+    body: |
+      `Integer` has the same trap: small values are cached, big ones aren't.
+      Compare values with `equals` or `Objects.equals`.
+      `Objects.equals` also handles `null`.
 
   - type: choice
     prompt: Which of these safely compare two `String` values by content?

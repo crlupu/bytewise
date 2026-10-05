@@ -6,13 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 13" }
 steps:
   - type: explanation
-    title: An odd interface
+    title: clone is a strange mechanism
     body: |
-      `Cloneable` has no methods. Implementing it changes the behaviour of a **protected** method in `Object`: `clone`
-      then returns a field-by-field copy instead of throwing `CloneNotSupportedException`. That's an unusual — and
-      fragile — use of an interface.
-
-      And field-by-field means **shallow**: references are copied, not the objects they point to.
+      `Cloneable` has no methods.
+      It just changes what `Object.clone` does.
+      The copy is shallow: references are shared, not copied.
 
   - type: predict
     prompt: "A `Stack` with an `Object[] elements` field overrides `clone` as just `return (Stack) super.clone();`. What's wrong?"
@@ -26,17 +24,17 @@ steps:
     explanation: The fix is `result.elements = elements.clone();` — and mutable fields must not be `final`, or you can't reassign them.
 
   - type: explanation
-    title: Copy constructors and factories
+    title: Prefer copy constructors
     body: |
-      A better way to copy:
+      A copy constructor or copy factory is plain Java.
 
       ```java
-      public Yum(Yum yum) { ... }                       // copy constructor
-      public static Yum newInstance(Yum yum) { ... }    // copy factory
+      public Yum(Yum yum) { ... }
       ```
 
-      They don't depend on a risky extralinguistic mechanism, don't conflict with `final` fields, throw no checked
-      exceptions, need no casts — and can take an interface type, like `new TreeSet<>(hashSet)`.
+      It works with `final` fields and needs no cast.
+      It can even convert types: `new TreeSet<>(hashSet)`.
+      For arrays, `clone()` is still the neatest way.
 
   - type: choice
     prompt: Which are advantages of copy constructors over `clone`?

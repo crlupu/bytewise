@@ -6,22 +6,12 @@ sources:
   - { book: effective-java, ref: "Item 21" }
 steps:
   - type: explanation
-    title: Adding to an interface
+    title: Default methods can surprise
     body: |
-      Before Java 8, adding a method to an interface broke every implementation. Default methods made it possible — the
-      new method gets a body every implementation inherits.
-
-      But the default is written without knowing the implementations. Java 8 added `removeIf` to `Collection`:
-
-      ```java
-      default boolean removeIf(Predicate<? super E> filter) {
-          boolean result = false;
-          for (Iterator<E> it = iterator(); it.hasNext(); ) {
-              if (filter.test(it.next())) { it.remove(); result = true; }
-          }
-          return result;
-      }
-      ```
+      Default methods let you add methods to an existing interface.
+      But the default is written without seeing the implementations.
+      `Collection.removeIf` doesn't know about a wrapper's lock.
+      So it can break a synchronized collection.
 
   - type: choice
     prompt: A synchronized collection wrapper locks a mutex in every method. What happens when someone calls the inherited `removeIf`?
@@ -33,6 +23,13 @@ steps:
       - text: It doesn't compile
         feedback: It compiles fine — that's what makes it dangerous.
     explanation: The default can't preserve invariants it didn't know existed. Apache Commons' `SynchronizedCollection` was a real victim.
+
+  - type: explanation
+    title: Get interfaces right first
+    body: |
+      After release, an interface is hard to change.
+      Write several implementations and clients before publishing.
+      Defaults are safest in brand-new interfaces.
 
   - type: choice
     prompt: What's the lesson for designing an interface?

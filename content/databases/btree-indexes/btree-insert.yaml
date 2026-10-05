@@ -6,18 +6,12 @@ sources:
   - { book: database-internals, ref: "Chapter 2, B-Tree Basics" }
 steps:
   - type: explanation
-    title: The rules
+    title: The B-tree rules
     body: |
-      A B-tree of **order *m*** keeps a few rules:
-
-      - every node holds at most *m* − 1 keys, in sorted order;
-      - a node with *k* keys has *k* + 1 children, and the keys separate their ranges;
-      - all leaves are on the same level.
-
-      New keys always go into a **leaf**. When a leaf would hold *m* keys, it **splits**: the middle key
-      moves up into the parent, and the keys either side become two nodes.
-
-      In the next steps the order is small, so splits come quickly.
+      A node of order m holds at most m − 1 sorted keys.
+      All leaves sit at the same depth.
+      New keys go into a leaf.
+      A full leaf splits, pushing its middle key up.
 
   - type: widget
     widget: btree
@@ -86,11 +80,10 @@ steps:
   - type: explanation
     title: Always balanced
     body: |
-      Because new levels only appear at the top, **every leaf stays at the same depth**. No insertion order
-      can make the tree lopsided.
-
-      Compare a plain binary search tree: insert keys in sorted order and it degenerates into a linked list,
-      with searches as slow as a scan. A B-tree's worst case is the same as its best case: one node per level.
+      New levels only appear at the top, when the root splits.
+      So every leaf stays at the same depth.
+      No insertion order can make it lopsided.
+      A search visits one node per level.
 
   - type: widget
     widget: btree

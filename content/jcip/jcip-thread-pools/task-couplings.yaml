@@ -6,15 +6,19 @@ sources:
   - { book: jcip, ref: "§8.1, Implicit Couplings Between Tasks and Execution Policies" }
 steps:
   - type: explanation
-    title: Not all tasks are interchangeable
+    title: Some tasks depend on the policy
     body: |
-      The Executor framework decouples submission from execution — but some tasks quietly depend on a particular
-      execution policy:
+      Tasks that wait for other tasks.
+      Tasks that rely on running on one thread.
+      Tasks that must respond quickly.
+      These all care how the pool runs them.
 
-      - **dependent tasks**, which wait for other tasks in the same pool;
-      - tasks that rely on **thread confinement**, and are only safe in a single-threaded executor;
-      - **response-time-sensitive** tasks, which suffer behind long-running ones;
-      - tasks that use **`ThreadLocal`**, which assume something about thread reuse.
+  - type: explanation
+    title: Pools can starve themselves
+    body: |
+      A task waits for another task in the same pool.
+      If every thread is waiting, nothing can run.
+      That's thread starvation deadlock.
 
   - type: widget
     widget: locks
@@ -41,6 +45,13 @@ steps:
         correct: true
       - text: Use a single-threaded executor
         feedback: That's the worst case — any dependent task deadlocks.
+
+  - type: explanation
+    title: Long tasks block short ones
+    body: |
+      A few slow tasks can occupy every thread.
+      Quick requests then wait behind them.
+      Separate long work into its own pool.
 
   - type: choice
     prompt: A pool mixes 50 ms requests with occasional 5-minute reports. What happens when several reports arrive at once?

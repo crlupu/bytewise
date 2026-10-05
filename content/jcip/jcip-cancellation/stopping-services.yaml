@@ -6,19 +6,19 @@ sources:
   - { book: jcip, ref: "§7.2, Stopping a Thread-based Service" }
 steps:
   - type: explanation
-    title: Ownership
+    title: Services own their threads
     body: |
-      Threads are owned by whoever created them — usually a service like a thread pool or a logging service. The
-      application owns the service, not its threads, so it can't stop them directly.
-
-      > Provide lifecycle methods whenever a thread-owning service has a lifetime longer than that of the method that created it.
+      Whoever creates a thread owns it.
+      Your app owns the service, not its threads.
+      So services need methods to start and stop them.
 
   - type: explanation
-    title: A logging service
+    title: Stopping a logger cleanly
     body: |
-      Log calls put messages on a queue; a background thread writes them out. To stop it, we must stop the writer
-      thread **and** stop new messages being queued — without losing messages already accepted, and without anyone
-      blocking forever in `put` on a full queue.
+      A logger queues messages; a background thread writes them.
+      Stopping it means: refuse new messages.
+      Finish the queued ones.
+      Don't leave anyone blocked on a full queue.
 
   - type: choice
     prompt: The stop method just interrupts the writer thread. What goes wrong?
@@ -30,13 +30,11 @@ steps:
     explanation: The fix is a shutdown flag plus a count of reservations, checked atomically when logging — or simply delegating to an `ExecutorService`.
 
   - type: explanation
-    title: Poison pills
+    title: Poison pills and shutdown
     body: |
-      For producer–consumer services, a **poison pill** is a recognisable object put on the queue that means "when you
-      get this, stop". FIFO ordering ensures the consumer finishes all earlier work first.
-
-      It works when the number of producers and consumers is known: each consumer needs one pill, and the consumer must
-      wait for one pill from each producer.
+      A poison pill is a special item that means "stop here".
+      Consumers finish everything before it.
+      Executors offer `shutdown()`, then `awaitTermination`, then `shutdownNow()`.
 
   - type: choice
     prompt: "`shutdownNow` returns the tasks that never started. What about tasks that were *running* when it was called?"

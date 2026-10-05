@@ -6,13 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 51" }
 steps:
   - type: explanation
-    title: A handful of rules
+    title: Small, clear signatures
     body: |
-      - **Choose names carefully**, following the conventions and staying consistent across the API.
-      - **Don't go overboard with convenience methods** — each one is something to document, test and maintain.
-      - **Avoid long parameter lists**: four or fewer. Long runs of identically typed parameters are especially harmful.
-      - **Prefer interfaces over classes for parameter types**: take a `Map`, not a `HashMap`.
-      - **Prefer two-element enums to `boolean` parameters**, unless the meaning is clear from the method name.
+      Choose names carefully and consistently.
+      Keep parameter lists to four or fewer.
+      Accept interfaces, like `Map`, not `HashMap`.
+
+  - type: explanation
+    title: Shortening parameter lists
+    body: |
+      Split one method into several simpler ones.
+      Group related parameters into a helper class.
+      Or use a builder.
 
   - type: match
     prompt: Match each technique for shortening a parameter list.
@@ -23,6 +28,13 @@ steps:
         right: A `Card` object instead of separate rank and suit
       - left: Use a builder for the method's parameters
         right: Set the parameters one by one, then call `execute()`
+
+  - type: explanation
+    title: Enums beat booleans
+    body: |
+      `newInstance(true)` says nothing.
+      `newInstance(TemperatureScale.CELSIUS)` explains itself.
+      And an enum can gain a third value later.
 
   - type: choice
     prompt: Which call is easier to read and extend?

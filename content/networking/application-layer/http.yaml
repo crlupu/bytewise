@@ -6,14 +6,11 @@ sources:
   - { book: kurose-ross, ref: "§2.2, The Web and HTTP" }
 steps:
   - type: explanation
-    title: Requests ride on TCP
+    title: Each connection costs a round trip
     body: |
-      HTTP is request–response: the client sends `GET /index.html`, the server replies with a status line,
-      headers and the body. Under it is a TCP connection — and setting one up costs a round trip (RTT) before
-      the request can even be sent.
-
-      So fetching one small object over a **new** connection takes about **2 RTTs**: one for the handshake, one
-      for the request and response.
+      HTTP is request and response, over TCP.
+      Opening a TCP connection takes one round trip.
+      So one object on a new connection takes about 2 RTTs.
 
   - type: predict
     prompt: |
@@ -43,6 +40,18 @@ steps:
       - One handshake, then one RTT per object.
     explanation: 1 RTT for the handshake + 11 request–response round trips = 12.
 
+  - type: explanation
+    title: Conditional requests
+    body: |
+      A cache can ask "has it changed?":
+
+      ```http
+      GET /logo.png HTTP/1.1
+      If-Modified-Since: Sat, 03 Oct 2026 09:00:00 GMT
+      ```
+
+      If not, the server replies `304 Not Modified`, with no body.
+
   - type: match
     prompt: Match each status code to its meaning.
     pairs:
@@ -58,17 +67,11 @@ steps:
         right: The server can't handle it right now — try later
 
   - type: explanation
-    title: Conditional GET
+    title: HTTP/2 and HTTP/3
     body: |
-      A cache — a browser's, or a proxy's — may hold a copy that might be stale. Instead of downloading it again, it asks:
-
-      ```http
-      GET /logo.png HTTP/1.1
-      If-Modified-Since: Sat, 03 Oct 2026 09:00:00 GMT
-      ```
-
-      (or `If-None-Match` with an `ETag`). If nothing changed, the server answers **304 Not Modified** with no body —
-      a round trip, but no download.
+      HTTP/1.1 sends one request at a time per connection.
+      HTTP/2 interleaves many streams on one connection.
+      HTTP/3 runs on QUIC, so one lost packet stalls only its stream.
 
   - type: choice
     prompt: HTTP/1.1 sends requests on a connection one at a time. A slow response blocks everything queued behind it. What did HTTP/2 change?

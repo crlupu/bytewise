@@ -5,6 +5,12 @@ tags: [java, effective java, defensive copy, immutability, security, date]
 sources:
   - { book: effective-java, ref: "Item 50" }
 steps:
+  - type: explanation
+    title: Callers can change your objects
+    body: |
+      A caller may keep a reference to a mutable object it passed in.
+      Later, it can change your internal state through it.
+
   - type: predict
     prompt: "`Period` stores the two `Date`s it was given in `private final` fields and checks `start` is before `end`. What does this print?"
     code: |
@@ -24,6 +30,14 @@ steps:
     hints:
       - "`final` stops the field pointing elsewhere. Does it stop the `Date` itself changing?"
     explanation: The caller changed the period's internals — and now `end` isn't after `start`, breaking the invariant.
+
+  - type: explanation
+    title: Copy in, copy out
+    body: |
+      Copy mutable parameters before checking them.
+      Return copies from getters.
+      Don't use `clone` on types that can be subclassed.
+      Better still, use immutable types like `Instant`.
 
   - type: order
     prompt: Put a defensive constructor's work in order.

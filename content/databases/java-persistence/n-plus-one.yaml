@@ -6,21 +6,18 @@ sources:
   - { book: hpjp, ref: "Part II, Fetching" }
 steps:
   - type: explanation
-    title: One query, then one per row
+    title: One query per row
     body: |
-      With JPA, a `Post` has many `PostComment`s. Load the posts, then touch each one's comments:
+      Comments are loaded lazily, on first use:
 
       ```java
       List<Post> posts = em.createQuery("select p from Post p", Post.class)
-                           .setMaxResults(50)
-                           .getResultList();
-      for (Post p : posts) {
+          .setMaxResults(50).getResultList();
+      for (Post p : posts)
           log(p.getTitle(), p.getComments().size());
-      }
       ```
 
-      The comments are **lazy**: Hibernate loads them only when first used. So the loop issues one more `SELECT`
-      for every post.
+      Each `getComments()` runs another query.
 
   - type: predict
     prompt: How many SQL queries does that code run, if there are 50 posts?
@@ -51,22 +48,11 @@ steps:
       integration tests.
 
   - type: explanation
-    title: Fetch what you need, in one go
+    title: Fetch what you need up front
     body: |
-      Tell the query up front that you need the comments:
-
-      ```java
-      select distinct p
-      from Post p
-      left join fetch p.comments
-      where p.id in :ids
-      ```
-
-      Other tools for the same job:
-
-      - an **entity graph** naming the associations to fetch for one use case;
-      - **batch fetching** (`@BatchSize` or `hibernate.default_batch_fetch_size`): load lazy collections for many parents with `IN (...)`;
-      - a **DTO projection**: select only the columns the screen shows, straight into a plain object.
+      `join fetch` loads posts and comments in one query.
+      Batch fetching loads many collections with one `IN (...)`.
+      A DTO projection selects just the needed columns.
 
   - type: match
     prompt: Match each fix to what it does.
@@ -79,6 +65,13 @@ steps:
         right: Selects just the needed columns into a read-only object
       - left: Entity graph
         right: Declares per use case which associations to load eagerly
+
+  - type: explanation
+    title: Lazy by default
+    body: |
+      Don't switch associations to `EAGER`.
+      Then every query pays for data it may not need.
+      Keep them lazy, and fetch per use case.
 
   - type: choice
     prompt: Should you fix N+1 by mapping the association as `FetchType.EAGER`?

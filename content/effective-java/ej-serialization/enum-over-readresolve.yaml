@@ -6,16 +6,21 @@ sources:
   - { book: effective-java, ref: "Item 89" }
 steps:
   - type: explanation
-    title: Deserialization makes new instances
+    title: Serializable singletons break
     body: |
-      Add `implements Serializable` to a singleton and it's no longer a singleton: every deserialization creates a new
-      instance. The classic fix is `readResolve`, which substitutes the real instance for the deserialized one:
+      Each deserialization creates a new instance.
+      `readResolve` swaps in the real one:
 
       ```java
-      private Object readResolve() {
-          return INSTANCE;   // the deserialized object becomes garbage
-      }
+      private Object readResolve() { return INSTANCE; }
       ```
+
+  - type: explanation
+    title: Use an enum
+    body: |
+      `readResolve` needs every reference field to be `transient`.
+      An enum singleton needs nothing.
+      Java guarantees there's only one.
 
   - type: choice
     prompt: "With `readResolve`, what else must hold for the singleton to be safe?"

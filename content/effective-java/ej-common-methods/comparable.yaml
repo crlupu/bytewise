@@ -6,14 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 14" }
 steps:
   - type: explanation
-    title: A natural ordering
+    title: compareTo defines a natural order
     body: |
-      Implementing `Comparable<T>` gives a class a **natural ordering**, and with it `Collections.sort`, `Arrays.binarySearch`,
-      `TreeSet` and `TreeMap` all just work.
-
-      `compareTo` returns a negative number, zero or a positive number as `this` is less than, equal to or greater than
-      the argument. Like `equals`, it must be antisymmetric and transitive — and it's strongly recommended that it be
-      **consistent with equals**: `compareTo` is 0 exactly when `equals` is true.
+      `Comparable` lets sorting, `TreeSet` and `TreeMap` just work.
+      `compareTo` returns negative, zero or positive.
+      It should agree with `equals`: zero exactly when equal.
 
   - type: predict
     prompt: |
@@ -26,6 +23,17 @@ steps:
       - text: Both 2
         feedback: TreeSet uses `compareTo`, which treats them as equal.
     explanation: HashSet uses `equals`; TreeSet uses `compareTo`. An ordering inconsistent with equals makes sorted collections behave differently.
+
+  - type: explanation
+    title: Compare without subtracting
+    body: |
+      `a - b` can overflow and flip the sign.
+      Use `Integer.compare(a, b)` instead.
+      Or build a comparator from parts:
+
+      ```java
+      comparingInt(PhoneNumber::areaCode).thenComparingInt(PhoneNumber::prefix)
+      ```
 
   - type: choice
     prompt: What's wrong with this comparator?

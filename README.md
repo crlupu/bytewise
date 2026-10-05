@@ -115,10 +115,17 @@ sources:                  # optional; ids from content/books.yaml
   - { book: jcip, ref: "Chapter 2, Thread Safety" }
 steps:                    # 5 to 15
   - type: explanation
-    title: Optional heading
+    title: One line, three steps   # the idea, as a heading
     body: |
-      Markdown, with fenced code blocks (highlighted), tables, images and inline SVG.
+      `count++` looks like one action.
+      The JVM does it in three: read, add one, write back.
+      A thread can be paused between any two.
 ```
+
+**Each lesson teaches 2–3 main ideas, one explanation slide per idea** — the build rejects
+a lesson with fewer or more. Put each slide just before the exercises that practise it.
+Write the body as a few short sentences, **one per line**; each line is shown as its own
+paragraph. A small code block, table or list is fine when an exercise needs it.
 
 Every exercise takes `prompt`, plus optional `explanation` (shown when right), `feedback`
 (shown when wrong and nothing more specific applies), `hints: [...]` (revealed one at a

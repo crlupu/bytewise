@@ -8,14 +8,13 @@ steps:
   - type: explanation
     title: Reordering is everywhere
     body: |
-      Compilers reorder instructions, processors execute out of order, caches delay writes. Within one thread, none of
-      it is visible — the JMM promises **within-thread as-if-serial** semantics. Between threads, all bets are off unless
-      the program uses synchronization.
+      Compilers, CPUs and caches reorder operations.
+      One thread can't tell. Other threads can.
 
       ```java
-      // Thread one       // Thread two
-      a = 1;              b = 1;
-      x = b;              y = a;
+      // Thread one     // Thread two
+      a = 1;            b = 1;
+      x = b;            y = a;
       ```
 
   - type: predict
@@ -28,11 +27,18 @@ steps:
     explanation: Every combination — (1, 0), (0, 1), (1, 1) and (0, 0) — is possible.
 
   - type: explanation
-    title: The happens-before rules
+    title: Happens-before
     body: |
-      The JMM defines a partial ordering called **happens-before**. If action A happens-before action B, then B is
-      guaranteed to see A's results. If two accesses to a variable aren't ordered by happens-before, and at least one is
-      a write, the program has a **data race**.
+      If A happens-before B, B sees everything A did.
+      Unordered reads and writes to one variable are a data race.
+
+  - type: explanation
+    title: The rules
+    body: |
+      Program order within a thread.
+      An unlock before the next lock of the same lock.
+      A volatile write before later reads.
+      Thread start and join. And it's transitive.
 
   - type: match
     prompt: Match each rule to what it orders.
@@ -49,16 +55,6 @@ steps:
         right: Every action in a thread happens-before another thread detects it ended, via `join` or `isAlive`
       - left: Transitivity
         right: If A happens-before B, and B before C, then A happens-before C
-
-  - type: explanation
-    title: Piggybacking
-    body: |
-      Transitivity lets you "piggyback" on another synchronization. `FutureTask` writes its result to an ordinary field,
-      then does a volatile/CAS write of its state. A thread calling `get` reads that state — so it's guaranteed to see the
-      result field too.
-
-      Library classes give the same guarantees: putting an object into a `BlockingQueue` happens-before taking it out;
-      a `countDown` happens-before the corresponding `await` returns.
 
   - type: blank
     prompt: Complete the definition.

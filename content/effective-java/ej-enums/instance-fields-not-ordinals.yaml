@@ -6,16 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 35" }
 steps:
   - type: explanation
-    title: Tempting, but fragile
+    title: ordinal is just a position
     body: |
-      Every enum constant has an `ordinal()` — its position in the declaration. It's tempting to use it:
-
-      ```java
-      public enum Ensemble {
-          SOLO, DUET, TRIO, QUARTET, QUINTET;
-          public int numberOfMusicians() { return ordinal() + 1; }
-      }
-      ```
+      `ordinal()` is a constant's position in the declaration.
+      Deriving meaning from it is fragile.
+      Reorder the constants, and the meaning changes.
 
   - type: choice
     prompt: What's wrong with deriving the number of musicians from the ordinal?
@@ -28,6 +23,17 @@ steps:
         correct: true
       - text: "`ordinal()` is slow"
         feedback: It's just a field read; the problem is meaning, not speed.
+
+  - type: explanation
+    title: Store values in fields
+    body: |
+      Give the enum a field, set in its constructor.
+
+      ```java
+      SOLO(1), DUET(2), OCTET(8);
+      ```
+
+      Leave `ordinal()` to `EnumSet` and `EnumMap`.
 
   - type: blank
     prompt: Store the value in a field instead.

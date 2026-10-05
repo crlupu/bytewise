@@ -6,17 +6,23 @@ sources:
   - { book: effective-java, ref: "Item 80" }
 steps:
   - type: explanation
-    title: The executor framework
+    title: Tasks, not threads
     body: |
-      Creating a work queue with threads by hand used to take pages of careful code. Now it's three lines:
+      A task is the work: a `Runnable` or `Callable`.
+      An executor decides how and when it runs.
 
       ```java
       ExecutorService exec = Executors.newSingleThreadExecutor();
-      exec.execute(runnable);
+      exec.execute(task);
       exec.shutdown();
       ```
 
-      The key abstraction is the **task** — a `Runnable` or a `Callable` — separate from the **mechanism** that runs it.
+  - type: explanation
+    title: Executors do the hard parts
+    body: |
+      You can wait for one task, any task, or all of them.
+      You can schedule tasks for later, or repeat them.
+      You can shut everything down cleanly.
 
   - type: match
     prompt: Match each need to the executor feature.
@@ -29,6 +35,13 @@ steps:
         right: "`ScheduledThreadPoolExecutor`"
       - left: Wait for the executor to terminate cleanly
         right: "`awaitTermination`"
+
+  - type: explanation
+    title: Choose the right pool
+    body: |
+      Under heavy load, use a fixed-size pool.
+      For divide-and-conquer work, use a fork-join pool.
+      Its idle threads steal tasks from busy ones.
 
   - type: choice
     prompt: Which pool suits a heavily loaded production server?

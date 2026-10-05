@@ -6,10 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 66" }
 steps:
   - type: explanation
-    title: Native methods
+    title: Native code is outside Java
     body: |
-      The Java Native Interface lets Java call methods written in C or C++. Historically they served three purposes:
-      access to platform-specific facilities, access to existing native libraries, and writing performance-critical code.
+      JNI lets Java call C or C++.
+      It was used for platform features, old libraries and speed.
+
+  - type: explanation
+    title: Rarely worth it now
+    body: |
+      The JVM is fast, so native code seldom helps.
+      Native bugs can crash the whole program.
+      It's platform-specific and hard to debug.
+      Use it for established native libraries only.
 
   - type: choice
     prompt: Is writing native code to speed up Java usually a good idea today?

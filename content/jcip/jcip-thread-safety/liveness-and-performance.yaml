@@ -6,12 +6,18 @@ sources:
   - { book: jcip, ref: "§2.5, Liveness and Performance" }
 steps:
   - type: explanation
-    title: Too coarse
+    title: Too much locking is slow
     body: |
-      The simplest way to fix the caching factorizer is to make `service` `synchronized`. It's correct — and terrible:
-      now only one request at a time can be served, even though factoring a number doesn't touch shared state at all.
+      Locking the whole request handler is correct.
+      But then only one request runs at a time.
+      Every other core sits idle.
 
-      Requests queue up behind each other; on a multiprocessor, all but one core sit idle.
+  - type: explanation
+    title: Lock only shared state
+    body: |
+      Take the lock just to read or update shared data.
+      Do the slow work without it.
+      But don't split locks so finely that overhead dominates.
 
   - type: order
     prompt: Put the narrow-locking version of the factorizer in order.
@@ -32,6 +38,12 @@ steps:
       - text: As large as possible, for safety
         feedback: Safe, but it can destroy concurrency.
     explanation: Simplicity, safety and performance pull in different directions; resist sacrificing simplicity prematurely.
+
+  - type: explanation
+    title: Never wait while holding a lock
+    body: |
+      Don't hold a lock during I/O or long computations.
+      If that call hangs, every thread needing the lock hangs too.
 
   - type: blank
     prompt: Complete the rule.

@@ -6,12 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 32" }
 steps:
   - type: explanation
-    title: A leaky abstraction
+    title: Generic varargs leak
     body: |
-      Calling a varargs method creates an array to hold the arguments. If the parameter type is generic —
-      `List<String>... lists` — that array has a non-reifiable element type, which is exactly what Java otherwise
-      forbids you to create. The compiler warns of possible **heap pollution**: a variable of a parameterized type
-      referring to an object that isn't of that type.
+      Varargs creates an array for the arguments.
+      With a generic type, that array can't be checked.
+      The compiler warns of heap pollution.
 
   - type: predict
     prompt: What happens?
@@ -30,6 +29,13 @@ steps:
         feedback: Only warnings — that's why it's dangerous.
       - text: It prints 42
     explanation: Storing into a generic varargs array is unsafe.
+
+  - type: explanation
+    title: "When it's safe"
+    body: |
+      Don't store anything into the varargs array.
+      Don't let the array escape the method.
+      Then mark the method `@SafeVarargs`.
 
   - type: choice
     prompt: When is a generic varargs method safe?

@@ -6,18 +6,13 @@ sources:
   - { book: jcip, ref: "§3.2, Publication and Escape" }
 steps:
   - type: explanation
-    title: Publishing an object
+    title: Publishing and escaping
     body: |
-      **Publishing** an object makes it available to code outside its current scope: storing a reference where others
-      can find it, returning it from a method, passing it to another class's method.
-
-      An object that's published when it shouldn't have been has **escaped**. Publishing one object can publish others too:
+      Publishing makes an object reachable by other code.
+      An object that's published by mistake has escaped.
 
       ```java
-      class UnsafeStates {
-          private String[] states = { "AK", "AL", ... };
-          public String[] getStates() { return states; }   // the private array escapes
-      }
+      public String[] getStates() { return states; } // private array escapes
       ```
 
   - type: choice
@@ -29,20 +24,12 @@ steps:
         feedback: "Private stops code naming the field. It doesn't stop code holding a reference from changing the array."
 
   - type: explanation
-    title: Letting this escape during construction
+    title: "Don't let this escape"
     body: |
-      ```java
-      public class ThisEscape {
-          public ThisEscape(EventSource source) {
-              source.registerListener(new EventListener() {
-                  public void onEvent(Event e) { doSomething(e); }
-              });
-          }
-      }
-      ```
-
-      The anonymous inner class holds a hidden reference to the enclosing `ThisEscape`. Registering it publishes `this`
-      before the constructor has finished.
+      A constructor that registers a listener publishes `this` early.
+      Other threads may use a half-built object.
+      Construct first, then register, in a factory method.
+      Creating a thread in a constructor is fine. Starting it isn't.
 
   - type: choice
     prompt: Why is publishing `this` from a constructor dangerous?

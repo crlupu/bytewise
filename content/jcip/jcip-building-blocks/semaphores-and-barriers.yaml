@@ -6,28 +6,18 @@ sources:
   - { book: jcip, ref: "§5.5.3–5.5.4, Semaphores and Barriers" }
 steps:
   - type: explanation
-    title: Counting semaphores
+    title: Semaphores hand out permits
     body: |
-      A `Semaphore` manages a set of virtual **permits**. `acquire()` takes one, blocking until one is free; `release()`
-      returns one. A semaphore with N permits lets at most N threads through at a time.
+      `acquire()` takes a permit, waiting if none are left.
+      `release()` gives one back.
+      This set allows at most `bound` elements:
 
       ```java
-      public class BoundedHashSet<T> {
-          private final Set<T> set = Collections.synchronizedSet(new HashSet<>());
-          private final Semaphore sem;
-          public BoundedHashSet(int bound) { sem = new Semaphore(bound); }
-
-          public boolean add(T o) throws InterruptedException {
-              sem.acquire();
-              boolean wasAdded = false;
-              try { wasAdded = set.add(o); return wasAdded; }
-              finally { if (!wasAdded) sem.release(); }
-          }
-          public boolean remove(Object o) {
-              boolean wasRemoved = set.remove(o);
-              if (wasRemoved) sem.release();
-              return wasRemoved;
-          }
+      public boolean add(T o) throws InterruptedException {
+          sem.acquire();
+          boolean wasAdded = false;
+          try { wasAdded = set.add(o); return wasAdded; }
+          finally { if (!wasAdded) sem.release(); }
       }
       ```
 
@@ -49,13 +39,11 @@ steps:
     explanation: Unlike intrinsic locks, a semaphore permit isn't tied to a thread — any thread can release it.
 
   - type: explanation
-    title: Barriers
+    title: Barriers wait for each other
     body: |
-      A **barrier** is like a latch, except that it waits for **other threads** rather than for an event. `CyclicBarrier`
-      makes a fixed number of threads meet at a point: each calls `await()`, and when the last one arrives, all are
-      released — and the barrier resets for the next round.
-
-      Simulations use it: each thread computes its part of one step, waits at the barrier, then all start the next step.
+      A barrier waits for a group of threads to arrive.
+      When the last one comes, all go on together.
+      `CyclicBarrier` then resets for the next round.
 
   - type: match
     prompt: Match each synchronizer to its job.

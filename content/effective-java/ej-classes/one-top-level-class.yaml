@@ -6,21 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 25" }
 steps:
   - type: explanation
-    title: Two files, same classes
+    title: One file can hold several classes
     body: |
-      The compiler allows several top-level classes in one source file. Suppose:
+      Java allows several top-level classes in one source file.
+      Two files might then define the same classes differently.
 
       ```java
       // Utensil.java
       class Utensil { static final String NAME = "pan"; }
       class Dessert { static final String NAME = "cake"; }
-
-      // Dessert.java
-      class Utensil { static final String NAME = "pot"; }
-      class Dessert { static final String NAME = "pie"; }
       ```
 
-      and `Main` prints `Utensil.NAME + Dessert.NAME`.
+      `Dessert.java` defines both again, as "pot" and "pie".
 
   - type: predict
     prompt: You compile with `javac Main.java Utensil.java`. What does `Main` print?
@@ -34,6 +31,14 @@ steps:
     hints:
       - When `Main` refers to `Utensil`, the compiler finds `Utensil.java`, which defines both classes.
     explanation: "`pancake`. With `javac Main.java Dessert.java`, compilation fails with duplicate classes; with `javac Dessert.java Main.java`, it prints `potpie`."
+
+  - type: explanation
+    title: Behaviour depends on compile order
+    body: |
+      Which definition wins depends on the order files are compiled.
+      That's a fragile, confusing program.
+      Keep one top-level class per file.
+      Classes that belong together can be static nested classes.
 
   - type: choice
     prompt: What's the real problem?

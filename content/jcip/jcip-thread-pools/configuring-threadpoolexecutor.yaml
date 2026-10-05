@@ -6,19 +6,12 @@ sources:
   - { book: jcip, ref: "§8.3, Configuring ThreadPoolExecutor" }
 steps:
   - type: explanation
-    title: The general constructor
+    title: "ThreadPoolExecutor's knobs"
     body: |
-      The `Executors` factories are shortcuts for `ThreadPoolExecutor`. Its full constructor exposes every knob:
-
-      ```java
-      new ThreadPoolExecutor(
-          corePoolSize, maximumPoolSize,
-          keepAliveTime, TimeUnit.SECONDS,
-          new ArrayBlockingQueue<>(capacity),       // work queue
-          threadFactory,
-          new ThreadPoolExecutor.CallerRunsPolicy() // saturation policy
-      );
-      ```
+      Core size: threads kept even when idle.
+      Maximum size: the upper limit.
+      Keep-alive: when extra idle threads retire.
+      Work queue: where tasks wait.
 
   - type: match
     prompt: Match each parameter to what it controls.
@@ -32,6 +25,12 @@ steps:
       - left: Work queue
         right: Where tasks wait when all threads are busy
 
+  - type: explanation
+    title: Extra threads need a full queue
+    body: |
+      The pool grows past the core size only when the queue is full.
+      An unbounded queue is never full.
+
   - type: predict
     prompt: |
       Core size 2, maximum size 10, and an **unbounded** `LinkedBlockingQueue`. 100 slow tasks arrive at once. How many
@@ -42,6 +41,13 @@ steps:
       - text: Ten
         feedback: Extra threads beyond the core are only created when the queue is **full** — and an unbounded queue never is.
     explanation: A common configuration surprise. With an unbounded queue, the maximum pool size has no effect.
+
+  - type: explanation
+    title: When the queue fills up
+    body: |
+      A saturation policy decides what happens next.
+      Abort, discard, or run it in the caller.
+      Caller-runs slows the submitter, pushing back on load.
 
   - type: match
     prompt: The bounded queue is full. Match each saturation policy to what it does.

@@ -6,21 +6,17 @@ sources:
   - { book: jcip, ref: "§4.2, Instance Confinement" }
 steps:
   - type: explanation
-    title: Confine, then lock
+    title: Hide unsafe objects inside safe ones
     body: |
-      A non-thread-safe object can still be used safely if it's **confined** inside another object and every access goes
-      through code holding the right lock:
+      A plain `HashSet` isn't thread-safe.
+      Keep it private and access it only under a lock.
 
       ```java
-      @ThreadSafe
-      public class PersonSet {
-          @GuardedBy("this") private final Set<Person> mySet = new HashSet<>();
-          public synchronized void addPerson(Person p) { mySet.add(p); }
-          public synchronized boolean containsPerson(Person p) { return mySet.contains(p); }
-      }
+      private final Set<Person> mySet = new HashSet<>();
+      public synchronized void addPerson(Person p) { mySet.add(p); }
       ```
 
-      The `HashSet` isn't thread-safe, but it never escapes, and both paths to it are synchronized.
+      As long as it never escapes, the class is safe.
 
   - type: choice
     prompt: What would break `PersonSet`'s thread safety?
@@ -35,16 +31,10 @@ steps:
   - type: explanation
     title: The Java monitor pattern
     body: |
-      An object following the **Java monitor pattern** encapsulates all its mutable state and guards it with its own
-      intrinsic lock — `Vector` and `Hashtable` work this way.
-
-      The lock doesn't have to be `this`. A **private lock** works just as well and has an advantage:
-
-      ```java
-      private final Object myLock = new Object();
-      @GuardedBy("myLock") Widget widget;
-      void someMethod() { synchronized (myLock) { ... } }
-      ```
+      Keep all mutable state private.
+      Guard it with one lock.
+      A private lock object works best.
+      Outside code can't grab it by mistake.
 
   - type: choice
     prompt: Why might a private lock be better than `this`?

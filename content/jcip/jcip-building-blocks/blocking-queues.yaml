@@ -6,16 +6,22 @@ sources:
   - { book: jcip, ref: "§5.3, Blocking Queues and the Producer-consumer Pattern" }
 steps:
   - type: explanation
-    title: Put and take
+    title: Producers and consumers
     body: |
-      A `BlockingQueue` adds blocking `put` and `take`: `put` waits if the queue is full, `take` waits if it's empty.
-      That's exactly what the **producer–consumer** pattern needs. Producers put work in without knowing who'll handle it;
-      consumers take it out without knowing where it came from.
+      `put` waits when the queue is full.
+      `take` waits when it's empty.
+      Producers and consumers never need to know each other.
 
       ```java
       BlockingQueue<File> queue = new LinkedBlockingQueue<>(BOUND);
-      // producer: queue.put(file);   consumer: File f = queue.take();
       ```
+
+  - type: explanation
+    title: Bounded queues push back
+    body: |
+      A full bounded queue makes producers wait.
+      That slows them to the consumers' pace.
+      Handing an object through a queue also hands over ownership.
 
   - type: choice
     prompt: Producers suddenly generate work much faster than consumers can handle. What does a **bounded** queue do?
@@ -47,9 +53,9 @@ steps:
   - type: explanation
     title: Deques and work stealing
     body: |
-      `Deque` and `BlockingDeque` allow insertion and removal at both ends. They enable **work stealing**: each consumer
-      has its own deque, and when it runs out of work it steals from the **tail** of someone else's. Workers rarely
-      contend for one shared queue — which is why fork-join pools use this design.
+      A deque can be used from both ends.
+      Each worker has its own.
+      An idle worker steals from the tail of another's.
 
   - type: blank
     prompt: The queue method that blocks when the queue is empty.

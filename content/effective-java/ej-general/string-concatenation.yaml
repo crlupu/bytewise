@@ -6,18 +6,16 @@ sources:
   - { book: effective-java, ref: "Item 63" }
 steps:
   - type: explanation
-    title: Quadratic time
+    title: += in a loop is quadratic
     body: |
-      ```java
-      public String statement() {
-          String result = "";
-          for (int i = 0; i < numItems(); i++)
-              result += lineForItem(i);
-          return result;
-      }
-      ```
+      Strings are immutable.
+      Each `+=` copies everything built so far.
 
-      Strings are immutable, so each `+=` copies everything built so far into a new string.
+      ```java
+      String result = "";
+      for (int i = 0; i < numItems(); i++)
+          result += lineForItem(i);
+      ```
 
   - type: predict
     prompt: The number of items doubles. Roughly how much longer does `statement()` take?
@@ -28,6 +26,13 @@ steps:
         feedback: Each step copies all previous characters, so total work grows with the *square* of n.
       - text: The same
     explanation: Concatenating n strings with `+` takes time quadratic in n.
+
+  - type: explanation
+    title: Use a StringBuilder
+    body: |
+      `StringBuilder` grows in place.
+      Append in the loop, then call `toString()` once.
+      A few `+` in one statement are fine.
 
   - type: blank
     prompt: The linear-time version.

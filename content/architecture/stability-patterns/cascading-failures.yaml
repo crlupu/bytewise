@@ -6,14 +6,11 @@ sources:
   - { book: release-it, ref: "Chapter 4, Stability Antipatterns" }
 steps:
   - type: explanation
-    title: Integration points
+    title: Slow is worse than down
     body: |
-      Every call to another system — a database, a payment provider, another team's service — is an **integration point**,
-      and Nygard counts them as the number-one killer of systems. Each one can fail in many ways: refuse connections,
-      return errors, return garbage… or simply **never answer**.
-
-      The last is the worst. A dependency that's *down* fails fast. A dependency that's *slow* holds your resources
-      while you wait.
+      Every call to another system is an integration point.
+      A dead dependency fails fast.
+      A slow one holds your threads while you wait.
 
   - type: predict
     prompt: |
@@ -34,6 +31,14 @@ steps:
     explanation: |
       200 ÷ 20 = 10 seconds. After that, your service can't answer *anything* — even requests that never touch the
       broken dependency. Your callers then start waiting on you.
+
+  - type: explanation
+    title: Failures cascade
+    body: |
+      Your threads block on the slow dependency.
+      Your pool runs out, and you stop answering.
+      Then your callers block on you.
+      A timeout breaks the chain.
 
   - type: order
     prompt: Put the steps of a cascading failure in order.

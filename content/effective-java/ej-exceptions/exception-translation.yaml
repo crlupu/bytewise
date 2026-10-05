@@ -6,20 +6,24 @@ sources:
   - { book: effective-java, ref: "Item 73" }
 steps:
   - type: explanation
-    title: Leaky exceptions
+    title: Low-level exceptions leak details
     body: |
-      A method that propagates a low-level exception — a `SQLException` from a `UserRepository.findByName`, say — exposes
-      implementation details and pollutes the API: switch storage and the exceptions change, breaking clients.
+      A `SQLException` from `findUser` reveals how you store users.
+      Change the storage, and callers break.
 
-      **Exception translation**: catch it and throw one that fits your abstraction.
+  - type: explanation
+    title: Translate, and chain the cause
+    body: |
+      Catch the low-level exception.
+      Throw one that fits your level, passing the original as its cause.
 
       ```java
-      try {
-          ... // use lower-level abstraction
-      } catch (LowerLevelException e) {
-          throw new HigherLevelException(..., e);   // chaining
+      catch (LowerLevelException e) {
+          throw new HigherLevelException("...", e);
       }
       ```
+
+      Better still, avoid the failure in the first place.
 
   - type: blank
     prompt: Chain the cause so it isn't lost.

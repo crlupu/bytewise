@@ -6,15 +6,18 @@ sources:
   - { book: jcip, ref: "§15.1–15.2, Disadvantages of Locking; Hardware Support for Concurrency" }
 steps:
   - type: explanation
-    title: Locking is pessimistic
+    title: Locks are pessimistic
     body: |
-      A lock assumes the worst: another thread might interfere, so keep it out. When a thread can't get the lock it's
-      suspended, and resuming it costs context switches. A thread holding a lock that gets delayed — page fault,
-      preemption — delays everyone waiting.
+      A lock assumes interference, and keeps others out.
+      Blocked threads cost context switches.
+      A delayed lock holder delays everyone.
 
-      Modern processors offer an **optimistic** alternative: **compare-and-swap** (CAS). "Set this variable to *new*,
-      but only if it still holds *expected*; tell me whether it worked." If another thread got there first, nothing is
-      changed and you can retry.
+  - type: explanation
+    title: Compare-and-swap is optimistic
+    body: |
+      CAS says: set it to the new value, if it still holds the old one.
+      If another thread changed it, nothing happens.
+      Then you read again and retry.
 
   - type: widget
     widget: threads
@@ -43,6 +46,12 @@ steps:
       } while (!value.[[compareAndSet]](v, v + 1));
     code: true
     explanation: That's essentially what `incrementAndGet()` does for you.
+
+  - type: explanation
+    title: CAS usually wins
+    body: |
+      Failed CAS attempts retry instead of sleeping.
+      At realistic contention, that beats locking.
 
   - type: choice
     prompt: Under heavy contention, many threads CAS the same variable and most fail. Is that worse than locking?

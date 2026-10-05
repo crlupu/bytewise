@@ -5,6 +5,12 @@ tags: [java, effective java, for-each, iterators, loops]
 sources:
   - { book: effective-java, ref: "Item 58" }
 steps:
+  - type: explanation
+    title: Index loops invite mistakes
+    body: |
+      Iterators and indexes add variables you can misuse.
+      Calling `next()` in the wrong loop is a classic bug.
+
   - type: predict
     prompt: "`Face` is an enum with 6 values. How many lines does this print?"
     code: |
@@ -24,6 +30,13 @@ steps:
       - How many times is `i.next()` called per pass of the inner loop?
     explanation: It prints only the six "doubles" (ONE ONE … SIX SIX) — `i` advances along with `j`. With unequal collections, it would throw `NoSuchElementException`.
 
+  - type: explanation
+    title: for-each hides the iterator
+    body: |
+      `for (Face f : faces)` has nothing to get wrong.
+      It works on arrays and anything `Iterable`.
+      It's just as fast as an indexed loop.
+
   - type: blank
     prompt: The for-each version, which can't make that mistake.
     template: |
@@ -31,6 +44,13 @@ steps:
           for (Face f2 : faces)
               System.out.println(f1 + " " + f2);
     code: true
+
+  - type: explanation
+    title: "When you can't use it"
+    body: |
+      Removing elements while looping: use `removeIf`.
+      Replacing elements: use an index or list iterator.
+      Walking two collections together: use explicit iterators.
 
   - type: match
     prompt: Where can't you use for-each? Match each case to its alternative.

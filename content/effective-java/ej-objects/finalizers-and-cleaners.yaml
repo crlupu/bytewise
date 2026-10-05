@@ -6,11 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 8" }
 steps:
   - type: explanation
-    title: Not destructors
+    title: Finalizers are not destructors
     body: |
-      C++ destructors run at a predictable moment. Java's **finalizers** (`Object.finalize`, deprecated since Java 9 and
-      deprecated for removal since Java 18) and their replacement **cleaners** (`java.lang.ref.Cleaner`) do not:
-      they run whenever the garbage collector gets round to it — possibly never.
+      Finalizers and cleaners run when the garbage collector gets round to it.
+      That might be late. It might be never.
+      They are also slow, and they swallow exceptions.
 
   - type: choice
     prompt: Which are real problems with finalizers?
@@ -24,6 +24,13 @@ steps:
       - text: They run immediately when the last reference disappears
         feedback: That's the misconception. Timing depends entirely on the GC.
     explanation: They also open a security hole — a malicious subclass's finalizer can resurrect a half-constructed object.
+
+  - type: explanation
+    title: Close resources explicitly
+    body: |
+      Make the class implement `AutoCloseable`.
+      Clients call `close()`, usually through try-with-resources.
+      A cleaner is only a safety net, for when someone forgets.
 
   - type: choice
     prompt: A class holds an open file. What's the right way to release it?

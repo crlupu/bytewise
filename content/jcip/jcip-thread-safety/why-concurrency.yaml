@@ -6,18 +6,19 @@ sources:
   - { book: jcip, ref: "Chapter 1, Introduction" }
 steps:
   - type: explanation
-    title: Threads are everywhere
+    title: Your code is already concurrent
     body: |
-      Even if you never call `new Thread()`, your code is probably concurrent. Servlet containers, RMI, timers, GUI
-      frameworks and message listeners all call your code from threads they manage — so any state your code touches
-      may be reached by more than one thread at once.
+      Servlets, timers and GUI frameworks call your code from their own threads.
+      So any state you touch may be reached by several threads at once.
 
-      Threads exist for good reasons:
-
-      - **Exploiting multiple processors** — a single-threaded program uses one core out of many.
-      - **Simpler modelling** — one thread per independent activity can be clearer than one thread juggling them all.
-      - **Simpler handling of asynchronous events** — a thread can block on I/O without stopping everything else.
-      - **More responsive user interfaces** — long work moves off the event thread.
+  - type: explanation
+    title: Threads help, and threads hurt
+    body: |
+      Threads use every CPU core and keep UIs responsive.
+      But they bring three risks.
+      Safety: wrong results.
+      Liveness: something never happens.
+      Performance: everything gets slow.
 
   - type: match
     prompt: Match each kind of risk to what goes wrong.
@@ -37,6 +38,13 @@ steps:
       - text: One — each servlet runs on its own thread
         feedback: The container shares one servlet instance between all request threads.
     explanation: That's why a servlet's fields are shared mutable state, and why frameworks make your code concurrent whether you planned it or not.
+
+  - type: explanation
+    title: Concurrency bugs hide
+    body: |
+      They depend on exact timing.
+      They appear rarely, and often only under real load.
+      That's why they're so costly.
 
   - type: choice
     prompt: Which is the real reason concurrency bugs are so costly?

@@ -6,17 +6,14 @@ sources:
   - { book: jcip, ref: "§3.1.4, Volatile Variables" }
 steps:
   - type: explanation
-    title: What volatile does
+    title: volatile means always fresh
     body: |
-      Declaring a field `volatile` tells the compiler and runtime that it's shared: it isn't cached where other
-      processors can't see it, and operations on it aren't reordered with other memory operations.
-
-      A read of a volatile variable always returns the most recent write by any thread. And everything a thread did
-      **before** writing a volatile becomes visible to the thread that later reads it.
+      A `volatile` field is never cached out of sight.
+      Every read sees the latest write.
+      Writes before it become visible too.
 
       ```java
       volatile boolean asleep;
-      ...
       while (!asleep) countSomeSheep();
       ```
 
@@ -31,6 +28,13 @@ steps:
         feedback: Every read is fresh, but the read-add-write is still three steps that can interleave.
       - text: An invariant over two variables
         feedback: Volatile can't make updates to two variables atomic together.
+
+  - type: explanation
+    title: Visible, but not atomic
+    body: |
+      `count++` on a `volatile` still races.
+      Use `volatile` for simple flags and published references.
+      Use locks or atomics for read-modify-write.
 
   - type: widget
     widget: threads

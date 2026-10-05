@@ -6,15 +6,11 @@ sources:
   - { book: jcip, ref: "§2.4, Guarding State with Locks" }
 steps:
   - type: explanation
-    title: One variable, one lock, every access
+    title: Same lock, every access
     body: |
-      Locks only protect state if they're used consistently:
-
-      > For each mutable state variable that may be accessed by more than one thread, **all** accesses to that variable
-      > must be performed with the **same** lock held.
-
-      Then the variable is said to be **guarded by** that lock. Synchronizing only the writes isn't enough — reads need
-      the lock too, both to see a consistent value and to see the latest one.
+      Each shared mutable variable needs one lock.
+      Every read and every write must hold that lock.
+      Locking only the writes isn't enough.
 
   - type: predict
     prompt: |
@@ -45,6 +41,13 @@ steps:
       The invariant "`lastFactors` are the factors of `lastNumber`" spans both fields.
       **To preserve state consistency, update related state variables in a single atomic operation.**
 
+  - type: explanation
+    title: Invariants need one lock
+    body: |
+      Some variables must stay consistent with each other.
+      Guard all of them with the same lock.
+      Two separately safe fields can still be inconsistent together.
+
   - type: blank
     prompt: Complete the rule for invariants.
     template: "For every invariant that involves more than one variable, all the variables in it must be guarded by the [[same]] lock."
@@ -57,6 +60,13 @@ steps:
       - text: Yes, always
         feedback: "`if (!vector.contains(e)) vector.add(e);` is a race even though both methods are synchronized."
     explanation: It may also hurt performance badly. Synchronization has to match the operations that must be atomic.
+
+  - type: explanation
+    title: Locks are agreements
+    body: |
+      Holding a lock doesn't block access to fields.
+      It only blocks others taking the same lock.
+      Document the rule with `@GuardedBy`.
 
   - type: match
     prompt: Match each practice to its purpose.

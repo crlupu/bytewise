@@ -6,13 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 45" }
 steps:
   - type: explanation
-    title: Pipelines
+    title: How a pipeline works
     body: |
-      A stream pipeline is a **source**, zero or more **intermediate operations** (`map`, `filter`, `sorted`…), and one
-      **terminal operation** (`collect`, `count`, `forEach`…). Pipelines are evaluated **lazily**: nothing happens until
-      the terminal operation runs.
-
-      Streams are good at some things and bad at others. Overused, they produce code that's hard to read and maintain.
+      A source, then intermediate steps like `map` and `filter`.
+      Then one terminal step, like `collect`.
+      Nothing runs until the terminal step.
 
   - type: predict
     prompt: What does this print?
@@ -27,6 +25,13 @@ steps:
       - text: It doesn't compile
     explanation: Fix it with `forEach(x -> System.out.print((char) x))` — or, better, avoid streams for processing `char` values.
 
+  - type: explanation
+    title: "Streams can't do everything"
+    body: |
+      A lambda can't change local variables.
+      It can't `return`, `break` or `continue` an outer loop.
+      It can't throw checked exceptions.
+
   - type: choice
     prompt: Which of these can a code block do, but a lambda in a stream can't?
     options:
@@ -38,6 +43,13 @@ steps:
         correct: true
       - text: Transform each element
         feedback: That's exactly what streams are good at.
+
+  - type: explanation
+    title: Use them where they shine
+    body: |
+      Streams are great for transforming, filtering and grouping.
+      Complex loops with early exits read better as loops.
+      Name lambda parameters carefully.
 
   - type: match
     prompt: Streams are a good fit when you want to…

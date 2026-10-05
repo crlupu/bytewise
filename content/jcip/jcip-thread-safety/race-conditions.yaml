@@ -8,7 +8,7 @@ steps:
   - type: explanation
     title: One line, three steps
     body: |
-      Here is a counter that several threads share:
+      Several threads share this counter:
 
       ```java
       class Counter {
@@ -17,13 +17,8 @@ steps:
       }
       ```
 
-      `count++` looks like one action. The JVM actually carries it out as three:
-
-      1. **read** `count` into a temporary (a register),
-      2. **add** one to the temporary,
-      3. **write** the temporary back to `count`.
-
-      A thread can be paused between any two of those steps — and another thread can run in the gap.
+      `count++` is really three steps: read, add one, write back.
+      A thread can be paused between any two.
 
   - type: order
     prompt: Put the steps of `count++` in the order a thread performs them.
@@ -86,16 +81,10 @@ steps:
   - type: explanation
     title: Race conditions
     body: |
-      When the result depends on the **timing** of threads, that's a **race condition**. The section of
-      code that must not be interleaved — here, the read-add-write — is a **critical section**.
-
-      Races are hard to catch in testing:
-
-      - the bad interleaving needs a thread switch at exactly the wrong instruction;
-      - on a quiet machine that may happen once in a million runs;
-      - adding a `println` to debug it changes the timing and hides it.
-
-      So we don't test our way out of races; we design them out.
+      When the result depends on timing, it's a race condition.
+      Code that must not interleave is a critical section.
+      Races are rare and hard to reproduce in tests.
+      So design them out instead.
 
   - type: choice
     prompt: Which of these make `increment()` safe for many threads?
@@ -131,6 +120,13 @@ steps:
     template: "`count++` is a read-[[modify]]-write sequence, so it is not [[atomic]]."
     hints:
       - The middle step changes the value.
+
+  - type: explanation
+    title: Check-then-act races too
+    body: |
+      "If it's null, create it" is two steps.
+      Two threads can both see `null`.
+      Then both create an object.
 
   - type: choice
     prompt: Two threads call `getInstance()` at the same moment on an object that's not yet created. What can happen?

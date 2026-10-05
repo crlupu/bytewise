@@ -6,16 +6,12 @@ sources:
   - { book: kurose-ross, ref: "§3.7, TCP Congestion Control" }
 steps:
   - type: explanation
-    title: Two kinds of loss signal
+    title: Two loss signals
     body: |
-      A sender learns of a loss in one of two ways:
-
-      - **Timeout** — no ACK arrives at all. Serious: maybe nothing is getting through.
-      - **Three duplicate ACKs** — the receiver keeps acknowledging the same byte because one segment is missing but
-        later ones are arriving. Milder: the network is still delivering. The sender resends the missing segment at
-        once (**fast retransmit**) rather than waiting for a timeout.
-
-      Either way, `ssthresh` becomes **half** the current window.
+      A timeout: nothing is getting through. Serious.
+      Three duplicate ACKs: one segment is missing, others arrive. Milder.
+      The missing segment is resent at once: fast retransmit.
+      Either way, `ssthresh` becomes half the window.
 
   - type: widget
     widget: congestion
@@ -63,6 +59,13 @@ steps:
           feedback: It halved ssthresh — the window itself went all the way down.
     explanation: Tahoe treats every loss like a timeout. Reno distinguishes the milder signal and recovers faster.
 
+  - type: explanation
+    title: Reno versus Tahoe
+    body: |
+      Tahoe drops the window to 1 on any loss.
+      Reno halves it on duplicate ACKs: fast recovery.
+      Both drop to 1 on a timeout.
+
   - type: match
     prompt: Match each event to what Reno does.
     pairs:
@@ -76,13 +79,11 @@ steps:
         right: ssthresh halves; window drops to 1; slow start again
 
   - type: explanation
-    title: Additive increase, multiplicative decrease
+    title: AIMD is fair
     body: |
-      Ignore slow start, and steady-state Reno does two things: **add one** segment per RTT while all is well, and
-      **halve** the window on loss. That's **AIMD**, and it draws TCP's signature **sawtooth**.
-
-      AIMD has a remarkable property: two connections sharing a bottleneck converge towards an **equal share** of it.
-      Each adds the same amount; but halving takes more from the one with the bigger window.
+      Add one segment per round trip. Halve on loss.
+      This draws TCP's sawtooth.
+      Competing flows converge to an equal share.
 
   - type: choice
     prompt: Why multiplicative decrease, rather than subtracting one segment on loss?

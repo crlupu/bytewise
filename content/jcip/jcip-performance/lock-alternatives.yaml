@@ -6,12 +6,19 @@ sources:
   - { book: jcip, ref: "§11.4.4–11.6, Hot Fields; Alternatives to Exclusive Locks; Object Pooling" }
 steps:
   - type: explanation
-    title: Hot fields
+    title: Hot fields serialize everything
     body: |
-      A hash map that keeps an exact element count makes `size()` instant — but every `put` and `remove` must update the
-      counter. The counter becomes a **hot field**: no matter how finely you stripe the buckets, every write contends on it.
+      A field every operation updates becomes a bottleneck.
+      An exact size counter in a map is one.
+      Striping the buckets doesn't help it.
 
-      `ConcurrentHashMap` avoids it by keeping a separate count per segment (or, today, per-cell counters summed on demand).
+  - type: explanation
+    title: Alternatives to exclusive locks
+    body: |
+      Concurrent collections for shared data.
+      Read-write locks for read-mostly data.
+      Immutable objects you replace instead of modify.
+      Atomics, or `LongAdder`, for hot counters.
 
   - type: match
     prompt: Match each alternative to an exclusive lock with where it helps.
@@ -35,6 +42,13 @@ steps:
       - text: "`AtomicLong`"
         feedback: Better than a lock, but under heavy contention all threads still CAS the same variable.
     explanation: "`LongAdder` (Java 8) is the counter equivalent of striping."
+
+  - type: explanation
+    title: "Don't pool, measure"
+    body: |
+      Allocation is cheap. Object pools add contention.
+      Idle CPUs under load suggest lock contention.
+      Profilers and thread dumps show which lock.
 
   - type: choice
     prompt: Should you pool small objects to avoid allocation in concurrent code?

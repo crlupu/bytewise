@@ -6,14 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 84" }
 steps:
   - type: explanation
+    title: "Don't rely on the scheduler"
+    body: |
+      The scheduler decides which runnable thread runs.
+      Different systems decide differently.
+      Code that depends on its choices isn't portable.
+
+  - type: explanation
     title: Keep runnable threads few
     body: |
-      When many threads are runnable, the scheduler decides which run and for how long — and policies differ between
-      operating systems. Robust, portable programs keep the average number of **runnable** threads close to the number of
-      processors. Then the scheduler has little choice to make.
-
-      Threads shouldn't run if they aren't doing useful work: size thread pools appropriately, keep tasks reasonably
-      small (but not so small that dispatch overhead dominates), and never **busy-wait**.
+      Aim for about as many runnable threads as CPU cores.
+      Never busy-wait in a loop.
+      Don't fix problems with `Thread.yield` or priorities.
 
   - type: choice
     prompt: What's wrong with this latch?

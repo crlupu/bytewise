@@ -6,26 +6,17 @@ sources:
   - { book: jcip, ref: "§2.1, What Is Thread Safety?" }
 steps:
   - type: explanation
-    title: It's all about state
+    title: "It's about shared, mutable state"
     body: |
-      Writing thread-safe code is, at its core, about managing access to **shared, mutable state** — data in instance or
-      static fields that more than one thread can reach, and that can change.
-
-      Whenever more than one thread accesses a state variable and at least one of them might write it, they must all
-      coordinate their access. There are three ways to fix a class that doesn't:
-
-      - **don't share** the state across threads;
-      - **make it immutable**;
-      - **use synchronization** whenever it's accessed.
+      Trouble starts when threads share data that can change.
+      If any thread writes it, all must coordinate.
 
   - type: explanation
-    title: A definition
+    title: What thread-safe means
     body: |
-      A class is **thread-safe** if it behaves correctly when accessed from multiple threads, regardless of how the
-      runtime schedules or interleaves them, and **with no additional synchronization** from the calling code.
-
-      "Correctly" means it keeps its invariants and meets its specification — so a class with no specification can't
-      really be called thread-safe or not.
+      A thread-safe class works correctly from many threads.
+      However they interleave.
+      With no extra locking by callers.
 
   - type: choice
     prompt: Is this servlet thread-safe?
@@ -44,6 +35,14 @@ steps:
       - text: No — servlets are always called from many threads
         feedback: Many threads, yes — but they share nothing, so they can't interfere.
     explanation: "**Stateless objects are always thread-safe.**"
+
+  - type: explanation
+    title: Three ways to fix it
+    body: |
+      Don't share the state.
+      Make it immutable.
+      Or synchronize every access.
+      It's easiest to design this in from the start.
 
   - type: match
     prompt: Match each way of fixing shared mutable state with an example.

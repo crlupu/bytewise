@@ -6,20 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 79" }
 steps:
   - type: explanation
-    title: Alien methods
+    title: "Don't call alien code while locked"
     body: |
-      An observable set notifies observers while holding its lock:
+      An alien method is code you don't control, like a callback.
 
       ```java
-      private void notifyElementAdded(E element) {
-          synchronized (observers) {
-              for (SetObserver<E> observer : observers)
-                  observer.added(this, element);   // alien method
-          }
+      synchronized (observers) {
+          for (SetObserver<E> o : observers)
+              o.added(this, element); // alien
       }
       ```
 
-      `observer.added` is an **alien** method: the set has no control over what it does.
+      It might modify your data, or wait for another thread.
 
   - type: choice
     prompt: An observer unsubscribes itself from inside `added`. What happens?
@@ -39,6 +37,13 @@ steps:
       - text: "`ConcurrentModificationException`"
     explanation: Both failures share one cause — calling an alien method inside a synchronized region.
 
+  - type: explanation
+    title: Keep synchronized blocks small
+    body: |
+      Copy the data under the lock, then call out without it.
+      Or use `CopyOnWriteArrayList`, which needs no lock to iterate.
+      Inside a lock, only read or change shared state.
+
   - type: match
     prompt: Match each fix to how it works.
     pairs:
@@ -48,6 +53,13 @@ steps:
         right: Every write copies the array, so iteration needs no lock at all
       - left: Do as little as possible inside synchronized regions
         right: Hold locks only to read or modify shared state, nothing more
+
+  - type: explanation
+    title: Let clients decide
+    body: |
+      Internal locking costs every user, even single-threaded ones.
+      `StringBuilder` leaves synchronization to its clients.
+      Synchronize internally only when it gives much better concurrency.
 
   - type: choice
     prompt: "Should a general-purpose mutable class synchronize internally, like `StringBuffer`?"

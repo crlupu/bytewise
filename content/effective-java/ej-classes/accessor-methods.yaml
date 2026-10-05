@@ -6,19 +6,12 @@ sources:
   - { book: effective-java, ref: "Item 16" }
 steps:
   - type: explanation
-    title: Degenerate classes
+    title: Public fields freeze your design
     body: |
-      ```java
-      class Point {
-          public double x;
-          public double y;
-      }
-      ```
-
-      Clients read and write the fields directly. You can't change the representation without changing every client,
-      can't enforce invariants (say, coordinates within bounds), and can't do anything when a field is read or written.
-
-      The fix is the familiar one: private fields, public accessors (and mutators, if it must be mutable).
+      A class with public fields lets clients touch them directly.
+      You can't change how the data is stored.
+      You can't enforce rules on the values.
+      You can't react when a field is read or written.
 
   - type: choice
     prompt: Which problems do public fields cause in a **public** class?
@@ -31,6 +24,14 @@ steps:
         correct: true
       - text: They make the class slower
         feedback: Accessors are inlined by the JIT; speed isn't the issue.
+
+  - type: explanation
+    title: Hide fields behind methods
+    body: |
+      Make fields private and expose accessors instead.
+      In private or package-private classes, public fields are fine.
+      There, every client is your own code.
+      Records give you a small immutable carrier with accessors built in.
 
   - type: choice
     prompt: When is exposing fields directly acceptable?

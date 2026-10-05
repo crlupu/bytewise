@@ -6,11 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 75" }
 steps:
   - type: explanation
-    title: The only clue
+    title: The message may be all you get
     body: |
-      When a program fails in production, the stack trace with its detail message may be the only information you get —
-      and reproducing the failure is often hard. The message should capture **the values of all parameters and fields
-      that contributed** to the exception.
+      In production, the stack trace may be your only clue.
+      Reproducing the failure can be hard.
+
+  - type: explanation
+    title: Capture the values
+    body: |
+      Include every value that caused the failure.
+      For an index error: the bounds and the index.
+      Never include passwords or keys.
+      Build the message in the exception's constructor.
 
   - type: choice
     prompt: Which message for an `IndexOutOfBoundsException` is most useful?

@@ -6,12 +6,18 @@ sources:
   - { book: jcip, ref: "§4.5, Documenting Synchronization Policies" }
 steps:
   - type: explanation
-    title: Two audiences
+    title: Write the policy down
     body: |
-      Documentation is one of the most powerful — and most underused — tools for managing thread safety.
+      Clients need to know: is it thread-safe?
+      Maintainers need to know: which lock guards what?
+      Documentation answers both.
 
-      - **Clients** need to know whether a class is thread-safe, and whether it makes any guarantees about compound actions.
-      - **Maintainers** need to know which variables are guarded by which locks, and what the invariants are.
+  - type: explanation
+    title: Annotations help
+    body: |
+      `@ThreadSafe`, `@NotThreadSafe` and `@Immutable` describe classes.
+      `@GuardedBy("lock")` names a field's lock.
+      If the docs are silent, assume it's not thread-safe.
 
   - type: match
     prompt: Match each annotation to what it documents.

@@ -6,14 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 11" }
 steps:
   - type: explanation
-    title: The rule
+    title: Equal objects need equal hash codes
     body: |
-      Hash-based collections find an object by its `hashCode` first and only then call `equals`. So:
-
-      > **Equal objects must have equal hash codes.**
-
-      Override `equals` without `hashCode`, and two equal objects usually get different, identity-based hash codes —
-      a `HashMap` will look in the wrong bucket and never find your key.
+      A `HashMap` finds the bucket by `hashCode` first.
+      Only then does it call `equals`.
+      Override `equals` without `hashCode`, and lookups miss.
 
   - type: predict
     prompt: "`Point` overrides `equals` to compare `x` and `y`, but not `hashCode`. What does this print?"
@@ -32,6 +29,13 @@ steps:
     hints:
       - Which method does `HashMap.get` call first?
     explanation: Almost certainly `null`. (Occasionally the identity hashes collide — making the bug intermittent, which is worse.)
+
+  - type: explanation
+    title: Writing hashCode
+    body: |
+      `Objects.hash(x, y)` is the easy way.
+      Use exactly the fields that `equals` uses.
+      And don't change those fields while the object is in a set or map.
 
   - type: choice
     prompt: Which `hashCode` implementations are legal for that `Point`?

@@ -8,13 +8,10 @@ steps:
   - type: explanation
     title: Round trips are the cost
     body: |
-      Inserting 1,000 rows one statement at a time means 1,000 trips to the database and back. Even at 0.5 ms each,
-      that's half a second spent mostly waiting on the network.
-
-      JDBC can **batch** them: queue many executions of one prepared statement, and send them together.
+      1,000 single inserts mean 1,000 network round trips.
+      A batch sends many in one trip.
 
       ```java
-      PreparedStatement ps = conn.prepareStatement("insert into post (id, title) values (?, ?)");
       for (Post p : posts) {
           ps.setLong(1, p.id());
           ps.setString(2, p.title());
@@ -40,18 +37,12 @@ steps:
     explanation: 1,000 ÷ 50 = 20 round trips instead of 1,000.
 
   - type: explanation
-    title: Turning it on in Hibernate
+    title: Batching in Hibernate
     body: |
-      Hibernate batches only when told to:
-
-      ```properties
-      hibernate.jdbc.batch_size=50
-      hibernate.order_inserts=true
-      hibernate.order_updates=true
-      ```
-
-      Ordering groups statements for the same table together, so a batch isn't broken every time the flush
-      alternates between `post` and `post_comment`.
+      Set `hibernate.jdbc.batch_size`.
+      Turn on ordering of inserts and updates.
+      Avoid `IDENTITY` ids: they force one insert at a time.
+      Use a pooled sequence instead.
 
   - type: choice
     prompt: |
@@ -87,6 +78,13 @@ steps:
       - At flush, inserts are sorted so statements for one table sit together
       - Each table's inserts are added to a JDBC batch
       - The batch is sent when it reaches the batch size, or at the end of the flush
+
+  - type: explanation
+    title: Large jobs need clearing
+    body: |
+      The persistence context keeps every loaded entity.
+      Flush and clear it every batch.
+      Otherwise memory grows without limit.
 
   - type: choice
     prompt: You must load and update 100,000 rows in one job. Besides batching, what keeps memory in check?

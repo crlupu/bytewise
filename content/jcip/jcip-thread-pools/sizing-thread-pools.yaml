@@ -6,19 +6,17 @@ sources:
   - { book: jcip, ref: "§8.2, Sizing Thread Pools" }
 steps:
   - type: explanation
-    title: It depends on the tasks
+    title: Size depends on the work
     body: |
-      Pool size is rarely hard-coded; compute it from the machine (`Runtime.getRuntime().availableProcessors()`) and the
-      nature of the work.
+      For pure computation, use about one thread per core, plus one.
+      Tasks that wait on I/O need more threads.
+      Get the core count with `availableProcessors()`.
 
-      - **Compute-intensive** tasks: about N<sub>cpu</sub> + 1 threads. The extra one fills in when a thread pauses for
-        a page fault or similar.
-      - Tasks that **wait** — on I/O or other blocking operations — need more threads, since each spends part of its
-        time not using a CPU.
-
-      > N<sub>threads</sub> = N<sub>cpu</sub> × U<sub>cpu</sub> × (1 + W/C)
-
-      where U is the target CPU utilisation (0–1) and W/C is the ratio of wait time to compute time.
+  - type: explanation
+    title: The sizing formula
+    body: |
+      threads = cores × target CPU use × (1 + wait time / compute time)
+      Longer waits mean more threads.
 
   - type: predict
     prompt: |
@@ -50,6 +48,12 @@ steps:
       - text: "4"
         feedback: "That ignores the waiting time."
     explanation: 8 × 0.5 × 10 = 40.
+
+  - type: explanation
+    title: Other limits
+    body: |
+      Database connections, memory and files cap the pool too.
+      More threads than connections just means more waiting.
 
   - type: choice
     prompt: The tasks share a JDBC connection pool of 10 connections. Does a pool of 80 threads still make sense?

@@ -6,13 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 19" }
 steps:
   - type: explanation
-    title: Self-use must be documented
+    title: Document self-use
     body: |
-      If a class is designed for subclassing, its docs must say which overridable methods it calls on itself, in what
-      order, and how results affect it — the `@implSpec` "Implementation Requirements" section. Otherwise subclasses
-      break the way `InstrumentedHashSet` did, by overriding a method another one secretly relied on.
+      A class meant for subclassing must document its self-use.
+      Which overridable methods does it call on itself, and when?
+      That becomes a permanent part of its API.
 
-      That's a big commitment: the self-use pattern becomes part of the API forever.
+  - type: explanation
+    title: Constructors must not call overridable methods
+    body: |
+      The superclass constructor runs first.
+      If it calls an overridden method, the subclass isn't set up yet.
+      Its fields are still `null` or zero.
 
   - type: predict
     prompt: What does this print?
@@ -44,6 +49,13 @@ steps:
       - text: Unit-test the class on its own
         feedback: That checks behaviour, not whether the protected hooks you chose are the right ones.
     explanation: Writing subclasses reveals missing protected hooks — and hooks nobody needs.
+
+  - type: explanation
+    title: Otherwise, prohibit subclassing
+    body: |
+      Designing for inheritance is real work.
+      Test it by writing several subclasses before release.
+      If you won't do that, make the class `final`.
 
   - type: choice
     prompt: A class isn't designed or documented for subclassing. What should you do?

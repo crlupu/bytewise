@@ -6,19 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 22" }
 steps:
   - type: explanation
-    title: Interfaces say what you can do
+    title: An interface is a type
     body: |
-      When a class implements an interface, the interface tells clients something about what they can do with instances.
-      An interface that holds only constants says nothing of the kind:
+      Implementing an interface says what clients can do with you.
+      A constant interface says nothing of the kind.
 
       ```java
       public interface PhysicalConstants {
           double AVOGADROS_NUMBER = 6.022_140_857e23;
-          double BOLTZMANN_CONSTANT = 1.380_648_52e-23;
       }
       ```
 
-      Classes "implement" it just to write `BOLTZMANN_CONSTANT` instead of `PhysicalConstants.BOLTZMANN_CONSTANT`.
+      Classes implement it only to skip the prefix.
 
   - type: choice
     prompt: Why is the constant interface a poor use of interfaces?
@@ -29,6 +28,14 @@ steps:
         feedback: They can — that's why the antipattern exists.
       - text: It's slower
     explanation: Worse, all subclasses inherit the namespace pollution, and the class can never stop implementing it without breaking compatibility.
+
+  - type: explanation
+    title: Better homes for constants
+    body: |
+      Put a constant in the class it belongs to.
+      Use an enum for a fixed set of values.
+      Use a utility class for the rest.
+      `import static` removes the prefix without implementing anything.
 
   - type: match
     prompt: Match each kind of constant to its better home.

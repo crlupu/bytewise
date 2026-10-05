@@ -6,13 +6,18 @@ sources:
   - { book: jcip, ref: "§14.2, Using Condition Queues" }
 steps:
   - type: explanation
-    title: The condition predicate
+    title: Lock, predicate, queue
     body: |
-      The **condition predicate** is the precondition that makes an operation state-dependent: "the buffer is not empty"
-      for `take`. Document it for every condition queue and every wait.
+      The condition predicate is what a thread waits for, like "not empty".
+      The lock guards the state the predicate reads.
+      The same object is the condition queue.
 
-      There's a three-way relationship: the **lock**, the **condition predicate**, and the **condition queue**. The
-      predicate involves state variables guarded by the lock, and the lock object *is* the condition queue.
+  - type: explanation
+    title: Always wait in a loop
+    body: |
+      Check the predicate before waiting.
+      Check it again after waking.
+      Hold the lock throughout.
 
   - type: choice
     prompt: Why must you test the condition predicate in a `while` loop, not an `if`?
@@ -32,6 +37,13 @@ steps:
       - left: Hold the lock while testing and waiting
         right: A missed signal between the test and the wait
 
+  - type: explanation
+    title: notify can wake the wrong thread
+    body: |
+      Waiters for different predicates share one queue.
+      `notify` wakes one of them, maybe the wrong one.
+      `notifyAll` is safer. Optimize only once it works.
+
   - type: choice
     prompt: Several threads wait on the same object, for **different** predicates (not-full and not-empty). Is `notify` safe?
     options:
@@ -40,13 +52,6 @@ steps:
       - text: Yes, it's more efficient than notifyAll
         feedback: More efficient, but only correct under narrow conditions.
     explanation: Use `notify` only when all waiters wait for the same predicate and each notification enables exactly one of them. Otherwise, `notifyAll`.
-
-  - type: explanation
-    title: Conditional notification
-    body: |
-      `notifyAll` wakes everyone, which can cause a stampede of context switches. One optimisation: notify only on the
-      transitions that can make a waiter succeed — `put` notifies only when the buffer goes from empty to not-empty.
-      It's easy to get wrong, so make it work first, then optimise if needed.
 
   - type: blank
     prompt: Complete the rule.

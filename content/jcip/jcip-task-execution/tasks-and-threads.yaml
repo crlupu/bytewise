@@ -6,26 +6,18 @@ sources:
   - { book: jcip, ref: "§6.1, Executing Tasks in Threads" }
 steps:
   - type: explanation
-    title: Tasks
+    title: Work is made of tasks
     body: |
-      Most concurrent applications are organised around **tasks**: abstract, discrete units of work. A server's natural
-      task is one client request. Choosing good task boundaries — independent tasks — is the first step to concurrency.
+      A task is an independent unit of work, like one request.
+      You could run tasks one by one.
+      Or start a new thread for each.
 
-      The next question is how to run them. Two naive answers:
-
-      ```java
-      // Sequential
-      while (true) {
-          Socket connection = socket.accept();
-          handleRequest(connection);
-      }
-
-      // Thread per task
-      while (true) {
-          Socket connection = socket.accept();
-          new Thread(() -> handleRequest(connection)).start();
-      }
-      ```
+  - type: explanation
+    title: Both extremes fail
+    body: |
+      One at a time is slow and unresponsive.
+      A thread per task costs time and memory.
+      Under heavy load, it can crash the server.
 
   - type: match
     prompt: Match each approach to its problem.

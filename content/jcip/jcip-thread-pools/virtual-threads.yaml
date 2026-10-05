@@ -6,20 +6,24 @@ sources:
   - { book: jcip, ref: "Follow-up to Chapters 6 and 8 — see JEP 444" }
 steps:
   - type: explanation
-    title: Cheap threads
+    title: Virtual threads are cheap
     body: |
-      JCIP's advice — bound your threads with a pool — comes from platform threads being expensive: each is an OS
-      thread with a large stack. **Virtual threads**, final in Java 21, are scheduled by the JVM instead. Thousands or
-      millions are fine.
-
-      When a virtual thread blocks on I/O, the JVM unmounts it from its **carrier** (a platform thread in a small
-      fork-join pool) and runs another one there. Blocking becomes cheap.
+      Classic threads are OS threads: costly and limited.
+      Virtual threads, in Java 21, are managed by the JVM.
+      You can run millions.
 
       ```java
       try (var exec = Executors.newVirtualThreadPerTaskExecutor()) {
           for (Request r : requests) exec.submit(() -> handle(r));
       }
       ```
+
+  - type: explanation
+    title: Blocking becomes cheap
+    body: |
+      A blocked virtual thread steps off its carrier thread.
+      Another runs in its place.
+      Great for I/O-heavy work. No need to pool them.
 
   - type: choice
     prompt: Which workload benefits most from virtual threads?
@@ -38,6 +42,12 @@ steps:
         feedback: Pooling exists to amortise expensive creation. Virtual threads aren't expensive.
     explanation: To limit access to a scarce resource, like a database, use a `Semaphore` — not a small pool.
 
+  - type: explanation
+    title: Same rules, one catch
+    body: |
+      Thread safety and visibility work exactly the same.
+      Before Java 24, blocking inside `synchronized` pinned the carrier.
+
   - type: choice
     prompt: Which of the book's lessons still apply unchanged to virtual threads?
     options:
@@ -45,13 +55,6 @@ steps:
         correct: true
       - text: None — virtual threads are a different model
         feedback: Data races, deadlocks and visibility work exactly as before.
-
-  - type: explanation
-    title: Pinning
-    body: |
-      In Java 21, a virtual thread that blocks while inside a `synchronized` block (or a native call) **pins** its
-      carrier: the carrier can't run other virtual threads until it unblocks. With few carriers, heavy pinning loses the
-      benefit. Using `ReentrantLock` around blocking I/O avoided it; Java 24 (JEP 491) removed pinning for `synchronized`.
 
   - type: blank
     prompt: Create an executor that starts a new virtual thread per task.

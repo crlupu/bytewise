@@ -6,16 +6,11 @@ sources:
   - { book: kurose-ross, ref: "§3.5.6, TCP Connection Management" }
 steps:
   - type: explanation
-    title: Each direction closes on its own
+    title: Each direction closes separately
     body: |
-      A TCP connection is two byte streams, one each way. Closing is done **per direction**: a side sends
-      **FIN** to say "I've finished sending", and the other side acknowledges it.
-
-      So a full close takes four segments: FIN and ACK one way, FIN and ACK the other. In between, the
-      connection is **half-closed** — one side can still send.
-
-      Afterwards, the side that closed first waits in **TIME_WAIT** for twice the maximum segment lifetime
-      (2×MSL) before it is truly CLOSED.
+      FIN means "I've finished sending".
+      Each side sends its own FIN, and ACKs the other's.
+      In between, the connection is half-closed.
 
   - type: widget
     widget: tcp
@@ -53,6 +48,13 @@ steps:
         feedback: FIN closes only the sender's direction. The other stream stays open until its own FIN.
     explanation: That's how a client can send a whole request, close its side, and still read the full response.
 
+  - type: explanation
+    title: TIME_WAIT
+    body: |
+      The side that closed first waits twice the maximum segment lifetime.
+      It can resend a lost final ACK.
+      Stray old packets die out before the port is reused.
+
   - type: choice
     prompt: Why does the side that closed first wait in TIME_WAIT?
     options:
@@ -81,11 +83,8 @@ steps:
         right: Everything's acknowledged; waiting 2×MSL before closing
 
   - type: explanation
-    title: Reading socket states in production
+    title: Reading socket states
     body: |
-      `ss -tan` (or `netstat`) shows these states for live sockets, and two patterns are worth recognising:
-
-      - **Many CLOSE_WAIT** sockets: the peer closed, but *your* application never called `close()`. That's a bug —
-        a leaked connection.
-      - **Many TIME_WAIT** sockets on a busy client: normal. Each closed connection waits a minute or so.
-        It only bites when you run out of local ports; reusing connections (keep-alive, pooling) is the fix.
+      Many `CLOSE_WAIT` sockets: your app forgot to close them. A bug.
+      Many `TIME_WAIT` on a busy client: normal.
+      Reuse connections if you run out of ports.

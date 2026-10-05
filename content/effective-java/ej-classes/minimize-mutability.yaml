@@ -6,18 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 17" }
 steps:
   - type: explanation
-    title: Objects that never change
+    title: Immutable objects never change
     body: |
-      An **immutable** object's state is fixed when it's created: `String`, `Integer`, `BigDecimal`, `LocalDate`.
-      Bloch's rules for writing one:
+      `String`, `Integer` and `LocalDate` are fixed once created.
+      They are simple and thread-safe.
+      They can be shared freely, and make perfect map keys.
 
-      1. Don't provide methods that modify state (no setters).
-      2. Make sure the class can't be extended — make it `final`, or give it private constructors and static factories.
-      3. Make all fields `final`.
-      4. Make all fields `private`.
-      5. Make sure no one else can reach a mutable component — copy mutable inputs on the way in and out.
-
-      "Change" becomes "return a new object": `bigDecimal.add(x)` leaves the original alone.
+  - type: explanation
+    title: Five rules for immutability
+    body: |
+      No methods that change state.
+      Make the class `final`.
+      Make all fields `private` and `final`.
+      Never share a mutable component with clients.
 
   - type: choice
     prompt: Which of these are advantages of immutable objects?
@@ -55,6 +56,14 @@ steps:
     explanation: |
       `final` freezes the reference, not the object. The caller still holds the same `Date` and changed it.
       This is why rule 5 exists.
+
+  - type: explanation
+    title: Copy mutable parts
+    body: |
+      A caller may keep a reference to a `Date` it gave you.
+      Copy mutable inputs before validating them.
+      Copy mutable outputs before returning them.
+      For long builds, use a mutable companion like `StringBuilder`.
 
   - type: blank
     prompt: Fix the constructor with a defensive copy.

@@ -5,6 +5,14 @@ tags: [java, effective java, concurrency, thread safety, documentation, private 
 sources:
   - { book: effective-java, ref: "Item 82" }
 steps:
+  - type: explanation
+    title: Thread safety comes in levels
+    body: |
+      Immutable: no locking needed at all.
+      Unconditionally thread-safe: safe as is.
+      Conditionally thread-safe: some sequences need the caller's lock.
+      Not thread-safe: the caller must synchronize everything.
+
   - type: match
     prompt: Match each level of thread safety to an example.
     pairs:
@@ -18,6 +26,13 @@ steps:
         right: "`ArrayList`, `HashMap` — clients must synchronize"
       - left: Thread-hostile
         right: Unsafe even with external synchronization — usually by modifying static data
+
+  - type: explanation
+    title: Say which level in the docs
+    body: |
+      `synchronized` on a method is an implementation detail.
+      Write the safety level in the class's documentation.
+      If clients must lock, say which lock.
 
   - type: choice
     prompt: Is the `synchronized` modifier in a method's Javadoc enough to document thread safety?
@@ -41,6 +56,16 @@ steps:
       - text: Nothing — the wrapper handles it
         feedback: Iteration is a compound operation across many calls; the wrapper can't lock around it.
     explanation: Conditionally thread-safe classes must document which lock clients should hold for which sequences.
+
+  - type: explanation
+    title: Lock a private object
+    body: |
+      A public lock can be grabbed by anyone.
+      A private final lock object can't.
+
+      ```java
+      private final Object lock = new Object();
+      ```
 
   - type: blank
     prompt: The private lock object idiom.

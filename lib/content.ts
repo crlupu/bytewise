@@ -78,11 +78,26 @@ function makeRenderer(hl: Highlighter) {
   return {
     block: (s: string): Html => marked.parse(s.trim(), { async: false }) as string,
     inline: (s: string): Html => marked.parseInline(s.trim(), { async: false }) as string,
+    /** Idea slides: one short sentence per line, each shown as its own paragraph. */
+    slide: (s: string): Html => marked.parse(sentencesToParagraphs(s.trim()), { async: false }) as string,
     code: highlight,
   };
 }
 
 type Render = ReturnType<typeof makeRenderer>;
+
+/** Puts a blank line between consecutive lines of prose — not inside code fences, tables or lists. */
+function sentencesToParagraphs(md: string): string {
+  const out: string[] = [];
+  let fenced = false;
+  const prose = (l: string | undefined) => !!l && l.trim() !== "" && !/^\s*(\||[-*+] |\d+\. |>|```)/.test(l);
+  for (const line of md.split("\n")) {
+    if (line.startsWith("```")) fenced = !fenced;
+    else if (!fenced && prose(line) && prose(out[out.length - 1])) out.push("");
+    out.push(line);
+  }
+  return out.join("\n");
+}
 
 // ---- Deterministic shuffles ----
 // The pages are pre-rendered, so the shuffled order must be the same on the
@@ -162,7 +177,7 @@ function annotateStep(step: Step, { annotate, chip }: Annotator) {
 function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): Step {
   const id = raw.id ?? `step-${index + 1}`;
   const key = `${lessonKey}/${id}`;
-  if (raw.type === "explanation") return { type: "explanation", id, key, title: raw.title, body: r.block(raw.body) };
+  if (raw.type === "explanation") return { type: "explanation", id, key, title: raw.title, body: r.slide(raw.body) };
 
   const base = {
     id,
@@ -384,6 +399,10 @@ async function load(): Promise<Loaded> {
           steps.push(step);
         });
         if (steps.length !== lp.data.steps.length) return;
+        // A lesson teaches two or three main ideas, each on its own slide.
+        const ideas = steps.filter((s) => s.type === "explanation").length;
+        if (ideas < 2 || ideas > 3)
+          problems.push(`${rel(lessonFile)}: steps: has ${ideas} explanation slides; a lesson needs 2–3, one per main idea`);
 
         let body: Step[];
         try {

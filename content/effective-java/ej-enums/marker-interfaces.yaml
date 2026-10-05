@@ -6,12 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 41" }
 steps:
   - type: explanation
-    title: Markers
+    title: Markers tag a property
     body: |
-      A **marker interface** contains no methods; implementing it just marks a class as having some property.
-      `Serializable` is the classic example: it says instances may be written to an `ObjectOutputStream`.
+      A marker interface has no methods, like `Serializable`.
+      A marker annotation does the same, like `@Test`.
+      Both say "this class has a property".
 
-      A **marker annotation** does the same job with an annotation, like `@Test`.
+  - type: explanation
+    title: Interfaces define types
+    body: |
+      A marker interface is a type the compiler checks.
+      A method can accept only marked objects.
+      Annotations can also mark methods and fields.
+      Want a type? Use an interface.
 
   - type: choice
     prompt: What can a marker interface do that a marker annotation can't?

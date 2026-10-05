@@ -6,18 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 26" }
 steps:
   - type: explanation
-    title: What a raw type is
+    title: Raw types skip checking
     body: |
-      `List<E>` is a generic type; `List<String>` is a parameterized type. Using `List` with no type argument is a
-      **raw type** — it exists only for compatibility with pre-Java 5 code, and opts out of generic type checking.
-
-      ```java
-      private final Collection stamps = ...;   // raw
-      stamps.add(new Coin(...));               // compiles, with only a warning
-      for (Iterator i = stamps.iterator(); i.hasNext(); ) {
-          Stamp s = (Stamp) i.next();          // ClassCastException — here, far from the mistake
-      }
-      ```
+      `List<String>` is checked by the compiler.
+      Plain `List` is a raw type, kept for old code.
+      Mistakes surface later, as a `ClassCastException`.
 
   - type: predict
     prompt: Does this compile?
@@ -36,6 +29,14 @@ steps:
       - text: It runs without error
         feedback: The compiler-inserted cast to `String` fails when the `Integer` comes out.
     explanation: The raw parameter silently accepted an `Integer` into a list of strings.
+
+  - type: explanation
+    title: "Use List<?> instead"
+    body: |
+      `List<Object>` holds anything, with checking.
+      `List<?>` is a list of some unknown type.
+      You can still read from it safely.
+      Raw types remain only in `List.class` and `instanceof`.
 
   - type: match
     prompt: Match each type to what it means.

@@ -5,6 +5,13 @@ tags: [java, concurrency, performance, context switch, contention, lock elision,
 sources:
   - { book: jcip, ref: "§11.3, Costs Introduced by Threads" }
 steps:
+  - type: explanation
+    title: Threads have costs
+    body: |
+      Context switches swap threads and flush caches.
+      Memory barriers stop optimizations.
+      Blocking on a lock costs extra switches.
+
   - type: match
     prompt: Match each cost to its cause.
     pairs:
@@ -16,20 +23,15 @@ steps:
         right: A contended lock suspends a thread, costing two extra context switches
 
   - type: explanation
-    title: Uncontended is cheap
+    title: Uncontended locks are cheap
     body: |
-      Most synchronization is **uncontended** — only one thread wants the lock at a time — and modern JVMs make that
-      fast. They can even remove locking altogether:
-
-      - **lock elision**: if escape analysis shows an object never leaves its thread, its locks are dropped;
-      - **lock coarsening**: adjacent synchronized blocks on the same lock are merged.
+      Most locks are taken by one thread at a time.
+      The JIT can even remove locks that never escape a thread:
 
       ```java
-      public String getStoogeNames() {
-          List<String> stooges = new Vector<>();   // never escapes
-          stooges.add("Moe"); stooges.add("Larry"); stooges.add("Curly");
-          return stooges.toString();
-      }
+      List<String> stooges = new Vector<>(); // never escapes
+      stooges.add("Moe"); stooges.add("Larry"); stooges.add("Curly");
+      return stooges.toString();
       ```
 
   - type: choice
@@ -40,6 +42,13 @@ steps:
       - text: Exactly four
         feedback: That's what the source says, but escape analysis can remove them.
     explanation: Don't worry much about the cost of uncontended synchronization. Worry about **contended** synchronization.
+
+  - type: explanation
+    title: Contention is what hurts
+    body: |
+      A contended lock makes threads wait.
+      JVMs spin for short waits and suspend for long ones.
+      Focus on locks that are actually contended.
 
   - type: choice
     prompt: A contended lock can be waited for by spinning or by suspending the thread. Which is better?

@@ -5,6 +5,13 @@ tags: [java, effective java, generics, arrays, covariance, erasure, reification]
 sources:
   - { book: effective-java, ref: "Item 28" }
 steps:
+  - type: explanation
+    title: Arrays fail late
+    body: |
+      Arrays are covariant: `Long[]` is an `Object[]`.
+      Store a `String` in it, and it fails at run time.
+      Generics reject the same mistake at compile time.
+
   - type: predict
     prompt: What happens?
     code: |
@@ -30,6 +37,14 @@ steps:
         correct: true
       - text: It throws at run time
     explanation: Generics are **invariant** — a `List<Long>` is not a `List<Object>` — so the mistake is caught at compile time.
+
+  - type: explanation
+    title: "Arrays and generics don't mix"
+    body: |
+      Arrays know their element type at run time.
+      Generics erase it.
+      So `new List<String>[10]` is illegal.
+      Prefer `List<T>` to `T[]`.
 
   - type: match
     prompt: Match each property to arrays or generics.

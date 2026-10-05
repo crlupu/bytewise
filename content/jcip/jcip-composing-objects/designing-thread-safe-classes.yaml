@@ -5,6 +5,13 @@ tags: [java, concurrency, class design, invariants, state, synchronization polic
 sources:
   - { book: jcip, ref: "§4.1, Designing a Thread-safe Class" }
 steps:
+  - type: explanation
+    title: Three steps to a thread-safe class
+    body: |
+      Find the variables that make up the state.
+      Find the invariants that constrain them.
+      Decide how concurrent access will be managed.
+
   - type: order
     prompt: Put the three basic steps of designing a thread-safe class in order.
     items:
@@ -14,13 +21,11 @@ steps:
     explanation: The **synchronization policy** says how the class combines immutability, confinement and locking — and which lock guards which variable.
 
   - type: explanation
-    title: Invariants and postconditions
+    title: Invariants need atomic updates
     body: |
-      Some states are invalid: a counter can't be negative; in a `NumberRange`, `lower` must be ≤ `upper`. These are
-      **invariants**. Operations also have **postconditions** — after `increment`, the next value is the old one plus one.
-
-      When an invariant or postcondition involves several variables, operations on them must be atomic together:
-      you can't update one, release the lock, and then update the other.
+      An invariant is a rule that must always hold, like `lower <= upper`.
+      If it spans several variables, update them together, under one lock.
+      Otherwise another thread sees them half-changed.
 
   - type: choice
     prompt: A counter's state is a `long`, with the invariant "never negative". What does the invariant tell you about the design?
@@ -31,11 +36,12 @@ steps:
         feedback: Invariants are exactly what synchronization exists to protect.
 
   - type: explanation
-    title: State-dependent operations
+    title: Some operations must wait
     body: |
-      Some operations have **state-based preconditions**: you can't remove an item from an empty queue. Single-threaded
-      code can only fail; concurrent code can **wait** for the precondition to become true, because another thread may
-      change the state. Blocking queues and semaphores do exactly this, and are usually the easiest way to build it.
+      You can't take from an empty queue.
+      Alone, that would just fail.
+      With threads, you can wait until another thread adds something.
+      Blocking queues and semaphores do this for you.
 
   - type: match
     prompt: Match each concept to an example.

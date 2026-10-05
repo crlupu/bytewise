@@ -6,12 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 83" }
 steps:
   - type: explanation
-    title: Usually, don't
+    title: Usually, initialize normally
     body: |
-      Lazy initialization delays creating a field's value until it's first needed. It saves work if the field is never
-      used — and costs something on every access. Under most circumstances, **normal initialization is preferable**.
+      Lazy initialization delays work until a value is needed.
+      It saves work only if the value is often unused.
+      It costs something on every access.
+      So prefer normal initialization.
 
-      When you do need it — the field is expensive to compute and rarely used — pick an idiom that's safe for multiple threads.
+  - type: explanation
+    title: Safe lazy idioms
+    body: |
+      For a static field, use a holder class.
+      The JVM initializes it on first use, safely and without locks.
+      For an instance field, use a synchronized getter or double-checking.
 
   - type: match
     prompt: Match each lazy-initialization idiom to where it fits.
@@ -32,22 +39,15 @@ steps:
     explanation: The class isn't initialized until `getField` first touches it — and the JVM guarantees that's thread-safe.
 
   - type: explanation
-    title: Double-check
+    title: Double-checking needs volatile
     body: |
+      Check once without the lock, then again with it.
+
       ```java
       private volatile FieldType field;
-
-      private FieldType getField() {
-          FieldType result = field;
-          if (result == null) {                 // first check (no locking)
-              synchronized (this) {
-                  if (field == null)            // second check (with locking)
-                      field = result = computeFieldValue();
-              }
-          }
-          return result;
-      }
       ```
+
+      Without `volatile`, a thread may see a half-built object.
 
   - type: choice
     prompt: Why is the field `volatile` in the double-check idiom?

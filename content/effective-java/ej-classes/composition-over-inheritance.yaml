@@ -8,18 +8,15 @@ steps:
   - type: explanation
     title: Inheritance breaks encapsulation
     body: |
-      A subclass depends on **how** its superclass is implemented, not just on what it promises. When the superclass
-      changes — or calls its own methods in a way you didn't expect — the subclass can break without a line of it changing.
-
-      Here's a set that counts how many elements were ever added to it:
+      A subclass depends on how its superclass is built.
+      Override one method, and another may call it unexpectedly.
 
       ```java
       class InstrumentedHashSet<E> extends HashSet<E> {
           int addCount = 0;
-          @Override public boolean add(E e) { addCount++; return super.add(e); }
-          @Override public boolean addAll(Collection<? extends E> c) {
-              addCount += c.size();
-              return super.addAll(c);
+          public boolean add(E e) { addCount++; return super.add(e); }
+          public boolean addAll(Collection<? extends E> c) {
+              addCount += c.size(); return super.addAll(c);
           }
       }
       ```
@@ -56,25 +53,12 @@ steps:
     explanation: Fixes that depend on the superclass's internals are just new fragile bets.
 
   - type: explanation
-    title: Composition and forwarding
+    title: Wrap and forward instead
     body: |
-      Give the new class a **private field** holding an instance of the existing class, and have each method
-      **forward** to it:
-
-      ```java
-      class InstrumentedSet<E> extends ForwardingSet<E> {
-          int addCount = 0;
-          InstrumentedSet(Set<E> s) { super(s); }
-          @Override public boolean add(E e) { addCount++; return super.add(e); }
-          @Override public boolean addAll(Collection<? extends E> c) {
-              addCount += c.size();
-              return super.addAll(c);
-          }
-      }
-      ```
-
-      `ForwardingSet` holds a `Set` and passes every call straight through. Now `addAll` reaches the *inner* set,
-      whose own `add` isn't ours — so nothing is counted twice. And it works with any `Set`: `new InstrumentedSet<>(new TreeSet<>())`.
+      Keep the existing object in a private field.
+      Each method forwards the call to it.
+      The inner object's own calls never reach your code.
+      And the wrapper works with any implementation of the interface.
 
   - type: match
     prompt: Match each term to its meaning.
@@ -87,6 +71,13 @@ steps:
         right: A class that adds behavior around another instance of the same interface
       - left: Fragile base class
         right: A superclass change silently breaking subclasses
+
+  - type: explanation
+    title: When inheritance fits
+    body: |
+      Extend only when B truly *is an* A.
+      And only when A was designed and documented for it.
+      Otherwise, prefer composition.
 
   - type: choice
     prompt: When is inheritance the right tool?

@@ -6,14 +6,19 @@ sources:
   - { book: jcip, ref: "§5.2, Concurrent Collections" }
 steps:
   - type: explanation
-    title: Designed for concurrency
+    title: Built for many threads
     body: |
-      Synchronized collections serialise every access with one lock. **Concurrent collections** are designed for many
-      threads at once: replacing synchronized collections with concurrent ones can offer dramatic scalability improvements
-      with little risk.
+      Concurrent collections let many threads work at once.
+      `ConcurrentHashMap` lets readers and writers proceed in parallel.
+      Swapping one in often scales dramatically better.
 
-      `ConcurrentHashMap` uses finer-grained locking (lock striping, in the book's era; CAS and per-bin locks today),
-      so any number of readers and a good number of writers proceed in parallel.
+  - type: explanation
+    title: What you trade
+    body: |
+      `size()` is only an estimate while the map changes.
+      You can't lock the whole map.
+      Instead, it offers atomic actions like `putIfAbsent`.
+      Its iterators never throw. They're weakly consistent.
 
   - type: choice
     prompt: What does `ConcurrentHashMap` give up compared with a synchronized map?
@@ -47,10 +52,11 @@ steps:
         feedback: Concurrent collections' iterators never throw it.
 
   - type: explanation
-    title: Copy-on-write
+    title: Copy-on-write lists
     body: |
-      `CopyOnWriteArrayList` creates and republishes a new copy of the array on every modification. Iterators work on
-      the snapshot that was current when they started, so they need no locking and never throw.
+      `CopyOnWriteArrayList` copies its array on every change.
+      Iteration needs no lock at all.
+      Perfect when reads vastly outnumber writes, like listener lists.
 
   - type: choice
     prompt: Which workload suits `CopyOnWriteArrayList`?

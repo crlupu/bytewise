@@ -6,14 +6,18 @@ sources:
   - { book: jcip, ref: "§14.4–14.6, Anatomy of a Synchronizer; AbstractQueuedSynchronizer" }
 steps:
   - type: explanation
-    title: A common core
+    title: One framework underneath
     body: |
-      `ReentrantLock` and `Semaphore` look alike — both have a gate that lets some threads through and blocks others. In
-      fact both, along with `CountDownLatch`, `ReentrantReadWriteLock` and (originally) `FutureTask`, are built on
-      **`AbstractQueuedSynchronizer`** (AQS).
+      Locks, semaphores and latches all share a core: AQS.
+      AQS keeps one integer of state.
+      And a queue of waiting threads.
 
-      AQS manages one integer of **state**, and a queue of waiting threads. A synchronizer built on it defines what
-      **acquire** and **release** mean for that state.
+  - type: explanation
+    title: Define acquire and release
+    body: |
+      A synchronizer says what acquire and release mean for the state.
+      Acquire fails? AQS queues and blocks the thread.
+      Release succeeds? Waiting threads try again.
 
   - type: match
     prompt: Match each synchronizer to what its AQS state means.
@@ -28,25 +32,10 @@ steps:
         right: The task's status — running, completed or cancelled
 
   - type: explanation
-    title: A binary latch
+    title: Wrap it privately
     body: |
-      ```java
-      public class OneShotLatch {
-          private final Sync sync = new Sync();
-          public void signal() { sync.releaseShared(0); }
-          public void await() throws InterruptedException { sync.acquireSharedInterruptibly(0); }
-
-          private class Sync extends AbstractQueuedSynchronizer {
-              protected int tryAcquireShared(int ignored) {
-                  return (getState() == 1) ? 1 : -1;   // succeed if open
-              }
-              protected boolean tryReleaseShared(int ignored) {
-                  setState(1);   // open the latch
-                  return true;   // let other threads try to acquire
-              }
-          }
-      }
-      ```
+      Keep the AQS subclass as a private helper.
+      Expose only your own methods, like `signal` and `await`.
 
   - type: choice
     prompt: What does a negative return from `tryAcquireShared` tell AQS?

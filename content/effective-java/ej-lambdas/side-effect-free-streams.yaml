@@ -5,6 +5,12 @@ tags: [java, effective java, streams, collectors, forEach, side effects]
 sources:
   - { book: effective-java, ref: "Item 46" }
 steps:
+  - type: explanation
+    title: Streams compute, not mutate
+    body: |
+      A stream should transform data with pure functions.
+      Doing the work inside `forEach` is a loop in disguise.
+
   - type: choice
     prompt: What's wrong with this word-frequency code?
     code: |
@@ -20,6 +26,13 @@ steps:
         feedback: It compiles and works. It just doesn't use streams the way they're designed to be used.
       - text: "`merge` isn't allowed in streams"
     explanation: "`forEach` should only *report* the result of a computation, not perform it."
+
+  - type: explanation
+    title: Collectors build results
+    body: |
+      `toList()`, `toMap()` and `groupingBy()` gather results.
+      `joining()` builds a string.
+      Use `forEach` only to print or report the result.
 
   - type: blank
     prompt: The idiomatic version.

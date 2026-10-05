@@ -6,19 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 10" }
 steps:
   - type: explanation
-    title: Often, don't override it
+    title: "Often, don't override equals"
     body: |
-      `Object.equals` means identity: an object equals only itself. That's right for many classes — threads, services,
-      anything with identity rather than a value. Override `equals` for **value classes**, like `Money` or `Point`,
-      where two instances with the same contents should count as the same.
+      By default, an object equals only itself.
+      That's right for things with identity, like threads.
+      Override it for value classes, like `Money` or `Point`.
 
-      When you do, collections and libraries will trust your `equals` to behave like equality. It must be:
-
-      - **reflexive** — `x.equals(x)` is true;
-      - **symmetric** — `x.equals(y)` exactly when `y.equals(x)`;
-      - **transitive** — if `x.equals(y)` and `y.equals(z)`, then `x.equals(z)`;
-      - **consistent** — repeated calls agree while the objects don't change;
-      - and `x.equals(null)` is false.
+  - type: explanation
+    title: The rules equals must follow
+    body: |
+      Reflexive: `x.equals(x)`.
+      Symmetric: if `x` equals `y`, then `y` equals `x`.
+      Transitive: equality carries across a chain.
+      Consistent, and `x.equals(null)` is false.
 
   - type: match
     prompt: Match each property to an example of it being broken.
@@ -61,6 +61,14 @@ steps:
       - text: Ignore the color in `ColorPoint.equals`
         feedback: Then two points of different colors are "equal", which isn't what you wanted.
     explanation: Give `ColorPoint` a private `Point` field and an `asPoint()` view, rather than extending `Point`.
+
+  - type: explanation
+    title: A reliable recipe
+    body: |
+      Check `this` first, as a shortcut.
+      Check the type with `instanceof`, then cast.
+      Compare each significant field.
+      Use `Double.compare` for `double` fields.
 
   - type: order
     prompt: Put the steps of a high-quality `equals` in order.

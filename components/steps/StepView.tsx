@@ -54,7 +54,7 @@ export function StepView({ step, ...ev }: { step: Step } & StepEvents) {
         <div className="player__body">
           <div className="step-enter">
             {step.title && <h1 className="step__title">{step.title}</h1>}
-            <Html className="prose" html={step.body} />
+            <Html className="prose slide" html={step.body} />
           </div>
         </div>
         <Foot>

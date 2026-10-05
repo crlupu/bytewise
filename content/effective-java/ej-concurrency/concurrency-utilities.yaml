@@ -5,6 +5,14 @@ tags: [java, effective java, concurrency, concurrenthashmap, countdownlatch, wai
 sources:
   - { book: effective-java, ref: "Item 81" }
 steps:
+  - type: explanation
+    title: Use the high-level tools
+    body: |
+      `java.util.concurrent` has three kinds of tools.
+      Executors run tasks.
+      Concurrent collections handle shared data.
+      Synchronizers, like latches, coordinate threads.
+
   - type: match
     prompt: Match each `java.util.concurrent` category to an example.
     pairs:
@@ -14,6 +22,13 @@ steps:
         right: "`ConcurrentHashMap`, `BlockingQueue`"
       - left: Synchronizers
         right: "`CountDownLatch`, `Semaphore`, `Phaser`"
+
+  - type: explanation
+    title: Concurrent collections scale
+    body: |
+      `ConcurrentHashMap` lets many threads work at once.
+      It offers atomic actions like `putIfAbsent`.
+      A synchronized map makes every thread wait for one lock.
 
   - type: blank
     prompt: Intern strings concurrently, without an extra lookup in the common case.
@@ -38,16 +53,16 @@ steps:
   - type: explanation
     title: If you must use wait
     body: |
+      Always call `wait` inside a loop that checks the condition.
+
       ```java
       synchronized (obj) {
-          while (!condition) obj.wait();   // always in a loop
-          ... // perform action appropriate to condition
+          while (!condition) obj.wait();
       }
       ```
 
-      Always test the condition in a loop: a thread can wake when the condition doesn't hold — another thread changed
-      it, someone called `notifyAll`, or a *spurious wakeup* happened. And prefer `notifyAll` to `notify`, unless you're
-      sure only one waiter can make progress.
+      A thread can wake when the condition is still false.
+      Prefer `notifyAll` to `notify`.
 
   - type: choice
     prompt: To time an interval, which is right?

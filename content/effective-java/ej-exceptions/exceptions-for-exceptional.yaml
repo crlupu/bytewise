@@ -6,17 +6,16 @@ sources:
   - { book: effective-java, ref: "Item 69" }
 steps:
   - type: explanation
-    title: Clever, and wrong
+    title: "Exceptions aren't control flow"
     body: |
+      This loop ends by catching an exception:
+
       ```java
-      try {
-          int i = 0;
-          while (true) range[i++].climb();
-      } catch (ArrayIndexOutOfBoundsException e) {
-      }
+      try { int i = 0; while (true) range[i++].climb(); }
+      catch (ArrayIndexOutOfBoundsException e) { }
       ```
 
-      The idea: the JVM checks bounds anyway, so skip the "redundant" check and catch the exception at the end.
+      It's slower, harder to read, and can hide real bugs.
 
   - type: choice
     prompt: What's wrong with that reasoning?
@@ -28,6 +27,13 @@ steps:
       - text: It doesn't work at all
         feedback: It works — that's what makes it tempting. It's slower and buggier than the plain loop.
     explanation: "The standard idiom `for (Mountain m : range) m.climb();` is clearer and faster."
+
+  - type: explanation
+    title: Let clients check first
+    body: |
+      Offer a state-testing method, like `hasNext()`.
+      Or return an empty `Optional`.
+      Clients should never need exceptions for normal logic.
 
   - type: match
     prompt: An API's method can only be called in a certain state. Match each design to how clients use it.

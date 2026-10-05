@@ -6,30 +6,17 @@ sources:
   - { book: jcip, ref: "§10.2, Avoiding and Diagnosing Deadlocks" }
 steps:
   - type: explanation
-    title: A strategy
+    title: Design lock order in
     body: |
-      A program that never acquires more than one lock at a time can't have a lock-ordering deadlock. When multiple
-      locks are needed, make lock ordering part of the design:
-
-      1. identify where multiple locks could be acquired — keep those places few;
-      2. analyse them globally, so every thread takes locks in a consistent order;
-      3. use open calls wherever possible.
+      Code that takes one lock at a time can't lock-order deadlock.
+      Where you need several, keep those places few.
+      Make them all use one order.
 
   - type: explanation
-    title: Timed lock attempts
+    title: Back off with tryLock
     body: |
-      Explicit `Lock`s offer `tryLock(timeout, unit)`. Instead of waiting forever, a thread that can't get its second lock
-      **backs off** — releases what it holds — and tries again later, ideally after a random delay.
-
-      ```java
-      if (fromLock.tryLock()) {
-          try {
-              if (toLock.tryLock()) {
-                  try { ... } finally { toLock.unlock(); }
-              }
-          } finally { fromLock.unlock(); }
-      }
-      ```
+      `tryLock` gives up instead of waiting forever.
+      Release what you hold, then retry after a random delay.
 
   - type: widget
     widget: locks
@@ -45,6 +32,13 @@ steps:
     hints:
       - If both try at once, both back off. Then let one thread get ahead before the other starts again.
     explanation: Back-off turns a permanent deadlock into a temporary delay — at the risk of livelock if both keep retrying in step.
+
+  - type: explanation
+    title: Diagnose with thread dumps
+    body: |
+      A thread dump shows every thread's stack and locks.
+      It reports deadlock cycles.
+      Use `jstack` or `jcmd <pid> Thread.print`.
 
   - type: choice
     prompt: How do you find out which threads are deadlocked in a running JVM?

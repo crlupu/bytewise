@@ -6,11 +6,18 @@ sources:
   - { book: jcip, ref: "§13.2–13.4, Performance Considerations; Fairness; Choosing Between Synchronized and ReentrantLock" }
 steps:
   - type: explanation
-    title: Fair and nonfair
+    title: Fair or nonfair
     body: |
-      `ReentrantLock` offers a choice. A **fair** lock grants access in the order threads asked. A **nonfair** lock (the
-      default) lets a thread **barge** in: if the lock happens to be free when it asks, it takes it, even if others are
-      queued.
+      A fair lock serves threads in arrival order.
+      A nonfair lock lets a newcomer barge in when it's free.
+      Nonfair is the default.
+
+  - type: explanation
+    title: Nonfair is faster
+    body: |
+      Waking a waiting thread takes time.
+      A running thread can use the lock in that gap.
+      Choose fairness only when starvation matters.
 
   - type: choice
     prompt: Why is nonfair locking usually faster under contention?
@@ -28,6 +35,12 @@ steps:
         correct: true
       - text: Always
         feedback: Most programs never need fairness, and pay for it heavily if they ask for it.
+
+  - type: explanation
+    title: Prefer synchronized
+    body: |
+      `synchronized` is simpler, and can't be left locked.
+      Use `ReentrantLock` only for timeouts, interrupts or unusual structures.
 
   - type: match
     prompt: Synchronized or ReentrantLock?

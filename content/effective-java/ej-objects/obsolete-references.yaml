@@ -6,21 +6,16 @@ sources:
   - { book: effective-java, ref: "Item 7" }
 steps:
   - type: explanation
-    title: A leak in a garbage-collected language
+    title: Java programs can leak memory
     body: |
+      This stack pops by moving `size` down:
+
       ```java
-      public class Stack {
-          private Object[] elements = new Object[16];
-          private int size = 0;
-          public void push(Object e) { ensureCapacity(); elements[size++] = e; }
-          public Object pop() {
-              if (size == 0) throw new EmptyStackException();
-              return elements[--size];
-          }
-      }
+      public Object pop() { return elements[--size]; }
       ```
 
-      It works — but it leaks. After `pop`, the array slot still points at the popped object.
+      The array slot still points at the popped object.
+      So the garbage collector can never free it.
 
   - type: choice
     prompt: Why can't the garbage collector reclaim popped objects?
@@ -32,6 +27,13 @@ steps:
       - text: "`pop` returns a copy, not the original"
         feedback: Java returns the reference itself.
     explanation: Those references are **obsolete** — they'll never be dereferenced again — but the GC can't know that.
+
+  - type: explanation
+    title: Null out what you manage yourself
+    body: |
+      Clear the slot once it's no longer in use.
+      Only classes that manage their own memory need this.
+      Ordinary local variables just go out of scope.
 
   - type: blank
     prompt: Fix `pop`.
@@ -50,6 +52,13 @@ steps:
       - text: Yes — it helps the garbage collector
         feedback: It just clutters code; locals become unreachable when their scope ends.
     explanation: The warning sign is a class that keeps its own storage pool, like the stack's array.
+
+  - type: explanation
+    title: Watch caches and listeners
+    body: |
+      Caches that only grow are a common leak.
+      So are listeners that are never removed.
+      Evict old entries, or hold them through weak references.
 
   - type: match
     prompt: Match each common source of leaks to a fix.

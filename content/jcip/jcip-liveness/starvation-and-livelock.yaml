@@ -5,6 +5,14 @@ tags: [java, concurrency, liveness, starvation, livelock, thread priorities]
 sources:
   - { book: jcip, ref: "§10.3, Other Liveness Hazards" }
 steps:
+  - type: explanation
+    title: Four liveness hazards
+    body: |
+      Deadlock: threads wait for each other forever.
+      Starvation: a thread never gets what it needs.
+      Poor responsiveness: users wait too long.
+      Livelock: threads stay busy but make no progress.
+
   - type: match
     prompt: Match each liveness hazard to its description.
     pairs:
@@ -17,6 +25,12 @@ steps:
       - left: Livelock
         right: Threads aren't blocked, but keep repeating an operation that always fails
 
+  - type: explanation
+    title: "Priorities don't fix starvation"
+    body: |
+      Thread priorities behave differently on each system.
+      Changing them usually causes new problems.
+
   - type: choice
     prompt: Is raising a thread's priority a good way to fix starvation?
     options:
@@ -28,12 +42,9 @@ steps:
   - type: explanation
     title: Livelock
     body: |
-      A message-processing system rolls back a transaction and puts a message back **at the head of the queue** when
-      processing fails. If the message can never succeed — a bug in the handler for that kind of message — it's
-      redelivered and fails forever: the **poison message** problem.
-
-      Livelock also strikes when threads respond to each other too politely, like two people stepping aside in a
-      corridor in the same direction, again and again.
+      A message that always fails gets retried forever.
+      Polite threads keep stepping aside for each other.
+      Random retry delays break the cycle.
 
   - type: choice
     prompt: Two threads with `tryLock` back-off keep retrying in exact lockstep, colliding every time. What's the remedy?

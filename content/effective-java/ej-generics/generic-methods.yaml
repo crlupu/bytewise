@@ -6,18 +6,15 @@ sources:
   - { book: effective-java, ref: "Item 30" }
 steps:
   - type: explanation
-    title: A generic method
+    title: Methods can be generic too
     body: |
+      Declare type parameters before the return type.
+
       ```java
-      public static <E> Set<E> union(Set<E> s1, Set<E> s2) {
-          Set<E> result = new HashSet<>(s1);
-          result.addAll(s2);
-          return result;
-      }
+      public static <E> Set<E> union(Set<E> s1, Set<E> s2)
       ```
 
-      The type parameter list `<E>` goes between the modifiers and the return type. Callers don't specify `E` —
-      the compiler **infers** it from the arguments.
+      Callers don't name `E`. The compiler infers it.
 
   - type: blank
     prompt: Put the type parameter list in the right place.
@@ -27,14 +24,9 @@ steps:
   - type: explanation
     title: Recursive type bounds
     body: |
-      To find the maximum of a collection, elements must be comparable **to each other**:
-
-      ```java
-      public static <E extends Comparable<E>> E max(Collection<E> c) { ... }
-      ```
-
-      Read it as "any type E that can be compared to itself". A type parameter bounded by an expression involving
-      itself is a **recursive type bound**.
+      `<E extends Comparable<E>>` means "E can be compared with itself".
+      So `max` can compare any two elements.
+      A stateless generic object can be shared across all types.
 
   - type: choice
     prompt: What does `<E extends Comparable<E>>` guarantee inside `max`?

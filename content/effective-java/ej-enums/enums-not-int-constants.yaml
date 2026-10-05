@@ -6,17 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 34" }
 steps:
   - type: explanation
-    title: The int enum pattern
+    title: int constants are unsafe
     body: |
-      ```java
-      public static final int APPLE_FUJI  = 0;
-      public static final int APPLE_PIPPIN = 1;
-      public static final int ORANGE_NAVEL = 0;
-      ```
+      `APPLE_FUJI = 0` and `ORANGE_NAVEL = 0` are both just `int`s.
+      Nothing stops you passing an orange as an apple.
+      They print as bare numbers.
 
-      Nothing stops you passing an orange where an apple is expected, or comparing them with `==`. The values print as
-      bare numbers. And because constants are compiled into clients, changing a value silently breaks them until they're
-      recompiled.
+  - type: explanation
+    title: Enums are real types
+    body: |
+      An `Apple` parameter accepts only `Apple` values.
+      Enums print their names.
+      `values()` lists every constant.
 
   - type: choice
     prompt: Which are advantages of a Java `enum` over int constants?
@@ -31,24 +32,15 @@ steps:
         feedback: Each constant is an object; memory isn't the point.
 
   - type: explanation
-    title: Enums with behaviour
+    title: Enums can carry behaviour
     body: |
-      Enums are full classes. Each constant can carry data and even its own method body:
+      Each constant can have data and its own method body.
 
       ```java
-      public enum Operation {
-          PLUS("+")   { public double apply(double x, double y) { return x + y; } },
-          MINUS("-")  { public double apply(double x, double y) { return x - y; } },
-          TIMES("*")  { public double apply(double x, double y) { return x * y; } };
-
-          private final String symbol;
-          Operation(String symbol) { this.symbol = symbol; }
-          public abstract double apply(double x, double y);
-      }
+      PLUS("+") { double apply(double x, double y) { return x + y; } },
       ```
 
-      With an **abstract** method, adding a constant without implementing `apply` doesn't compile — safer than a
-      `switch` on `this` that someone forgets to update.
+      Make the method abstract, and every constant must implement it.
 
   - type: choice
     prompt: "Payroll: weekdays and weekends compute overtime differently. Instead of a switch in `PayrollDay`, what's the more robust design?"

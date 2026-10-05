@@ -6,23 +6,31 @@ sources:
   - { book: effective-java, ref: "Item 2" }
 steps:
   - type: explanation
-    title: Too many constructor parameters
+    title: Long parameter lists hurt
     body: |
-      With many optional parameters, constructors become a guessing game:
+      Some classes have many optional parameters.
+      Telescoping constructors pass them all by position:
 
       ```java
-      new NutritionFacts(240, 8, 100, 0, 35, 27); // which number is which?
+      new NutritionFacts(240, 8, 100, 0, 35, 27); // which is which?
       ```
 
-      The **builder** pattern names each argument, keeps the finished object immutable, and validates once in `build()`:
+      Swap two numbers and it still compiles.
+      The JavaBeans pattern uses setters instead — but then the object exists half-built.
+
+  - type: explanation
+    title: A builder names every argument
+    body: |
+      A builder collects the parameters one named call at a time.
+      Then `build()` validates them and creates the object.
 
       ```java
       NutritionFacts cola = new NutritionFacts.Builder(240, 8)
-          .calories(100)
-          .sodium(35)
-          .carbohydrate(27)
-          .build();
+          .calories(100).sodium(35).build();
       ```
+
+      It reads like named arguments.
+      And the finished object can still be immutable.
 
   - type: match
     prompt: Match each approach to its main weakness.

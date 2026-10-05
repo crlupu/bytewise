@@ -6,17 +6,23 @@ sources:
   - { book: effective-java, ref: "Item 77" }
 steps:
   - type: explanation
-    title: The empty catch block
+    title: An empty catch hides failures
     body: |
+      An exception says something needs attention.
+
       ```java
-      try {
-          ...
-      } catch (SomeException e) {
-      }
+      try { ... } catch (SomeException e) { }
       ```
 
-      An exception is a signal that something needs attention. Swallowing it means the program carries on in an unknown
-      state — and may fail much later, far from the cause, with no clue left behind.
+      Swallow it, and the program continues in an unknown state.
+
+  - type: explanation
+    title: If you ignore one, say why
+    body: |
+      Sometimes ignoring is right.
+      Then name the variable `ignored`.
+      And add a comment explaining why.
+      Otherwise, let it propagate.
 
   - type: choice
     prompt: When is ignoring an exception acceptable?

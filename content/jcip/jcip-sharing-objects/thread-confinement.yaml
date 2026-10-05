@@ -6,14 +6,18 @@ sources:
   - { book: jcip, ref: "§3.3, Thread Confinement" }
 steps:
   - type: explanation
-    title: Don't share
+    title: "Don't share"
     body: |
-      Accessing shared, mutable data needs synchronization. One way around it: **don't share**. If data is only ever
-      accessed from one thread, no synchronization is needed. This is **thread confinement**, and it's one of the
-      simplest ways to achieve thread safety.
+      Data used by only one thread needs no locks.
+      This is thread confinement.
+      Swing keeps all components on one thread.
 
-      Swing confines its components to the event dispatch thread; JDBC connection pools hand each connection to one
-      thread at a time, which uses it for the whole request.
+  - type: explanation
+    title: Three ways to confine
+    body: |
+      Ad hoc: by convention only. Fragile.
+      Stack: only local variables can reach it.
+      `ThreadLocal`: each thread gets its own copy.
 
   - type: match
     prompt: Match each kind of confinement to how it works.
@@ -41,6 +45,13 @@ steps:
           ThreadLocal.[[withInitial]](() -> DriverManager.getConnection(DB_URL));
     code: true
     explanation: Each thread calling `connectionHolder.get()` gets its own connection, created on first use.
+
+  - type: explanation
+    title: ThreadLocal in pools
+    body: |
+      Pool threads are reused.
+      Values left in a `ThreadLocal` leak into the next task.
+      Remove them when the task ends.
 
   - type: choice
     prompt: What's the danger of `ThreadLocal` in a thread pool?

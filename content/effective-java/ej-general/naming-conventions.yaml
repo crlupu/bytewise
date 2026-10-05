@@ -5,6 +5,14 @@ tags: [java, effective java, naming, conventions, style]
 sources:
   - { book: effective-java, ref: "Item 68" }
 steps:
+  - type: explanation
+    title: Names show what things are
+    body: |
+      Packages: `lowercase.dotted`.
+      Classes: `EachWordCapitalized`.
+      Methods and fields: `firstLowercase`.
+      Constants: `UPPER_SNAKE_CASE`. Type parameters: one letter.
+
   - type: match
     prompt: Match each identifier type to its typographical convention.
     pairs:
@@ -30,6 +38,13 @@ steps:
         right: Exception type
       - left: "`R`"
         right: Return type of a function
+
+  - type: explanation
+    title: Names follow grammar
+    body: |
+      Boolean methods start with `is` or `has`.
+      `toX` converts to a new object.
+      `asX` returns a view of the same object.
 
   - type: match
     prompt: Match each grammatical method-name pattern to its meaning.

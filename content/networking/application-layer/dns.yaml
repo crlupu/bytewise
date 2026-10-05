@@ -8,15 +8,10 @@ steps:
   - type: explanation
     title: A distributed directory
     body: |
-      Before your browser opens a TCP connection to `www.example.com`, it needs an IP address. The **Domain Name System**
-      maps names to addresses — and no single server could hold the whole map or survive the load. So DNS is a
-      **hierarchy**:
-
-      - **Root** servers know where the servers for each top-level domain are.
-      - **TLD** servers (for `.com`, `.org`, `.ro`…) know each domain's **authoritative** servers.
-      - **Authoritative** servers hold the actual records for their domain.
-
-      Your device asks a **local resolver** (your ISP's, or one like 1.1.1.1), which does the legwork.
+      DNS turns names like `www.example.com` into IP addresses.
+      Root servers point to top-level domain servers, like `.com`.
+      Those point to the domain's authoritative servers.
+      Your resolver walks this chain for you.
 
   - type: order
     prompt: The resolver's cache is empty. Put the lookup of `www.example.com` in order.
@@ -42,6 +37,13 @@ steps:
       - left: NS
         right: The authoritative name server for a domain
 
+  - type: explanation
+    title: Caching keeps it fast
+    body: |
+      Resolvers cache every answer.
+      Most lookups never reach a root server.
+      DNS uses UDP: one packet each way, no handshake.
+
   - type: choice
     prompt: In practice, most lookups never reach a root server. Why?
     options:
@@ -52,13 +54,11 @@ steps:
     explanation: Caching is what makes DNS fast and keeps load off the top of the hierarchy.
 
   - type: explanation
-    title: TTL — the cost of caching
+    title: TTL is the price of caching
     body: |
-      Every record carries a **TTL** (time to live, in seconds): how long resolvers may cache it.
-
-      A long TTL means fewer lookups and faster answers — but if you change the record, some users keep the old
-      answer until their cached copy expires. Before migrating a service to a new address, teams **lower the TTL**
-      days in advance, so the switch takes effect quickly.
+      Each record has a TTL: how long it may be cached.
+      A change takes up to one TTL to reach everyone.
+      Lower the TTL days before a migration.
 
   - type: predict
     prompt: |

@@ -6,25 +6,18 @@ sources:
   - { book: jcip, ref: "§7.3, Handling Abnormal Thread Termination" }
 steps:
   - type: explanation
-    title: Thread leakage
+    title: Threads can die silently
     body: |
-      When a thread dies from an uncaught exception, its stack trace goes to the console — which nobody may be watching —
-      and the thread is gone. In a GUI, the event thread dies and the app freezes; in a pool, capacity silently shrinks.
+      An uncaught exception kills its thread.
+      The trace goes to a console nobody reads.
+      A pool quietly shrinks, or a GUI freezes.
 
-      Code that calls unknown code (like tasks in a pool) should be suspicious of it:
-
-      ```java
-      public void run() {
-          Throwable thrown = null;
-          try {
-              while (!isInterrupted()) runTask(getTaskFromWorkQueue());
-          } catch (Throwable e) {
-              thrown = e;
-          } finally {
-              threadExited(this, thrown);   // tell the owner, who may replace this thread
-          }
-      }
-      ```
+  - type: explanation
+    title: Catch and report
+    body: |
+      Wrap code you don't control in `try`/`catch (Throwable)`.
+      An `UncaughtExceptionHandler` can log dying threads.
+      With `submit`, the exception goes into the `Future` instead.
 
   - type: choice
     prompt: What does `Thread.UncaughtExceptionHandler` provide?

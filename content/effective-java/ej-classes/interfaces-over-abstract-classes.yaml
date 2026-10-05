@@ -6,13 +6,12 @@ sources:
   - { book: effective-java, ref: "Item 20" }
 steps:
   - type: explanation
-    title: Two ways to define a type
+    title: Interfaces are more flexible
     body: |
-      Java has two mechanisms for defining a type with multiple implementations. The decisive difference: a class can
-      extend only **one** abstract class, but implement **any number** of interfaces.
-
-      So existing classes can easily be retrofitted with a new interface — add `implements Comparable` — while fitting a
-      new abstract class means inserting it high in the hierarchy, where it affects every descendant.
+      A class can extend only one abstract class.
+      It can implement any number of interfaces.
+      So existing classes are easy to retrofit with an interface.
+      Interfaces are ideal for mixins like `Comparable`.
 
   - type: choice
     prompt: Which are advantages of interfaces over abstract classes?
@@ -27,20 +26,17 @@ steps:
         feedback: Interfaces can't have instance fields; that's an abstract class's advantage.
 
   - type: explanation
-    title: Skeletal implementations
+    title: Add a skeletal implementation
     body: |
-      You can combine both: an interface for the type, plus an abstract **skeletal implementation** class that implements
-      the non-primitive methods on top of a few primitive ones. By convention it's called `AbstractInterface`:
-      `AbstractList`, `AbstractSet`, `AbstractMap`.
+      Pair the interface with an abstract class that does most of the work.
+      By convention it's named `AbstractList`, `AbstractSet` and so on.
+      Implementers write just a few primitive methods.
 
       ```java
-      static List<Integer> intArrayAsList(int[] a) {
-          return new AbstractList<>() {
-              @Override public Integer get(int i) { return a[i]; }
-              @Override public Integer set(int i, Integer v) { int old = a[i]; a[i] = v; return old; }
-              @Override public int size() { return a.length; }
-          };
-      }
+      new AbstractList<Integer>() {
+          public Integer get(int i) { return a[i]; }
+          public int size() { return a.length; }
+      };
       ```
 
   - type: match

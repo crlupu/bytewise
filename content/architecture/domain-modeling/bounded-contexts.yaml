@@ -6,13 +6,11 @@ sources:
   - { book: learning-ddd, ref: "Chapters 1–4, Strategic Design" }
 steps:
   - type: explanation
-    title: Speak the business's language
+    title: One shared language
     body: |
-      Many bugs are translation errors: the business means one thing, the code models another. Domain-driven design
-      answers with a **ubiquitous language** — one precise vocabulary, shared by domain experts and engineers, and used
-      unchanged in conversations, documents, tests and code.
-
-      If the experts say *policy*, the class is `Policy` — not `InsuranceContractRecord`.
+      Many bugs are translation errors.
+      Use the business's words in code, docs and conversation.
+      This is the ubiquitous language.
 
   - type: choice
     prompt: In a CRM, Marketing calls someone a **lead** once they download a whitepaper. Sales calls someone a lead only after a qualifying call. What should the model do?
@@ -28,11 +26,10 @@ steps:
   - type: explanation
     title: Bounded contexts
     body: |
-      A **bounded context** is the boundary inside which a model and its language are consistent. Across boundaries, the
-      same word may mean different things — and that's fine, because each model only has to be right for its own context.
-
-      Bounded contexts are also natural units of ownership: ideally one team per context, and often one service per
-      context — but the boundary is about **meaning** first, deployment second.
+      A word can mean different things in different departments.
+      A bounded context is where one meaning holds.
+      Each context gets its own model.
+      Ideally, one team owns each context.
 
   - type: match
     prompt: Match each kind of subdomain to how to treat it.
@@ -44,6 +41,13 @@ steps:
       - left: Generic subdomain
         right: Solved problems everyone has, like auth or payments — buy or adopt
     explanation: Where you invest design effort follows from which kind of subdomain you're in.
+
+  - type: explanation
+    title: Connecting contexts
+    body: |
+      Teams can partner, share a small kernel, or conform.
+      An anticorruption layer translates a foreign model into yours.
+      Don't split every entity into its own context.
 
   - type: match
     prompt: Match each integration pattern between bounded contexts to its description.

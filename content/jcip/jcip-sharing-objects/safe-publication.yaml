@@ -5,6 +5,12 @@ tags: [java, concurrency, safe publication, effectively immutable, volatile, con
 sources:
   - { book: jcip, ref: "§3.5, Safe Publication" }
 steps:
+  - type: explanation
+    title: Unsafe publication shows half-built objects
+    body: |
+      A plain field assignment isn't enough.
+      Another thread might see the object before its fields are set.
+
   - type: predict
     prompt: |
       One thread runs `holder = new Holder(42);` (a plain public field). Another calls `holder.assertSanity()`.
@@ -25,6 +31,14 @@ steps:
         feedback: In a single thread it can't. Across threads, an improperly published object can appear to change under you.
     explanation: The problem isn't the `Holder` class; it's how it was published.
 
+  - type: explanation
+    title: Safe ways to publish
+    body: |
+      A static initializer.
+      A `volatile` or `final` field.
+      A field guarded by a lock.
+      A thread-safe collection.
+
   - type: match
     prompt: Match each safe-publication idiom to an example.
     pairs:
@@ -40,13 +54,11 @@ steps:
         right: Putting it in a `ConcurrentHashMap` or `BlockingQueue`
 
   - type: explanation
-    title: What each kind of object needs
+    title: What each object needs
     body: |
-      - **Immutable** objects can be published by any mechanism — even an unsafe one.
-      - **Effectively immutable** objects — never modified after publication, though technically mutable — must be
-        **safely published**, then need no further synchronization. A `Date` stored in a `synchronizedMap` and never
-        changed is an example.
-      - **Mutable** objects must be safely published **and** either be thread-safe or guarded by a lock on every access.
+      Immutable: publish any way at all.
+      Effectively immutable: publish safely, then no locks.
+      Mutable: publish safely, and lock every access.
 
   - type: choice
     prompt: "You put a `Date` into a `Collections.synchronizedMap` and nobody ever modifies it. Do readers need to lock the `Date`?"

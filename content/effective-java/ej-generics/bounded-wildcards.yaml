@@ -6,21 +6,22 @@ sources:
   - { book: effective-java, ref: "Item 31" }
 steps:
   - type: explanation
-    title: Invariance gets in the way
+    title: Generics are invariant
     body: |
-      ```java
-      public void pushAll(Iterable<E> src) { for (E e : src) push(e); }
-
-      Stack<Number> numbers = new Stack<>();
-      Iterable<Integer> integers = ...;
-      numbers.pushAll(integers);   // error: Iterable<Integer> is not Iterable<Number>
-      ```
-
-      Logically it should work — an Integer *is* a Number. A **bounded wildcard** says so:
+      An `Integer` is a `Number`.
+      But an `Iterable<Integer>` is not an `Iterable<Number>`.
 
       ```java
-      public void pushAll(Iterable<? extends E> src)
+      public void pushAll(Iterable<E> src)   // rejects Iterable<Integer>
+      public void pushAll(Iterable<? extends E> src) // accepts it
       ```
+
+  - type: explanation
+    title: PECS
+    body: |
+      Producer `extends`: you read E's from it.
+      Consumer `super`: you put E's into it.
+      Don't use wildcards in return types.
 
   - type: blank
     prompt: "`popAll` moves elements *into* a destination collection. Make it accept a `Collection<Object>` for a `Stack<Number>`."

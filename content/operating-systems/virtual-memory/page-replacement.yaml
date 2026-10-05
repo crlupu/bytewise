@@ -8,13 +8,9 @@ steps:
   - type: explanation
     title: Who gets evicted?
     body: |
-      Memory is full and a page fault needs a frame. Which page goes? Three classic answers:
-
-      - **FIFO** — evict the page that was **loaded earliest**. Simple: a queue.
-      - **LRU** — evict the page **used least recently**. The past predicts the future.
-      - **OPT** (Bélády's optimal) — evict the page that **won't be needed for the longest**. Perfect, but it needs to see the future.
-
-      We'll play each against the same sequence of page accesses — a **reference string**.
+      FIFO: the page loaded earliest.
+      LRU: the page used least recently.
+      OPT: the page needed furthest in the future.
 
   - type: widget
     widget: paging
@@ -64,6 +60,13 @@ steps:
       LRU: 9. Try OPT too — it gets 7, the fewest any policy could manage on this string.
       LRU lands between FIFO and the ideal.
 
+  - type: explanation
+    title: More memory, more faults?
+    body: |
+      OPT needs to see the future, so it's only a yardstick.
+      Strangely, FIFO can fault more with more frames.
+      That's Bélády's anomaly.
+
   - type: choice
     prompt: Why don't real operating systems use OPT?
     options:
@@ -102,12 +105,9 @@ steps:
   - type: explanation
     title: Stack algorithms and the clock
     body: |
-      LRU and OPT can't show the anomaly. They are **stack algorithms**: the pages held with *n* frames
-      are always a subset of those held with *n* + 1, so more frames can never mean more faults.
-
-      True LRU is costly — it needs to timestamp every memory access. Real kernels approximate it with the
-      **clock** (second-chance) algorithm: each frame has a *referenced* bit the hardware sets on access;
-      a hand sweeps the frames, clearing set bits and evicting the first frame whose bit is already clear.
+      LRU and OPT never show the anomaly.
+      True LRU is too costly to track.
+      The clock algorithm approximates it with a referenced bit.
 
   - type: match
     prompt: Match each policy to the page it evicts.

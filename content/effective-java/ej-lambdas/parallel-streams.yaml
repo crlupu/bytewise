@@ -6,18 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 48" }
 steps:
   - type: explanation
-    title: Not a free speed-up
+    title: "parallel() isn't a free speed-up"
     body: |
       This prints the first 20 Mersenne primes:
 
       ```java
       primes().map(p -> TWO.pow(p.intValueExact()).subtract(ONE))
-              .filter(mersenne -> mersenne.isProbablePrime(50))
-              .limit(20)
-              .forEach(System.out::println);
+          .filter(mersenne -> mersenne.isProbablePrime(50))
+          .limit(20)
+          .forEach(System.out::println);
       ```
 
-      where `primes()` is `Stream.iterate(TWO, BigInteger::nextProbablePrime)`.
+      Here `primes()` is `Stream.iterate(TWO, BigInteger::nextProbablePrime)`.
 
   - type: predict
     prompt: Someone adds `.parallel()` to this pipeline, hoping for a speed-up on a 4-core machine. What happens?
@@ -30,6 +30,13 @@ steps:
     explanation: |
       The library can't split `Stream.iterate`, and `limit` makes threads compute extra, ever-more-expensive elements
       that will be thrown away.
+
+  - type: explanation
+    title: What parallelizes well
+    body: |
+      Sources that split cheaply: arrays, `ArrayList`, ranges.
+      Terminal operations that combine cheaply: `sum`, `count`.
+      `Stream.iterate` and `limit` parallelize badly.
 
   - type: match
     prompt: Good or poor for parallel streams?
@@ -52,18 +59,9 @@ steps:
     explanation: Use `parallel()` only after measuring a real speed-up on realistic data — and keep correctness requirements in mind.
 
   - type: explanation
-    title: When it does help
+    title: Measure, and stay correct
     body: |
-      Counting primes up to *n* is a good fit — a splittable range, independent work per element, a cheap terminal combination:
-
-      ```java
-      static long pi(long n) {
-          return LongStream.rangeClosed(2, n)
-                           .parallel()
-                           .mapToObj(BigInteger::valueOf)
-                           .filter(i -> i.isProbablePrime(50))
-                           .count();
-      }
-      ```
-
-      On a quad-core machine this runs several times faster than the sequential version.
+      Functions must be stateless and non-interfering.
+      Otherwise results can be wrong, not just slow.
+      Counting primes in a range does speed up well.
+      Always measure before keeping `.parallel()`.

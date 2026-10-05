@@ -6,13 +6,10 @@ sources:
   - { book: jcip, ref: "§3.1, Visibility" }
 steps:
   - type: explanation
-    title: Synchronization isn't just about atomicity
+    title: Writes may stay invisible
     body: |
-      Synchronized blocks are usually thought of as being about atomicity. Just as important is **memory visibility**:
-      making sure that when one thread changes an object, other threads can actually see the change.
-
-      Without synchronization, the compiler, the JIT, the processor and its caches may all keep values out of main
-      memory, or reorder operations, as long as the thread doing them can't tell.
+      Without synchronization, one thread's writes may never reach another.
+      Caches, the compiler and the CPU may delay or reorder them.
 
   - type: predict
     prompt: What can this program print?
@@ -43,6 +40,13 @@ steps:
       Seeing `0` means the reader saw the write to `ready` before the write to `number` — **reordering**. Without
       synchronization there are no guarantees about the order in which another thread sees writes.
 
+  - type: explanation
+    title: Stale and torn values
+    body: |
+      A reader can see an out-of-date value.
+      Some fields fresh, others stale.
+      A `long` or `double` can even be half-written.
+
   - type: choice
     prompt: A getter for a field isn't synchronized, but its setter is. What can a reader see?
     options:
@@ -61,6 +65,13 @@ steps:
       - text: Only values that some thread actually wrote
         feedback: That "out-of-thin-air safety" holds for most variables, but the JVM may split 64-bit `long` and `double` writes.
     explanation: Shared mutable `long` and `double` variables need `volatile` or a lock even when staleness doesn't matter.
+
+  - type: explanation
+    title: Locks also make writes visible
+    body: |
+      Locking isn't only about taking turns.
+      It also publishes what the previous holder wrote.
+      Readers and writers must use the same lock.
 
   - type: blank
     prompt: Complete the rule.

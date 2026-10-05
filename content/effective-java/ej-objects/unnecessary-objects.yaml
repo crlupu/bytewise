@@ -5,6 +5,13 @@ tags: [java, effective java, performance, autoboxing, regex, string]
 sources:
   - { book: effective-java, ref: "Item 6" }
 steps:
+  - type: explanation
+    title: Reuse instead of recreating
+    body: |
+      `new String("bikini")` makes a new object on every call.
+      The literal `"bikini"` is reused.
+      Immutable objects can always be shared like this.
+
   - type: predict
     prompt: How many new `String` objects does this create, if called a million times?
     code: |
@@ -16,6 +23,13 @@ steps:
       - text: One — the literal is shared
         feedback: The literal is shared, but `new` copies it into a fresh object every time.
     explanation: Just write `String s = "bikini";` — one interned instance, reused everywhere.
+
+  - type: explanation
+    title: Boxing creates objects silently
+    body: |
+      A `Long sum` makes every `sum += i` create a new `Long`.
+      A `long sum` creates nothing.
+      Prefer primitives to boxed types in hot code.
 
   - type: predict
     prompt: This sums the integers from 0 to `Integer.MAX_VALUE`. Why is it several times slower than it should be?
@@ -35,22 +49,11 @@ steps:
     explanation: About 2³¹ unnecessary `Long` objects. Prefer primitives to boxed primitives, and watch for unintended autoboxing.
 
   - type: explanation
-    title: Hidden expensive objects
+    title: Some calls hide expensive work
     body: |
-      Some calls build costly objects internally every time:
-
-      ```java
-      static boolean isRomanNumeral(String s) {
-          return s.matches("^(?=.)M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
-      }
-      ```
-
-      `String.matches` compiles the regex into a `Pattern` on **every call**, then throws it away. Compile it once:
-
-      ```java
-      private static final Pattern ROMAN = Pattern.compile("^(?=.)M*(C[MD]|D?C{0,3})(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$");
-      static boolean isRomanNumeral(String s) { return ROMAN.matcher(s).matches(); }
-      ```
+      `String.matches` compiles its regex on every call.
+      Compile the `Pattern` once and keep it in a static field.
+      Small objects are cheap, though — only avoid the costly, repeated ones.
 
   - type: choice
     prompt: Does this mean object creation is expensive and should be avoided everywhere?

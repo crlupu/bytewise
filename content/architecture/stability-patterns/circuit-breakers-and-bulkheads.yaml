@@ -6,17 +6,12 @@ sources:
   - { book: release-it, ref: "Chapter 5, Stability Patterns" }
 steps:
   - type: explanation
-    title: The circuit breaker
+    title: Circuit breakers
     body: |
-      A timeout bounds each call. But if a dependency is down, every caller still waits the full timeout, on every call.
-
-      A **circuit breaker** wraps the integration point and counts failures:
-
-      - **Closed** — calls pass through. Too many failures **trip** it open.
-      - **Open** — calls fail **immediately**, without touching the dependency.
-      - **Half-open** — after a cool-down, a trial call is let through. Success closes the breaker; failure opens it again.
-
-      Like the one in your house: it stops a fault from doing more damage, and can be reset.
+      Closed: calls pass through.
+      Too many failures, and it opens.
+      Open: calls fail immediately.
+      Half-open: one trial call decides whether to close.
 
   - type: order
     prompt: Put a breaker's life through an outage in order.
@@ -42,12 +37,10 @@ steps:
   - type: explanation
     title: Bulkheads and backoff
     body: |
-      **Bulkheads**, like a ship's watertight compartments, split resources so a flood stays local: give each dependency
-      its **own** thread pool or connection pool. If the recommendations service hangs, it can exhaust only its own
-      pool, and checkout keeps working.
-
-      **Retries** need care. Immediate retries multiply load on a service that's already struggling — a *retry storm*.
-      Retry only idempotent calls, a few times, with **exponential backoff** and **jitter** so callers don't retry in lockstep.
+      Give each dependency its own thread or connection pool.
+      Then one failure stays contained.
+      Retry only idempotent calls.
+      Back off exponentially, with random jitter.
 
   - type: widget
     widget: tradeoff

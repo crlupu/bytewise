@@ -6,17 +6,12 @@ sources:
   - { book: ostep, ref: "Chapter 8, Scheduling: The Multi-Level Feedback Queue" }
 steps:
   - type: explanation
-    title: Learning from behaviour
+    title: Learn from behaviour
     body: |
-      We'd like STCF's turnaround and round robin's response, without knowing job lengths. The **multi-level feedback
-      queue** (MLFQ) gets close by watching what jobs actually do.
-
-      It keeps several queues, each a **priority level**. The two basic rules:
-
-      1. A job in a higher queue runs before any job in a lower one.
-      2. Jobs in the same queue take turns, round robin.
-
-      The trick is how jobs **move** between queues.
+      MLFQ has several queues, one per priority.
+      Higher queues run first.
+      Jobs in the same queue take turns.
+      Jobs move between queues as they run.
 
   - type: order
     prompt: Follow a long, CPU-hungry job through MLFQ. Put its life in order.
@@ -26,6 +21,13 @@ steps:
       - It is moved down one queue
       - It keeps sinking until it runs at the lowest priority
     explanation: The scheduler assumes every job might be short; jobs that prove otherwise drift down.
+
+  - type: explanation
+    title: Demote CPU hogs
+    body: |
+      New jobs start at the top.
+      Use up your time allotment, and you drop a level.
+      Interactive jobs stay near the top.
 
   - type: choice
     prompt: An editor waits for keystrokes, running for a millisecond each time. Where does it stay?
@@ -37,17 +39,11 @@ steps:
     explanation: Interactive jobs stay high and get the CPU quickly when they need it — good response time without being told they're interactive.
 
   - type: explanation
-    title: Two problems, two more rules
+    title: Boost and account
     body: |
-      With only those rules, MLFQ can be broken:
-
-      - **Starvation**: if interactive jobs keep arriving, long jobs at the bottom may never run.
-      - **Gaming**: a job could do a tiny bit of I/O just before its slice ends, give up the CPU, and stay at the top forever.
-
-      The fixes:
-
-      - **Priority boost**: every so often (period *S*), move every job back to the top queue.
-      - **Accounting**: count the *total* CPU used at a level, however it's split up. Once the allotment is used, demote — whether or not the job gave up the CPU early.
+      Every so often, boost all jobs back to the top.
+      That prevents starvation.
+      Count total CPU time per level, so jobs can't game it.
 
   - type: match
     prompt: Match each rule to the problem it solves.

@@ -6,11 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 88" }
 steps:
   - type: explanation
-    title: A hidden constructor
+    title: readObject is a hidden constructor
     body: |
-      The immutable `Period` copies its `Date`s and checks `start <= end` in its constructor. Make it `Serializable` with
-      the default form, and none of that runs on deserialization: `readObject` effectively becomes another public
-      constructor — one that takes whatever bytes an attacker supplies.
+      Deserialization skips your constructor's checks.
+      It builds objects from whatever bytes it gets.
+      An attacker can forge a broken or shared object.
 
   - type: choice
     prompt: Which attacks become possible against a serializable `Period` with no `readObject`?
@@ -21,6 +21,14 @@ steps:
         correct: true
       - text: None, since the fields are private and final
         feedback: Serialization bypasses constructors and access control.
+
+  - type: explanation
+    title: Copy, then check
+    body: |
+      Call `defaultReadObject()` first.
+      Copy mutable fields defensively.
+      Check invariants on the copies.
+      Throw `InvalidObjectException` if they fail.
 
   - type: order
     prompt: Put a defensive `readObject` in order.

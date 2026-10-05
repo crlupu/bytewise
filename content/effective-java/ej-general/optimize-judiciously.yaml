@@ -6,11 +6,17 @@ sources:
   - { book: effective-java, ref: "Item 67" }
 steps:
   - type: explanation
-    title: Good programs, not fast ones
+    title: Write good programs first
     body: |
-      Premature optimization trades clarity — and often correctness — for speed you may not need. Strive to write
-      **good** programs: well-structured, with information hidden behind clean module boundaries. If one later turns
-      out to be too slow, a good architecture lets you optimize the part that matters without touching the rest.
+      Optimizing early costs clarity, and often correctness.
+      Well-structured code hides details behind clean boundaries.
+      Then a slow part can be fixed alone.
+
+  - type: explanation
+    title: Some choices are hard to undo
+    body: |
+      Public APIs, wire protocols and data formats are long-lived.
+      Think about their performance up front.
 
   - type: choice
     prompt: Which design decisions are hard to undo for performance later, so deserve thought up front?
@@ -23,6 +29,14 @@ steps:
         correct: true
       - text: The body of a private method
         feedback: That can be rewritten freely later — the definition of "optimize when needed".
+
+  - type: explanation
+    title: "Measure, don't guess"
+    body: |
+      Measure before optimizing.
+      Profile to find the real hot spot.
+      Measure again afterwards.
+      Microbenchmarks mislead without a tool like JMH.
 
   - type: order
     prompt: Put the steps of a sound optimization in order.

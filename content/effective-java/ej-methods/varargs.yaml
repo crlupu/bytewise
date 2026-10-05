@@ -6,15 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 53" }
 steps:
   - type: explanation
-    title: One or more
+    title: Varargs takes zero or more
     body: |
-      A varargs method accepts zero or more arguments, collected into an array. For a method that needs **at least one**:
+      `int... args` accepts any number of arguments as an array — even none.
+      This `min` needs at least one:
 
       ```java
       static int min(int... args) {
-          if (args.length == 0) throw new IllegalArgumentException("Too few arguments");
+          if (args.length == 0)
+              throw new IllegalArgumentException("Too few arguments");
           int min = args[0];
-          for (int i = 1; i < args.length; i++) if (args[i] < min) min = args[i];
+          for (int i = 1; i < args.length; i++)
+              if (args[i] < min) min = args[i];
           return min;
       }
       ```
@@ -27,6 +30,13 @@ steps:
       - text: Varargs can't be used with primitives
         feedback: "`int...` is fine."
     explanation: It's also clumsy — `args[0]` must be handled separately.
+
+  - type: explanation
+    title: Require one, then the rest
+    body: |
+      `min(int firstArg, int... remainingArgs)` needs at least one.
+      Each varargs call allocates an array.
+      Fast APIs add overloads for the common small counts.
 
   - type: blank
     prompt: Require at least one argument in the signature.

@@ -6,13 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 74" }
 steps:
   - type: explanation
-    title: Part of the contract
+    title: Exceptions are part of the contract
     body: |
-      The exceptions a method throws are part of what callers need to know to use it correctly:
-
-      - Declare **checked** exceptions individually, and document each with `@throws` and the conditions that cause it.
-      - **Document unchecked exceptions too** — they describe the method's preconditions — but don't list them in the
-        method's `throws` clause.
+      Callers need to know what can go wrong.
+      Declare each checked exception separately.
+      Never just `throws Exception`.
 
   - type: choice
     prompt: Why is `public void process() throws Exception` a bad declaration?
@@ -21,6 +19,13 @@ steps:
         correct: true
       - text: It doesn't compile
     explanation: Never declare `throws Exception` or `throws Throwable` (`main` is the one exception).
+
+  - type: explanation
+    title: Document unchecked ones too
+    body: |
+      Use `@throws` for every exception.
+      List only checked ones in the `throws` clause.
+      If all methods share one, document it on the class.
 
   - type: choice
     prompt: How do you tell checked from unchecked exceptions at a glance in good documentation?

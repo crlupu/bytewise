@@ -6,20 +6,17 @@ sources:
   - { book: jcip, ref: "§6.2, The Executor Framework" }
 steps:
   - type: explanation
-    title: Decoupling submission from execution
+    title: Executors separate what from how
     body: |
-      ```java
-      public interface Executor { void execute(Runnable command); }
-      ```
-
-      One method — and a big idea. Code that submits tasks doesn't decide which thread runs them, when, or how many at
-      once. That's the executor's **execution policy**, and you can change it in one place.
+      You submit tasks to an `Executor`.
+      It decides which thread runs them, and when.
 
       ```java
-      private static final Executor exec = Executors.newFixedThreadPool(100);
-      ...
+      Executor exec = Executors.newFixedThreadPool(100);
       exec.execute(() -> handleRequest(connection));
       ```
+
+      Change the policy in one place.
 
   - type: match
     prompt: Match each factory to the pool it builds.
@@ -34,16 +31,11 @@ steps:
         right: Runs tasks after a delay or periodically
 
   - type: explanation
-    title: Lifecycle
+    title: Executors must be shut down
     body: |
-      An `ExecutorService` has three states — **running**, **shutting down** and **terminated** — and methods to move
-      between them:
-
-      - `shutdown()` starts a graceful shutdown: no new tasks, but already-submitted ones finish.
-      - `shutdownNow()` attempts to cancel running tasks and returns the ones never started.
-      - `awaitTermination(timeout, unit)` waits for termination.
-
-      Tasks submitted after shutdown are handed to the **rejected execution handler**.
+      `shutdown()` finishes queued tasks, then stops.
+      `shutdownNow()` tries to cancel running ones.
+      Unstopped pool threads keep the JVM alive.
 
   - type: choice
     prompt: A program creates an `ExecutorService` but never shuts it down. What happens when `main` returns?

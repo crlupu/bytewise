@@ -6,18 +6,12 @@ sources:
   - { book: ostep, ref: "Chapters 18–19, Paging and TLBs" }
 steps:
   - type: explanation
-    title: Every process gets its own address space
+    title: Virtual addresses
     body: |
-      Your program never sees physical memory directly. It uses **virtual addresses**, which the CPU
-      translates on every access.
-
-      Translation works in fixed-size blocks:
-
-      - virtual memory is cut into **pages** (commonly 4 KiB);
-      - physical memory is cut into **frames** of the same size;
-      - each process has a **page table** saying which frame holds each page — or that the page isn't in memory at all.
-
-      An address splits into a **page number** and an **offset** within the page. Only the page number is translated.
+      Programs use virtual addresses, never physical ones.
+      Memory is split into pages, often 4 KiB.
+      A page table maps each page to a physical frame.
+      An address is a page number plus an offset.
 
   - type: predict
     prompt: Pages are 4 KiB (4,096 bytes). Which page number holds virtual address **9,000**?
@@ -38,6 +32,13 @@ steps:
     hints:
       - The offset is what's left after removing whole pages — 9,000 − 2 × 4,096.
     explanation: The offset passes through translation unchanged; only the page number is swapped for a frame number.
+
+  - type: explanation
+    title: Page faults
+    body: |
+      If a page isn't in memory, the access faults.
+      The OS loads it from disk, then retries the instruction.
+      A TLB caches recent translations.
 
   - type: choice
     prompt: A program touches a page whose page-table entry says "not in memory". What happens?
@@ -68,11 +69,10 @@ steps:
       | Where the data is | Rough time to get it |
       |---|---|
       | TLB hit, in RAM | ~100 ns |
-      | Page fault, from SSD | ~100 µs (1,000× slower) |
-      | Page fault, from spinning disk | ~10 ms (100,000× slower) |
+      | Page fault, from SSD | ~100 µs |
+      | Page fault, from spinning disk | ~10 ms |
 
-      When memory is full, every fault must **evict** a page to make room. Pick badly — throw out a page
-      that's needed again soon — and you pay for another fault. That choice is the subject of the next lesson.
+      So which page to evict matters a lot.
 
   - type: predict
     prompt: |

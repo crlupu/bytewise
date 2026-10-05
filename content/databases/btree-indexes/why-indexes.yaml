@@ -6,17 +6,16 @@ sources:
   - { book: sql-performance-explained, ref: "Chapter 1, Anatomy of an Index" }
 steps:
   - type: explanation
-    title: Finding one row in ten million
+    title: Without an index, read everything
     body: |
-      A table is stored on disk as **pages** — blocks of, say, 8 KiB, each holding a few dozen rows
-      in no particular order.
+      A table is stored as pages, rows in no order.
 
       ```sql
       SELECT * FROM users WHERE email = 'ada@example.com';
       ```
 
-      Without help, the database has only one way to answer this: read every page and check every row.
-      That's a **full table scan**.
+      With no index, the database checks every row.
+      That's a full table scan.
 
   - type: choice
     prompt: "`users` has 10 million rows and no index on `email`. In the worst case, how many rows does the query above examine?"
@@ -30,16 +29,12 @@ steps:
     explanation: With nothing sorted by `email`, the only safe answer is to look at every row.
 
   - type: explanation
-    title: Keep a sorted copy — as a tree
+    title: An index is a sorted tree
     body: |
-      An **index** is a separate structure holding the indexed column, **sorted**, with a pointer to each row.
-      Sorted means we can search instead of scan.
-
-      A sorted array would make inserts expensive (shift everything over). So databases use a **B-tree**:
-      a tree whose nodes are whole disk pages, each holding **hundreds** of keys and pointing to hundreds of children.
-
-      With that much **fan-out**, the tree is very shallow. A search reads one node per level, and the top
-      levels are almost always cached in memory.
+      An index keeps the column sorted, pointing to each row.
+      Databases store it as a B-tree.
+      Each node is a page holding hundreds of keys.
+      So the tree is only a few levels deep.
 
   - type: predict
     prompt: |
@@ -88,15 +83,11 @@ steps:
       so it falls back to scanning.
 
   - type: explanation
-    title: Indexes aren't free
+    title: Indexes cost writes
     body: |
-      Every index is another structure to keep up to date:
-
-      - each `INSERT`, `UPDATE` of the column and `DELETE` must change the index too;
-      - it takes disk space and memory;
-      - the query planner has more options to weigh.
-
-      Index the columns you search and sort by often — not every column, just in case.
+      Every insert, update and delete must update the index too.
+      Indexes take disk space and memory.
+      Index the columns you search and sort by often.
 
   - type: choice
     prompt: Which of these are costs of adding an index?

@@ -6,18 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 27" }
 steps:
   - type: explanation
-    title: Warnings are bugs waiting
+    title: Fix every warning you can
     body: |
-      With generics you'll see unchecked cast, unchecked method invocation, unchecked conversion warnings and more.
-      Many are trivial to fix:
+      Unchecked warnings mean a possible `ClassCastException`.
+      Many are easy: `new HashSet<>()` instead of `new HashSet()`.
+      With none left, your generic code is type-safe.
 
-      ```java
-      Set<Lark> exaltation = new HashSet();     // warning: unchecked conversion
-      Set<Lark> exaltation = new HashSet<>();   // fixed with the diamond
-      ```
-
-      Eliminate every one you can. If you eliminate them all, your code is guaranteed type-safe: no
-      `ClassCastException` from generics at run time.
+  - type: explanation
+    title: "Suppress only what's proven"
+    body: |
+      If you prove a cast is safe, suppress the warning.
+      Use the smallest scope, like one declaration.
+      Add a comment saying why it's safe.
 
   - type: choice
     prompt: You can't eliminate a warning, but you've proved the cast is safe. What should you do?

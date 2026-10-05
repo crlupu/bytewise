@@ -6,10 +6,11 @@ sources:
   - { book: effective-java, ref: "Item 39" }
 steps:
   - type: explanation
-    title: Naming patterns
+    title: Naming patterns are fragile
     body: |
-      Before annotations, tools found special program elements by name. JUnit 3 ran every method whose name began
-      with `test`.
+      Old tools found methods by name, like `testSomething`.
+      Misspell the name, and the test silently never runs.
+      The compiler can't help.
 
   - type: choice
     prompt: You wrote a test method called `tsetSafetyOverride`. What happens under a naming pattern?
@@ -22,16 +23,18 @@ steps:
     explanation: Naming patterns also can't attach parameters (like an expected exception) or apply to just the right kinds of elements.
 
   - type: explanation
-    title: A marker annotation
+    title: Annotations are checked
     body: |
+      An annotation marks a method explicitly.
+
       ```java
       @Retention(RetentionPolicy.RUNTIME)
       @Target(ElementType.METHOD)
       public @interface Test {}
       ```
 
-      `@Retention` and `@Target` are **meta-annotations**. A test runner finds methods with
-      `m.isAnnotationPresent(Test.class)` and invokes them reflectively.
+      Tools find it at run time with reflection.
+      Use it on the wrong element, and it won't compile.
 
   - type: match
     prompt: Match each meta-annotation choice to its effect.

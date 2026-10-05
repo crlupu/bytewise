@@ -5,6 +5,12 @@ tags: [java, effective java, interfaces, flexibility, collections]
 sources:
   - { book: effective-java, ref: "Item 64" }
 steps:
+  - type: explanation
+    title: Declare with interfaces
+    body: |
+      Declare variables, parameters and returns with interface types.
+      Mention the class only when you create the object.
+
   - type: choice
     prompt: Which declaration is better?
     options:
@@ -15,16 +21,18 @@ steps:
     explanation: If an appropriate interface type exists, use it for variables, fields, parameters and return values.
 
   - type: explanation
-    title: Switching implementations
+    title: Switching becomes easy
     body: |
-      Declared as a `Set`, switching to a `HashSet` is a one-word change at the constructor:
+      `Set<Son> s = new LinkedHashSet<>();`
+      To switch, change only the constructor.
+      If you rely on special behaviour, like order, document it.
 
-      ```java
-      Set<Son> sonSet = new HashSet<>();
-      ```
-
-      The only caution: if the original implementation offered some special behaviour the code relies on — like
-      `LinkedHashSet`'s iteration order — the new one must provide it too, and that should be documented.
+  - type: explanation
+    title: When to use a class
+    body: |
+      Value classes like `String` have no interface.
+      Some frameworks are built on base classes.
+      Then use the least specific class that does the job.
 
   - type: match
     prompt: When is it fine to use a class as the type? Match each case.

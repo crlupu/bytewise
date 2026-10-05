@@ -5,6 +5,13 @@ tags: [java, effective java, floating point, bigdecimal, money, precision]
 sources:
   - { book: effective-java, ref: "Item 60" }
 steps:
+  - type: explanation
+    title: "Binary can't store 0.1 exactly"
+    body: |
+      `float` and `double` store binary fractions.
+      Most decimal values, like 0.1, are only approximated.
+      Small errors appear in sums and differences.
+
   - type: predict
     prompt: What does this print?
     code: |
@@ -20,7 +27,8 @@ steps:
   - type: explanation
     title: Buying candy
     body: |
-      You have $1.00. Candies cost 10¢, 20¢, 30¢… Buy one of each, cheapest first, until you can't afford the next:
+      You have $1.00. Candies cost 10¢, 20¢, 30¢…
+      Buy one of each, cheapest first, while you can afford it.
 
       ```java
       double funds = 1.00;
@@ -41,6 +49,13 @@ steps:
       - text: "2"
         feedback: "The first three purchases succeed; it's the fourth that fails by a hair."
     explanation: Three, with $0.3999999999999999 left over. The rounding errors make the program wrong.
+
+  - type: explanation
+    title: Use exact types for money
+    body: |
+      `BigDecimal` is exact, but verbose and slower.
+      `int` or `long` cents are exact and fast.
+      Create `BigDecimal` from a string, like `"0.10"`.
 
   - type: match
     prompt: Match each choice for money to its trade-off.

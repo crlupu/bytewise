@@ -6,26 +6,18 @@ sources:
   - { book: effective-java, ref: "Item 23" }
 steps:
   - type: explanation
-    title: A tagged class
+    title: Tagged classes do too much
     body: |
+      A tagged class uses a field to say which kind it is.
+
       ```java
-      class Figure {
-          enum Shape { RECTANGLE, CIRCLE }
-          final Shape shape;
-          double length, width;   // used only for RECTANGLE
-          double radius;          // used only for CIRCLE
-          double area() {
-              switch (shape) {
-                  case RECTANGLE: return length * width;
-                  case CIRCLE:    return Math.PI * radius * radius;
-                  default: throw new AssertionError(shape);
-              }
-          }
-      }
+      enum Shape { RECTANGLE, CIRCLE }
+      final Shape shape;
+      double length, width, radius; // only some are used
       ```
 
-      One class trying to be several. Every instance carries fields it doesn't use, and every new shape means editing
-      every switch.
+      Every method switches on the tag.
+      Every instance carries fields it doesn't need.
 
   - type: choice
     prompt: Which are problems with tagged classes?
@@ -38,6 +30,14 @@ steps:
         correct: true
       - text: They can't be immutable at all
         feedback: They can be — just awkwardly.
+
+  - type: explanation
+    title: Use a class hierarchy instead
+    body: |
+      Make an abstract root with abstract methods.
+      Give each kind its own subclass, with only its own fields.
+      Forget to implement a method, and it won't compile.
+      `sealed` lets you list the allowed subclasses.
 
   - type: order
     prompt: Put the steps of converting a tagged class into a hierarchy in order.

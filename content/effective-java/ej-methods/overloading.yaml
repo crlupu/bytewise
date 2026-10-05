@@ -6,21 +6,19 @@ sources:
   - { book: effective-java, ref: "Item 52" }
 steps:
   - type: explanation
-    title: A classifier
+    title: Which overload runs?
     body: |
-      ```java
-      public class CollectionClassifier {
-          public static String classify(Set<?> s)        { return "Set"; }
-          public static String classify(List<?> lst)    { return "List"; }
-          public static String classify(Collection<?> c) { return "Unknown Collection"; }
+      Three overloads, and three different collections:
 
-          public static void main(String[] args) {
-              Collection<?>[] collections = {
-                  new HashSet<String>(), new ArrayList<BigInteger>(), new HashMap<String, String>().values()
-              };
-              for (Collection<?> c : collections) System.out.println(classify(c));
-          }
-      }
+      ```java
+      static String classify(Set<?> s)        { return "Set"; }
+      static String classify(List<?> lst)     { return "List"; }
+      static String classify(Collection<?> c) { return "Unknown Collection"; }
+
+      Collection<?>[] collections = { new HashSet<String>(),
+          new ArrayList<BigInteger>(), new HashMap<String, String>().values() };
+      for (Collection<?> c : collections)
+          System.out.println(classify(c));
       ```
 
   - type: predict
@@ -31,6 +29,13 @@ steps:
       - text: "`Set`, `List`, `Unknown Collection`"
         feedback: That's what the author hoped. But which overload runs is decided by the *compile-time* type of `c`.
     explanation: "`c` is declared as `Collection<?>`, so the compiler picks `classify(Collection<?>)` every time."
+
+  - type: explanation
+    title: Chosen at compile time
+    body: |
+      Overloads are picked from the declared types.
+      Overrides are picked from the actual object.
+      So overloading can surprise you.
 
   - type: match
     prompt: Overloading or overriding?
@@ -54,6 +59,12 @@ steps:
       - text: "Both `[-3, -2, -1]`"
         feedback: "`list.remove(i)` with an `int` picks `remove(int index)`, removing by position, not by value."
     explanation: "Fix it with `list.remove((Integer) i)` — and the confusion came from autoboxing plus an overload."
+
+  - type: explanation
+    title: Use different names
+    body: |
+      Avoid overloads with the same number of parameters.
+      Name them differently, like `writeInt` and `writeLong`.
 
   - type: choice
     prompt: What's a safe, conservative policy?

@@ -6,24 +6,19 @@ sources:
   - { book: kurose-ross, ref: "§3.6–3.7, Congestion Control" }
 steps:
   - type: explanation
-    title: Nobody tells the sender how fast to go
+    title: The sender must guess the speed
     body: |
-      Flow control stops a sender overrunning the *receiver*. **Congestion control** stops senders overrunning the
-      *network* — routers whose queues fill up and drop packets.
-
-      No router tells TCP the right speed. The sender has to infer it: an ACK means "that got through", a lost segment
-      means "too much". It keeps a **congestion window**, `cwnd`: how many unacknowledged segments it may have in flight.
-      Roughly, it sends `cwnd` segments per round-trip time (RTT).
+      Flow control protects the receiver.
+      Congestion control protects the network.
+      ACKs mean "it got through". Losses mean "too much".
+      The congestion window, `cwnd`, limits data in flight.
 
   - type: explanation
-    title: Two phases
+    title: Slow start, then avoidance
     body: |
-      - **Slow start**: begin with `cwnd` = 1 segment, and add one for every ACK — which **doubles** `cwnd` each RTT.
-        "Slow" only because it starts at 1.
-      - When `cwnd` reaches the **slow-start threshold**, `ssthresh`, switch to **congestion avoidance**: add just
-        **one** segment per RTT.
-
-      Exponential growth finds the right neighbourhood fast; linear growth then probes gently for any extra capacity.
+      Slow start: `cwnd` doubles every round trip.
+      At `ssthresh`, switch to congestion avoidance.
+      Then grow by just one segment per round trip.
 
   - type: widget
     widget: congestion

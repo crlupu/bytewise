@@ -6,8 +6,10 @@ sources:
   - { book: effective-java, ref: "Item 40" }
 steps:
   - type: explanation
-    title: The bigram bug
+    title: A missed override
     body: |
+      A bigram is a pair of letters. This set should hold 26 of them.
+
       ```java
       public class Bigram {
           private final char first, second;
@@ -23,6 +25,8 @@ steps:
       System.out.println(s.size());
       ```
 
+      Look closely at the parameter type of `equals`.
+
   - type: predict
     prompt: What does it print?
     options:
@@ -35,6 +39,13 @@ steps:
     hints:
       - "`HashSet` calls `equals(Object)`. Which method did `Bigram` define?"
     explanation: "`equals(Bigram)` **overloads** `equals(Object)` rather than overriding it, so the set uses identity — all 260 objects are distinct."
+
+  - type: explanation
+    title: "@Override catches it"
+    body: |
+      Put `@Override` on every method meant to override.
+      If nothing is overridden, the compiler reports an error.
+      It costs nothing and prevents silent bugs.
 
   - type: choice
     prompt: How would `@Override` have helped?
