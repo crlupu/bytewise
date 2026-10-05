@@ -18,9 +18,12 @@ npx tsc --noEmit   # type check
 
 ## Deployment
 
-`.github/workflows/deploy-pages.yml` builds with `GITHUB_PAGES=true` (which sets the
-`/bytewise` base path) and deploys on every push to `main`. One-time setup: in the
-repository's **Settings → Pages**, set **Source** to **GitHub Actions**.
+Every push to `main` runs `.github/workflows/deploy-pages.yml`: it builds the site with
+`GITHUB_PAGES=true` (which sets the `/bytewise` base path) and publishes the result —
+`index.html` and everything it needs — to the `gh-pages` branch. GitHub Pages serves that
+branch: **Settings → Pages → Build and deployment → Deploy from a branch → `gh-pages` / (root)**.
+
+The site is at https://crlupu.github.io/bytewise/.
 
 ## What's in v1
 
