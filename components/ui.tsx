@@ -51,7 +51,7 @@ export function Meter({ value, label }: { value: number; label?: string }) {
   );
 }
 
-export function Ring({ pct, size = 40, label }: { pct: number; size?: number; label?: string }) {
+export function Ring({ pct, size = 40, label, bare = false }: { pct: number; size?: number; label?: string; bare?: boolean }) {
   const stroke = size >= 40 ? 4 : 3;
   const r = size / 2 - stroke;
   const c = 2 * Math.PI * r;
@@ -80,13 +80,14 @@ export function Ring({ pct, size = 40, label }: { pct: number; size?: number; la
         <path
           d={`M${cx - k} ${cx + k * 0.05} L${cx - k * 0.3} ${cx + k * 0.75} L${cx + k} ${cx - k * 0.65}`}
           fill="none"
-          stroke="#fff"
+          stroke="var(--accent-foreground)"
           strokeWidth={2.25}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       ) : (
-        size >= 40 && (
+        size >= 40 &&
+        !bare && (
           <text x={cx} y={cx} dominantBaseline="central" textAnchor="middle" fontSize={11} fontWeight={700} fill="var(--foreground)" className="figure">
             {pct}%
           </text>

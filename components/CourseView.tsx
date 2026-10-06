@@ -69,7 +69,7 @@ export function CourseView({
       })()}
 
       <section>
-        <ul className="list">
+        <ul className="list path">
           {course.lessons.map((l, i) => {
             const status = lessonStatus(l, p);
             const st = lessonSteps(l, p);
@@ -111,7 +111,7 @@ export function CourseView({
               </>
             );
             return (
-              <li key={l.key} className={`lesson-row${status === "locked" ? " is-locked" : ""}`}>
+              <li key={l.key} className={`lesson-row is-${status}${status === "locked" ? " is-locked" : ""}`}>
                 {editing ? (
                   <div className="list-row">
                     {body}

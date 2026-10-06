@@ -165,14 +165,18 @@ To add a widget: put its logic and zod schemas in `lib/widgets/<name>.ts`, regis
 
 ## Design
 
-The interface follows Momentum's design language (Apple's Human Interface Guidelines):
-ink on paper with one accent, electric blue `#097CFB`, which only ever means progress —
-a correct answer, a filled meter, the primary button, the current tab. Amber means
-"not yet" (a wrong answer, items due); red is for destructive actions only. The accent
-never carries small text. Type is the system face on the iOS type ladder; figures use
-the rounded variant with tabular digits. Tab bar on phones, sidebar from 1056px, one
-filled button per screen, 44px touch targets, hover styles only behind `(hover: hover)`.
-All tokens are in `app/globals.css`.
+The interface uses the Grove palette in a bento layout. It's black and white, lit by
+one green (`#2F8F2C` light, `#8FE25A` dark), which only ever means progress: a correct
+answer, a filled meter, a finished lesson. The one filled button on a screen is black
+in light mode and lime (`#A6EE6A`) in dark mode. Amber means "not yet" (a wrong answer,
+items due, the streak spark); red is for destructive actions only.
+
+Home is a bento grid (continue, streak, review, accuracy) above each topic's courses as
+rows with thin progress bars; a course is a path of lessons joined by a line; a
+lesson's actions sit in a bottom sheet. Type is Inter Tight with JetBrains Mono for
+code and labels, loaded at build time through `next/font`. A floating tab bar on
+phones, a sidebar from 1056px, 44px touch targets, hover styles only behind
+`(hover: hover)`. Design explorations are in `design/`. All tokens are in `app/globals.css`.
 
 ## Progress data
 

@@ -1,15 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronIcon, PlayIcon, ReviewIcon, StreakIcon } from "@/components/icons";
+import { ChevronIcon, PlayIcon } from "@/components/icons";
 import { Meter, PageHead, Ring, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
 import { dueItems, progress, streak, useHydrated, useProgress } from "@/lib/progress";
 import { continueTarget, courseProgress, lessonSteps } from "@/lib/status";
 import type { Catalog } from "@/lib/types";
 
-const TOPIC_COLORS = ["var(--data-indigo)", "var(--data-teal)", "var(--data-orange)", "var(--data-magenta)", "var(--data-green)", "var(--data-slate)"];
+const SPARK = "M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z";
 
+function Spark({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden>
+      <path d={SPARK} fill="currentColor" transform="translate(32 32) scale(2.6) translate(-32 -32)" />
+    </svg>
+  );
+}
+
+/**
+ * Home is a bento grid: what to do next as the big tile, then the streak,
+ * the review queue and accuracy at a glance. Below it, every course as a
+ * row with a thin progress bar.
+ */
 export function HomeView({ catalog }: { catalog: Catalog }) {
   const p = useProgress();
   const hydrated = useHydrated();
@@ -19,109 +32,87 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
   const target = continueTarget(catalog, p);
   const course = target && catalog.topics.flatMap((t) => t.courses).find((c) => c.id === target.lesson.courseId);
   const steps = target ? lessonSteps(target.lesson, p) : null;
+  // Accuracy: the share of answered exercises that were right first time, with no hints.
+  const tried = Object.values(p.steps).filter((r) => r.firstTry !== null);
+  const accuracy = tried.length ? Math.round((tried.filter((r) => r.firstTry).length / tried.length) * 100) : null;
 
   return (
     <>
-      <PageHead title="Learn" subtitle={hydrated ? longDate() : " "} />
+      <PageHead title="Learn" subtitle={hydrated ? longDate() : " "} />
 
-      <div className="home-top">
+      <div className="bento">
         {target && course && steps && (
-          <div className="card card--pad hero">
-            <div>
-              <p className="hero__eyebrow">{target.fresh ? (p.last ? "Up next" : "Start here") : "Continue"} · {course.title}</p>
-              <h2 className="hero__title">{target.lesson.title}</h2>
-              <p className="muted" style={{ fontSize: "0.9375rem", marginTop: 4 }}>
-                {target.lesson.summary}
-              </p>
-            </div>
-            <div className="hero__meta">
-              {target.fresh ? (
-                <span>
-                  {target.lesson.duration} min · {plural(target.lesson.steps, "step")}
+          <Link
+            href={`/lesson/${target.lesson.courseId}/${target.lesson.id}/`}
+            className="tile tile--continue"
+            onClick={() => {
+              if (!target.fresh) progress.setPosition(target.lesson.key, target.step);
+            }}
+          >
+            <span className="tile__eyebrow">{target.fresh ? (p.last ? "Up next" : "Start here") : "Continue"}</span>
+            <span className="tile__play" aria-hidden>
+              <PlayIcon />
+            </span>
+            <span className="tile__title">{target.lesson.title}</span>
+            <span className="tile__sub">{course.title}</span>
+            {target.fresh ? (
+              <span className="tile__meta">
+                {target.lesson.duration} min, {plural(target.lesson.steps, "step")}
+              </span>
+            ) : (
+              <span className="tile__meta tile__meta--bar">
+                <Meter value={(steps.done / steps.total) * 100} label="Lesson progress" />
+                <span className="figure">
+                  {steps.done} of {steps.total}
                 </span>
-              ) : (
-                <>
-                  <Meter value={(steps.done / steps.total) * 100} label="Lesson progress" />
-                  <span className="figure">
-                    {steps.done} / {steps.total}
-                  </span>
-                </>
-              )}
-            </div>
-            <div>
-              <Link
-                href={`/lesson/${target.lesson.courseId}/${target.lesson.id}/`}
-                className="btn btn--primary"
-                onClick={() => {
-                  if (!target.fresh) progress.setPosition(target.lesson.key, target.step);
-                }}
-              >
-                <PlayIcon aria-hidden />
-                {target.fresh ? "Start lesson" : "Continue"}
-              </Link>
-            </div>
-          </div>
+              </span>
+            )}
+            <span className="sr-only">{target.fresh ? "Start lesson" : "Continue lesson"}</span>
+          </Link>
         )}
 
-        <div className="card card--pad mini-stats">
-          <Link href="/review/" className="mini-stat">
-            <span className={`mini-stat__icon${due ? " mini-stat__icon--warn" : ""}`}>
-              <ReviewIcon aria-hidden />
-            </span>
-            <span style={{ flex: 1 }}>
-              <span className="mini-stat__value" style={{ display: "block" }}>
-                {due}
-              </span>
-              <span className="mini-stat__label">{due ? `review item${due === 1 ? "" : "s"} due` : "Nothing due for review"}</span>
-            </span>
-            <ChevronIcon className="chevron" aria-hidden />
-          </Link>
-          <Link href="/progress/" className="mini-stat">
-            <span className="mini-stat__icon">
-              <StreakIcon aria-hidden />
-            </span>
-            <span style={{ flex: 1 }}>
-              <span className="mini-stat__value" style={{ display: "block" }}>
-                {s.current} {s.current === 1 ? "day" : "days"}
-              </span>
-              <span className="mini-stat__label">{s.today ? "Streak — today's done" : s.current ? "Streak — keep it going today" : "Streak — finish a lesson to start one"}</span>
-            </span>
-            <ChevronIcon className="chevron" aria-hidden />
-          </Link>
-        </div>
+        <Link href="/progress/" className="tile tile--streak">
+          <Spark size={18} />
+          <span className="tile__big figure">{s.current}</span>
+          <span className="tile__label">day streak</span>
+          <span className="tile__hint">{s.today ? "Today's done" : s.current ? "Keep it going today" : "Finish a lesson to start one"}</span>
+        </Link>
+
+        <Link href="/review/" className={`tile tile--review${due ? " has-due" : ""}`}>
+          <span className="tile__big figure">{due}</span>
+          <span className="tile__label">{due ? "due for review" : "nothing due"}</span>
+          <span className="tile__pill">{due ? "Start" : "Review"}</span>
+        </Link>
+
+        <Link href="/progress/" className="tile tile--accuracy">
+          {accuracy !== null && <Ring pct={accuracy} size={60} bare label={`${accuracy}% right first time`} />}
+          <span>
+            {accuracy !== null && <span className="tile__big tile__big--sm figure">{accuracy}%</span>}
+            <span className="tile__label">{accuracy === null ? "Answer a question to see how often you're right first time" : "right first time"}</span>
+          </span>
+          <ChevronIcon className="chevron" aria-hidden />
+        </Link>
       </div>
 
       <section aria-label="Topics">
-        {catalog.topics.map((t, ti) => (
+        {catalog.topics.map((t) => (
           <div className="topic" key={t.id}>
-            <div className="topic__head">
-              <span className="dot" style={{ background: TOPIC_COLORS[ti % TOPIC_COLORS.length] }} aria-hidden />
-              <h2 className="section-title" style={{ margin: 0 }}>
-                {t.title}
-              </h2>
-            </div>
+            <h2 className="section-title">{t.title}</h2>
             <p className="topic__summary">{t.summary}</p>
-            <ul className="list">
+            <ul className="rows">
               {t.courses.map((c) => {
                 const cp = courseProgress(c, p);
                 return (
                   <li key={c.id}>
-                    <Link href={`/course/${c.id}/`} className="list-row">
-                      <span className="course-row__ring">
-                        <Ring pct={cp.pct} size={40} label={`${cp.done} of ${cp.total} lessons complete`} />
-                      </span>
-                      <span className="list-row__body">
-                        <span className="list-row__title" style={{ display: "block" }}>
-                          {c.title}
-                        </span>
-                        <span className="list-row__sub" style={{ display: "block" }}>
-                          {c.summary}
-                        </span>
-                        <span className="list-row__meta" style={{ display: "block" }}>
-                          {cp.done} of {plural(cp.total, "lesson")} complete
+                    <Link href={`/course/${c.id}/`} className="row">
+                      <span className="row__head">
+                        <span className="row__title">{c.title}</span>
+                        <span className="row__count figure">
+                          {cp.done} of {plural(cp.total, "lesson")}
                         </span>
                       </span>
-                      <ChevronIcon className="chevron" aria-hidden />
+                      <span className="row__sub">{c.summary}</span>
+                      <Meter value={cp.pct} label={`${c.title} progress`} />
                     </Link>
                   </li>
                 );
