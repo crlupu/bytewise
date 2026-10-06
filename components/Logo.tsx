@@ -1,14 +1,16 @@
-const SPARK = "M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z";
-
-/** The mark: a lowercase b with a lime spark beside it — the moment something clicks. */
+/**
+ * The mark: a lowercase b built from soft tiles, the way Home is built —
+ * a stem and a bowl joined into one shape, and one lime tile above for
+ * the spark.
+ */
 export function Logo({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden className="logo">
       <rect x="0.5" y="0.5" width="63" height="63" rx="16" fill="#0a0d09" stroke="rgba(166,238,106,0.25)" />
-      <rect x="11" y="10" width="9" height="38" rx="4.5" fill="#fff" />
-      <circle cx="31" cy="36" r="13" fill="#fff" />
-      <circle cx="31" cy="36" r="6" fill="#0a0d09" />
-      <path d={SPARK} fill="#a6ee6a" transform="translate(50 44) scale(.68) translate(-32 -32)" />
+      <rect x="11" y="8" width="14" height="48" rx="6" fill="#fff" />
+      <rect x="11" y="26" width="42" height="30" rx="12" fill="#fff" />
+      <rect x="25" y="34" width="18" height="14" rx="5" fill="#0a0d09" />
+      <rect x="31" y="8" width="13" height="13" rx="4.5" fill="#a6ee6a" />
     </svg>
   );
 }
