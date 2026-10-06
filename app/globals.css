@@ -76,7 +76,7 @@
   --primary-foreground: #ffffff;
 
   --warning: #8a5d0c;
-  --warning-mark: #c98a12;
+  --warning-mark: #a8720f;
   --warning-soft: rgba(201, 138, 18, 0.13);
   --danger: #d0302f;
   --danger-soft: rgba(208, 48, 47, 0.1);
@@ -3123,4 +3123,163 @@ body {
 }
 .logo {
   border-radius: 25%;
+}
+
+
+/* ============================================================
+   The logo's language: soft rectangles, never circles or pills;
+   white on ink; and one small lime tile, the spark. Buttons, nodes
+   and the tab bar are cut like the logo's tiles, progress fills in
+   ink (lime on dark), and every page title ends in the lime tile.
+   ============================================================ */
+
+:root {
+  --r-tile-sm: 9px;
+  --fill: var(--foreground);
+}
+.dark {
+  --fill: var(--lime);
+}
+
+/* Page titles end with the spark, top right, as in the mark. */
+.page-title::after {
+  content: "";
+  display: inline-block;
+  inline-size: 0.24em;
+  block-size: 0.24em;
+  margin-inline-start: 0.07em;
+  border-radius: 0.07em;
+  background: var(--glow);
+  vertical-align: 0.6em;
+}
+.dark .page-title::after {
+  background: var(--lime);
+}
+
+/* Buttons: tiles, not pills. */
+.btn,
+.btn--primary,
+.player__actions .btn,
+.tile__pill {
+  border-radius: var(--r-control);
+}
+.tile__pill {
+  border-radius: 10px;
+}
+
+/* The Continue tile's play button is the logo's lime tile. */
+.tile__play {
+  border-radius: 14px;
+  inline-size: 2.875rem;
+  block-size: 2.875rem;
+}
+
+/* Tab bar and sidebar: the selected section is a solid tile,
+   ink on light and white on dark, like the b on its tile. */
+.tabbar {
+  border-radius: 26px;
+}
+.tabbar__tab {
+  border-radius: 18px;
+}
+.tabbar__tab.is-active,
+.tabbar__tab.is-active svg,
+.side-link.is-active,
+.side-link.is-active:hover,
+.side-link.is-active svg {
+  background: var(--foreground);
+  color: var(--background);
+}
+.tabbar__tab.is-active svg,
+.side-link.is-active svg {
+  background: none;
+}
+.side-link {
+  border-radius: 12px;
+}
+
+/* Progress fills in ink (lime in dark), with square-cut ends. */
+.meter,
+.meter > span {
+  border-radius: 3px;
+}
+.meter {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.meter > span {
+  background: var(--fill);
+}
+.tile--continue .meter > span {
+  background: var(--lime);
+}
+.segments > span {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.segments > span.is-done {
+  background: var(--fill);
+}
+.segments > span.is-current {
+  background: color-mix(in srgb, var(--fill) 45%, transparent);
+}
+
+/* Accuracy as ten tiles. */
+.tile-meter {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.tile-meter i {
+  inline-size: 0.625rem;
+  block-size: 1.5rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.tile-meter i.is-on {
+  background: var(--fill);
+}
+
+/* Lesson status: square tiles. Done is ink with a white tick (white
+   with an ink tick on dark), in progress fills with lime from the
+   bottom, locked is an empty tile. */
+.status {
+  border-radius: var(--r-tile-sm);
+}
+.status--completed,
+.path .status--completed {
+  background: var(--foreground);
+  border-color: var(--foreground);
+  color: var(--background);
+}
+.status--in_progress,
+.path .status--in_progress {
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  border: 2px solid var(--foreground);
+  border-radius: var(--r-tile-sm);
+  background: var(--surface);
+}
+.status__fill {
+  display: block;
+  inline-size: 100%;
+  background: var(--lime);
+}
+.path > li.is-completed:not(:last-child)::after {
+  background: var(--foreground);
+}
+.path .is-in_progress .list-row,
+.path .is-available:first-of-type .list-row,
+.path .is-completed + .is-available .list-row {
+  box-shadow:
+    inset 0 0 0 1.5px var(--foreground),
+    0 0 32px -12px var(--glow);
+}
+
+/* The lesson's action panel doesn't resize, so no grabber. */
+.player__foot::before {
+  display: none;
+}
+.player__foot-inner {
+  padding-block-start: 0.75rem;
 }

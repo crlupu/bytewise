@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronIcon, PlayIcon } from "@/components/icons";
-import { Meter, PageHead, Ring, plural } from "@/components/ui";
+import { Meter, PageHead, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
 import { dueItems, progress, streak, useHydrated, useProgress } from "@/lib/progress";
 import { continueTarget, courseProgress, lessonSteps } from "@/lib/status";
@@ -85,11 +85,18 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
         </Link>
 
         <Link href="/progress/" className="tile tile--accuracy">
-          {accuracy !== null && <Ring pct={accuracy} size={60} bare label={`${accuracy}% right first time`} />}
           <span>
             {accuracy !== null && <span className="tile__big tile__big--sm figure">{accuracy}%</span>}
             <span className="tile__label">{accuracy === null ? "Answer a question to see how often you're right first time" : "right first time"}</span>
           </span>
+          {accuracy !== null && (
+            // Ten tiles, one per ten percent.
+            <span className="tile-meter" role="img" aria-label={`${accuracy}% right first time`}>
+              {Array.from({ length: 10 }, (_, i) => (
+                <i key={i} className={i < Math.round(accuracy / 10) ? "is-on" : undefined} />
+              ))}
+            </span>
+          )}
           <ChevronIcon className="chevron" aria-hidden />
         </Link>
       </div>

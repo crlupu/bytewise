@@ -107,8 +107,9 @@ export function StatusMark({ status, index, pct }: { status: LessonStatus; index
     );
   if (status === "in_progress")
     return (
-      <span className="status status--in_progress" aria-label={`In progress, ${pct}%`}>
-        <Ring pct={Math.max(pct, 4)} size={28} label={`In progress, ${pct}%`} />
+      <span className="status status--in_progress" role="img" aria-label={`In progress, ${pct}%`}>
+        {/* A tile filling from the bottom, like the logo's tiles. */}
+        <span className="status__fill" style={{ blockSize: `${Math.max(pct, 25)}%` }} />
       </span>
     );
   if (status === "locked")
