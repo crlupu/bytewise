@@ -1,0 +1,145 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bytewise Brand Board 3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;600;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--page:#eceef1;--ink:#0a0b0d;--sub:#5c616b;--black:#060708;--mint:#2fd27a;--mint2:#9ff5c6;--amber:#ffb547;--lapis:#2a4bb0;
+ --sans:"Inter Tight",-apple-system,system-ui,sans-serif;--serif:"Instrument Serif",ui-serif,Georgia,serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0d0e10;--ink:#f1f2f4;--sub:#9a9fa9}}
+:root[data-theme="dark"]{--page:#0d0e10;--ink:#f1f2f4;--sub:#9a9fa9}
+*{box-sizing:border-box} body{margin:0;background:var(--page);color:var(--ink);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+.grain{position:absolute;inset:0;width:100%;height:100%;opacity:.08;mix-blend-mode:overlay;pointer-events:none}
+.mono{font:500 11px/1.6 var(--mono);letter-spacing:.04em;text-transform:uppercase}
+/* hero */
+.hero{position:relative;overflow:hidden;margin:20px 0 0;border-radius:44px;background:var(--black);color:#fff;min-height:1060px;
+ background:radial-gradient(55% 45% at 50% 100%,rgba(47,210,122,.85),rgba(47,210,122,.25) 45%,transparent 75%),radial-gradient(40% 30% at 50% 108%,#d8ffe9,transparent 70%),var(--black)}
+.nav{display:flex;align-items:center;gap:28px;padding:26px 34px;position:relative;z-index:2}
+.nav .brand{display:flex;align-items:center;gap:8px;font:600 17px var(--sans);letter-spacing:-.02em}
+.nav .links{display:flex;gap:26px;margin:0 auto;color:rgba(255,255,255,.55);font-size:13px}
+.pillbtn{padding:10px 18px;border-radius:999px;background:#fff;color:#000;font:600 13px var(--sans)}
+.hero .kicker{text-align:center;color:var(--amber);margin-top:56px}
+.hero h1{margin:14px auto 0;text-align:center;font:900 clamp(56px,9.4vw,132px)/.86 var(--sans);letter-spacing:-.045em;text-transform:uppercase;max-width:11ch;
+ background:linear-gradient(180deg,#fff 40%,rgba(255,255,255,.55));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .sub{text-align:center;color:rgba(255,255,255,.6);max-width:42ch;margin:22px auto 0;font-size:16px}
+.device{position:absolute;left:50%;bottom:-170px;translate:-50% 0;width:330px;height:560px;border-radius:56px;padding:8px;background:linear-gradient(160deg,#5c6068,#1a1c20 35%,#0b0c0e 70%,#3c4048);box-shadow:0 -10px 80px rgba(47,210,122,.45)}
+.device .scr{height:100%;border-radius:48px;background:#0b0d10;overflow:hidden;padding:52px 18px 0;position:relative}
+.device .isl{position:absolute;top:13px;left:50%;translate:-50% 0;width:96px;height:28px;border-radius:20px;background:#000}
+.lsn .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin-bottom:22px} .lsn .bar i{display:block;width:45%;height:100%;background:linear-gradient(90deg,#1e9a5a,var(--mint2))}
+.lsn .k{color:rgba(255,255,255,.45)}
+.lsn h3{font:600 22px/1.15 var(--sans);letter-spacing:-.03em;margin:8px 0 16px}
+.lsn .term{border-bottom:1.5px dotted var(--amber)}
+.lsn .o{border-radius:18px;padding:13px 14px;margin-bottom:8px;background:rgba(255,255,255,.06);font-size:14px;color:rgba(255,255,255,.85)}
+.lsn .o.ok{background:linear-gradient(180deg,rgba(47,210,122,.24),rgba(47,210,122,.12));box-shadow:inset 0 0 0 1px rgba(47,210,122,.6);color:#fff}
+.lsn code{font:12.5px var(--mono)}
+.chip{position:absolute;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 14px 10px 10px;border-radius:18px;color:#fff;font-size:13px;
+ background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.06));backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 20px 40px rgba(0,0,0,.35)}
+.chip .dot{width:30px;height:30px;border-radius:10px;display:grid;place-items:center}
+.chip small{display:block;color:rgba(255,255,255,.55);font-size:11px}
+/* editorial */
+.edit{display:grid;grid-template-columns:1fr 1.4fr;gap:40px;align-items:end;padding:150px 0 120px}
+@media (max-width:820px){.edit{grid-template-columns:1fr}}
+.edit .mono{color:var(--sub);max-width:34ch} .edit .mono b{color:#d9531e;font-weight:500}
+.edit h2{font:300 clamp(48px,7.4vw,104px)/.95 var(--sans);letter-spacing:-.055em;margin:0}
+.edit h2 em{font:italic 400 1.04em var(--serif);letter-spacing:-.02em}
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:900px){.tiles{grid-template-columns:1fr}}
+.tile{position:relative;overflow:hidden;border-radius:32px;height:380px;padding:30px 26px;color:#fff;text-align:center;
+ background:radial-gradient(70% 45% at 50% 105%,rgba(47,210,122,.75),rgba(47,210,122,.15) 55%,transparent 80%),var(--black)}
+.tile h3{font:800 17px/1.1 var(--sans);letter-spacing:-.01em;text-transform:uppercase;margin:0 auto;max-width:18ch}
+.tile .ui{position:absolute;left:26px;right:26px;bottom:28px}
+.slide{text-align:left;border-radius:22px;padding:18px;background:#0f1114;box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 20px 40px rgba(0,0,0,.4)}
+.slide b{font:700 19px/1.15 var(--sans);letter-spacing:-.03em;display:block;margin-bottom:10px}
+.slide p{margin:0 0 6px;color:rgba(255,255,255,.7);font-size:13px;line-height:1.4}
+.tip{text-align:left;border-radius:20px;padding:14px 16px;background:#f5f6f8;color:#0a0b0d;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.tip b{font:600 14px var(--sans)} .tip p{margin:4px 0 0;font-size:12.5px;line-height:1.4;color:#41464f}
+.tipline{font-size:15px;color:rgba(255,255,255,.85);margin-bottom:12px;text-align:left} .tipline span{border-bottom:1.5px dotted var(--amber);background:rgba(255,181,71,.15);border-radius:4px;padding:0 3px}
+.curve{border-radius:22px;padding:16px;background:#0f1114;box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+.curve svg{width:100%;height:auto;display:block}
+.days{display:flex;justify-content:space-between;margin-top:8px;color:rgba(255,255,255,.45)}
+/* dashboard band */
+.sky{position:relative;overflow:hidden;margin:120px 0 0;border-radius:44px;padding:56px 48px 64px;background:radial-gradient(60% 80% at 85% 20%,#b9d3ff,transparent 70%),radial-gradient(60% 70% at 10% 90%,#d7f3ff,transparent 70%),#e9f1ff;color:#0b1430}
+.sky .ghost{position:absolute;right:-20px;top:-40px;font:900 220px/1 var(--sans);letter-spacing:-.06em;color:rgba(255,255,255,.55);pointer-events:none}
+.greet{font:400 clamp(40px,5.4vw,68px)/1 var(--sans);letter-spacing:-.045em;margin:0;position:relative}
+.greet em{display:block;font:italic 400 1.05em var(--serif);letter-spacing:-.01em}
+.sky .lead{color:#4a5675;margin:18px 0 40px;position:relative}
+.board{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;position:relative}
+@media (max-width:900px){.board{grid-template-columns:1fr}}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+.stat{border-radius:24px;padding:18px;background:rgba(255,255,255,.7);box-shadow:inset 0 1px 0 #fff,0 10px 30px -14px rgba(11,20,48,.25)}
+.stat small{color:#4a5675;font-size:13px} .stat b{display:block;font:400 56px/1 var(--serif);letter-spacing:-.02em;margin:10px 0 6px}
+.stat .delta{display:inline-block;padding:2px 8px;border-radius:999px;background:#0b1430;color:#fff;font:500 11px var(--mono)}
+.folder{position:relative;padding-top:26px}
+.folder .tab{position:absolute;top:0;left:28px;padding:5px 20px 9px;border-radius:14px 14px 0 0;background:#4c7cf0;color:#dfe8ff;font-size:12px}
+.folder .body{border-radius:28px;padding:22px 24px;height:230px;color:#fff;background:linear-gradient(160deg,#5b89f5,#3a63de 55%,#2a4bb0);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 30px 50px -20px rgba(42,75,176,.6);display:flex;flex-direction:column}
+.folder .body b{font:500 26px/1.1 var(--sans);letter-spacing:-.03em} .folder .body small{color:rgba(255,255,255,.75);margin-top:6px}
+.folder .body p{margin:auto 0 0;color:rgba(255,255,255,.8);font-size:13px;max-width:34ch}
+.folder.back{position:absolute;inset:-14px -16px auto auto;width:100%;opacity:.55;transform:rotate(4deg);z-index:-1}
+.folder.back .body{background:linear-gradient(160deg,#6fd6e8,#3aa7c9)}
+/* steps */
+.steps{position:relative;overflow:hidden;margin:120px 0 20px;border-radius:44px;background:var(--black);color:#fff;padding:96px 40px}
+.steps>.h{text-align:center;font:900 clamp(40px,6vw,76px)/.9 var(--sans);letter-spacing:-.04em;text-transform:uppercase;margin:0 0 72px;color:rgba(255,255,255,.92)}
+.srow{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+@media (max-width:900px){.srow{grid-template-columns:1fr}}
+.step{text-align:center} .step .mono{color:var(--mint)} .step h4{font:800 22px/1.1 var(--sans);text-transform:uppercase;letter-spacing:-.01em;margin:8px 0 8px}
+.step p{color:rgba(255,255,255,.55);margin:0 auto 26px;max-width:28ch;font-size:14px}
+.stage{height:200px;border-radius:28px;display:grid;place-items:center;background:radial-gradient(60% 60% at 50% 100%,rgba(47,210,122,.35),transparent 70%),#0c0d0f;box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.mini{width:150px;border-radius:18px;padding:14px;text-align:left;background:#15171a;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.mini i{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.18);margin-top:7px} .mini i:first-child{height:9px;width:70%;background:rgba(255,255,255,.7);margin:0}
+.pick{display:flex;gap:10px} .pick span{padding:12px 16px;border-radius:16px;background:#15171a;font:500 13px var(--mono);color:rgba(255,255,255,.7)}
+.pick .ok{background:rgba(47,210,122,.18);box-shadow:inset 0 0 0 1px var(--mint);color:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,18px);gap:7px} .cal i{width:18px;height:18px;border-radius:6px;background:#1b1d21} .cal i.on{background:var(--mint);box-shadow:0 0 14px rgba(47,210,122,.7)} .cal i.due{background:var(--amber);box-shadow:0 0 14px rgba(255,181,71,.7)}
+footer{padding:40px 0 64px;color:var(--sub);font-size:13px}
+</style></head><body><div class="wrap">
+
+<header class="hero"><svg class="grain" aria-hidden="true"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg>
+<div class="nav"><span class="brand"><svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true"><mask id="n1"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#n1)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb547" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg>Bytewise</span><span class="links"><span>Topics</span><span>How it works</span><span>Books</span><span>Review</span></span><span class="pillbtn">Start learning</span></div>
+<p class="mono kicker">Software, one idea at a time</p>
+<h1>Learn how software really works</h1>
+<p class="sub">Short interactive lessons from the best books on Java, concurrency, databases, networks and architecture.</p>
+<div class="device"><div class="scr lsn"><span class="isl"></span>
+<div class="bar"><i></i></div><span class="mono k">Choose one</span>
+<h3>Which change removes the <span class="term">race condition</span>?</h3>
+<div class="o">Make <code>count</code> final</div>
+<div class="o ok">Synchronize <code>increment</code></div>
+<div class="o">Use one thread at a time</div></div></div>
+<div class="chip" style="left:calc(50% - 440px);bottom:250px"><span class="dot" style="background:var(--mint);color:#04140b"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span><span>Correct<small>Only one thread can run it at once</small></span></div>
+<div class="chip" style="left:calc(50% + 200px);bottom:140px"><span class="dot" style="background:rgba(255,181,71,.2)"><svg width="16" height="16" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb547" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg></span><span>12 days<small>Your streak</small></span></div>
+</header>
+
+<section class="edit">
+<p class="mono">B/26<br><br><b>177 lessons.</b> Every one teaches two or three ideas, each on its own slide, then asks you to use them straight away. Terms from the books explain themselves when you tap them.</p>
+<h2>one idea,<br>then <em>practice.</em></h2>
+</section>
+
+<div class="tiles">
+<div class="tile"><svg class="grain" aria-hidden="true"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg><h3>An idea per slide</h3><div class="ui"><div class="slide"><b>Every object has a lock</b><p><code style="font:12px var(--mono)">synchronized</code> takes the object's built-in lock.</p><p>Only one thread can hold it at a time.</p></div></div></div>
+<div class="tile"><svg class="grain" aria-hidden="true"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg><h3>Tap any term you've forgotten</h3><div class="ui"><p class="tipline">Watch out for the <span>telescoping constructor</span>.</p><div class="tip"><b>Telescoping constructor</b><p>A chain of constructors, each adding one more optional parameter. Easy to call with arguments swapped.</p></div></div></div>
+<div class="tile"><svg class="grain" aria-hidden="true"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg><h3>Review before you forget</h3><div class="ui"><div class="curve"><svg viewBox="0 0 240 90"><path d="M6 10 C40 60,60 70,80 74" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/><path d="M80 14 C110 46,130 54,150 58" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/><path d="M150 16 C185 32,210 38,234 40" fill="none" stroke="#2fd27a" stroke-width="2.5"/><circle cx="80" cy="14" r="5" fill="#ffb547"/><circle cx="150" cy="16" r="5" fill="#ffb547"/></svg><div class="days mono"><span>Day 1</span><span>Day 3</span><span>Day 9</span></div></div></div></div>
+</div>
+
+<section class="sky"><span class="ghost">bytewise</span>
+<h2 class="greet">Good evening, <em>Alex</em></h2>
+<p class="lead">Pick up where you left off, or review what's fading.</p>
+<div class="board">
+<div class="stats">
+<div class="stat"><small>Streak</small><b>12</b><span class="delta">+1 today</span></div>
+<div class="stat"><small>Lessons done</small><b>37</b><span class="delta">of 177</span></div>
+<div class="stat"><small>Accuracy</small><b>92%</b><span class="delta">+4% this week</span></div>
+</div>
+<div style="position:relative;isolation:isolate">
+<div class="folder back"><span class="tab">Review</span><div class="body"></div></div>
+<div class="folder"><span class="tab">Next lesson</span><div class="body"><b>Safe publication</b><small>Java Concurrency in Practice, 6 min</small><p>Unsafe publication shows half-built objects. Learn the four safe ways to share one.</p></div></div>
+</div></div></section>
+
+<section class="steps"><svg class="grain" aria-hidden="true"><filter id="gn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 0"/></filter><rect width="100%" height="100%" filter="url(#gn)"/></svg>
+<p class="h">How a lesson works</p>
+<div class="srow">
+<div class="step"><span class="mono">Step 1</span><h4>Read the idea</h4><p>A few short sentences on one slide. Nothing more.</p><div class="stage"><div class="mini"><i></i><i></i><i style="width:80%"></i><i style="width:60%"></i></div></div></div>
+<div class="step"><span class="mono">Step 2</span><h4>Try it</h4><p>Pick, match, fill in or play with a live simulation.</p><div class="stage"><div class="pick"><span>final</span><span class="ok">synchronized</span></div></div></div>
+<div class="step"><span class="mono">Step 3</span><h4>Remember it</h4><p>It comes back for review just as you'd start to forget.</p><div class="stage"><div class="cal"><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i class="due"></i></div></div></div>
+</div></section>
+
+<footer>Bytewise brand board 3. Inter Tight, Instrument Serif and JetBrains Mono; mint glow, amber spark.</footer>
+</div></body></html>
