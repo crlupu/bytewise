@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bytewise Logo Concepts</title>
+<style>
+  :root {
+    --bg: #f2f3f1; --surface: #fff; --fg: #1d1d1f; --muted: #6b6e6c; --line: #e1e3e0;
+    --blue: #097cfb; --ink: #1d1d1f; --tint: #9fd0ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #000; --surface: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #2c2c2e; }
+  }
+  :root[data-theme="dark"] { --bg: #000; --surface: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #2c2c2e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1060px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font: 700 28px/1.2 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 60ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: 0 0 0 .5px var(--line); }
+  .card.pick { box-shadow: 0 0 0 2px var(--blue); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 4px; }
+  h2 { font-size: 17px; margin: 0 0 4px; }
+  .card p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 16px; }
+  .sizes svg { display: block; }
+  .dark { background: #000; border-radius: 14px; padding: 10px; display: flex; gap: 10px; align-items: flex-end; }
+  .word { display: flex; align-items: center; gap: 10px; font: 700 24px/1 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; letter-spacing: -.01em; }
+  .word span b { color: var(--blue); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bytewise logo concepts</h1>
+  <p class="lede">Six directions in the app's electric blue, each shown as an app icon, at favicon sizes, on black, and next to the wordmark. Recommended: the bitten b.</p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- 0. Current: a byte of tiles -->
+      <symbol id="current" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <g fill="#fff">
+          <rect x="10" y="18" width="9" height="12" rx="3" opacity=".35"/><rect x="22" y="18" width="9" height="12" rx="3"/><rect x="34" y="18" width="9" height="12" rx="3"/><rect x="46" y="18" width="9" height="12" rx="3" opacity=".35"/>
+          <rect x="10" y="34" width="9" height="12" rx="3"/><rect x="22" y="34" width="9" height="12" rx="3"/><rect x="34" y="34" width="9" height="12" rx="3"/><rect x="46" y="34" width="9" height="12" rx="3"/>
+        </g>
+      </symbol>
+
+      <!-- 1. Bitten b -->
+      <mask id="bite">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="35" cy="38" r="6.5" fill="#000"/>
+        <circle cx="49" cy="23.5" r="6" fill="#000"/>
+        <circle cx="54" cy="31" r="6" fill="#000"/>
+        <circle cx="53" cy="39.5" r="5" fill="#000"/>
+      </mask>
+      <symbol id="bitten" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <g fill="#fff" mask="url(#bite)">
+          <rect x="14" y="10" width="10" height="44" rx="5"/>
+          <circle cx="35" cy="38" r="16"/>
+        </g>
+      </symbol>
+
+      <!-- 2. Pixel B (5×7 bitmap) -->
+      <symbol id="pixel" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <g fill="#fff">
+          <rect x="17" y="10" width="5.5" height="5.5" rx="1.5"/><rect x="23.5" y="10" width="5.5" height="5.5" rx="1.5"/><rect x="30" y="10" width="5.5" height="5.5" rx="1.5"/><rect x="36.5" y="10" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="16.5" width="5.5" height="5.5" rx="1.5"/><rect x="43" y="16.5" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="23" width="5.5" height="5.5" rx="1.5"/><rect x="43" y="23" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="29.5" width="5.5" height="5.5" rx="1.5"/><rect x="23.5" y="29.5" width="5.5" height="5.5" rx="1.5"/><rect x="30" y="29.5" width="5.5" height="5.5" rx="1.5"/><rect x="36.5" y="29.5" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="36" width="5.5" height="5.5" rx="1.5"/><rect x="43" y="36" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="42.5" width="5.5" height="5.5" rx="1.5"/><rect x="43" y="42.5" width="5.5" height="5.5" rx="1.5"/>
+          <rect x="17" y="49" width="5.5" height="5.5" rx="1.5"/><rect x="23.5" y="49" width="5.5" height="5.5" rx="1.5"/><rect x="30" y="49" width="5.5" height="5.5" rx="1.5"/><rect x="36.5" y="49" width="5.5" height="5.5" rx="1.5"/>
+        </g>
+        <rect x="43" y="10" width="5.5" height="5.5" rx="1.5" fill="#9fd0ff"/>
+      </symbol>
+
+      <!-- 3. Steps -->
+      <symbol id="steps" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <g fill="#fff">
+          <rect x="12" y="38" width="11" height="14" rx="4" opacity=".55"/>
+          <rect x="26.5" y="28" width="11" height="24" rx="4" opacity=".8"/>
+          <rect x="41" y="18" width="11" height="34" rx="4"/>
+        </g>
+        <path d="M46.5 6.5c.6 3.2 1.6 4.2 4.8 4.8-3.2.6-4.2 1.6-4.8 4.8-.6-3.2-1.6-4.2-4.8-4.8 3.2-.6 4.2-1.6 4.8-4.8Z" fill="#9fd0ff"/>
+      </symbol>
+
+      <!-- 4. Spark in brackets -->
+      <symbol id="spark" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <path d="M21 19 10.5 32 21 45M43 19l10.5 13L43 45" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#fff"/>
+      </symbol>
+
+      <!-- 5. B-tree -->
+      <symbol id="tree" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#097cfb"/>
+        <path d="M27 24 18 40M37 24l9 16" stroke="#fff" stroke-width="3.5" stroke-linecap="round" opacity=".6"/>
+        <g fill="#fff">
+          <rect x="20" y="12" width="24" height="12" rx="4"/>
+          <rect x="7" y="40" width="22" height="12" rx="4"/>
+          <rect x="35" y="40" width="22" height="12" rx="4"/>
+        </g>
+        <g fill="#097cfb">
+          <rect x="31" y="15" width="2" height="6" rx="1"/>
+          <rect x="17" y="43" width="2" height="6" rx="1"/>
+          <rect x="45" y="43" width="2" height="6" rx="1"/>
+        </g>
+      </symbol>
+
+      <!-- 6. b with cursor -->
+      <mask id="counter">
+        <rect width="64" height="64" fill="#fff"/>
+        <circle cx="31" cy="36" r="6" fill="#000"/>
+      </mask>
+      <symbol id="cursor" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#1d1d1f"/>
+        <g fill="#fff" mask="url(#counter)">
+          <rect x="11" y="10" width="9" height="38" rx="4.5"/>
+          <circle cx="31" cy="36" r="13"/>
+        </g>
+        <rect x="45" y="44" width="10" height="5" rx="2.5" fill="#097cfb"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="grid">
+    <section class="card pick">
+      <span class="tag">Recommended</span>
+      <h2>1 · Bitten b</h2>
+      <p>A lowercase b with a bite out of it: bite-sized lessons, and a pun on byte. Simple enough to read at 16 px, and playful without being childish.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#bitten"/></svg><svg width="32" height="32"><use href="#bitten"/></svg><svg width="16" height="16"><use href="#bitten"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#bitten"/></svg><svg width="20" height="20"><use href="#bitten"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#bitten"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Retro</span>
+      <h2>2 · Pixel B</h2>
+      <p>A B drawn as a 5×7 bitmap, like old terminal fonts, with one light-blue pixel as the "spark". Clearly about computers; gets busy below 24 px.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#pixel"/></svg><svg width="32" height="32"><use href="#pixel"/></svg><svg width="16" height="16"><use href="#pixel"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#pixel"/></svg><svg width="20" height="20"><use href="#pixel"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#pixel"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Progress</span>
+      <h2>3 · Steps</h2>
+      <p>Three rising bars and a spark: small steps that add up, like the lessons. Reads as growth; less obviously about code.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#steps"/></svg><svg width="32" height="32"><use href="#steps"/></svg><svg width="16" height="16"><use href="#steps"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#steps"/></svg><svg width="20" height="20"><use href="#steps"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#steps"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Insight</span>
+      <h2>4 · Spark in brackets</h2>
+      <p>Code brackets around a spark: the "aha" moment inside code. Bold and legible at every size, but code-bracket marks are common.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#spark"/></svg><svg width="32" height="32"><use href="#spark"/></svg><svg width="16" height="16"><use href="#spark"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#spark"/></svg><svg width="20" height="20"><use href="#spark"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#spark"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Structure</span>
+      <h2>5 · B-tree</h2>
+      <p>Three linked nodes, each split by a key, echoing the B-tree widget. Hints at structured knowledge; the dividers vanish at 16 px.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#tree"/></svg><svg width="32" height="32"><use href="#tree"/></svg><svg width="16" height="16"><use href="#tree"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#tree"/></svg><svg width="20" height="20"><use href="#tree"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#tree"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Terminal</span>
+      <h2>6 · b_ cursor</h2>
+      <p>A b followed by a blinking cursor, on near-black: "type to begin". Distinctive next to blue icons; the cursor could animate in the app.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#cursor"/></svg><svg width="32" height="32"><use href="#cursor"/></svg><svg width="16" height="16"><use href="#cursor"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#cursor"/></svg><svg width="20" height="20"><use href="#cursor"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#cursor"/></svg><span>Bytewise</span></div>
+    </section>
+
+    <section class="card">
+      <span class="tag">Today</span>
+      <h2>Current · Byte of tiles</h2>
+      <p>The icon in the app now: eight tiles for eight bits, two dimmed. Fine as a placeholder, but abstract — it doesn't say "learning".</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#current"/></svg><svg width="32" height="32"><use href="#current"/></svg><svg width="16" height="16"><use href="#current"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#current"/></svg><svg width="20" height="20"><use href="#current"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#current"/></svg><span>Bytewise</span></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
