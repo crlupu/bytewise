@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { SettingsSync } from "@/components/SettingsSync";
 import { TermTips } from "@/components/TermTips";
 import { THEME_SCRIPT } from "@/lib/themeScript";
@@ -8,8 +8,9 @@ import "./globals.css";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
-const interTight = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-inter-tight", display: "swap" });
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-jetbrains-mono", display: "swap" });
+// Variable fonts (Latin subset from Google Fonts) kept in the repo, so the build never fetches them.
+const interTight = localFont({ src: "./fonts/InterTight-latin.woff2", weight: "400 900", variable: "--font-inter-tight", display: "swap" });
+const jetbrainsMono = localFont({ src: "./fonts/JetBrainsMono-latin.woff2", weight: "400 500", variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Bytewise",

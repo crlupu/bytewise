@@ -174,7 +174,7 @@ items due, the streak spark); red is for destructive actions only.
 Home is a bento grid (continue, streak, review, accuracy) above each topic's courses as
 rows with thin progress bars; a course is a path of lessons joined by a line; a
 lesson's actions sit in a bottom sheet. Type is Inter Tight with JetBrains Mono for
-code and labels, loaded at build time through `next/font`. A floating tab bar on
+code and labels, self-hosted from `app/fonts` through `next/font/local`. A floating tab bar on
 phones, a sidebar from 1056px, 44px touch targets, hover styles only behind
 `(hover: hover)`. Design explorations are in `design/`. All tokens are in `app/globals.css`.
 
