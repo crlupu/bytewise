@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bytewise Logo Concepts 2</title>
+<style>
+  :root {
+    --bg: #f2f3f1; --surface: #fff; --fg: #1d1d1f; --muted: #6b6e6c; --line: #e1e3e0;
+    --blue: #097cfb; --ink: #1d1d1f; --tint: #9fd0ff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #000; --surface: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #2c2c2e; }
+  }
+  :root[data-theme="dark"] { --bg: #000; --surface: #1c1c1e; --fg: #f5f5f7; --muted: #98989d; --line: #2c2c2e; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1060px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font: 700 28px/1.2 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 60ch; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border-radius: 16px; padding: 20px; box-shadow: 0 0 0 .5px var(--line); }
+  .card.pick { box-shadow: 0 0 0 2px var(--blue); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 4px; }
+  h2 { font-size: 17px; margin: 0 0 4px; }
+  .card p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; margin-bottom: 16px; }
+  .sizes svg { display: block; }
+  .dark { background: #000; border-radius: 14px; padding: 10px; display: flex; gap: 10px; align-items: flex-end; }
+  .word { display: flex; align-items: center; gap: 10px; font: 700 24px/1 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; letter-spacing: -.01em; }
+  .word span b { color: var(--blue); font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bytewise logo concepts, round 2</h1>
+  <p class="lede">New directions mixing the two picks: the spark and brackets of 4 with the near-black tile, b and cursor of 6. Your picks come first, for comparison. Recommended: b with a spark.</p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <mask id="counter"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask>
+      <mask id="counter2"><rect width="64" height="64" fill="#fff"/><circle cx="34.5" cy="38.5" r="4.8" fill="#000"/></mask>
+      <symbol id="pick4" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#097cfb"/><path d="M21 19 10.5 32 21 45M43 19l10.5 13L43 45" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#fff" transform="translate(32 32) scale(1) translate(-32 -32)"/></symbol>
+      <symbol id="pick6" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><g fill="#fff" mask="url(#counter)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><rect x="45" y="44" width="10" height="5" rx="2.5" fill="#097cfb"/></symbol>
+      <symbol id="bspark" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><g fill="#fff" mask="url(#counter)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#0a84ff" transform="translate(50 44) scale(0.62) translate(-32 -32)"/></symbol>
+      <symbol id="darkspark" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><path d="M21 19 10.5 32 21 45M43 19l10.5 13L43 45" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#0a84ff" transform="translate(32 32) scale(1) translate(-32 -32)"/></symbol>
+      <symbol id="prompt" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><path d="M13 19.5 25.5 32 13 44.5" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#0a84ff" transform="translate(43 32) scale(1.05) translate(-32 -32)"/></symbol>
+      <symbol id="sparkcounter" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><g fill="#fff"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="14"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#0a84ff" transform="translate(31 36) scale(0.62) translate(-32 -32)"/></symbol>
+      <symbol id="cursorbrackets" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><path d="M21 19 10.5 32 21 45M43 19l10.5 13L43 45" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="25" y="39" width="14" height="5.5" rx="2.75" fill="#0a84ff"/></symbol>
+      <symbol id="bracketb" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#1d1d1f"/><path d="M15 22 7.5 32 15 42M49 22l7.5 10L49 42" fill="none" stroke="#0a84ff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><g fill="#fff" mask="url(#counter2)"><rect x="20" y="15" width="7.5" height="34" rx="3.75"/><circle cx="34.5" cy="38.5" r="11"/></g></symbol>
+    </defs>
+  </svg>
+  <div class="grid">
+    <section class="card">
+      <span class="tag">Your pick</span>
+      <h2>4 · Spark in brackets</h2>
+      <p>The starting point: an "aha" spark inside code brackets, white on blue.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#pick4"/></svg><svg width="32" height="32"><use href="#pick4"/></svg><svg width="16" height="16"><use href="#pick4"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#pick4"/></svg><svg width="20" height="20"><use href="#pick4"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#pick4"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Your pick</span>
+      <h2>6 · b_ cursor</h2>
+      <p>The other starting point: a b and a blinking cursor on near-black.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#pick6"/></svg><svg width="32" height="32"><use href="#pick6"/></svg><svg width="16" height="16"><use href="#pick6"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#pick6"/></svg><svg width="20" height="20"><use href="#pick6"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#pick6"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card pick">
+      <span class="tag">Recommended</span>
+      <h2>A · b with a spark</h2>
+      <p>The b from 6, with the spark from 4 where the cursor was: Bytewise, plus the moment it clicks. Two simple shapes, so it stays clear at 16 px.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#bspark"/></svg><svg width="32" height="32"><use href="#bspark"/></svg><svg width="16" height="16"><use href="#bspark"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#bspark"/></svg><svg width="20" height="20"><use href="#bspark"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#bspark"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Inverted</span>
+      <h2>B · Brackets, dark</h2>
+      <p>Concept 4 moved onto the near-black tile, with a blue spark. Same idea, but calmer and more distinctive than blue-on-blue.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#darkspark"/></svg><svg width="32" height="32"><use href="#darkspark"/></svg><svg width="16" height="16"><use href="#darkspark"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#darkspark"/></svg><svg width="20" height="20"><use href="#darkspark"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#darkspark"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Terminal</span>
+      <h2>C · Prompt spark</h2>
+      <p>A shell prompt › followed by a spark instead of a command: type, and learn. Reads instantly as code; very bold at small sizes.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#prompt"/></svg><svg width="32" height="32"><use href="#prompt"/></svg><svg width="16" height="16"><use href="#prompt"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#prompt"/></svg><svg width="20" height="20"><use href="#prompt"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#prompt"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Monogram</span>
+      <h2>D · Spark inside the b</h2>
+      <p>A b whose hole is a blue spark. Compact and clever up close, but the spark gets tiny in a browser tab.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#sparkcounter"/></svg><svg width="32" height="32"><use href="#sparkcounter"/></svg><svg width="16" height="16"><use href="#sparkcounter"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#sparkcounter"/></svg><svg width="20" height="20"><use href="#sparkcounter"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#sparkcounter"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Minimal</span>
+      <h2>E · Brackets and cursor</h2>
+      <p>Brackets waiting for input: ‹ _ ›. The spark of 4 becomes the cursor of 6. Quiet and very simple.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#cursorbrackets"/></svg><svg width="32" height="32"><use href="#cursorbrackets"/></svg><svg width="16" height="16"><use href="#cursorbrackets"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#cursorbrackets"/></svg><svg width="20" height="20"><use href="#cursorbrackets"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#cursorbrackets"/></svg><span>Bytewise</span></div>
+    </section>
+    <section class="card">
+      <span class="tag">Monogram</span>
+      <h2>F · b in brackets</h2>
+      <p>A b written like a tag, ‹b›, with blue brackets. Most literal about code; the most detail of the set.</p>
+      <div class="sizes"><svg width="96" height="96"><use href="#bracketb"/></svg><svg width="32" height="32"><use href="#bracketb"/></svg><svg width="16" height="16"><use href="#bracketb"/></svg>
+        <div class="dark"><svg width="40" height="40"><use href="#bracketb"/></svg><svg width="20" height="20"><use href="#bracketb"/></svg></div></div>
+      <div class="word"><svg width="32" height="32"><use href="#bracketb"/></svg><span>Bytewise</span></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
