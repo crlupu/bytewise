@@ -1,0 +1,133 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bytewise Colour Palettes</title>
+<style>
+:root{--page:#eef0f2;--card:#fff;--ink:#16181d;--sub:#5f6470;--line:#e1e3e7;--hl:#1d3461}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#000;--card:#16181d;--ink:#f3f4f6;--sub:#9aa0aa;--line:#2a2d33;--hl:#8fb0ff}}
+:root[data-theme="dark"]{--page:#000;--card:#16181d;--ink:#f3f4f6;--sub:#9aa0aa;--line:#2a2d33;--hl:#8fb0ff}
+*{box-sizing:border-box} body{margin:0;background:var(--page);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:32px 16px 48px}
+h1{font:700 28px/1.2 ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;margin:0 0 6px}
+.lede{color:var(--sub);margin:0 0 24px;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:16px}
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border-radius:16px;padding:20px;box-shadow:0 0 0 .5px var(--line)}
+.card.pick{box-shadow:0 0 0 2px var(--hl)}
+.tag{font-size:12px;font-weight:600;color:var(--hl)} h2{font-size:18px;margin:2px 0 4px} .card>p{margin:0 0 12px;color:var(--sub);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px;font-size:13px}
+.mode{width:40px;color:var(--sub);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px} .chip i{width:16px;height:16px;border-radius:5px;box-shadow:0 0 0 .5px rgba(127,127,127,.4)}
+.chip code{color:var(--sub);font-size:12px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media (max-width:560px){.pair{grid-template-columns:1fr}}
+.frame{border-radius:14px;overflow:hidden}
+.aa{font-size:12px;color:var(--sub);margin:10px 0 0}
+.mock{background:var(--bg);color:var(--fg);padding:14px;font-size:13px;height:100%}
+.m-top{display:flex;align-items:center;gap:8px;font:700 15px ui-rounded,"SF Pro Rounded",-apple-system,sans-serif}
+.streak{margin-left:auto;color:var(--amber);font-weight:700;font-size:13px}
+.m-progress{height:6px;border-radius:3px;background:var(--track);margin:12px 0} .m-progress i{display:block;height:100%;border-radius:3px;background:var(--success)}
+.m-q{margin:0 0 10px;font-weight:600}
+.m-q u{text-decoration:underline dotted var(--amber) 2px;text-underline-offset:3px}
+.m-opt{background:var(--surface);border-radius:10px;padding:9px 11px;margin-bottom:6px;box-shadow:0 0 0 1px rgba(127,127,127,.18)}
+.m-opt.sel{box-shadow:inset 0 0 0 2px var(--success)}
+.m-opt code{font-size:12px}
+.m-fb{display:flex;gap:9px;align-items:flex-start;background:var(--surface);border-radius:10px;padding:9px 11px;margin:10px 0}
+.tick{flex:none;width:20px;height:20px;border-radius:50%;background:var(--success);color:var(--surface);display:grid;place-items:center;font-size:12px;font-weight:700}
+.m-fb small{color:var(--muted)}
+.m-btn{background:var(--accent);color:var(--accentFg);text-align:center;border-radius:10px;padding:9px;font-weight:700}
+</style></head><body><main>
+<h1>Bytewise colour palettes</h1>
+<p class="lede">Four directions built from navy, green and amber. Each is shown on a lesson screen in light and dark mode, with the b-and-spark logo recoloured. Contrast is checked against WCAG AA: 4.5:1 for text, 3:1 for controls.</p>
+<div class="grid">
+<section class="card">
+  <span class="tag">Navy</span><h2>Midnight</h2><p>Navy does everything: buttons, selection, progress and the tick on a right answer. Amber only lights the spark and the streak. Calm and serious, like a good textbook.</p>
+  <div class="chips"><span class="mode">Light</span><span class="chip"><i style="background:#1d3461"></i>Brand<code>#1d3461</code></span><span class="chip"><i style="background:#1d3461"></i>Action<code>#1d3461</code></span><span class="chip"><i style="background:#1d3461"></i>Correct<code>#1d3461</code></span><span class="chip"><i style="background:#e29a12"></i>Spark<code>#e29a12</code></span></div>
+  <div class="chips"><span class="mode">Dark</span><span class="chip"><i style="background:#1d3461"></i>Brand<code>#1d3461</code></span><span class="chip"><i style="background:#8fb0ff"></i>Action<code>#8fb0ff</code></span><span class="chip"><i style="background:#8fb0ff"></i>Correct<code>#8fb0ff</code></span><span class="chip"><i style="background:#ffb547"></i>Spark<code>#ffb547</code></span></div>
+  <div class="pair"><div class="frame light"><div class="mock" style="--bg:#f3f4f7;--surface:#ffffff;--fg:#141b2d;--muted:#5d6475;--brand:#1d3461;--accent:#1d3461;--accentFg:#ffffff;--success:#1d3461;--amber:#e29a12;--track:#dfe4ef">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1d3461"/><mask id="m28140252909043328"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909043328)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#e29a12" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div><div class="frame dark"><div class="mock" style="--bg:#060a13;--surface:#121a2b;--fg:#f2f4f8;--muted:#98a1b3;--brand:#1d3461;--accent:#8fb0ff;--accentFg:#0b1530;--success:#8fb0ff;--amber:#ffb547;--track:#24304a">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1d3461" stroke="#ffffff" stroke-opacity=".14" stroke-width="1"/><mask id="m28140252909078336"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909078336)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb547" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div></div>
+  <p class="aa">All text and controls pass WCAG AA · button text contrast ≥ 8.4:1</p>
+</section>
+<section class="card">
+  <span class="tag">Warm</span><h2>Navy & Amber</h2><p>A navy frame with amber for every action — buttons, selection, progress. Green appears only on right answers. The warmest and most distinctive option — but in light mode amber is too pale for thin outlines or text, so those would have to be navy.</p>
+  <div class="chips"><span class="mode">Light</span><span class="chip"><i style="background:#16213a"></i>Brand<code>#16213a</code></span><span class="chip"><i style="background:#f0a020"></i>Action<code>#f0a020</code></span><span class="chip"><i style="background:#1f8a4c"></i>Correct<code>#1f8a4c</code></span><span class="chip"><i style="background:#f0a020"></i>Spark<code>#f0a020</code></span></div>
+  <div class="chips"><span class="mode">Dark</span><span class="chip"><i style="background:#16213a"></i>Brand<code>#16213a</code></span><span class="chip"><i style="background:#ffb43a"></i>Action<code>#ffb43a</code></span><span class="chip"><i style="background:#4cc787"></i>Correct<code>#4cc787</code></span><span class="chip"><i style="background:#ffb43a"></i>Spark<code>#ffb43a</code></span></div>
+  <div class="pair"><div class="frame light"><div class="mock" style="--bg:#f5f4f0;--surface:#ffffff;--fg:#16213a;--muted:#62656e;--brand:#16213a;--accent:#f0a020;--accentFg:#1d1400;--success:#1f8a4c;--amber:#f0a020;--track:#ece6d8">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#16213a"/><mask id="m28140252909077824"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909077824)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#f0a020" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div><div class="frame dark"><div class="mock" style="--bg:#080d19;--surface:#141c2e;--fg:#f4f2ec;--muted:#a3a7b2;--brand:#16213a;--accent:#ffb43a;--accentFg:#1d1400;--success:#4cc787;--amber:#ffb43a;--track:#2a3247">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#16213a" stroke="#ffffff" stroke-opacity=".14" stroke-width="1"/><mask id="m28140252909077120"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909077120)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb43a" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div></div>
+  <p class="aa">Below AA: light: action on card 2.2:1 · button text contrast ≥ 8.5:1</p>
+</section>
+<section class="card">
+  <span class="tag">Green</span><h2>Forest</h2><p>Green leads, so the brand and "correct" are the same colour — the app feels like it's cheering you on. Amber for the spark and streak, navy-black text.</p>
+  <div class="chips"><span class="mode">Light</span><span class="chip"><i style="background:#1f7a4d"></i>Brand<code>#1f7a4d</code></span><span class="chip"><i style="background:#1f7a4d"></i>Action<code>#1f7a4d</code></span><span class="chip"><i style="background:#1f7a4d"></i>Correct<code>#1f7a4d</code></span><span class="chip"><i style="background:#e09612"></i>Spark<code>#e09612</code></span></div>
+  <div class="chips"><span class="mode">Dark</span><span class="chip"><i style="background:#1f7a4d"></i>Brand<code>#1f7a4d</code></span><span class="chip"><i style="background:#4cc787"></i>Action<code>#4cc787</code></span><span class="chip"><i style="background:#4cc787"></i>Correct<code>#4cc787</code></span><span class="chip"><i style="background:#ffb547"></i>Spark<code>#ffb547</code></span></div>
+  <div class="pair"><div class="frame light"><div class="mock" style="--bg:#f2f5f1;--surface:#ffffff;--fg:#14231b;--muted:#5f6b63;--brand:#1f7a4d;--accent:#1f7a4d;--accentFg:#ffffff;--success:#1f7a4d;--amber:#e09612;--track:#dde8e0">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1f7a4d"/><mask id="m28140252909077376"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909077376)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#e09612" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div><div class="frame dark"><div class="mock" style="--bg:#050a07;--surface:#121c16;--fg:#eef5f0;--muted:#97a69c;--brand:#1f7a4d;--accent:#4cc787;--accentFg:#04140b;--success:#4cc787;--amber:#ffb547;--track:#20342a">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1f7a4d" stroke="#ffffff" stroke-opacity=".14" stroke-width="1"/><mask id="m28140252909079040"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909079040)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb547" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div></div>
+  <p class="aa">All text and controls pass WCAG AA · button text contrast ≥ 5.3:1</p>
+</section>
+<section class="card pick">
+  <span class="tag">Recommended</span><h2>Navy · Green · Amber</h2><p>Each colour has one job. Navy: the brand and every action. Green: right answers and progress. Amber: the spark — streaks and glossary terms. The most informative, at the cost of one more colour.</p>
+  <div class="chips"><span class="mode">Light</span><span class="chip"><i style="background:#1d3461"></i>Brand<code>#1d3461</code></span><span class="chip"><i style="background:#1d3461"></i>Action<code>#1d3461</code></span><span class="chip"><i style="background:#1d8a50"></i>Correct<code>#1d8a50</code></span><span class="chip"><i style="background:#e29a12"></i>Spark<code>#e29a12</code></span></div>
+  <div class="chips"><span class="mode">Dark</span><span class="chip"><i style="background:#1d3461"></i>Brand<code>#1d3461</code></span><span class="chip"><i style="background:#8fb0ff"></i>Action<code>#8fb0ff</code></span><span class="chip"><i style="background:#4cc787"></i>Correct<code>#4cc787</code></span><span class="chip"><i style="background:#ffb547"></i>Spark<code>#ffb547</code></span></div>
+  <div class="pair"><div class="frame light"><div class="mock" style="--bg:#f3f4f6;--surface:#ffffff;--fg:#15203a;--muted:#5d6475;--brand:#1d3461;--accent:#1d3461;--accentFg:#ffffff;--success:#1d8a50;--amber:#e29a12;--track:#dfe4ec">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1d3461"/><mask id="m28140252909085888"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909085888)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#e29a12" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div><div class="frame dark"><div class="mock" style="--bg:#060a13;--surface:#121a2b;--fg:#f2f4f8;--muted:#98a1b3;--brand:#1d3461;--accent:#8fb0ff;--accentFg:#0b1530;--success:#4cc787;--amber:#ffb547;--track:#24304a">
+  <div class="m-top"><svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect x=".5" y=".5" width="63" height="63" rx="16" fill="#1d3461" stroke="#ffffff" stroke-opacity=".14" stroke-width="1"/><mask id="m28140252909085952"><rect width="64" height="64" fill="#fff"/><circle cx="31" cy="36" r="6" fill="#000"/></mask><g fill="#fff" mask="url(#m28140252909085952)"><rect x="11" y="10" width="9" height="38" rx="4.5"/><circle cx="31" cy="36" r="13"/></g><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="#ffb547" transform="translate(50 44) scale(.68) translate(-32 -32)"/></svg><b>Bytewise</b><span class="streak">✦ 12</span></div>
+  <div class="m-progress"><i style="width:62%"></i></div>
+  <p class="m-q">Two threads increment a shared <u>race condition</u>-prone counter. Which fixes it?</p>
+  <div class="m-opt sel">Make <code>increment</code> synchronized</div>
+  <div class="m-opt">Make the field <code>final</code></div>
+  <div class="m-fb"><span class="tick">✓</span><div><b>Correct</b><br><small>Only one thread at a time can run it.</small></div></div>
+  <div class="m-btn">Continue</div>
+</div></div></div>
+  <p class="aa">All text and controls pass WCAG AA · button text contrast ≥ 8.4:1</p>
+</section>
+</div></main></body></html>
