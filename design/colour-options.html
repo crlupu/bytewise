@@ -1,0 +1,162 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bytewise Colour Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--page:#f6f6f4;--pink:#101114;--psub:#62666e;--pline:#e3e4e6;--sans:"Inter Tight",-apple-system,system-ui,sans-serif;--serif:"Instrument Serif",Georgia,serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0a0a0b;--pink:#f1f2f4;--psub:#9a9ea6;--pline:#25262a}}
+:root[data-theme="dark"]{--page:#0a0a0b;--pink:#f1f2f4;--psub:#9a9ea6;--pline:#25262a}
+*{box-sizing:border-box} body{margin:0;background:var(--page);color:var(--pink);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+main{max-width:1180px;margin:0 auto;padding:56px 20px 64px}
+h1{font:300 clamp(44px,7vw,88px)/.95 var(--sans);letter-spacing:-.05em;margin:0 0 14px}
+.lede{color:var(--psub);max-width:56ch;margin:0 0 24px;font-size:18px}
+.opt-sec{padding:64px 0;border-top:1px solid var(--pline)}
+.head{display:grid;grid-template-columns:1fr 1.3fr;gap:32px;align-items:end;margin-bottom:32px}
+@media (max-width:820px){.head{grid-template-columns:1fr}}
+.src{color:var(--psub);font:500 13px var(--mono)} .head h2{font:800 clamp(48px,7vw,84px)/.9 var(--sans);letter-spacing:-.05em;margin:6px 0 0}
+.head p{color:var(--psub);margin:0;font-size:17px;max-width:52ch}
+.sws{display:grid;grid-template-columns:repeat(7,1fr);gap:12px}
+@media (max-width:820px){.sws{grid-template-columns:repeat(4,1fr)}}
+.sw .pair{border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(127,127,127,.18)} .sw .pair i{display:block;height:56px}
+.sw b{display:block;font:600 13px var(--sans);margin-top:8px} .sw code{font:11px/1.5 var(--mono);color:var(--psub)}
+.aa{color:var(--psub);font-size:13px;margin:14px 0 36px}
+.phones{display:flex;gap:32px;justify-content:center;flex-wrap:wrap}
+.cap{text-align:center;color:var(--psub);font-size:14px;margin-top:14px}
+.phone{width:290px;border-radius:54px;padding:6px;background:linear-gradient(150deg,#d4d7dd,#7f848d 35%,#3c3f45 65%,#a9adb5);box-shadow:0 40px 70px -30px rgba(10,16,40,.45)}
+.screen{position:relative;height:600px;border-radius:48px;overflow:hidden;background:var(--bg);color:var(--ink);font-size:13px}
+.isl{position:absolute;top:12px;left:50%;translate:-50% 0;width:90px;height:26px;border-radius:20px;background:#000;z-index:5}
+.status{position:relative;z-index:4;display:flex;justify-content:space-between;padding:14px 28px 0;font:600 13px var(--sans)}
+.glow{position:absolute;inset:auto -20% -30% -20%;height:60%;background:radial-gradient(50% 50% at 50% 50%,var(--glow),transparent 70%);opacity:.0;pointer-events:none}
+.dark .glow{opacity:.55} .f-sky.light .glow{opacity:.5;inset:-20% -30% auto 20%} .f-current .glow{opacity:.35} .f-current.dark .glow.g2{opacity:.6;inset:auto -10% -25% -10%}
+.lh{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:18px 18px 0}
+.lt{margin:0;font:800 32px/1 var(--sans);letter-spacing:-.04em} .lt.up{text-transform:uppercase;font-weight:900} .lt.low{font-weight:300;font-size:42px;letter-spacing:-.06em}
+.f-sky .lt{font:400 26px/1.05 var(--sans);letter-spacing:-.04em} .lt em{display:block;font:italic 400 1.15em var(--serif);letter-spacing:-.01em}
+.mono{font:500 10px var(--mono);letter-spacing:.06em;width:100%} .red{color:var(--accent)}
+.streak{display:flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:var(--surface);font:600 12px var(--sans);box-shadow:0 0 0 1px var(--line)}
+.hc{position:relative;margin:16px 14px 0;border-radius:28px;padding:16px;min-height:170px;display:flex;flex-direction:column;justify-content:flex-end;background:var(--surface);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.f-grove .hc{background:radial-gradient(80% 70% at 50% 120%,var(--glow),transparent 70%),var(--surface)}
+.f-sky .hc{background:linear-gradient(160deg,#5b89f5,#3461e0 55%,#2a4bb0);color:#fff;box-shadow:0 20px 40px -18px rgba(52,97,224,.7)} .f-sky.dark .hc{background:linear-gradient(160deg,#3a5fd6,#22409f 60%,#16295f)}
+.f-current .hc{background:radial-gradient(70% 80% at 85% 10%,color-mix(in srgb,var(--glow) 55%,transparent),transparent 65%),var(--surface)}
+.hc small{opacity:.75} .hc b{font:800 22px/1.1 var(--sans);letter-spacing:-.035em;margin:2px 0 10px} .f-current .hc b{font-weight:400;font-size:24px}
+.pr{display:flex;align-items:center;gap:8px;font-size:11px;opacity:.85} .pr .t{flex:1;height:5px;border-radius:3px;background:color-mix(in srgb,currentColor 18%,transparent);overflow:hidden} .pr .t i{display:block;width:66%;height:100%;background:var(--correct)}
+.f-sky .pr .t i{background:#bff3e6}
+.resume{position:absolute;top:14px;right:14px;padding:6px 12px;border-radius:999px;background:var(--primary);color:var(--onPrimary);font:600 11px var(--sans)} .f-sky .resume{background:#fff;color:#2a4bb0}
+.sec{font:700 17px var(--sans);letter-spacing:-.02em;margin:18px 18px 8px;position:relative} .f-current .sec{font:500 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--sub)}
+.rows{margin:0 14px;border-radius:22px;background:var(--surface);box-shadow:0 0 0 1px var(--line);position:relative}
+.row{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:14px} .row+.row{box-shadow:inset 0 1px 0 var(--line)} .row div{flex:1;display:grid} .row small{color:var(--sub);font-size:11.5px}
+.dot{width:10px;height:10px;border-radius:50%} .pct{font:500 11px var(--mono);color:var(--sub)}
+.tabs{position:absolute;left:14px;right:14px;bottom:16px;height:54px;border-radius:999px;display:flex;align-items:center;justify-content:space-around;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(16px);box-shadow:0 0 0 1px var(--line),0 10px 30px rgba(0,0,0,.15);font:600 11px var(--sans);color:var(--sub)}
+.tabs .on{color:var(--ink);background:var(--bg);padding:7px 12px;border-radius:999px}
+.top{position:relative;display:flex;align-items:center;gap:12px;padding:16px 20px 0} .x{font-size:16px;color:var(--sub)} .n{font:600 12px var(--sans);color:var(--sub)}
+.bar{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden} .bar i{display:block;width:40%;height:100%;background:var(--correct)}
+.lb{position:relative;padding:20px 20px 0} .kind{font:500 11px var(--mono);letter-spacing:.04em;color:var(--sub);text-transform:uppercase}
+.q{font:700 21px/1.18 var(--sans);letter-spacing:-.035em;margin:8px 0 14px} .f-grove .q{font-weight:800} .f-current .q{font-weight:400;font-size:23px}
+.term{border-bottom:2px dotted var(--accent)}
+.opt{display:flex;align-items:center;gap:10px;border-radius:18px;padding:12px 14px;margin-bottom:8px;background:var(--surface);box-shadow:0 0 0 1px var(--line);font-size:14px}
+.opt code{font:12px var(--mono)}
+.opt.ok{background:var(--correctSoft);box-shadow:inset 0 0 0 1.5px var(--correct)}
+.tk{width:20px;height:20px;border-radius:50%;background:var(--correct);display:grid;place-items:center;flex:none} .tk.big{width:30px;height:30px}
+.fb{position:absolute;left:14px;right:14px;bottom:88px;display:flex;gap:12px;align-items:center;border-radius:22px;padding:13px 14px;background:var(--surface);box-shadow:0 0 0 1px var(--line),0 14px 30px -16px rgba(0,0,0,.3)}
+.fb b{display:block;font:700 15px var(--sans);color:var(--correct)} .fb small{color:var(--sub);font-size:12px}
+.cta{position:absolute;left:14px;right:14px;bottom:20px;height:52px;border-radius:999px;display:grid;place-items:center;background:var(--primary);color:var(--onPrimary);font:700 16px var(--sans)}
+.f-grove.light .cta{background:#0a0d09;box-shadow:0 0 0 0} .f-grove .cta{text-transform:uppercase;letter-spacing:.02em;font-weight:800;font-size:14px}
+footer{color:var(--psub);font-size:13px;padding-top:24px;border-top:1px solid var(--pline)}
+</style></head><body><main>
+<h1>Three colour options</h1>
+<p class="lede">One palette for each design you shared. Same screens in each, so you can compare the colours themselves: the Learn tab in both modes, and a lesson just after a right answer.</p>
+<section class="opt-sec">
+<div class="head"><div><span class="src">From Spendvest</span><h2>Grove</h2></div><p>Black and white, lit by one vivid green. The green does double duty: it's the light behind everything and the colour of a right answer, so success literally glows. Bold, confident, a little sporty.</p></div>
+<div class="sws"><div class="sw"><div class="pair"><i style="background:#f2f4ef"></i><i style="background:#050605"></i></div><b>Background</b><code>#f2f4ef<br>#050605</code></div><div class="sw"><div class="pair"><i style="background:#ffffff"></i><i style="background:#121611"></i></div><b>Card</b><code>#ffffff<br>#121611</code></div><div class="sw"><div class="pair"><i style="background:#0a0d09"></i><i style="background:#f1f4ee"></i></div><b>Text</b><code>#0a0d09<br>#f1f4ee</code></div><div class="sw"><div class="pair"><i style="background:#0a0d09"></i><i style="background:#a6ee6a"></i></div><b>Main button</b><code>#0a0d09<br>#a6ee6a</code></div><div class="sw"><div class="pair"><i style="background:#2f8f2c"></i><i style="background:#8fe25a"></i></div><b>Correct</b><code>#2f8f2c<br>#8fe25a</code></div><div class="sw"><div class="pair"><i style="background:#a8720f"></i><i style="background:#ffc35a"></i></div><b>Spark</b><code>#a8720f<br>#ffc35a</code></div><div class="sw"><div class="pair"><i style="background:#7ed957"></i><i style="background:#5ed14a"></i></div><b>Glow</b><code>#7ed957<br>#5ed14a</code></div></div>
+<p class="aa">Each swatch: light mode on top, dark below. Every check passes WCAG AA.</p>
+<div class="phones"><div><div class="phone"><div class="screen dark f-grove" style="--bg:#050605;--surface:#121611;--ink:#f1f4ee;--sub:#9aa395;--primary:#a6ee6a;--onPrimary:#0a1a04;--correct:#8fe25a;--correctSoft:#16260f;--accent:#ffc35a;--glow:#5ed14a;--line:#232a21"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><h3 class="lt up">Learn</h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, dark</p></div><div><div class="phone"><div class="screen light f-grove" style="--bg:#f2f4ef;--surface:#ffffff;--ink:#0a0d09;--sub:#5a6355;--primary:#0a0d09;--onPrimary:#ffffff;--correct:#2f8f2c;--correctSoft:#e3f5dc;--accent:#a8720f;--glow:#7ed957;--line:#e2e6dd"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow g2"></div>
+<div class="top"><span class="x">✕</span><span class="bar"><i></i></span><span class="n">3 of 8</span></div>
+<div class="lb"><span class="kind">Choose one</span>
+<p class="q">Which change removes the <span class="term">race condition</span>?</p>
+<div class="opt">Make <code>count</code> final</div>
+<div class="opt ok"><span class="tk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span>Synchronize <code>increment</code></div>
+<div class="opt">Use one thread at a time</div></div>
+<div class="fb"><span class="tk big"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span><div><b>Correct</b><small>Only one thread can run it at once.</small></div></div>
+<div class="cta">Continue</div></div></div><p class="cap">A right answer, light</p></div>
+<div><div class="phone"><div class="screen light f-grove" style="--bg:#f2f4ef;--surface:#ffffff;--ink:#0a0d09;--sub:#5a6355;--primary:#0a0d09;--onPrimary:#ffffff;--correct:#2f8f2c;--correctSoft:#e3f5dc;--accent:#a8720f;--glow:#7ed957;--line:#e2e6dd"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><h3 class="lt up">Learn</h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, light</p></div></div>
+</section><section class="opt-sec">
+<div class="head"><div><span class="src">From Taski</span><h2>Sky</h2></div><p>Soft daylight blues on white, with a black header for weight. Royal blue for actions, a teal for right answers, and a warm gold from Taski's charts as the spark. Calm, clear and friendly.</p></div>
+<div class="sws"><div class="sw"><div class="pair"><i style="background:#edf3ff"></i><i style="background:#05070c"></i></div><b>Background</b><code>#edf3ff<br>#05070c</code></div><div class="sw"><div class="pair"><i style="background:#ffffff"></i><i style="background:#121725"></i></div><b>Card</b><code>#ffffff<br>#121725</code></div><div class="sw"><div class="pair"><i style="background:#0b1430"></i><i style="background:#eef2fb"></i></div><b>Text</b><code>#0b1430<br>#eef2fb</code></div><div class="sw"><div class="pair"><i style="background:#3461e0"></i><i style="background:#7d9cff"></i></div><b>Main button</b><code>#3461e0<br>#7d9cff</code></div><div class="sw"><div class="pair"><i style="background:#0f8a74"></i><i style="background:#45d3b4"></i></div><b>Correct</b><code>#0f8a74<br>#45d3b4</code></div><div class="sw"><div class="pair"><i style="background:#a8730f"></i><i style="background:#f5c45a"></i></div><b>Spark</b><code>#a8730f<br>#f5c45a</code></div><div class="sw"><div class="pair"><i style="background:#8fb6ff"></i><i style="background:#3461e0"></i></div><b>Glow</b><code>#8fb6ff<br>#3461e0</code></div></div>
+<p class="aa">Each swatch: light mode on top, dark below. Every check passes WCAG AA.</p>
+<div class="phones"><div><div class="phone"><div class="screen light f-sky" style="--bg:#edf3ff;--surface:#ffffff;--ink:#0b1430;--sub:#55617d;--primary:#3461e0;--onPrimary:#ffffff;--correct:#0f8a74;--correctSoft:#dcf4ee;--accent:#a8730f;--glow:#8fb6ff;--line:#dfe7f7"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><h3 class="lt">Good evening, <em>Alex</em></h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, light</p></div><div><div class="phone"><div class="screen light f-sky" style="--bg:#edf3ff;--surface:#ffffff;--ink:#0b1430;--sub:#55617d;--primary:#3461e0;--onPrimary:#ffffff;--correct:#0f8a74;--correctSoft:#dcf4ee;--accent:#a8730f;--glow:#8fb6ff;--line:#dfe7f7"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow g2"></div>
+<div class="top"><span class="x">✕</span><span class="bar"><i></i></span><span class="n">3 of 8</span></div>
+<div class="lb"><span class="kind">Choose one</span>
+<p class="q">Which change removes the <span class="term">race condition</span>?</p>
+<div class="opt">Make <code>count</code> final</div>
+<div class="opt ok"><span class="tk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span>Synchronize <code>increment</code></div>
+<div class="opt">Use one thread at a time</div></div>
+<div class="fb"><span class="tk big"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span><div><b>Correct</b><small>Only one thread can run it at once.</small></div></div>
+<div class="cta">Continue</div></div></div><p class="cap">A right answer, light</p></div>
+<div><div class="phone"><div class="screen dark f-sky" style="--bg:#05070c;--surface:#121725;--ink:#eef2fb;--sub:#98a2b8;--primary:#7d9cff;--onPrimary:#06102b;--correct:#45d3b4;--correctSoft:#0f2a28;--accent:#f5c45a;--glow:#3461e0;--line:#232a3c"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><h3 class="lt">Good evening, <em>Alex</em></h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, dark</p></div></div>
+</section><section class="opt-sec">
+<div class="head"><div><span class="src">From UMO</span><h2>Current</h2></div><p>Fog grey and graphite, almost colourless, with one violet glow and a single red mark used only for small labels. Quiet and editorial: the content does the talking, colour arrives only when something happens.</p></div>
+<div class="sws"><div class="sw"><div class="pair"><i style="background:#eceef1"></i><i style="background:#0b0c0f"></i></div><b>Background</b><code>#eceef1<br>#0b0c0f</code></div><div class="sw"><div class="pair"><i style="background:#f8f9fa"></i><i style="background:#17191e"></i></div><b>Card</b><code>#f8f9fa<br>#17191e</code></div><div class="sw"><div class="pair"><i style="background:#16181c"></i><i style="background:#eef0f4"></i></div><b>Text</b><code>#16181c<br>#eef0f4</code></div><div class="sw"><div class="pair"><i style="background:#16181c"></i><i style="background:#eef0f4"></i></div><b>Main button</b><code>#16181c<br>#eef0f4</code></div><div class="sw"><div class="pair"><i style="background:#6a3fe0"></i><i style="background:#a98bff"></i></div><b>Correct</b><code>#6a3fe0<br>#a98bff</code></div><div class="sw"><div class="pair"><i style="background:#d23a2a"></i><i style="background:#ff6a55"></i></div><b>Signal</b><code>#d23a2a<br>#ff6a55</code></div><div class="sw"><div class="pair"><i style="background:#9b72ff"></i><i style="background:#7b3cf5"></i></div><b>Glow</b><code>#9b72ff<br>#7b3cf5</code></div></div>
+<p class="aa">Each swatch: light mode on top, dark below. Every check passes WCAG AA.</p>
+<div class="phones"><div><div class="phone"><div class="screen light f-current" style="--bg:#eceef1;--surface:#f8f9fa;--ink:#16181c;--sub:#666b75;--primary:#16181c;--onPrimary:#ffffff;--correct:#6a3fe0;--correctSoft:#ece6ff;--accent:#d23a2a;--glow:#9b72ff;--line:#dcdfe4"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><span class="mono red">B/26</span><h3 class="lt low">learn</h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, light</p></div><div><div class="phone"><div class="screen dark f-current" style="--bg:#0b0c0f;--surface:#17191e;--ink:#eef0f4;--sub:#9a9fa9;--primary:#eef0f4;--onPrimary:#0b0c0f;--correct:#a98bff;--correctSoft:#211a3a;--accent:#ff6a55;--glow:#7b3cf5;--line:#26282e"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow g2"></div>
+<div class="top"><span class="x">✕</span><span class="bar"><i></i></span><span class="n">3 of 8</span></div>
+<div class="lb"><span class="kind">Choose one</span>
+<p class="q">Which change removes the <span class="term">race condition</span>?</p>
+<div class="opt">Make <code>count</code> final</div>
+<div class="opt ok"><span class="tk"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#17191e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span>Synchronize <code>increment</code></div>
+<div class="opt">Use one thread at a time</div></div>
+<div class="fb"><span class="tk big"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#17191e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.3 5 8.6l4.5-5"/></svg></span><div><b>Correct</b><small>Only one thread can run it at once.</small></div></div>
+<div class="cta">Continue</div></div></div><p class="cap">A right answer, dark</p></div>
+<div><div class="phone"><div class="screen dark f-current" style="--bg:#0b0c0f;--surface:#17191e;--ink:#eef0f4;--sub:#9a9fa9;--primary:#eef0f4;--onPrimary:#0b0c0f;--correct:#a98bff;--correctSoft:#211a3a;--accent:#ff6a55;--glow:#7b3cf5;--line:#26282e"><span class="isl"></span><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<div class="glow"></div>
+<div class="lh"><span class="mono red">B/26</span><h3 class="lt low">learn</h3><span class="streak"><svg width="12" height="12" viewBox="0 0 64 64"><path d="M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z" fill="var(--accent)" transform="translate(32 32) scale(2.6) translate(-32 -32)"/></svg>12 days</span></div>
+<div class="hc"><small>Java Concurrency in Practice</small><b>Sharing objects</b><div class="pr"><span class="t"><i></i></span><span>4 of 6</span></div><span class="resume">Resume</span></div>
+<p class="sec">Topics</p>
+<div class="rows"><div class="row"><span class="dot" style="background:var(--primary)"></span><div>Effective Java<small>90 lessons</small></div><span class="pct">38%</span></div>
+<div class="row"><span class="dot" style="background:var(--correct)"></span><div>Databases<small>8 lessons</small></div><span class="pct">12%</span></div>
+<div class="row"><span class="dot" style="background:var(--accent)"></span><div>Networking<small>6 lessons</small></div><span class="pct">0%</span></div></div>
+<div class="tabs"><span class="on">Learn</span><span>Review</span><span>Progress</span><span>Search</span></div></div></div><p class="cap">Learn, dark</p></div></div>
+</section>
+<footer>Bytewise colour options. Contrast checked against WCAG AA: 4.5:1 for text and button labels, 3:1 for coloured marks on cards.</footer>
+</main></body></html>
