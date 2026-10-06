@@ -72,8 +72,10 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
         )}
 
         <Link href="/progress/" className="tile tile--streak">
-          <Spark size={18} />
-          <span className="tile__big figure">{s.current}</span>
+          <span className="tile__big figure">
+            {s.current}
+            <Spark size={18} />
+          </span>
           <span className="tile__label">day streak</span>
           <span className="tile__hint">{s.today ? "Today's done" : s.current ? "Keep it going today" : "Finish a lesson to start one"}</span>
         </Link>

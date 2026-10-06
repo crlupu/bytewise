@@ -2862,6 +2862,27 @@ body {
 }
 
 /* Streak: the one lime tile. */
+/* Streak and review sit side by side: both numbers on the top line,
+   the hint and the button at the bottom. */
+.tile--streak .tile__big,
+.tile--review .tile__big {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.125rem;
+  margin-block-start: 0;
+}
+.tile--streak .tile__big svg {
+  margin-block-start: 0.125rem;
+}
+.tile--streak .tile__hint,
+.tile--review .tile__pill {
+  margin-block-start: auto;
+}
+.tile--streak .tile__label,
+.tile--review .tile__label {
+  margin-block-start: 0.25rem;
+  margin-block-end: 0.5rem;
+}
 .tile--streak {
   background: var(--lime);
   color: var(--on-lime);
