@@ -24,6 +24,10 @@ steps:
         feedback: "`1.10` can't be stored exactly, so the difference isn't exactly 0.9 either."
       - text: "0.90"
         feedback: "`println` of a `double` never adds a trailing zero — and the value isn't 0.9 anyway."
+    details: |
+      `double` stores numbers in binary, and 1.10 has no exact binary representation — just as 1/3 has none in decimal.
+      The nearest `double` is slightly above 1.10, so 2.00 minus it is slightly below 0.9: 0.8999999999999999.
+      Printing shows the shortest decimal that identifies that exact `double`. Rounding for display hides the error but doesn't remove it, and errors accumulate across calculations.
 
   - type: predict
     prompt: What does this print?

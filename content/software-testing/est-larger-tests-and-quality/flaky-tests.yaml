@@ -45,3 +45,7 @@ steps:
         correct: true
       - text: Add automatic retries until it passes
         feedback: Retries hide the flakiness — and possibly a real race in the production code.
+    details: |
+      A test that fails occasionally teaches the team to ignore red builds, which hides real failures.
+      Retrying until green hides the flakiness, and if the cause is a real race condition in production code, it hides that too.
+      Investigate: run the test many times, look for time, order or concurrency dependencies, and fix the cause. Quarantine it only while you work on it.

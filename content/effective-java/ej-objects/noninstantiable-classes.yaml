@@ -34,6 +34,10 @@ steps:
       - text: It works fine — that's the standard approach
         feedback: It's a common mistake rather than the standard.
     explanation: A private constructor also prevents subclassing, because every subclass constructor must call a superclass one.
+    details: |
+      An abstract class can't be instantiated directly, but anyone can write `class MyUtils extends Utils {}` and instantiate that.
+      Worse, `abstract` tells readers the class is meant to be subclassed — the opposite of the intent.
+      A private constructor prevents both: no one outside can call it, and no subclass can exist, because a subclass's constructor must call a superclass constructor it can't see.
 
   - type: predict
     prompt: A class has no constructors written in it. Is `new Helper()` legal from another package?

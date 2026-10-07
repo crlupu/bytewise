@@ -52,6 +52,10 @@ steps:
         correct: true
       - text: It doesn't
         feedback: Methods that throw it clear the status first; that's why restoring it matters.
+    details: |
+      Interruption is a single flag per thread. When a blocking method like `take` notices it, it clears the flag and throws `InterruptedException` instead.
+      The information now lives only in the exception, so if you catch it and do nothing, the request to stop is lost — code further up the stack, which might own the thread and need to exit, never learns about it.
+      That's why you either rethrow, or call `Thread.currentThread().interrupt()` to put the flag back.
 
   - type: explanation
     title: Not everything is interruptible

@@ -52,6 +52,10 @@ steps:
       - text: "`false`"
         feedback: "`valueOf` doesn't create objects — it returns one of two shared constants."
     explanation: "`Boolean.valueOf` returns `Boolean.TRUE` or `Boolean.FALSE`, so both variables hold the very same object."
+    details: |
+      `Boolean.valueOf(String)` parses the string case-insensitively and returns one of two pre-made constants, `Boolean.TRUE` or `Boolean.FALSE`.
+      Both calls return `Boolean.TRUE`, so `a` and `b` refer to the same object and `==` is true.
+      This is a static factory's caching at work: no new objects, ever. `new Boolean("true")` — now deprecated — would have created a new object on every call.
 
   - type: explanation
     title: Names and costs

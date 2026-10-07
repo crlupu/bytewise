@@ -77,6 +77,10 @@ steps:
       - text: It suffers from Bélády's anomaly
         feedback: OPT never does. You'll meet the anomaly in a moment.
     explanation: OPT is a yardstick — run it afterwards on a recorded trace to see how close a real policy got.
+    details: |
+      OPT evicts the page that won't be used for the longest time, which requires knowing the program's future accesses.
+      An OS only knows what has happened so far.
+      So OPT is used afterwards as a benchmark on recorded traces, while real systems approximate it with LRU-like policies, assuming the recent past predicts the near future.
 
   - type: widget
     widget: paging
@@ -131,3 +135,7 @@ steps:
       - text: FIFO
         feedback: You just watched FIFO do it.
     explanation: Both are stack algorithms, so giving them more frames never adds faults.
+    details: |
+      LRU and OPT are stack algorithms: the set of pages they'd keep with N frames is always a subset of what they'd keep with N + 1.
+      Any access that hits with N frames therefore also hits with more frames, so more memory can never add faults.
+      FIFO isn't a stack algorithm — what it keeps depends on load order, not use — so adding frames can change which page is evicted for the worse.

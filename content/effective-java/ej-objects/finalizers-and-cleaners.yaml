@@ -24,6 +24,11 @@ steps:
       - text: They run immediately when the last reference disappears
         feedback: That's the misconception. Timing depends entirely on the GC.
     explanation: They also open a security hole — a malicious subclass's finalizer can resurrect a half-constructed object.
+    details: |
+      The garbage collector decides when an unreachable object is processed, and the finalizer thread may run at low priority — so a finalizer might run seconds later, much later or never before the JVM exits.
+      Resources released only by finalizers can run out long before then, like file descriptors.
+      Objects with finalizers also take much longer to allocate and reclaim, and an exception thrown inside one is swallowed silently.
+      Deterministic cleanup belongs in `close()`, called from try-with-resources.
 
   - type: explanation
     title: Close resources explicitly

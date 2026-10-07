@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: Nothing — 100% line coverage
         feedback: Lines aren't branches. The `if` never took its false path.
+    details: |
+      With `a = 1, b = 1`, the condition is true and `x = 1` runs, so every line is covered.
+      But the case where the condition is false — no assignment — is never exercised, and neither is `a > 0` true with `b > 0` false, or `a > 0` false.
+      A bug like `||` instead of `&&` would pass this test. Branch and condition coverage require those other outcomes.
 
   - type: explanation
     title: MC/DC

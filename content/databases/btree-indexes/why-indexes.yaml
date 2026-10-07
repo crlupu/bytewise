@@ -81,6 +81,10 @@ steps:
     explanation: |
       Equality, prefix matches and sorting all follow the index's order. A suffix match doesn't,
       so it falls back to scanning.
+    details: |
+      An index on `last_name` stores names in sorted order, like a phone book.
+      Equality finds one spot, a prefix like `'Lov%'` is a contiguous range starting at "Lov", and `ORDER BY` can read entries in order without sorting.
+      A pattern like `'%lace'` matches names scattered all over the sorted order, so the database can't jump to them and must scan.
 
   - type: explanation
     title: Indexes cost writes

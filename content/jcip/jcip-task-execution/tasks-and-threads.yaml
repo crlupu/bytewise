@@ -47,6 +47,10 @@ steps:
       - text: It slows down gracefully
         feedback: Graceful degradation needs a bound on the work in progress — exactly what thread-per-task lacks.
     explanation: The right answer is to bound the number of threads, which is what the Executor framework is for.
+    details: |
+      Each thread needs memory for its stack — often around a megabyte reserved — and the OS can only manage so many.
+      A burst of 10,000 requests creates 10,000 threads; context-switching among them slows everything, memory runs short, and eventually thread creation fails with `OutOfMemoryError`.
+      The failure is abrupt rather than gradual. A bounded pool with a queue degrades gracefully instead.
 
   - type: blank
     prompt: Complete the summary.

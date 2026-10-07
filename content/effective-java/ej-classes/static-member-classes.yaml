@@ -51,6 +51,11 @@ steps:
       - text: It's collected normally
         feedback: The hidden reference keeps it reachable.
     explanation: A classic memory leak — and an invisible one, since the reference doesn't appear in the source.
+    details: |
+      Every instance of a nonstatic member class carries a hidden reference to its enclosing instance, so it can call the outer object's methods.
+      As long as the inner object is reachable — say, from a long-lived cache — the outer object stays reachable too, along with everything it holds.
+      Nothing in the source shows this reference, which makes the leak hard to spot in a heap dump.
+      If the nested class doesn't need the outer instance, declaring it `static` removes the reference and the leak.
 
   - type: blank
     prompt: Declare a nested class with no link to the outer instance.

@@ -36,6 +36,10 @@ steps:
         correct: true
       - text: It uses hashing with perfect hash codes
         feedback: No hashing at all; that's part of why it's fast.
+    details: |
+      `EnumMap` stores its values in an array indexed by each key's `ordinal()`, which is exactly what a hand-written ordinal-indexed array does.
+      The difference is safety: the map's keys are typed, so you can't index with the wrong enum or an arbitrary int, and you never touch `ordinal()` yourself.
+      It also prints readably and works with the `Map` API. You get the speed of the array without its fragility.
 
   - type: choice
     prompt: "Grouping with streams: `Collectors.groupingBy(p -> p.lifeCycle)` returns a HashMap. How do you get an EnumMap?"

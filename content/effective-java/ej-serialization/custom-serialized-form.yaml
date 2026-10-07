@@ -23,6 +23,11 @@ steps:
         correct: true
       - text: It can't be serialized at all
         feedback: It can — that's what makes the poor choice easy to make.
+    details: |
+      The default serialized form records every field of every object reachable from the list, so the internal doubly linked nodes become part of the class's permanent format.
+      Changing to a different internal structure later would break compatibility with saved data.
+      The form also wastes space on links that are recomputable, and serializing a long list walks it recursively, which can overflow the stack.
+      A custom form that writes just the size and the strings avoids all three.
 
   - type: explanation
     title: Write the logical data

@@ -52,6 +52,10 @@ steps:
       - text: A switch with a default case
         feedback: A new day (a holiday, say) would silently get the default pay.
     explanation: The day must choose a pay type when it's declared, so a new constant can't forget it.
+    details: |
+      With a switch over the day in a method, adding a new constant compiles fine even if you forget to add a case — the day silently gets the default pay.
+      In the strategy enum, each `PayrollDay` constant passes a `PayType` (`WEEKDAY` or `WEEKEND`) to its constructor, and the pay calculation is delegated to it.
+      A new constant can't be declared without choosing a pay type, so the compiler forces the decision. It's safer, though a little more verbose, than a switch.
 
   - type: blank
     prompt: Iterate over every constant.

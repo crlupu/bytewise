@@ -26,6 +26,10 @@ steps:
         feedback: It compiles and works. It just doesn't use streams the way they're designed to be used.
       - text: "`merge` isn't allowed in streams"
     explanation: "`forEach` should only *report* the result of a computation, not perform it."
+    details: |
+      The stream exists only to drive `forEach`, and the real work — updating the map — happens as a side effect inside the lambda.
+      That's a loop in disguise: harder to read than a loop, and unsafe if anyone adds `.parallel()`, because `HashMap.merge` isn't thread-safe.
+      `collect(groupingBy(..., counting()))` describes the result directly and lets the library build the map safely.
 
   - type: explanation
     title: Collectors build results

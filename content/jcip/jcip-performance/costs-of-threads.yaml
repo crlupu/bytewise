@@ -42,6 +42,10 @@ steps:
       - text: Exactly four
         feedback: That's what the source says, but escape analysis can remove them.
     explanation: Don't worry much about the cost of uncontended synchronization. Worry about **contended** synchronization.
+    details: |
+      The `Vector` is created, used and discarded inside the method, so escape analysis can prove no other thread can see it.
+      Locks on an object no other thread can reach protect nothing, so the JIT can remove them (lock elision) or merge adjacent ones into one (lock coarsening).
+      That's why uncontended synchronization is cheap in practice and rarely worth optimizing by hand.
 
   - type: explanation
     title: Contention is what hurts

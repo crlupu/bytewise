@@ -43,6 +43,10 @@ steps:
         correct: true
       - text: "`2026-10-08`"
         feedback: "`plusDays` returns a new date; `d` itself never changes."
+    details: |
+      `LocalDate` is immutable: `plusDays(1)` doesn't change `d` but returns a new `LocalDate` for the next day.
+      Here the result is ignored, so `d` still prints as 2026-10-07.
+      The fix is `d = d.plusDays(1)`. Immutability makes dates safe to share between threads and use as map keys, at the cost of this easy mistake.
 
   - type: predict
     prompt: What does this print?
@@ -56,6 +60,10 @@ steps:
         feedback: "`java.time` clamps to the last valid day rather than rolling over."
       - text: It throws `DateTimeException`
         feedback: "`of(2024, 2, 31)` would throw, but `plusMonths` adjusts to the end of the month."
+    details: |
+      January 31 plus one month would be February 31, which doesn't exist.
+      `java.time` resolves this by clamping to the last valid day of the target month — February 29 in the leap year 2024.
+      Note that this means `plusMonths(1).minusMonths(1)` doesn't always return the starting date: January 31 → February 29 → January 29.
 
   - type: blank
     prompt: Get tomorrow's date.

@@ -19,6 +19,10 @@ steps:
         correct: true
       - text: Unspecified
         feedback: Java's object sorts are guaranteed stable.
+    details: |
+      A stable sort keeps elements that compare as equal in the order they already had.
+      Sorting by name first puts everyone in name order; sorting by department then reorders only between departments, and within a department everyone compares equal, so the name order survives.
+      This lets you build multi-key orderings from simple sorts. `Comparator.comparing(dept).thenComparing(name)` does it in one pass.
 
   - type: explanation
     title: binarySearch needs sorted input
@@ -40,6 +44,10 @@ steps:
         feedback: "4 would go at index 2, so the miss returns -(2) - 1 = -3."
       - text: "3 -1"
         feedback: Indexes start at 0, so 5 is at index 2.
+    details: |
+      5 is at index 2, so the first search returns 2.
+      4 isn't in the list; it would belong at index 2, between 3 and 5. A miss returns `-(insertionPoint) - 1`, which is -3.
+      The minus one makes sure a miss is always negative, even when the insertion point is 0. And all of this assumes a sorted list — on an unsorted one, the answer is meaningless.
 
   - type: match
     prompt: Match each method with what it does.

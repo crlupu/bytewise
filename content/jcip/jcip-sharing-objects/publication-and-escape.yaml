@@ -39,6 +39,10 @@ steps:
       - text: It isn't dangerous if it's the constructor's last statement
         feedback: Even as the last statement, the JVM doesn't guarantee other threads see a fully constructed object.
     explanation: An object is only in a predictable, consistent state after its constructor returns.
+    details: |
+      Registering a listener or starting a thread in the constructor hands `this` to other code before the constructor has finished.
+      Another thread can then call methods on an object whose fields aren't all set yet, and even `final` fields lose their visibility guarantee.
+      The object only becomes consistent when the constructor returns. A factory method that constructs first, then registers, avoids the escape.
 
   - type: order
     prompt: Put the safe alternative — a private constructor and a factory method — in order.

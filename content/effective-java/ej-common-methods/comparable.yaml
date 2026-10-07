@@ -23,6 +23,10 @@ steps:
       - text: Both 2
         feedback: TreeSet uses `compareTo`, which treats them as equal.
     explanation: HashSet uses `equals`; TreeSet uses `compareTo`. An ordering inconsistent with equals makes sorted collections behave differently.
+    details: |
+      A `HashSet` decides whether two elements are duplicates with `equals`, and `BigDecimal.equals` compares both value and scale, so `1.0` and `1.00` are different.
+      A `TreeSet` decides with `compareTo`, which compares only the numeric value, so it sees them as the same and keeps one.
+      `Comparable`'s contract strongly recommends that `compareTo` be consistent with `equals` precisely to avoid this; `BigDecimal` is the famous exception, and its documentation warns about it.
 
   - type: explanation
     title: Compare without subtracting

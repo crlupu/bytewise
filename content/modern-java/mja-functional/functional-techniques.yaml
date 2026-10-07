@@ -43,6 +43,10 @@ steps:
         feedback: "`add.apply(3)` is a function; applying it to 4 adds them."
       - text: It doesn't compile
         feedback: Lambdas can return lambdas.
+    details: |
+      `add` is a curried function: given `x`, it returns another function waiting for `y`.
+      `add.apply(3)` returns `y -> 3 + y`, a function with 3 fixed — called partial application.
+      Applying that to 4 gives 7. Curried functions make it easy to build specialized functions from general ones.
 
   - type: explanation
     title: Recursion and laziness
@@ -58,6 +62,10 @@ steps:
         correct: true
       - text: Streams use less memory per multiplication
         feedback: The arithmetic is the same; the difference is the call stack.
+    details: |
+      Each recursive call adds a stack frame, and the JVM doesn't perform tail-call optimization, even when the recursive call is the last thing a function does.
+      A recursive factorial of a large `n` therefore throws `StackOverflowError` once the stack fills up, typically after some thousands of calls.
+      A stream reduction or loop uses constant stack space.
 
   - type: blank
     prompt: Fix the first argument of a curried function.

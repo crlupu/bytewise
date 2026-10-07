@@ -19,6 +19,10 @@ steps:
         correct: true
       - text: Yes — unsafe publication allows it
         feedback: For non-final fields, yes. Final fields of a properly constructed object are the exception.
+    details: |
+      The Java Memory Model gives `final` fields a special guarantee: once the constructor finishes, any thread that sees a reference to the object sees the final fields as the constructor set them — even if the reference was published without synchronization.
+      It also covers objects reachable through those final fields, as of the end of the constructor.
+      The guarantee is lost if `this` escapes during construction, and it doesn't apply to non-final fields.
 
   - type: explanation
     title: Only as constructed

@@ -33,6 +33,11 @@ steps:
       - text: About one second
         feedback: Without synchronization, there's no guarantee the background thread ever sees the write — and the JIT may hoist the read out of the loop.
     explanation: "Fix it by synchronizing both the write *and* the read, or by declaring the field `volatile`."
+    details: |
+      Without synchronization, nothing guarantees that the background thread ever sees the main thread's write to `stopRequested`.
+      The JIT may even hoist the read out of the loop, turning `while (!stopRequested)` into `if (!stopRequested) while (true)` — a legal optimization, called hoisting, because no other thread is supposed to change a non-volatile field.
+      On many JVMs the program runs forever.
+      Declaring the field `volatile`, or reading and writing it inside `synchronized` methods, guarantees the write becomes visible.
 
   - type: explanation
     title: Synchronize reads and writes
@@ -66,6 +71,10 @@ steps:
     explanation: |
       `volatile` guarantees visibility, not atomicity: `++` is still read-add-write. Use `AtomicLong` and
       `getAndIncrement()`, or synchronize the method.
+    details: |
+      `volatile` makes every thread see the latest value, but `nextSerialNumber++` is still three steps: read the value, add one, write it back.
+      Two threads can both read 5, both compute 6 and both write 6, so two callers get the same serial number and one increment is lost.
+      Visibility doesn't make a compound operation atomic. `AtomicLong.getAndIncrement()` performs the read-add-write as one indivisible step using compare-and-swap.
 
   - type: match
     prompt: Match each tool to what it guarantees.

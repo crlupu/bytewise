@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: Loops are faster than if statements
     explanation: "Returning from `wait` is a hint that something changed, not a guarantee the predicate holds."
+    details: |
+      `wait` can return for several reasons: the condition you wanted became true, another condition sharing the same queue changed, another thread already consumed what you were waiting for, or a spurious wakeup with no notification at all.
+      So waking up only means "something may have changed".
+      Re-testing in a `while` loop makes the thread go back to waiting if the condition still isn't true.
 
   - type: match
     prompt: Match each rule for using `wait` to the bug it prevents.
@@ -52,6 +56,10 @@ steps:
       - text: Yes, it's more efficient than notifyAll
         feedback: More efficient, but only correct under narrow conditions.
     explanation: Use `notify` only when all waiters wait for the same predicate and each notification enables exactly one of them. Otherwise, `notifyAll`.
+    details: |
+      With a single intrinsic condition queue, producers waiting for "not full" and consumers waiting for "not empty" wait on the same object.
+      `notify` wakes one arbitrary waiter; if it wakes a producer when the event was "item added", the producer re-waits and the consumer that should have woken stays asleep — a missed signal that can stall the program.
+      `notifyAll` wakes everyone so the right thread is among them; explicit `Condition` objects avoid the problem by giving each predicate its own queue.
 
   - type: blank
     prompt: Complete the rule.

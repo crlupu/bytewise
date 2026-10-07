@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: One of them must be broken
         feedback: Both can be working as designed; they sample differently.
+    details: |
+      Many profilers can only sample a thread's stack at a safepoint, a point where the JVM can pause it safely.
+      The JIT removes safepoints from hot, counted loops, so time spent in such a loop gets attributed to the next safepoint — often in a different method.
+      Profilers like async-profiler or JFR sample without waiting for safepoints and avoid this bias.
 
   - type: explanation
     title: Instrumented profilers and JFR

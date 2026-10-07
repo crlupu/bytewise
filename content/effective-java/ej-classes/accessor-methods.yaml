@@ -24,6 +24,10 @@ steps:
         correct: true
       - text: They make the class slower
         feedback: Accessors are inlined by the JIT; speed isn't the issue.
+    details: |
+      A public field is part of the class's contract forever: every client reads and writes it directly, so you can't later store the value differently, compute it on demand or validate a new value.
+      With an accessor, the field is an implementation detail behind a method, so you can change the representation, add checks, log access or make it lazy without breaking anyone.
+      This only matters where clients outside your control exist — that is, in public classes. Inside a package or a private nested class, you can fix every user yourself.
 
   - type: explanation
     title: Hide fields behind methods

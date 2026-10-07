@@ -25,6 +25,10 @@ steps:
         feedback: "`\\u0022` is a quote, so the code is really `\"a\".length() + \"b\".length()`."
       - text: "16"
         feedback: The escapes aren't characters inside the string; they end and start strings.
+    details: |
+      The compiler turns `\u0022` into a double quote before it tokenizes the source.
+      So the line really reads `"a".length() + "b".length()` — two string literals with code between them — which is 1 + 1 = 2.
+      Unicode escapes are processed everywhere, including inside string literals and comments, which is why they should be reserved for characters you can't otherwise write.
 
   - type: explanation
     title: Even comments aren't safe

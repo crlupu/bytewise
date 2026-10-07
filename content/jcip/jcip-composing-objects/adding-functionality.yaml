@@ -31,6 +31,10 @@ steps:
       - text: Yes — the method is synchronized
         feedback: Synchronized on the wrong lock. Another thread calling `list.add` doesn't take the `ListHelper` lock.
     explanation: An illusion of synchronization — the classic client-side locking mistake.
+    details: |
+      `putIfAbsent` is synchronized on the `ListHelper` object, but the list's own methods synchronize on the list.
+      Two different locks don't exclude each other, so another thread can call `list.add(x)` between `contains` and `add` here.
+      The method looks atomic but isn't. To join the list's own locking, the helper must synchronize on the list itself, as `Collections.synchronizedList` documents.
 
   - type: explanation
     title: Use the right lock

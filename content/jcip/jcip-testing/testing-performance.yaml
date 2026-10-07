@@ -40,6 +40,10 @@ steps:
       - text: The new JVM is 1,000× faster
         feedback: Real improvements are rarely that large; suspect the benchmark.
     explanation: Make results observable cheaply — for example, compare a hash of the result with a random value, or use JMH's `Blackhole`.
+    details: |
+      If the result of `fib(30)` is never used, the JIT may prove the call has no effect and delete it, so the loop measures nothing.
+      A newer JVM with a smarter optimizer made the "benchmark" 1,000 times faster without the code getting faster at all.
+      Benchmarks must consume their results in a way the compiler can't predict, which is what JMH's `Blackhole` is for.
 
   - type: choice
     prompt: How do you avoid measuring the JIT compiler at work?

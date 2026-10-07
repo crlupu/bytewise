@@ -167,6 +167,7 @@ function annotateStep(step: Step, { annotate, chip }: Annotator) {
   if (key.length) step.terms = key.map(chip);
   step.hints = step.hints.map((h) => annotate(h, used));
   if (step.explanation) step.explanation = annotate(step.explanation, used);
+  if (step.details) step.details = annotate(step.details, new Set(used));
   // Only one piece of feedback shows at a time, so each gets its own count.
   const alone = (html: Html) => annotate(html, new Set(used));
   if (step.feedback) step.feedback = alone(step.feedback);
@@ -184,6 +185,7 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
     key,
     prompt: r.block(raw.prompt),
     explanation: raw.explanation ? r.block(raw.explanation) : undefined,
+    details: raw.details ? r.slide(raw.details) : undefined,
     feedback: raw.feedback ? r.block(raw.feedback) : undefined,
     hints: raw.hints.map(r.block),
   };

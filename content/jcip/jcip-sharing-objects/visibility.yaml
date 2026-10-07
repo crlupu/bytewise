@@ -39,6 +39,10 @@ steps:
     explanation: |
       Seeing `0` means the reader saw the write to `ready` before the write to `number` — **reordering**. Without
       synchronization there are no guarantees about the order in which another thread sees writes.
+    details: |
+      The reader may never see `ready` become true, because without synchronization the JIT can keep it in a register and loop forever.
+      If it does see `ready`, it may still read `number` as 0, because the two writes can be reordered or become visible in a different order.
+      Printing 42 is only the intended outcome. Proper synchronization or `volatile` rules out the other two.
 
   - type: explanation
     title: Stale and torn values
@@ -65,6 +69,10 @@ steps:
       - text: Only values that some thread actually wrote
         feedback: That "out-of-thin-air safety" holds for most variables, but the JVM may split 64-bit `long` and `double` writes.
     explanation: Shared mutable `long` and `double` variables need `volatile` or a lock even when staleness doesn't matter.
+    details: |
+      The JVM may write a 64-bit `long` or `double` as two 32-bit halves on some platforms.
+      A reader running between the two halves of a write sees the high bits of one value and the low bits of another — a number no thread ever wrote.
+      Declaring the field `volatile`, or guarding it with a lock, makes 64-bit reads and writes atomic.
 
   - type: explanation
     title: Locks also make writes visible

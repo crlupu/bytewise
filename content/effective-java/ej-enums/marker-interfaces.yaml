@@ -47,6 +47,10 @@ steps:
         correct: true
       - text: It doesn't matter — runtime checks are just as good
         feedback: Compile-time errors are always cheaper than runtime ones.
+    details: |
+      `writeObject(Object)` accepts anything, so passing an object that isn't `Serializable` only fails at run time with `NotSerializableException`.
+      Had the parameter been typed `Serializable`, the compiler would have rejected such calls.
+      That's the main advantage of a marker interface over a marker annotation: it defines a type, and types are checked at compile time.
 
   - type: blank
     prompt: Complete the rule.

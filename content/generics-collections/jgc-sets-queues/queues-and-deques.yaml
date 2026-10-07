@@ -44,6 +44,10 @@ steps:
         feedback: A priority queue isn't first-in, first-out; the smallest comes out first.
       - text: "541"
         feedback: By default the smallest comes first. Use `Comparator.reverseOrder()` for largest first.
+    details: |
+      A `PriorityQueue` is a binary heap: each `poll` removes the smallest remaining element by natural order, here 1, then 4, then 5.
+      The order in which elements were added doesn't matter.
+      Its iterator and `toString`, however, show the internal heap layout, which isn't sorted — only `poll` and `peek` follow priority order.
 
   - type: explanation
     title: ArrayDeque for stacks and queues
@@ -66,3 +70,7 @@ steps:
         correct: true
       - text: "`[1, 2, 3] 1`"
         feedback: "`push` adds to the front, so 2 goes before 1."
+    details: |
+      `push` adds to the front of the deque, like a stack. After pushing 1 then 2, the deque is [2, 1].
+      `offerLast(3)` adds to the back, giving [2, 1, 3]. The string concatenation evaluates `d` first, printing that.
+      Then `pop` removes and returns the front element, 2. `ArrayDeque` thus serves as both a stack and a queue.

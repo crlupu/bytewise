@@ -71,6 +71,10 @@ steps:
         feedback: That's exactly the bug — `from` in one call is `to` in the other.
       - text: Use `volatile` balances instead
         feedback: That removes atomicity of the transfer, not the deadlock risk.
+    details: |
+      `transferMoney(a, b)` locks the source then the destination, so two transfers in opposite directions lock the same pair in opposite orders and can deadlock.
+      Ordering by a unique key — an account number, or `System.identityHashCode` with a tie-breaking lock for the rare collision — makes every thread take the two locks in the same order whatever the argument order.
+      With one global order, a cycle of waiting can't form.
 
   - type: blank
     prompt: Complete the rule.

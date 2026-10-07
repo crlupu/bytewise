@@ -20,6 +20,10 @@ steps:
       - text: It notices the flag immediately
         feedback: A thread blocked in `put` isn't checking anything.
     explanation: That's why interruption is a better mechanism — blocking library methods respond to it.
+    details: |
+      A cancellation flag only works if the thread gets back to the code that checks it.
+      The producer is stuck inside `queue.put`, waiting for space that will never appear because the consumer stopped taking.
+      `put` doesn't know about your flag, so it waits forever. It does, however, respond to interruption — `interrupt()` makes it throw `InterruptedException` — which is why interruption is the right way to cancel threads that may block.
 
   - type: explanation
     title: Interruption reaches blocked threads

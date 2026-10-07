@@ -34,6 +34,10 @@ steps:
         correct: true
       - text: "`<T extends Comparable<T>> T max(Collection<T> c)`"
         feedback: "`Apple` doesn't implement `Comparable<Apple>`, so it doesn't fit `T extends Comparable<T>`."
+    details: |
+      `Apple` inherits `compareTo(Fruit)` from `Fruit`, so it implements `Comparable<Fruit>`, not `Comparable<Apple>`.
+      The bound `T extends Comparable<T>` therefore rejects `T = Apple`.
+      `T extends Comparable<? super T>` accepts any type comparable with itself or one of its supertypes, which covers inherited comparisons — the reason this signature appears throughout the JDK.
 
   - type: explanation
     title: Comparators are consistent with equals, or not

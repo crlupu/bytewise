@@ -64,6 +64,10 @@ steps:
         feedback: That's flow control — the receive window — a separate limit.
       - text: Doubling past a threshold would overflow the sequence numbers
     explanation: "`ssthresh` is set from the window at the last loss — the sender's memory of where trouble began."
+    details: |
+      `ssthresh` is set to half the window at the last loss, an estimate of how much the network could take.
+      Below it, doubling quickly reclaims capacity that's probably available. Near it, doubling would overshoot and cause another loss.
+      So the sender switches to adding one segment per RTT, cautiously probing for more capacity.
 
   - type: match
     prompt: Match each term to its meaning.

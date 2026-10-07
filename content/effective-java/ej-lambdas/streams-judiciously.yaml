@@ -24,6 +24,10 @@ steps:
         feedback: "`chars()` returns an `IntStream`, so `print(int)` is chosen — each character prints as its number."
       - text: It doesn't compile
     explanation: Fix it with `forEach(x -> System.out.print((char) x))` — or, better, avoid streams for processing `char` values.
+    details: |
+      `String.chars()` returns an `IntStream`, so each character is passed to `print(int)`, which prints its numeric code: 72 for H, 101 for e, and so on.
+      Nothing warns you, because the method reference is a valid `IntConsumer`.
+      It's a reminder that Java has no `CharStream`; to print characters, cast — `forEach(c -> System.out.print((char) c))` — or don't use a stream for char processing.
 
   - type: explanation
     title: "Streams can't do everything"

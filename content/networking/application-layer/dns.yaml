@@ -74,6 +74,10 @@ steps:
     hints:
       - 3,600 seconds is an hour, starting from 11:50.
     explanation: The cached copy expires an hour after it was fetched — 12:50.
+    details: |
+      A resolver keeps a cached answer for the record's TTL, counted from when it fetched it, not from when the record changed.
+      It cached the old address at 11:50 with a TTL of 3,600 seconds, so it keeps serving it until 12:50, regardless of the change at 12:00.
+      That's why operators lower TTLs a day or so before a planned change, so caches expire quickly when it happens.
 
   - type: choice
     prompt: DNS queries usually travel over UDP, not TCP. Why?

@@ -50,3 +50,7 @@ steps:
         correct: true
       - text: Local variable values in the frame
         feedback: Those are reset when the frame restarts.
+    details: |
+      Drop frame rewinds the execution point to the start of the current method and resets its local variables.
+      But anything the method already did outside itself — writes to a database, files, messages sent, fields of shared objects — stays done.
+      Running the method again repeats those effects, which can give misleading results. Use it on methods whose effects are local, or after checking what they've already changed.

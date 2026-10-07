@@ -28,6 +28,10 @@ steps:
       - text: "1"
         feedback: "`i - 1` is an `int`, so `remove` looks for an `Integer` and finds nothing."
     explanation: "`remove` takes `Object`, not `E`, so the compiler can't catch this. Cast: `s.remove((short) (i - 1))`."
+    details: |
+      `s.add(i)` boxes `i` as a `Short`. But `i - 1` is an `int` expression, so `s.remove(i - 1)` boxes it as an `Integer`.
+      `Short.equals` returns false for any `Integer`, even with the same value, so nothing is ever removed and all 100 shorts remain.
+      The compiler can't help because `Set.remove` takes `Object`. Casting to `(short) (i - 1)` fixes it.
 
   - type: explanation
     title: List.remove is overloaded
@@ -48,6 +52,10 @@ steps:
         correct: true
       - text: "`[3, 2]`"
         feedback: "`remove(int)` is chosen over `remove(Object)` because it needs no boxing — so it removes index 1."
+    details: |
+      `List<Integer>` has two `remove` methods: `remove(int index)` and `remove(Object o)`.
+      With the argument `1`, an `int`, `remove(int)` applies without boxing, and overload resolution prefers it, so the element at index 1 — the value 2 — is removed.
+      To remove the value 1, call `list.remove(Integer.valueOf(1))`.
 
   - type: choice
     prompt: Why doesn't `Set<E>.remove` take an `E`?

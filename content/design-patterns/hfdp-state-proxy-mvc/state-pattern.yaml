@@ -55,3 +55,7 @@ steps:
         correct: true
       - text: State uses inheritance and Strategy uses composition
         feedback: Both use composition.
+    details: |
+      Both patterns delegate behaviour to an object behind an interface, so their class diagrams look identical.
+      The difference is intent: in Strategy, the client chooses the behaviour, and it rarely changes.
+      In State, the state objects themselves switch the context to the next state as events happen, encoding a state machine.

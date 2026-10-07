@@ -35,6 +35,10 @@ steps:
         correct: true
       - text: The JVM limits each task's size
         feedback: There's no such limit; it's about balancing the load.
+    details: |
+      If work were split into exactly one chunk per core, the slowest chunk would determine the total time, and cores that finished early would sit idle.
+      With many small tasks, a core that finishes its own work steals tasks from the back of a busy core's queue.
+      The load balances itself, as long as tasks aren't so small that splitting overhead dominates.
 
   - type: explanation
     title: A spliterator splits the source

@@ -56,6 +56,11 @@ steps:
       - text: Nothing — the wrapper handles it
         feedback: Iteration is a compound operation across many calls; the wrapper can't lock around it.
     explanation: Conditionally thread-safe classes must document which lock clients should hold for which sequences.
+    details: |
+      Each method of the synchronized wrapper is atomic, but iteration is many calls: `iterator()`, then `hasNext()` and `next()` repeatedly.
+      Another thread can modify the map between those calls, causing `ConcurrentModificationException` or skipped elements.
+      The wrapper uses the map object itself as its lock, so clients must hold `synchronized (m)` for the whole loop — not on the key set view, which is a different object.
+      That's why such classes are "conditionally thread-safe": they're safe only if callers follow documented locking rules.
 
   - type: explanation
     title: Lock a private object

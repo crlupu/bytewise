@@ -36,6 +36,10 @@ steps:
         correct: true
       - text: The JIT undid the optimization
         feedback: Possible in a microbenchmark, but here the whole-system number didn't move because something else dominates.
+    details: |
+      Response time is the sum of everything a request waits for: parsing, business logic, database queries, network calls.
+      If parsing took 2 ms of a 200 ms request dominated by database time, halving it saves 1 ms — invisible in the end-to-end number.
+      Optimizing a component only pays off when it's on the critical path. Profile the whole request first to see where the time actually goes.
 
   - type: explanation
     title: Test early, test often

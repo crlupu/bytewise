@@ -61,6 +61,11 @@ steps:
       - text: CAS never fails
         feedback: It fails whenever another thread changed the value first.
     explanation: JCIP's measurements found atomics scale better than locks at low and moderate contention, and locks only catch up at very high contention.
+    details: |
+      A lock makes losing threads sleep, which costs a context switch to suspend them and another to wake them.
+      A failed CAS costs only a retry, done while the thread keeps running.
+      At moderate contention, retries are cheap and rare, so atomics win; at extreme contention, many threads burn CPU retrying the same location, and a lock's queueing can catch up.
+      Real programs mostly do other work between updates, which keeps contention in the range where atomics shine.
 
   - type: match
     prompt: Match each term to its meaning.

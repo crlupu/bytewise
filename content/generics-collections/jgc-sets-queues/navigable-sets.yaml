@@ -44,6 +44,10 @@ steps:
         correct: true
       - text: "`[1, 5, 9] [13]`"
         feedback: "By default `headSet` excludes its bound and `tailSet` includes it."
+    details: |
+      `headSet(9)` returns the elements strictly less than 9, and `tailSet(9)` those greater than or equal to 9 — the half-open convention used throughout Java's range APIs.
+      So 9 lands only in the tail: `[1, 5]` and `[9, 13]`.
+      Overloads like `headSet(9, true)` let you choose inclusive or exclusive bounds explicitly. Both results are live views of the original set.
 
   - type: match
     prompt: Match each call on `{1, 5, 9, 13}` with its result.

@@ -28,6 +28,10 @@ steps:
         feedback: They can — that's why the antipattern exists.
       - text: It's slower
     explanation: Worse, all subclasses inherit the namespace pollution, and the class can never stop implementing it without breaking compatibility.
+    details: |
+      Implementing an interface announces to the world that your class *is* that type — clients can assign it to the interface and rely on that forever.
+      A constant interface makes using some constants a permanent part of the public API, even if a later version no longer needs them.
+      The constants also leak into every subclass's namespace. Put constants in the class they belong to, an enum, or a utility class, and use static imports for brevity.
 
   - type: explanation
     title: Better homes for constants

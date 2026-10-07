@@ -44,6 +44,10 @@ steps:
         right: "`NullPointerException`, too"
       - left: "`List.of(1, 1)`"
         right: "`[1, 1]` — lists allow duplicates"
+    details: |
+      The immutable collections from `List.of` and friends reject `null` entirely: a null element or key throws `NullPointerException`, and so does even asking `contains(null)`.
+      `Set.of` and `Map.of` also reject duplicates at creation with `IllegalArgumentException`, since a duplicate there almost always signals a bug.
+      Lists may contain duplicates, so `List.of(1, 1)` is fine.
 
   - type: explanation
     title: Arrays.asList is different
@@ -61,6 +65,10 @@ steps:
         feedback: The list is fixed-size.
       - text: "`l.remove(0)`"
         feedback: The list is fixed-size.
+    details: |
+      `Arrays.asList` returns a fixed-size list backed by the array you pass in.
+      `set` writes straight through to the array, so it works; `add` and `remove` would need to change the array's length, which is impossible, so they throw `UnsupportedOperationException`.
+      For a resizable list, copy it: `new ArrayList<>(Arrays.asList(...))`.
 
   - type: blank
     prompt: Make a mutable copy you can add to.

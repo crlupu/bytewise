@@ -27,6 +27,10 @@ steps:
         feedback: "`null` fits both, and `double[]` is the more specific type."
       - text: It's ambiguous and doesn't compile
         feedback: It would be ambiguous only if neither type were a subtype of the other.
+    details: |
+      The compiler first finds every overload that could accept `null`: both `Object` and `double[]` can.
+      It then picks the most specific — one whose parameter type could be passed to the other. A `double[]` can be passed where an `Object` is expected, but not the reverse, so `double[]` wins.
+      To call the `Object` version, cast the argument: `new Confusing((Object) null)`.
 
   - type: explanation
     title: Overloads are chosen at compile time

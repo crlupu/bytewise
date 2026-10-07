@@ -37,6 +37,10 @@ steps:
         correct: true
       - text: It throws at run time
     explanation: Generics are **invariant** — a `List<Long>` is not a `List<Object>` — so the mistake is caught at compile time.
+    details: |
+      Generics are invariant: `List<Long>` is not a subtype of `List<Object>`, so the assignment on the first line doesn't compile.
+      That's the point — if it were allowed, adding a `String` through the `List<Object>` view would corrupt a list of `Long`s.
+      Arrays allow the equivalent assignment and catch the mistake only at run time. Generics catch it before the program runs.
 
   - type: explanation
     title: "Arrays and generics don't mix"

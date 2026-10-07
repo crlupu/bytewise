@@ -52,3 +52,7 @@ steps:
         correct: true
       - text: Nothing — they're better in every way
         feedback: Concurrency has costs; for batch throughput, Parallel GC can still win.
+    details: |
+      A concurrent collector does most of its marking and moving while application threads keep running, so pauses stay short.
+      That work still needs CPU, now competing with the application, and extra bookkeeping — barriers on reads or writes, extra memory to track objects being moved.
+      For a batch job that only cares about total runtime, a stop-the-world collector like Parallel GC often finishes sooner overall.

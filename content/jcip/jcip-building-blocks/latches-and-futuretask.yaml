@@ -31,6 +31,10 @@ steps:
       - text: Throws an exception
       - text: Blocks until someone resets it
         feedback: Latches can't be reset — that's a barrier's job.
+    details: |
+      A `CountDownLatch` counts down from its initial value and stops at zero; extra `countDown()` calls do nothing.
+      Once at zero, the latch is permanently open and every `await()` returns immediately.
+      It can't be reset — that one-shot behaviour is what distinguishes it from a `CyclicBarrier`, which resets after each trip.
 
   - type: explanation
     title: FutureTask holds a result

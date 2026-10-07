@@ -14,6 +14,8 @@ type ExerciseBase = {
   key: string;
   prompt: Html;
   explanation?: Html;
+  /** The deeper explanation behind "Explain in detail", shown once answered. */
+  details?: Html;
   feedback?: Html;
   hints: Html[];
   /** Glossary terms used in the answers, as buttons to show under the question. */

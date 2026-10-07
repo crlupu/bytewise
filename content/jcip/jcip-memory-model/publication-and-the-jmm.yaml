@@ -24,6 +24,10 @@ steps:
         correct: true
       - text: Only a null reference or a fully constructed object
         feedback: That's what safe publication guarantees. Without it, a partially constructed object is possible.
+    details: |
+      Publishing an object means two writes: the object's fields in the constructor, and the reference into a shared field.
+      Without synchronization, nothing orders them for other threads, so a reader can see the new reference before the field writes — an object that seems to exist with default values in its fields.
+      Safe publication, through `volatile`, a lock, a static initializer or a thread-safe collection, guarantees the reader sees the fields as constructed.
 
   - type: explanation
     title: Double-checked locking

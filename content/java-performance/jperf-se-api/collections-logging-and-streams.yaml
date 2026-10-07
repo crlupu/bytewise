@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: "`log.debug(\"Order \" + id + \" total \" + computeTotal());`"
         feedback: The string is built, and `computeTotal()` runs, before `debug` can check the level.
+    details: |
+      In `log.debug("Order " + id + " total " + computeTotal())`, Java evaluates the argument before calling `debug`: it builds the string and runs `computeTotal()`, only for `debug` to discard it.
+      With placeholders, the arguments are passed as they are, and the logger formats the message only if debug is enabled.
+      The remaining cost is a check and, at most, a small varargs array.
 
   - type: explanation
     title: Lambdas and streams are cheap

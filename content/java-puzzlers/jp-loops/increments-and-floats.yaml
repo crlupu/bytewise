@@ -28,6 +28,10 @@ steps:
         feedback: "Each `j = j++` stores the value `j` had before the increment."
       - text: "99"
         feedback: No increment survives the assignment.
+    details: |
+      `j++` evaluates to the old value of `j` and increments `j` as a side effect.
+      `j = j++` therefore: saves 0, increments `j` to 1, then assigns the saved 0 back to `j`.
+      Each iteration undoes its own increment, so `j` stays 0 after 100 rounds.
 
   - type: explanation
     title: A float runs out of precision
@@ -52,6 +56,10 @@ steps:
       - text: It loops forever
         feedback: It would, if the loop ever started. But `f < START + 50` is false from the beginning.
     explanation: Never use floating-point loop counters.
+    details: |
+      A `float` has 24 bits of precision, so near two billion, consecutive floats are 128 apart.
+      `START + 50` rounds to the nearest representable value, which is `START` itself, so the loop condition `f < START` is false from the start and the loop never runs.
+      Had it run, `f++` would also never change `f`. Use integer counters, and convert to floating point inside the loop if needed.
 
   - type: explanation
     title: "% and * have equal precedence"
@@ -74,3 +82,7 @@ steps:
       - text: "60"
         feedback: "That needs `ms % (60*1000)`. As written, the test is true whenever `ms % 60 == 0`."
     explanation: "Write `ms % MS_PER_MINUTE == 0` with a named constant — the bug can't hide there."
+    details: |
+      `%` and `*` have the same precedence and associate left to right, so `ms % 60*1000` means `(ms % 60) * 1000`.
+      That's 0 whenever `ms` is a multiple of 60, which happens 60,000 times in an hour of milliseconds.
+      The intended `ms % (60 * 1000)` would be true 60 times. A named constant, `MS_PER_MINUTE`, makes the mistake impossible to write.

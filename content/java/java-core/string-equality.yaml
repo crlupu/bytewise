@@ -91,6 +91,11 @@ steps:
     explanation: |
       `part + "lo"` is evaluated at run time and yields a new `String`. (Declare `part` as
       `final String part = "hel";` and it becomes a constant — then the answer flips to `true`.)
+    details: |
+      The compiler folds expressions made only of constants into a single literal, so `"hel" + "lo"` becomes `"hello"` at compile time and points to the same interned object.
+      A non-final variable isn't a constant, so `part + "lo"` is evaluated at run time with a `StringBuilder` (or `invokedynamic` concatenation), which always produces a new `String`.
+      That's why the same text can be `==` in one place and not in another — and why `==` on strings is a bug waiting for the code around it to change.
+      Use `equals` for content; reserve `==` for checking whether two references are literally the same object.
 
   - type: predict
     prompt: Autoboxing has the same trap. What does this print?
@@ -116,6 +121,11 @@ steps:
       Autoboxing calls `Integer.valueOf`, which returns cached objects for −128 to 127.
       127 hits the cache (same object); 128 doesn't (two objects). Compare boxed numbers with `equals()`,
       or unbox them first.
+    details: |
+      `Integer x = 127` compiles to `Integer.valueOf(127)`, and `valueOf` keeps a cache of `Integer` objects for -128 to 127.
+      Both variables get the same cached object, so `==` is true; 128 is outside the cache, so each `valueOf` call creates a new object and `==` compares two different references.
+      The cache's upper bound can even be raised with `-XX:AutoBoxCacheMax`, so code relying on `==` may behave differently on another JVM configuration.
+      Compare boxed numbers with `equals`, or unbox them to primitives first.
 
   - type: explanation
     title: Always compare with equals

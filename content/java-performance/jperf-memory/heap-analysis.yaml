@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: The map itself is 3 GB
         feedback: Shallow size is the map's own memory; retained size counts everything it keeps alive.
+    details: |
+      A `HashMap`'s own object is small — a few fields and a reference to its table.
+      Its retained size counts everything that would become unreachable if the map disappeared: the table, entries, keys and values only it references.
+      3 GB retained means the map is effectively holding 3 GB in memory. That's the classic shape of a cache or registry that never removes entries.
 
   - type: explanation
     title: Out of memory

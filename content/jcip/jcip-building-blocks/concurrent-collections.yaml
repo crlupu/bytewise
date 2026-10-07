@@ -50,6 +50,10 @@ steps:
         correct: true
       - text: "`ConcurrentModificationException`"
         feedback: Concurrent collections' iterators never throw it.
+    details: |
+      `ConcurrentHashMap` iterators don't lock the map and don't track a modification count, so they never throw `ConcurrentModificationException`.
+      They're weakly consistent: they traverse the elements as they were when the iterator was created, and may or may not reflect changes made during iteration.
+      That's usually what you want — a snapshot-ish view without blocking every writer while someone iterates.
 
   - type: explanation
     title: Copy-on-write lists

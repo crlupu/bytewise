@@ -22,6 +22,10 @@ steps:
       - text: Both, combined
         feedback: Plain try-finally has no way to combine them.
     explanation: The first exception — the one explaining what went wrong — is the one that vanishes.
+    details: |
+      With try-finally, if the body throws and then `close()` in the `finally` block throws too, the second exception propagates and the first is discarded.
+      The first one usually explains the problem, like a read error, while the second is a consequence of it.
+      try-with-resources keeps the original exception and attaches the `close` failure to it as a suppressed exception, retrievable with `getSuppressed()`.
 
   - type: explanation
     title: try-with-resources closes for you

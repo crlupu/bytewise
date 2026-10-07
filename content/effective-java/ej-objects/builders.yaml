@@ -41,6 +41,10 @@ steps:
         right: The object exists half-built and can't be immutable
       - left: Builder
         right: Slightly more code, and one extra object per construction
+    details: |
+      Telescoping constructors force callers to pass values by position, so `new NutritionFacts(240, 8, 100, 0, 35, 27)` compiles even with two numbers swapped.
+      JavaBeans setters fix readability but let the object be used before all setters are called, and rule out immutability.
+      A builder gives named, optional parameters and a single `build()` that validates everything before creating an immutable object; the price is an extra class and a little more code.
 
   - type: order
     prompt: Put the steps of using a builder in order.

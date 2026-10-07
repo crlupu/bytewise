@@ -34,6 +34,11 @@ steps:
         correct: true
       - text: As an anonymous inner class file, like `Outer$1.class`
         feedback: That's how anonymous classes compile. Lambdas avoid an extra class file per lambda.
+    details: |
+      javac moves the lambda body into a private synthetic method, like `lambda$main$0`.
+      At the lambda expression, it emits an `invokedynamic` whose bootstrap method is `LambdaMetafactory.metafactory`.
+      The first time it runs, the factory spins up a class implementing `Runnable` that calls the synthetic method; later executions reuse the linked call site.
+      No class file per lambda, and the JDK can change the strategy without recompiling your code.
 
   - type: choice
     prompt: "`return s + i;` with a `String s` and `int i` — what does javac emit since Java 9?"

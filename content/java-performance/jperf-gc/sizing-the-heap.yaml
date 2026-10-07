@@ -29,6 +29,10 @@ steps:
         feedback: Then every allocation would trigger a collection.
       - text: All of the machine's memory
         feedback: The OS, other processes and the JVM's non-heap memory need room too.
+    details: |
+      The live data after a full GC is the floor: the heap can't be smaller and still work.
+      With the heap only slightly larger, every allocation quickly fills it and triggers another collection, so the JVM spends its time collecting.
+      Making live data a third to a half of the heap gives the collector room to work efficiently. Then measure: GC logs show whether pauses and frequency are acceptable.
 
   - type: explanation
     title: Turn on GC logging

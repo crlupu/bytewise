@@ -36,6 +36,11 @@ steps:
         correct: true
       - text: The proxy is encrypted
     explanation: And the real class's fields can stay `final`.
+    details: |
+      With a serialization proxy, the serialized form is a simple private nested class holding just the logical state.
+      On deserialization, its `readResolve` rebuilds the real object through the public constructor or factory, so every invariant check and defensive copy runs as usual.
+      No instance of the real class is ever created from raw bytes, and its fields can stay `final`.
+      Forged streams aimed at the real class are rejected, because its `readObject` simply throws.
 
   - type: choice
     prompt: "`EnumSet` uses this pattern. What does it gain?"

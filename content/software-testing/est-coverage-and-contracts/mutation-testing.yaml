@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: The code has a bug
         feedback: Maybe, maybe not. It tells you the tests can't tell the two versions apart.
+    details: |
+      The mutant changed `>` to `>=`, and every test still passed.
+      The two versions only differ when `total` is exactly 50, so no test uses that value.
+      The mutant reveals a missing boundary test, and possibly a real bug: if the requirement is "50 or more", the original code is wrong, and the mutant is right.
 
   - type: match
     prompt: Match each mutation with what it checks your tests for.

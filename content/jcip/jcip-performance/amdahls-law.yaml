@@ -35,6 +35,10 @@ steps:
     hints:
       - 1 / (0.1 + 0.09)
     explanation: 1 / 0.19 ≈ 5.3 — barely half the ideal, with only 10% serial.
+    details: |
+      Amdahl's law gives speed-up = 1 / (F + (1 − F) / N), where F is the serial fraction and N the number of processors.
+      With F = 0.1 and N = 10: 1 / (0.1 + 0.9 / 10) = 1 / 0.19 ≈ 5.3.
+      Even a small serial part halves the benefit of ten cores, and as N grows the serial part dominates; that's why reducing serialization matters more than adding processors.
 
   - type: predict
     prompt: Same program, unlimited processors. What's the ceiling on its speed-up?

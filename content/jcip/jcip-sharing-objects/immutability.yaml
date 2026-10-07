@@ -29,6 +29,10 @@ steps:
         correct: true
       - text: No — it uses a mutable object
         feedback: Immutability is about the object's observable state, not the classes it uses internally.
+    details: |
+      Immutability is about observable state, not whether internal objects could in principle change.
+      The set is filled in the constructor, the reference is `private final`, no method modifies it and it never escapes, so after construction no one can change it.
+      The `final` field also guarantees that other threads see the set as constructed. That's enough for the class to be immutable, and therefore thread-safe without locks.
 
   - type: explanation
     title: "Replace, don't modify"

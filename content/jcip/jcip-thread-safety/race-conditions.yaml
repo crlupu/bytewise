@@ -44,6 +44,11 @@ steps:
     explanation: |
       2 when the threads take turns. 1 when both read 0 before either writes — then both write 1,
       and one update is lost. Let's make that happen.
+    details: |
+      Each `count++` is read, add, write.
+      If one thread finishes before the other starts, the second reads 1 and writes 2.
+      If both read 0 before either writes, both compute 1 and both write 1: one increment is lost.
+      No other result is possible from two increments of 0, so the answers are 1 or 2.
 
   - type: widget
     widget: threads
@@ -148,3 +153,7 @@ steps:
     explanation: |
       That's **check-then-act**, the other common race: you observe something (it's null), then act on it — but the
       observation may be stale by the time you act.
+    details: |
+      Both threads check `instance == null` before either assigns, so both create an `ExpensiveObject`.
+      Each caller gets a different object, which matters when it's meant to be a singleton — a registry, a cache, a connection.
+      This is check-then-act: the decision is based on an observation that may be out of date by the time you act. Synchronizing the method makes check and act atomic.

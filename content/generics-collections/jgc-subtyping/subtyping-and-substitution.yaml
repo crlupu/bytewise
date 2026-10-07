@@ -20,6 +20,10 @@ steps:
       - text: "`Integer` isn't a subtype of `Number`"
         feedback: It is. The problem is what you could then put into the list.
     explanation: "Generic types are invariant: `List<A>` and `List<B>` are unrelated unless `A` and `B` are the same."
+    details: |
+      If `List<Integer>` were a subtype of `List<Number>`, you could assign `ints` to `nums` and then call `nums.add(3.14)`.
+      The list behind both variables would now contain a `Double`, and code reading from `ints` would get a `ClassCastException`.
+      To prevent that, generic types are invariant. Wildcards like `List<? extends Number>` give you the read-only flexibility safely.
 
   - type: explanation
     title: Arrays are covariant

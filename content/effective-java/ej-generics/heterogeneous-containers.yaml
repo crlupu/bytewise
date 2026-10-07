@@ -52,6 +52,10 @@ steps:
         correct: true
       - text: Casts don't work on generics
     explanation: The map's values are `Object`, but the `Class` key remembers the true type.
+    details: |
+      An unchecked cast `(T) obj` is erased to nothing at run time, so a wrong value would slip out and fail later.
+      `Class.cast` actually checks that the object is an instance of the class and throws immediately if not.
+      Since the `Class<T>` key carries the real type, the container can guarantee every value it returns matches what was asked for.
 
   - type: choice
     prompt: Can you store a favourite `List<String>` this way?

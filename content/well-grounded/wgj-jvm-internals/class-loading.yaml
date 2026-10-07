@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: The application class loader
         feedback: Core classes are loaded by the bootstrap loader, which is represented by `null`.
+    details: |
+      Core classes like `String` are loaded by the bootstrap class loader, which is part of the JVM itself and isn't a Java object.
+      The API represents it as `null`.
+      Delegation guarantees this: every loader asks its parent first, so a request for `java.lang.String` always reaches the bootstrap loader, and no application can substitute its own `String`.
 
   - type: explanation
     title: A class is its name plus its loader
@@ -53,6 +57,10 @@ steps:
         correct: true
       - text: Two different versions of `Order` were compiled
         feedback: Even byte-for-byte identical class files make different classes when loaded by different loaders.
+    details: |
+      A class's identity at run time is its name plus the loader that defined it.
+      If two class loaders — say, two web applications, or a plugin and its host — each load `com.acme.Order` from their own copy, the JVM sees two unrelated classes with the same name.
+      An object of one can't be cast to the other, giving this baffling message. The fix is to load shared types from a common parent loader.
 
   - type: match
     prompt: Match each error with when it happens.

@@ -30,6 +30,11 @@ steps:
     explanation: |
       The library can't split `Stream.iterate`, and `limit` makes threads compute extra, ever-more-expensive elements
       that will be thrown away.
+    details: |
+      The pipeline generates Mersenne primes from `Stream.iterate`, whose elements each depend on the previous one, so the work can't be split into independent chunks.
+      With `limit(20)`, parallel threads speculatively compute primes beyond the ones needed, and each next candidate is far more expensive than the last.
+      The result is all cores busy on work that will be thrown away, and no output for a very long time.
+      Parallelism pays off only for sources that split cleanly, like arrays, `ArrayList` or `IntStream.range`.
 
   - type: explanation
     title: What parallelizes well
@@ -57,6 +62,10 @@ steps:
         correct: true
       - text: They never go wrong, only slow
     explanation: Use `parallel()` only after measuring a real speed-up on realistic data — and keep correctness requirements in mind.
+    details: |
+      The library splits the data, processes chunks independently and combines the partial results, assuming your functions don't care about order.
+      If a reduction isn't associative, like subtraction, or a lambda reads or writes shared state, results can differ from run to run.
+      These bugs don't throw; they silently give wrong answers. Sequential and parallel results should be identical — check that before trusting a parallel pipeline.
 
   - type: explanation
     title: Measure, and stay correct

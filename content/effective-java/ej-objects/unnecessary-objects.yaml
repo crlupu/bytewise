@@ -47,6 +47,11 @@ steps:
       - text: "`+=` on a `long` is slow in Java"
         feedback: Primitive `long` addition is a single instruction. The problem is the capital L.
     explanation: About 2³¹ unnecessary `Long` objects. Prefer primitives to boxed primitives, and watch for unintended autoboxing.
+    details: |
+      `sum` is declared as `Long` with a capital L, a boxed type, while `i` is a primitive `long`.
+      Every `sum += i` unboxes `sum`, adds, and boxes the result into a brand-new `Long` object — about 2^31 allocations.
+      Changing one character, `Long` to `long`, makes the loop several times faster.
+      Unintended autoboxing is easy to miss because the code compiles and gives the right answer.
 
   - type: explanation
     title: Some calls hide expensive work

@@ -43,6 +43,10 @@ steps:
       - text: No — different buckets, different locks
         feedback: With 16 stripes, buckets 3 and 19 map to the same stripe.
     explanation: Striping reduces contention by about the number of stripes, assuming keys spread evenly.
+    details: |
+      Lock striping assigns bucket `n` to lock `n mod 16`.
+      Buckets 3 and 19 both map to lock 3, so the two threads contend even though they touch different buckets.
+      With keys spread evenly, any two operations collide on a stripe only about one time in sixteen, which is why striping cuts contention roughly by the number of stripes.
 
   - type: choice
     prompt: What's the cost of lock striping?

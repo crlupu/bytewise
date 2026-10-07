@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: "`list` becomes `[2, 3]`"
         feedback: The for-each loop's hidden iterator notices the change on its next step.
+    details: |
+      A for-each loop uses a hidden iterator, and `ArrayList`'s iterator records the list's modification count when it's created.
+      `list.remove(i)` changes the list directly and bumps that count; on the next call to `next()`, the iterator sees the mismatch and throws `ConcurrentModificationException`.
+      Removing through the iterator itself, or with `removeIf`, keeps them in sync.
 
   - type: explanation
     title: Remove through the iterator

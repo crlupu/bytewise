@@ -27,6 +27,10 @@ steps:
       - text: "`true`"
         feedback: The two objects have identity hash codes, which almost never match, so they land in different buckets.
     explanation: Whenever you override `equals`, override `hashCode` so equal objects have equal hash codes.
+    details: |
+      `HashSet.contains` computes the hash code of the argument to choose a bucket, then compares with `equals` inside that bucket.
+      Without an override, `hashCode` comes from `Object` and is based on identity, so two equal names almost certainly hash differently.
+      The lookup checks the wrong bucket and never calls your `equals`. Equal objects must have equal hash codes.
 
   - type: explanation
     title: equals takes an Object
@@ -48,6 +52,10 @@ steps:
       - text: "`true`"
         feedback: "`HashSet` calls `equals(Object)`, which this class doesn't override."
     explanation: Put `@Override` on every overriding method. Here it would turn the bug into a compile error.
+    details: |
+      `equals(Name n)` takes a `Name`, so it overloads `Object.equals(Object)` instead of overriding it.
+      `HashSet` calls `equals(Object)`, which is still `Object`'s identity test, so two distinct `Name` objects are never equal even though the hash codes match.
+      `@Override` on the method would have turned this into a compile error.
 
   - type: blank
     prompt: Make the compiler check that you're overriding.

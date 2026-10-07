@@ -36,6 +36,11 @@ steps:
       - text: Calling `getInstance()` twice
         feedback: That returns the same instance both times.
     explanation: Class-based singletons need extra defences — a constructor that throws on a second call, and `readResolve`.
+    details: |
+      A private constructor stops ordinary code, but reflection can call it after `setAccessible(true)`, creating a second instance.
+      Serialization is another route: deserializing creates a new object without calling the constructor, so each deserialized copy is a new "singleton".
+      Class-based singletons defend with a constructor that throws on a second call and a `readResolve` that returns the real instance.
+      An enum singleton needs neither: the JVM forbids reflective creation of enum instances and deserializes enum constants to the existing ones.
 
   - type: choice
     prompt: Why is the single-element enum usually the best approach?

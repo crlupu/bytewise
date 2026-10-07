@@ -54,6 +54,10 @@ steps:
         correct: true
       - text: It throws `AssertionError` when `area()` is called
         feedback: That was the tagged class's behaviour. The hierarchy catches it at compile time.
+    details: |
+      In a tagged class, `area()` is a switch over the tag, and nothing forces a new tag value to get a case — the gap only shows up at run time, often as a default branch throwing an exception.
+      In a hierarchy, `area()` is abstract in the root, so a new subclass that doesn't implement it is rejected by the compiler.
+      The type system now tracks which flavours exist and what each must provide, which is exactly the bookkeeping the tagged class left to discipline.
 
   - type: blank
     prompt: In modern Java you can also close the hierarchy to known subtypes.

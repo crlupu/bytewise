@@ -52,3 +52,7 @@ steps:
         feedback: That would fail to compile.
       - text: The JVM ran out of memory
         feedback: That gives `OutOfMemoryError`.
+    details: |
+      Your code compiled against the library, and the library was compiled against version X of a transitive dependency.
+      At run time, the build tool's conflict resolution put version Y on the classpath, and Y doesn't have the method the library calls.
+      The JVM only discovers this when the call happens. `mvn dependency:tree` or `gradle dependencies` shows which version won and why.

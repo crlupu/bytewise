@@ -50,6 +50,10 @@ steps:
       - text: Nothing — it's a sensible convenience
         feedback: Put both in a `List` and `contains` could answer either way depending on the implementation.
     explanation: Don't try to make `equals` interoperate with a class you don't control.
+    details: |
+      `cis.equals(s)` is true because `CaseInsensitiveString` knows about `String`, but `String.equals` only accepts other `String`s, so `s.equals(cis)` is false.
+      Asymmetric `equals` breaks collections in unpredictable ways: whether `list.contains(cis)` is true depends on which object's `equals` the implementation happens to call.
+      The fix is to compare only with other `CaseInsensitiveString`s — one class can't unilaterally declare itself equal to a type it doesn't control.
 
   - type: choice
     prompt: "`ColorPoint extends Point` adds a color, and you want `equals` to compare it too. What's the catch?"
@@ -61,6 +65,11 @@ steps:
       - text: Ignore the color in `ColorPoint.equals`
         feedback: Then two points of different colors are "equal", which isn't what you wanted.
     explanation: Give `ColorPoint` a private `Point` field and an `asPoint()` view, rather than extending `Point`.
+    details: |
+      If `ColorPoint.equals` checks colour, then `point.equals(colorPoint)` is true but `colorPoint.equals(point)` is false — symmetry breaks.
+      If it ignores colour when comparing with a plain `Point`, then red and blue points can both equal the same plain point, breaking transitivity.
+      There's no way to satisfy both while also keeping the Liskov substitution principle, so favour composition: `ColorPoint` holds a `Point` and offers `asPoint()`.
+      Records and value classes sidestep the issue because they're final.
 
   - type: explanation
     title: A reliable recipe

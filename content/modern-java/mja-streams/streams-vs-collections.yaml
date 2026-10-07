@@ -36,6 +36,10 @@ steps:
       - text: "`BB`"
         feedback: The lambdas do print — but only for the elements actually processed.
     explanation: This is short-circuiting. Laziness means a stream does only the work the terminal operation needs.
+    details: |
+      Streams are lazy and process elements one at a time through the whole pipeline.
+      "a" is filtered out, "bb" passes the filter and is mapped, and `findFirst` has its answer — so "ccc" is never processed at all.
+      That's why "fccc" never prints. A loop with `break` would do the same; streams get it automatically from laziness and short-circuiting.
 
   - type: explanation
     title: A stream is used once

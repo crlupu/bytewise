@@ -50,3 +50,7 @@ steps:
         correct: true
       - text: They're the same pattern
         feedback: Both vary behaviour, but by different mechanisms.
+    details: |
+      In Template Method, a superclass fixes the algorithm's skeleton and subclasses supply steps by overriding methods — the variation is chosen at compile time, by which subclass you instantiate.
+      In Strategy, the whole algorithm lives in a separate object behind an interface, which can be swapped at run time.
+      Template Method reuses more code; Strategy is more flexible and avoids inheritance.

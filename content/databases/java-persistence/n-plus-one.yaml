@@ -33,6 +33,10 @@ steps:
     hints:
       - One for the list, then one each time `getComments()` is used.
     explanation: 1 + 50 = 51 — hence the name **N+1**. Each is a network round trip, so the cost grows with the page size.
+    details: |
+      The first query loads the 50 posts. Their `comments` collections are lazy, so each is a proxy that hasn't been loaded.
+      As the loop touches `post.getComments()` for each post, Hibernate runs a separate query to load that post's comments — 50 more.
+      51 round trips where 1 or 2 would do; with a page of 500 posts, it's 501.
 
   - type: choice
     prompt: Why is N+1 so easy to miss?
@@ -98,3 +102,7 @@ steps:
     explanation: |
       Hibernate warns about it ("firstResult/maxResults specified with collection fetch; applying in memory").
       Page over the parent ids first, then fetch their children for just those ids.
+    details: |
+      Fetching posts with their comments in one join returns one row per comment, not per post.
+      A SQL `LIMIT 10` would cut off rows partway through a post's comments, giving incomplete collections, so Hibernate fetches the whole result and paginates in memory.
+      On a large table that means loading everything to show ten posts. Paginate over posts first, then fetch the comments for just those posts.

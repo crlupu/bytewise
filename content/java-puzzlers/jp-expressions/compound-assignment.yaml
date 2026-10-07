@@ -29,6 +29,10 @@ steps:
       - text: It doesn't compile
         feedback: "`x = x + i` wouldn't. `x += i` compiles, because it includes a cast."
     explanation: Don't use compound assignment on `byte`, `short` or `char` with a wider right-hand side.
+    details: |
+      `x += i` is defined as `x = (short) (x + i)`: the sum 123,456 is computed as an `int`, then cast back to `short`.
+      A `short` holds only 16 bits, so the cast keeps the low 16 bits of 123,456 — 0x1E240 → 0xE240 — which, read as a signed 16-bit number, is -7,616.
+      The plain `x = x + i` would refuse to compile without an explicit cast, which is why compound assignment hides the bug.
 
   - type: choice
     prompt: Which line fails to compile?
@@ -66,6 +70,10 @@ steps:
       - text: "x = 1984; y = 2001"
         feedback: "`y` does change — it ends up holding the original `x`."
     explanation: Never assign the same variable more than once in one expression. Use a temporary variable to swap.
+    details: |
+      Java evaluates the left operand of each `^=` before the right side.
+      The outer `x ^= ...` saves the original `x` (1984) first, then evaluates `y ^= x ^= y`, which leaves y = 1984 and an intermediate x.
+      Finally it computes 1984 ^ 1984 = 0 for x. In C the result depends on the compiler; in Java it's well defined, and wrong.
 
   - type: order
     prompt: Put the steps of `x += i` (with `short x`, `int i`) in order.

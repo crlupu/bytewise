@@ -27,6 +27,10 @@ steps:
       - text: It doesn't compile
         feedback: Mixing `int` and `long` is legal; the `int` is widened.
     explanation: Write `0xcafebabeL` to get the positive `long` you meant. Better still, avoid mixing types in one expression.
+    details: |
+      `0xcafebabe` is an `int` literal, and its top bit is set, so its value is negative: -889,275,714.
+      Adding it to a `long` widens it with sign extension, giving `0xffffffffcafebabe`.
+      Adding `0x100000000` makes the high `ffffffff` overflow back to zero, leaving `0x00000000cafebabe` — so the 1 you expected disappears.
 
   - type: explanation
     title: char is unsigned
@@ -47,6 +51,10 @@ steps:
         feedback: "`char` can't be negative. `(char) -1` is `\\uffff`, and widening a `char` fills with zeros."
       - text: "255"
         feedback: The `byte` is sign-extended to 16 bits on its way to `char`, so all 16 bits are set.
+    details: |
+      `(byte) -1` is all 8 bits set. Casting a `byte` to `char` first sign-extends it to 16 bits set, `\uffff`.
+      Casting the `char` to `int` zero-extends, because `char` is unsigned, giving 0x0000ffff, which is 65,535.
+      Whether a widening fills with ones or zeros depends on the source type being signed — an easy thing to forget in a chain of casts.
 
   - type: explanation
     title: The conditional operator picks one type
@@ -71,6 +79,10 @@ steps:
       - text: "8888"
         feedback: "In the first expression `0` is a constant that fits in a `char`, so the result stays a `char`."
     explanation: Give both branches of a conditional the same type.
+    details: |
+      A conditional expression has one type for both branches.
+      In `true ? x : 0`, one operand is `char` and the other a constant `int` that fits in a `char`, so the result type is `char` and prints `X`.
+      In `false ? i : x`, `i` is an `int` variable, not a constant, so the result is promoted to `int`, and `'X'` prints as its code, 88.
 
   - type: match
     prompt: Match each conversion with what it does to the bits.

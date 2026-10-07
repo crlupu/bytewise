@@ -30,6 +30,10 @@ steps:
         feedback: "`X.Y` could be the nested class or the field. The field wins."
       - text: It's ambiguous and doesn't compile
         feedback: The language has a rule for it — the variable is preferred.
+    details: |
+      In `X.Y.Z`, `X.Y` could refer to the nested class `Y` or to the static field `Y`.
+      The Java Language Specification says that when a name could be a variable or a type, the variable is chosen.
+      So `X.Y` is the field of type `C`, and `X.Y.Z` is its instance field "White". This is called obscuring, and following naming conventions prevents it.
 
   - type: explanation
     title: Don't reuse platform names
@@ -71,3 +75,7 @@ steps:
       - text: Static imports of overloaded methods are illegal
         feedback: They're legal; the problem is name lookup inside the class.
     explanation: "Write `Arrays.toString(args)` — use static imports sparingly."
+    details: |
+      Inside `ImportDuty`, the simple name `toString` first finds members of the class itself, including the `toString()` inherited from `Object`.
+      Members always shadow static imports, so the call resolves to `Object.toString()`, which takes no arguments, and fails to compile.
+      Writing `Arrays.toString(args)` sidesteps name lookup entirely.

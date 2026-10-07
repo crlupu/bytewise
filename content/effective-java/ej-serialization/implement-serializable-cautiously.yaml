@@ -40,6 +40,10 @@ steps:
       - text: Nothing — adding methods is always compatible
         feedback: The auto-generated UID is computed from the class's structure, methods included.
     explanation: Always declare an explicit `private static final long serialVersionUID`.
+    details: |
+      Without an explicit `serialVersionUID`, the JVM computes one from the class's structure — its name, fields, methods and more.
+      Adding a method changes that hash, so streams written with the old class version fail to deserialize with `InvalidClassException`.
+      Declaring the UID yourself keeps it stable across compatible changes, and also avoids computing it at run time.
 
   - type: match
     prompt: Should it implement Serializable?

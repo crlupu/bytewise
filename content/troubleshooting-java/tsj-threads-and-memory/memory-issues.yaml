@@ -45,6 +45,10 @@ steps:
         correct: true
       - text: The heap is too small for normal operation
         feedback: The static map keeps growing because nothing removes entries — a bigger heap only delays the crash.
+    details: |
+      A static field lives as long as its class is loaded — usually the whole run — so anything in that map stays reachable.
+      If sessions are put in but never removed when they end, the map grows with every user, and the heap eventually fills.
+      The fix is eviction: remove entries when sessions end, bound the cache with a size or expiry, or hold entries through weak references.
 
   - type: choice
     prompt: Why must heap dumps be handled carefully?

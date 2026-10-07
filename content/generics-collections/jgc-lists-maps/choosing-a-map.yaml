@@ -52,6 +52,10 @@ steps:
         feedback: "Reading `a` made it the most recently used, so `b` is evicted."
       - text: "`[a, b, c]`"
         feedback: "`removeEldestEntry` keeps the size at 2."
+    details: |
+      The third constructor argument, `true`, switches the map from insertion order to access order: every `get` moves the entry to the end.
+      After `put(a)`, `put(b)` and `get(a)`, the order is b, a. Adding c makes the size 3, so `removeEldestEntry` returns true, and the eldest — the least recently used, b — is removed.
+      That leaves [a, c]: a complete least-recently-used cache in a few lines.
 
   - type: blank
     prompt: Create a map ordered by access instead of insertion.

@@ -23,6 +23,11 @@ steps:
       - text: It doesn't compile
         feedback: It compiles fine — that's what makes it dangerous.
     explanation: The default can't preserve invariants it didn't know existed. Apache Commons' `SynchronizedCollection` was a real victim.
+    details: |
+      Default methods are written without knowledge of the classes that will inherit them.
+      `removeIf` iterates and removes using the collection's own methods, but the synchronized wrapper's invariant is "every access holds the mutex" — and the default doesn't take it.
+      So the wrapper silently becomes thread-unsafe for one method, with no compile error and no test failure until a race happens in production.
+      That's why adding a default method to a widely implemented interface is risky: each existing implementation must be checked, and you can't check implementations you don't know about.
 
   - type: explanation
     title: Get interfaces right first

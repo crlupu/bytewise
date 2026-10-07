@@ -50,6 +50,10 @@ steps:
     explanation: |
       40 makes the leaf [30, 40]. 50 makes it [30, 40, 50] — too many — so it splits, and the middle
       key, 40, moves up. The root becomes [20, 40].
+    details: |
+      After inserting 40, the right leaf is [30, 40], which fits. Inserting 50 makes it [30, 40, 50] — three keys in a node that holds at most two.
+      The leaf splits around its middle key: [30] stays left, [50] goes right, and 40 is pushed up to the parent, so the root becomes [20, 40] with three children.
+      Pushing the middle key up is what keeps every leaf at the same depth.
 
   - type: widget
     widget: btree
@@ -119,6 +123,10 @@ steps:
       - text: About 1,000
       - text: About 1,000,000
     explanation: 100³ = 1,000,000, so about three levels.
+    details: |
+      Each node visited narrows the search to one of about 100 children.
+      After one level you're down to a hundredth of the keys, after two a ten-thousandth, and after three a millionth — that is, one key.
+      So the height is about log base 100 of a million, which is 3. Because the fan-out is so high, even billions of keys need only four or five levels, and the top levels usually stay in memory.
 
   - type: order
     prompt: Put the steps of inserting a key into a full leaf in order.

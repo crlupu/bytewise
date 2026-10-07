@@ -26,6 +26,10 @@ steps:
         feedback: "`B` extends `A`, so `B`'s default is more specific."
       - text: It doesn't compile
         feedback: There's a most specific interface, so there's no conflict.
+    details: |
+      `C` inherits `hello()` from both `A` and `B`.
+      Because `B extends A`, `B` is more specific, and its default overrides `A`'s — so there's no conflict, and `B`'s version wins.
+      This is the second resolution rule. If `A` and `B` were unrelated, `C` would have to override `hello()` itself.
 
   - type: predict
     prompt: What does `new E().hello()` return?
@@ -40,6 +44,10 @@ steps:
         correct: true
       - text: "`\"B\"`"
         feedback: A method from a class always beats an interface default — rule one.
+    details: |
+      `E` inherits `hello()` from its superclass `D` and a default from interface `B`.
+      The first rule says a method from a class, including an inherited one, always beats an interface default, so `D`'s "D" wins.
+      This "class wins" rule keeps existing class hierarchies stable when interfaces gain new default methods.
 
   - type: explanation
     title: Unrelated defaults must be resolved

@@ -94,6 +94,10 @@ steps:
         feedback: Arithmetic cost is irrelevant at network timescales.
       - text: The RFCs just happen to say so
     explanation: Gentle increase plus sharp decrease is what keeps the shared network stable.
+    details: |
+      When many senders share a congested link, all need to back off quickly.
+      Halving the window cuts load immediately, while growing by one per RTT adds load slowly.
+      This AIMD pattern also makes competing flows converge to fair shares: halving reduces large windows more than small ones, so the gap between flows shrinks each cycle.
 
   - type: widget
     widget: congestion

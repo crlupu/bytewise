@@ -26,6 +26,10 @@ steps:
     hints:
       - 11 objects, 2 RTTs each.
     explanation: 11 objects × 2 RTTs = 22.
+    details: |
+      Each object needs its own TCP connection: one RTT for the handshake (SYN, SYN-ACK), then one RTT to send the request and receive the response.
+      So each object costs 2 RTTs, and 11 objects fetched one after another cost 22.
+      Transfer time is ignored here because the objects are small; with a 100 ms RTT, that's 2.2 seconds of pure waiting.
 
   - type: predict
     prompt: Same page, but with one **persistent** connection (HTTP/1.1's default), requests sent one at a time. About how many RTTs?
@@ -83,6 +87,10 @@ steps:
       - text: It removed headers
         feedback: It compresses them (HPACK); they're still there.
     explanation: Multiplexing removes HTTP-level head-of-line blocking. One lost TCP segment still stalls every stream, though…
+    details: |
+      HTTP/1.1 sends requests one at a time on a connection, so a slow response blocks those behind it; browsers work around this with several parallel connections.
+      HTTP/2 splits each request and response into frames labelled with a stream ID and interleaves them on one connection, so a slow response no longer blocks the others at the HTTP level.
+      TCP still delivers bytes in order, though, so one lost packet stalls all streams until it's retransmitted.
 
   - type: choice
     prompt: "…which is why HTTP/3 runs over QUIC, on UDP. What does that buy?"

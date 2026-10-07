@@ -65,6 +65,10 @@ steps:
       - text: It rises back up as soon as it starts doing I/O
         feedback: Basic MLFQ only moves jobs down. The boost is what lets them come back.
     explanation: The boost also handles jobs that change behaviour, not just starvation.
+    details: |
+      Once a job sinks to the lowest queue, it only runs when higher queues are empty.
+      If it becomes interactive, its short bursts still sit at the bottom, waiting behind every higher-priority job — so its new phase gets poor response time.
+      The periodic boost moves every job back to the top, giving changed jobs a chance to prove they're now interactive.
 
   - type: blank
     prompt: Complete the summary.

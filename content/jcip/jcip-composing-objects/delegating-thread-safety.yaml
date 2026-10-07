@@ -43,6 +43,10 @@ steps:
     explanation: |
       When state variables are **not** independent, delegation isn't enough. The class needs its own lock around
       operations involving both.
+    details: |
+      `setLower(5)` checks `5 <= upper` while upper is still 10; at the same time `setUpper(4)` checks `4 >= lower` while lower is still 0.
+      Both checks pass, both sets happen, and the range ends up as (5, 4) — violating the invariant.
+      Each `AtomicInteger` is thread-safe on its own, but the invariant links them, so the check and the update must happen together under one lock.
 
   - type: blank
     prompt: Complete the rule.

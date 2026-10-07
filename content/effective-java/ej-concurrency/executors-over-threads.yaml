@@ -51,6 +51,10 @@ steps:
       - text: "`newCachedThreadPool`"
         feedback: Under heavy load a cached pool creates new threads for every queued task, making things worse.
     explanation: A cached pool is fine for a small program or a lightly loaded server.
+    details: |
+      A cached thread pool creates a new thread whenever all existing ones are busy, with no upper limit.
+      Under heavy load, tasks arrive faster than they finish, so it keeps creating threads, each with its own stack, until the machine thrashes or runs out of memory.
+      A fixed-size pool queues excess tasks instead, keeping the number of threads matched to what the CPUs and downstream resources can handle.
 
   - type: choice
     prompt: What does a fork-join pool add?

@@ -40,6 +40,10 @@ steps:
         feedback: "`final` stops the field pointing at another array; the array's contents are still writable."
       - text: Arrays can't be static
     explanation: Expose `Collections.unmodifiableList(Arrays.asList(PRIVATE_VALUES))`, or return a copy from a method.
+    details: |
+      `final` only stops the field from pointing to a different array. The array's elements can still be overwritten, so any client can do `VALUES[0] = null` and corrupt every other user.
+      Returning a nonzero-length array from a public accessor has the same problem.
+      The fixes either hand out a read-only view, `Collections.unmodifiableList(Arrays.asList(PRIVATE_VALUES))`, or a fresh copy on each call; `List.copyOf` or `List.of` work just as well in modern Java.
 
   - type: choice
     prompt: A method overrides one from a superclass. Can it be less accessible than the original?

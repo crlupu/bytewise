@@ -37,6 +37,11 @@ steps:
       - text: Never — it's for debugging only
         feedback: Either choice is reasonable; what matters is stating the intent clearly.
     explanation: Either way, say in the docs whether the format is guaranteed, and offer accessors so no one has to parse the string.
+    details: |
+      Specifying the format turns `toString` into a parsing contract: clients will write code that reads it, and you can never change it without breaking them.
+      For value classes like phone numbers, a standard, documented format is useful and often paired with a static factory that parses it.
+      For other classes, leave it unspecified and say so in the docs.
+      Either way, provide accessors for every value in the string, so no one needs to parse it to get them.
 
   - type: choice
     prompt: Why provide getters for the values that appear in `toString`?

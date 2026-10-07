@@ -33,6 +33,10 @@ steps:
         correct: true
       - text: A million calls to `fib(40)`
         feedback: Only if the JIT can't prove the result is unused and the call has no side effects.
+    details: |
+      The result of `fib(40)` is thrown away, and `fib` has no side effects.
+      Once the loop is hot and compiled, the JIT can prove the calls do nothing observable and remove them — dead code elimination — leaving an empty loop, which it may also remove.
+      The measured time then reflects nothing about `fib`. JMH avoids this by consuming results in a `Blackhole`.
 
   - type: explanation
     title: Let JMH do it

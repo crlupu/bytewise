@@ -25,6 +25,10 @@ steps:
         correct: true
       - text: "1"
         feedback: That's what `HashMap` would give. Here the two strings are different objects, so they're different keys.
+    details: |
+      `IdentityHashMap` compares keys with `==` and uses `System.identityHashCode`, ignoring `equals` and `hashCode`.
+      `new String("k")` creates two distinct objects with equal contents, so they're two different keys, and the map holds two entries.
+      A `HashMap` would treat them as one key and keep only the second value. Identity maps suit algorithms that track specific objects, like graph traversals.
 
   - type: explanation
     title: Weak keys

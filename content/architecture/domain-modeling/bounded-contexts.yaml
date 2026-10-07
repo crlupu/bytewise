@@ -73,6 +73,10 @@ steps:
       - text: Shared kernel
         feedback: That needs joint ownership — you can't change the legacy system.
     explanation: Translate at the boundary, so the legacy concepts never leak into the model that matters most.
+    details: |
+      An anticorruption layer sits between your model and the legacy system, translating its data and concepts into your own terms.
+      Your core model never sees the legacy system's awkward names or structures, so it can evolve independently.
+      When the legacy system changes or is replaced, only the translation layer needs to change.
 
   - type: blank
     prompt: Complete the definition.

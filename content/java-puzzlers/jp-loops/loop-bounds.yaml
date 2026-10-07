@@ -29,6 +29,10 @@ steps:
       - text: It doesn't compile
         feedback: Comparing a `byte` with an `int` is legal; the `byte` is widened.
     explanation: "Compare like with like: `b == (byte) 0x90`."
+    details: |
+      `0x90` is the `int` 144. Comparing it with a `byte` promotes the `byte` to `int` with sign extension.
+      A `byte` ranges from -128 to 127, so no `byte` ever equals 144; the byte with bits `0x90` is -112.
+      The comparison is always false, and the loop prints nothing.
 
   - type: explanation
     title: i <= MAX_VALUE is always true
@@ -50,6 +54,10 @@ steps:
       - text: "Prints `101`"
         feedback: "`i <= Integer.MAX_VALUE` can never be false."
     explanation: Use a `long` loop variable, or test with `<` and handle the last value separately.
+    details: |
+      `i <= Integer.MAX_VALUE` is true for every `int`.
+      When `i` reaches `MAX_VALUE` and the body runs, `i++` overflows to `Integer.MIN_VALUE`, which is still less than `MAX_VALUE`, so the loop continues forever.
+      Use a `long` loop variable, or test `i < MAX_VALUE` and handle the last value after the loop.
 
   - type: explanation
     title: Shift distances are masked
@@ -69,6 +77,10 @@ steps:
       - text: "0"
         feedback: An `int` shift uses `32 & 31`, which is 0 — so nothing moves.
     explanation: "For a `long`, the low six bits count, so `1L << 64` is `1L` too."
+    details: |
+      For `int` shifts, Java uses only the low five bits of the shift distance, so the distance is taken modulo 32.
+      `-1 << 32` is therefore `-1 << 0`, which is -1.
+      That's why a loop that keeps shifting until the value becomes 0 can run forever: at a distance of 32 it starts over.
 
   - type: blank
     prompt: Compare the `byte` with a `byte` constant.

@@ -65,3 +65,7 @@ steps:
         correct: true
       - text: Yes, records are always immutable
         feedback: The reference is final, but the list it points to can still change.
+    details: |
+      A record's fields are final, but `final` only fixes the reference. If the caller passes an `ArrayList` and keeps a reference to it, they can still add or remove tags.
+      `tags = List.copyOf(tags)` in the compact constructor stores an immutable copy that the caller can't reach.
+      Records give shallow immutability for free; deep immutability still takes defensive copies.

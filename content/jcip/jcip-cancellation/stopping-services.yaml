@@ -28,6 +28,10 @@ steps:
       - text: Nothing
         feedback: Shutdown must also deal with work in flight and with producers.
     explanation: The fix is a shutdown flag plus a count of reservations, checked atomically when logging — or simply delegating to an `ExecutorService`.
+    details: |
+      Interrupting the writer stops it, but messages already queued are never written, and producers blocked in `put` because the queue is full stay blocked forever.
+      And producers that call `log` after shutdown keep adding to a queue nobody reads.
+      A correct shutdown refuses new messages, lets the writer drain what's already queued, and then stops — which is precisely what delegating to an `ExecutorService` with `shutdown()` gives you.
 
   - type: explanation
     title: Poison pills and shutdown

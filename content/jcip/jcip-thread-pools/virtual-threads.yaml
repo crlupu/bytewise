@@ -41,6 +41,10 @@ steps:
       - text: Yes, like platform threads
         feedback: Pooling exists to amortise expensive creation. Virtual threads aren't expensive.
     explanation: To limit access to a scarce resource, like a database, use a `Semaphore` — not a small pool.
+    details: |
+      Pooling exists to amortize the cost of creating expensive platform threads.
+      Virtual threads cost about as much as a small object, so creating one per task is the intended model.
+      Pooling them would add complexity and limit concurrency for no benefit; when you need to limit access to something scarce, a `Semaphore` limits exactly that.
 
   - type: explanation
     title: Same rules, one catch

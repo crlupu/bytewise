@@ -30,6 +30,10 @@ steps:
       - text: No — `n != n` can never be true
         feedback: In a single thread it can't. Across threads, an improperly published object can appear to change under you.
     explanation: The problem isn't the `Holder` class; it's how it was published.
+    details: |
+      `n != n` reads the field twice. Without safe publication, the reader may see the reference to `Holder` before the constructor's write of `n` is visible.
+      It might read 0 on the first read and 42 on the second, and the assertion fails — a check that looks impossible.
+      The class is fine; the publication isn't. Making `n` final, or publishing through a `volatile` field or a lock, rules this out.
 
   - type: explanation
     title: Safe ways to publish

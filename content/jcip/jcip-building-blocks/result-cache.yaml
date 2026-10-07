@@ -37,6 +37,10 @@ steps:
         correct: true
       - text: Futures take less memory
     explanation: The map records "computation started", not just "computation finished".
+    details: |
+      If the map holds only finished results, a second thread asking for a value still being computed finds nothing and starts the same expensive computation again.
+      Storing a `Future` records that the computation has started: the second thread finds the future and simply waits on `get()` for the first thread's result.
+      The remaining race — two threads both inserting a future for the same key — is closed with `putIfAbsent`, so only one future ever runs.
 
   - type: explanation
     title: Clean up failures

@@ -25,6 +25,10 @@ steps:
         feedback: "That's what `replace(\".\", \"/\")` would do — it replaces plain text."
       - text: It throws `PatternSyntaxException`
         feedback: "`.` is a valid regex; it just means \"any character\"."
+    details: |
+      `replaceAll` treats its first argument as a regular expression, and in regex `.` matches any character.
+      So every one of the 19 characters in "com.javapuzzlers.Me" is replaced by a slash.
+      To match a literal dot, escape it as `"\\."`, quote it with `Pattern.quote(".")`, or use `replace`, which works on plain text.
 
   - type: choice
     prompt: Which calls turn `com.javapuzzlers.Me` into `com/javapuzzlers/Me`?
@@ -53,6 +57,10 @@ steps:
       - text: It works the same
         feedback: The replacement string is not plain text.
     explanation: "Use `Matcher.quoteReplacement(File.separator)`, or simply `s.replace('.', File.separatorChar)`."
+    details: |
+      In a replacement string, a backslash escapes the next character and `$` refers to a captured group.
+      On Windows, `File.separator` is a single backslash with nothing after it to escape, so `replaceAll` throws `IllegalArgumentException`.
+      `Matcher.quoteReplacement(File.separator)` escapes it properly; `s.replace('.', File.separatorChar)` avoids regex entirely.
 
   - type: match
     prompt: Match each method with how it reads its first argument.

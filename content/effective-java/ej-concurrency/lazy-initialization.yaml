@@ -57,3 +57,8 @@ steps:
       - text: To make the first check faster
         feedback: The local variable `result` is what speeds things up, by reading the volatile field only once in the common case.
     explanation: The idiom was broken before Java 5's memory model made `volatile` strong enough.
+    details: |
+      Creating an object and assigning its reference are separate steps that the compiler and CPU may reorder.
+      Without `volatile`, another thread can see the field as non-null and use the object before its constructor's writes are visible — reading default values from a "constructed" object.
+      `volatile` establishes a happens-before relationship: everything written before the volatile write is visible to any thread that reads the non-null value.
+      For static fields, the holder-class idiom gets the same safety from the JVM's class-initialization lock with no `volatile` at all.

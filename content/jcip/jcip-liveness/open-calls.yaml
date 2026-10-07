@@ -69,6 +69,10 @@ steps:
       - text: Nothing — pools aren't locks
         feedback: Anything a thread can wait for can take part in a deadlock.
     explanation: Thread starvation deadlock in thread pools is another kind of resource deadlock.
+    details: |
+      Deadlock isn't only about locks: any resource that threads hold while waiting for another can form a cycle.
+      Thread 1 holds the only connection of pool A and waits for pool B; thread 2 holds pool B's only connection and waits for pool A.
+      Larger pools make it rarer but not impossible. The cure is the same as for locks — acquire resources in a consistent order, or don't hold one while waiting for another.
 
   - type: blank
     prompt: Complete the rule.

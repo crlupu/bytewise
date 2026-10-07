@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: None; it's very precise
         feedback: It's precise about implementation, not behaviour — the total is what matters.
+    details: |
+      The test pins down how `calculateTotal` works internally, not what it produces.
+      Caching prices or restructuring the loop changes the number of calls without changing the total, and the test fails anyway.
+      Brittle tests like this discourage refactoring. Assert on the result — the total — and verify interactions only when they're the point, like sending an email.
 
   - type: explanation
     title: Own what you mock

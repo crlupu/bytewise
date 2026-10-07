@@ -29,6 +29,11 @@ steps:
       - text: "`Set`, `List`, `Unknown Collection`"
         feedback: That's what the author hoped. But which overload runs is decided by the *compile-time* type of `c`.
     explanation: "`c` is declared as `Collection<?>`, so the compiler picks `classify(Collection<?>)` every time."
+    details: |
+      Overloading is resolved at compile time from the declared types of the arguments.
+      In the loop, the variable `c` is declared as `Collection<?>`, so the compiler chooses `classify(Collection<?>)` for every call — the run-time classes `HashSet` and `ArrayList` never matter.
+      Overriding is the opposite: the method runs based on the object's run-time class.
+      Code that needs run-time dispatch should use a single method with `instanceof` checks or a pattern-matching switch.
 
   - type: explanation
     title: Chosen at compile time
@@ -59,6 +64,11 @@ steps:
       - text: "Both `[-3, -2, -1]`"
         feedback: "`list.remove(i)` with an `int` picks `remove(int index)`, removing by position, not by value."
     explanation: "Fix it with `list.remove((Integer) i)` — and the confusion came from autoboxing plus an overload."
+    details: |
+      `Set` has only `remove(Object)`, so `i` is boxed and the set removes the values 0, 1 and 2, leaving `[-3, -2, -1]`.
+      `List` has two overloads, `remove(int index)` and `remove(Object o)`, and the compiler prefers `remove(int)` because it needs no boxing.
+      So the list removes the elements at indexes 0, 1 and 2 as it shrinks: first -3, then -1 (now at index 1), then 1 (now at index 2), leaving `[-2, 0, 2]`.
+      Casting with `remove((Integer) i)` selects the object overload.
 
   - type: explanation
     title: Use different names

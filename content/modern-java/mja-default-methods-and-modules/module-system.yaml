@@ -47,6 +47,10 @@ steps:
         correct: true
       - text: Yes, it's public
         feedback: With modules, `public` means public within the module unless the package is exported.
+    details: |
+      With modules, `public` means "accessible to code that can read this package", and only exported packages are readable by other modules.
+      `com.example.shop.internal` isn't exported, so `Pricing` is invisible outside the module even though it's public — compilation fails, and reflection fails at run time too.
+      This lets library authors hide internals that had to be public only for their own cross-package use.
 
   - type: choice
     prompt: Why does a library like Hibernate need `opens` rather than `exports`?

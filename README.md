@@ -139,6 +139,10 @@ Every exercise takes `prompt`, plus optional `explanation` (shown when right), `
 (shown when wrong and nothing more specific applies), `hints: [...]` (revealed one at a
 time) and `id` (keeps progress stable if steps are reordered; defaults to `step-N`).
 
+Questions whose answer needs real reasoning also get `details`: a few sentences on the
+*why*, one per line, behind an **Explain in detail** button that appears once the question
+is answered correctly — so it never gives the answer away.
+
 | `type` | Fields |
 |---|---|
 | `choice` | `options: [{ text, correct, feedback }]`; several `correct` makes it multi-select. Optional `code`, `language`. |

@@ -35,6 +35,10 @@ steps:
       - text: "`Integer.MAX_VALUE`"
         feedback: It's positive and odd, so the remainder is 1 and the answer is right.
     explanation: Negative odd numbers give `-1`, so a quarter of all `int`s are reported as even.
+    details: |
+      Java defines `%` so that `(a / b) * b + a % b == a`, with division truncating toward zero.
+      For a = -3, b = 2: -3 / 2 is -1, so -3 % 2 must be -1.
+      The remainder takes the sign of the dividend, so every negative odd number gives -1, not 1, and `i % 2 == 1` reports it as even.
 
   - type: explanation
     title: Compare with zero instead

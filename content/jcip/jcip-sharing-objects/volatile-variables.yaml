@@ -28,6 +28,10 @@ steps:
         feedback: Every read is fresh, but the read-add-write is still three steps that can interleave.
       - text: An invariant over two variables
         feedback: Volatile can't make updates to two variables atomic together.
+    details: |
+      `volatile` guarantees each read sees the latest write, and that writes before a volatile write are visible after a volatile read.
+      That's enough for a flag one thread sets and others check, and for publishing a reference to an object that won't change.
+      It isn't enough when the new value depends on the old one, like `count++`, or when several variables must change together — those need atomicity, which only locks or atomic classes give.
 
   - type: explanation
     title: Visible, but not atomic

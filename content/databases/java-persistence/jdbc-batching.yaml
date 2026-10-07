@@ -58,6 +58,10 @@ steps:
     explanation: |
       The persistence context identifies entities by id, so with IDENTITY each `persist` forces an insert.
       Use a **sequence** (with an optimizer like `pooled`) to get ids ahead of time and keep batching.
+    details: |
+      Hibernate tracks entities in the persistence context by their id.
+      With `IDENTITY`, the database assigns the id when the row is inserted, so Hibernate must run each insert immediately to learn the id — it can't hold several and send them together.
+      A sequence lets Hibernate fetch ids in advance, often a block at a time with a pooled optimizer, so inserts can wait and be batched at flush.
 
   - type: match
     prompt: Match each id strategy to how it interacts with batching.

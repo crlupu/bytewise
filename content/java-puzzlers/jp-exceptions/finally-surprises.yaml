@@ -32,6 +32,10 @@ steps:
       - text: It doesn't compile
         feedback: It compiles — with a warning, in most IDEs.
     explanation: Never leave a `finally` block with `return`, `break`, `continue` or `throw`. It can also swallow an exception.
+    details: |
+      `return true` evaluates its value and starts to leave the method, but `finally` runs first.
+      A `return` inside `finally` replaces the pending return, so the method returns `false` and the original `true` is discarded.
+      The same happens to exceptions: a `return` in `finally` silently swallows any exception from the `try` block, which is why it's considered a bug.
 
   - type: predict
     prompt: What does `f()` return?
@@ -50,6 +54,10 @@ steps:
         correct: true
       - text: "`2`"
         feedback: "`return x` evaluates `x` before `finally` runs. Changing the variable afterwards doesn't change the saved value."
+    details: |
+      `return x` evaluates `x` to 1 and saves that value before `finally` runs.
+      The `finally` block then changes the variable `x`, but the saved return value is already a copy of 1.
+      Had `x` been a mutable object, changes to the object would be visible to the caller — but reassigning the variable never is.
 
   - type: explanation
     title: System.exit doesn't unwind

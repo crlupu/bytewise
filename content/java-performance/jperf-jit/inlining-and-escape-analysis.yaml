@@ -43,6 +43,10 @@ steps:
         feedback: The point is returned, so it escapes to the caller.
       - text: "`void store(int x, int y) { cache.add(new Point(x, y)); }`"
         feedback: The point is stored in a collection, so it escapes.
+    details: |
+      Escape analysis asks whether an object can be seen outside the method that created it.
+      In `dist`, the `Point` is created, used to compute a length and dropped; nothing else holds a reference, so the JIT can keep `x` and `y` in registers and never allocate the object.
+      Returning the point or storing it in a collection lets it escape, so it must live on the heap.
 
   - type: match
     prompt: Match each optimization with what it removes.

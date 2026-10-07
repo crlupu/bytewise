@@ -69,6 +69,10 @@ steps:
         feedback: "`distinct` removes the repeated letters, keeping first occurrences."
       - text: Something like `[Ljava.lang.String;@...`
         feedback: That's what you'd get with `map(Arrays::stream)` — a stream of streams. `flatMap` flattens it.
+    details: |
+      `w.split("")` turns each word into an array of one-letter strings, so `map` produces a stream of two arrays.
+      `flatMap(Arrays::stream)` turns each array into a stream and concatenates them into one stream of ten letters.
+      `distinct` keeps the first occurrence of each letter — h, e, l, o, w, r, d — and `joining` concatenates them into "helowrd".
 
   - type: blank
     prompt: Turn a list of lists into one stream of elements.

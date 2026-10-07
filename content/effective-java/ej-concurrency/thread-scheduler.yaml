@@ -36,6 +36,10 @@ steps:
       - text: It doesn't synchronize
         feedback: It does — it's just spinning instead of blocking.
     explanation: Use `CountDownLatch`, which blocks waiting threads.
+    details: |
+      The loop never blocks: it repeatedly takes the lock, checks `count` and releases it, keeping a CPU core 100% busy while doing no work.
+      That stolen CPU time slows down the threads that would bring `count` to zero, so the latch can make the whole program slower.
+      `CountDownLatch.await()` parks the waiting thread until it's needed, using no CPU while it waits.
 
   - type: choice
     prompt: A thread is starved of CPU time. Should you fix it with `Thread.yield()`?

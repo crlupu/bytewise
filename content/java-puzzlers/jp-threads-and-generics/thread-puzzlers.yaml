@@ -33,6 +33,10 @@ steps:
         feedback: With `start()`, the new thread would wait for main's lock and print second. But `run()` is a plain call in the main thread.
       - text: Either, depending on scheduling
         feedback: "There's only one thread here. `run()` doesn't start one."
+    details: |
+      `t.run()` is an ordinary method call: no thread is started, and `run()` executes on the main thread.
+      The main thread already holds the class's lock (both methods are `static synchronized`), and locks are reentrant, so `pong()` runs immediately and prints "Pong".
+      Then "Ping" is printed. Only `start()` creates a new thread.
 
   - type: explanation
     title: interrupted() clears the flag
@@ -73,6 +77,11 @@ steps:
       - text: It works; the thread just sets the field
         feedback: Touching the class from another thread blocks until initialization completes.
     explanation: Keep static initializers simple, and never wait on other threads in them.
+    details: |
+      The main thread holds the class-initialization lock while running the static initializer.
+      The new thread touches a static field of that class, which requires the class to be initialized, so it waits for the lock.
+      The main thread then calls `join()`, waiting for the new thread to finish — and neither can proceed.
+      Class initialization is a hidden lock, and static initializers shouldn't wait for other threads.
 
   - type: match
     prompt: Match each call with what it does.

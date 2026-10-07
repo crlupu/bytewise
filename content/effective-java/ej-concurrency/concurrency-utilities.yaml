@@ -49,6 +49,10 @@ steps:
         correct: true
       - text: Synchronized maps aren't thread-safe
         feedback: They are, but slowly — and compound actions still need external locking.
+    details: |
+      `Collections.synchronizedMap` puts one lock around every method, so only one thread at a time can read or write anything in the map.
+      `ConcurrentHashMap` lets reads proceed without locking and spreads writes across bins, so many threads can work at once.
+      It also provides atomic compound operations like `putIfAbsent`, `computeIfAbsent` and `merge`, which a synchronized wrapper can only offer if every client remembers to lock around the whole check-then-act.
 
   - type: explanation
     title: If you must use wait

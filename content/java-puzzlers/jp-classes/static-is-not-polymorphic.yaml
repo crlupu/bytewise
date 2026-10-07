@@ -30,6 +30,10 @@ steps:
       - text: "`woof ` once"
         feedback: "Both variables are declared as `Dog`, so both calls go to `Dog.bark()`. Basenjis do bark, here."
     explanation: Always call static methods through the class name, `Dog.bark()`, so nothing looks polymorphic.
+    details: |
+      Static methods belong to classes, not objects, so there is no dynamic dispatch.
+      `nipper.bark()` is compiled as `Dog.bark()` because `nipper` is declared as a `Dog`; the fact that it refers to a `Basenji` is ignored.
+      `Basenji.bark()` only hides `Dog.bark()`. Calling static methods through instances is legal but misleading — most IDEs warn about it.
 
   - type: explanation
     title: Even null works

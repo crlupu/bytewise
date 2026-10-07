@@ -40,6 +40,10 @@ steps:
     explanation: |
       6. `addAll` adds 3, then `super.addAll` calls the overridden `add` three times, adding 3 more. The subclass
       relied on an implementation detail it couldn't see.
+    details: |
+      `HashSet.addAll` happens to be implemented by calling `add` for each element — a fact documented nowhere in its contract.
+      The subclass counts 3 in its `addAll` override, then calls `super.addAll`, which calls the overridden `add` three more times, each adding 1 again.
+      The bug comes from depending on the superclass's self-use, which can change in any release; a wrapper class that forwards to a private `Set` never sees these internal calls and counts exactly once.
 
   - type: choice
     prompt: How should the subclass be fixed?
@@ -91,3 +95,7 @@ steps:
     explanation: |
       Inheritance is safe inside a package under one team's control, or for classes explicitly designed for it.
       Across package boundaries, prefer composition.
+    details: |
+      Inheritance creates the tightest possible coupling: the subclass depends on how the superclass is implemented, not just on what it promises.
+      That's acceptable when one team controls both classes and evolves them together, or when the superclass documents its self-use precisely and is designed for extension.
+      For everything else — especially extending classes from another library — composition gives you the same reuse while depending only on the public API.

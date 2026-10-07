@@ -37,6 +37,10 @@ steps:
         feedback: "That's plain `groupingBy`. With `counting()`, each group becomes its size."
       - text: "`4`"
         feedback: The result is a map from first letter to count.
+    details: |
+      `groupingBy` applies the classifier, `w.charAt(0)`, to each word: two start with 'a', one with 'b', one with 'c'.
+      The downstream collector `counting()` replaces each group's list with its size, as a `Long`.
+      The result is a `Map<Character, Long>`. Its iteration order isn't guaranteed — pass a `TreeMap::new` map factory if you need sorted keys.
 
   - type: explanation
     title: partitioningBy splits in two
@@ -56,6 +60,10 @@ steps:
         correct: true
       - text: "`[2, 4]`"
         feedback: "That's `filter`. Partitioning keeps both sides."
+    details: |
+      `partitioningBy` always produces a map with exactly two keys, `false` and `true`, even if one side is empty.
+      Each element goes to the key the predicate returns: odd numbers to `false`, even numbers to `true`.
+      It's like `groupingBy` with a boolean classifier, but guarantees both keys exist, so you never need to handle a missing group.
 
   - type: match
     prompt: Match each collector with what you get per group.

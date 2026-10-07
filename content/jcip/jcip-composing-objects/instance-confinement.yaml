@@ -52,3 +52,7 @@ steps:
       - text: Return `Collections.unmodifiableMap(locations)`
         feedback: The map is read-only, but the `MutablePoint`s inside can still be changed by callers.
     explanation: The cost is a snapshot that may be out of date — and copying can be slow for large collections.
+    details: |
+      Returning the internal map lets callers read and modify it without holding the tracker's lock, and the `MutablePoint`s inside can change while they're being read.
+      A deep copy — a new map with new point objects — taken while holding the lock gives callers a consistent snapshot they can't use to corrupt the tracker.
+      The trade-offs are the cost of copying and a snapshot that's immediately out of date; immutable points would make the copy cheaper.

@@ -21,6 +21,11 @@ steps:
         correct: true
       - text: None, since the fields are private and final
         feedback: Serialization bypasses constructors and access control.
+    details: |
+      `readObject` acts as a public constructor that takes a byte stream, and attackers can write any bytes they like.
+      A crafted stream can produce a `Period` whose end is before its start, because no constructor checks run.
+      Worse, an attacker can add extra references to the private `Date` fields in the stream and use them to mutate the deserialized period afterwards.
+      A defensive `readObject` copies the dates and validates the copies, like a constructor would.
 
   - type: explanation
     title: Copy, then check

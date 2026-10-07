@@ -40,3 +40,7 @@ steps:
       - text: "`List` is an interface"
         feedback: "Interfaces have class objects too: `List.class`."
     explanation: "Libraries like Jackson use a super type token — `new TypeReference<List<String>>() {}` — to capture the full type."
+    details: |
+      Because of erasure, `List<String>`, `List<Integer>` and plain `List` share a single `Class` object at run time: `List.class`.
+      So a `Class<T>` key can't distinguish them, and there's no `List<String>.class` literal.
+      Super type tokens work around this by subclassing a generic type, like `new TypeReference<List<String>>() {}`; the subclass's declared superclass keeps the full type, which reflection can read.

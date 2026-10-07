@@ -34,6 +34,10 @@ steps:
         correct: true
       - text: "false"
         feedback: At 10^16, neighbouring doubles are 2 apart. `big + 1` rounds back to `big`.
+    details: |
+      A `double` has 53 bits of precision. Around 10^16, that's not enough to represent every integer: adjacent doubles are 2 apart.
+      `big + 1` lies exactly halfway between two representable values, and rounds to `big` itself.
+      So `big == big + 1` is true, and a loop like `while (i != i + 1)` would end immediately for such values — or never, if the condition is flipped.
 
   - type: explanation
     title: Two's complement isn't symmetric

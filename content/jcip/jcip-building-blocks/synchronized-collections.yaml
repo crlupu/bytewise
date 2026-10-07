@@ -72,3 +72,7 @@ steps:
       - text: There's no iteration
         feedback: Hidden iterators lurk in `toString`, `hashCode`, `equals`, `containsAll`, `addAll` and the like.
     explanation: A debug message can throw `ConcurrentModificationException`. Encapsulate the collection with its synchronization, so iteration can't happen unguarded.
+    details: |
+      The debug statement concatenates the set into a string, which calls `set.toString()`, which iterates over the set.
+      The method that does this isn't synchronized, so another thread calling `addTenThings` at the same time can modify the set mid-iteration, causing `ConcurrentModificationException`.
+      Hidden iterations also lurk in `hashCode`, `equals`, `containsAll` and copy constructors — which is why it's safer to wrap the collection and its lock together in one class.

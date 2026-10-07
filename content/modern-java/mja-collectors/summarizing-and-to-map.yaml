@@ -50,6 +50,10 @@ steps:
         feedback: "That's what `HashMap.put` does, but `toMap` refuses to guess."
       - text: "`{a=2, b=1}`"
         feedback: That needs a merge function like `Integer::sum`.
+    details: |
+      `toMap(keyMapper, valueMapper)` doesn't know how to combine two values for the same key, so the second "a" throws `IllegalStateException: Duplicate key a`.
+      This is deliberate — silently overwriting would hide bugs.
+      Pass a merge function as a third argument, like `Integer::sum` to add up counts, or `(a, b) -> a` to keep the first.
 
   - type: blank
     prompt: Count words, adding up duplicates.

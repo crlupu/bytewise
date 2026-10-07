@@ -31,6 +31,10 @@ steps:
       - text: Grows until memory runs out
         feedback: That's what an unbounded queue does.
     explanation: Bounded queues are a powerful resource-management tool — they make overload visible early instead of exhausting memory.
+    details: |
+      With an unbounded queue, producers keep adding work no matter how far behind consumers are; the queue grows until memory runs out, often long after the overload began.
+      A bounded queue fills up and then makes `put` block, so producers automatically slow to the rate consumers can sustain.
+      That's back-pressure: overload becomes visible and self-limiting, and you can choose how to handle it, for example with `offer` and a timeout.
 
   - type: match
     prompt: Match each `BlockingQueue` implementation to its behaviour.

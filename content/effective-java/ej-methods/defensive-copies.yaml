@@ -46,6 +46,10 @@ steps:
       - Validate the copies, not the originals
       - Assign the copies to the fields
     explanation: Validating the originals leaves a window in which another thread can change them after the check — a time-of-check/time-of-use attack.
+    details: |
+      Suppose you check `start` and `end` first, then copy them.
+      Between the check and the copy, another thread holding the originals can change them — a time-of-check to time-of-use (TOCTOU) attack.
+      Your copies then hold values that never passed validation. Copying first and validating the copies leaves no such window, because only your code can reach the copies.
 
   - type: choice
     prompt: Why not make the copy with `start.clone()`?
@@ -54,6 +58,11 @@ steps:
         correct: true
       - text: "`clone` is too slow"
     explanation: Don't use `clone` to copy a parameter whose type can be subclassed by untrusted parties.
+    details: |
+      `Date` isn't final, so the argument might be a subclass written by an attacker.
+      Its `clone` could return an instance of that subclass that records a reference to itself in a static list, letting the attacker mutate your "copy" later.
+      `new Date(start.getTime())` creates an instance of exactly `Date`, whatever was passed in.
+      Use `clone` only on types you trust, such as arrays or final classes.
 
   - type: blank
     prompt: The accessor must not leak the internal object either.

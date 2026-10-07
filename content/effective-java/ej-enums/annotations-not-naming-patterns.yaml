@@ -21,6 +21,10 @@ steps:
         feedback: It has no way to know you meant a test.
       - text: It fails to compile
     explanation: Naming patterns also can't attach parameters (like an expected exception) or apply to just the right kinds of elements.
+    details: |
+      A naming-pattern framework finds tests by checking whether a method's name starts with "test".
+      A typo like `tsetSafetyOverride` simply doesn't match, so the method is never run — and no test failure is reported, because nothing ran.
+      The bug hides until someone notices the missing coverage. With an annotation, `@Test` is checked by the compiler, so a misspelled `@Tset` fails to compile.
 
   - type: explanation
     title: Annotations are checked

@@ -29,6 +29,10 @@ steps:
       - text: Yes — `stringList` doesn't use `V`
         feedback: Erasure applies to every member of a raw type, not just those that mention `V`.
     explanation: "Declare `Pair<Object> p` or `Pair<?> p` and it compiles."
+    details: |
+      When a generic class is used as a raw type, every generic type in its members is erased — not just the ones involving `V`.
+      So through a raw `Pair`, `stringList()` returns a raw `List`, whose elements are `Object`.
+      The for-each loop then can't assign them to `String`. Declaring `p` as `Pair<?>` or `Pair<Object>` keeps `List<String>`.
 
   - type: explanation
     title: Raw types exist for old code

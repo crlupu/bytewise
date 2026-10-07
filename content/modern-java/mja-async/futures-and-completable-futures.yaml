@@ -35,6 +35,10 @@ steps:
       - text: On the calling thread
         feedback: Then it wouldn't be asynchronous.
     explanation: For blocking I/O, pass your own executor sized for it — the common pool has only about one thread per core.
+    details: |
+      Without an executor argument, async methods use `ForkJoinPool.commonPool()`, which has about as many threads as there are CPU cores, minus one.
+      That's right for CPU-bound work, but if tasks block on I/O, a handful of slow calls can tie up the whole pool — and with it, parallel streams and anything else sharing it.
+      For blocking calls, pass a dedicated executor sized for the expected concurrency.
 
   - type: explanation
     title: join or get
@@ -59,3 +63,7 @@ steps:
         correct: true
       - text: Nothing; the exception is lost on the other thread
         feedback: "The future completes exceptionally, and `join` rethrows it wrapped in a `CompletionException`."
+    details: |
+      The supplier throws on a pool thread, and `CompletableFuture` catches it and completes exceptionally rather than letting the thread die.
+      `join()` then rethrows it wrapped in an unchecked `CompletionException`, whose `getCause()` is the original `IllegalStateException`.
+      `get()` would wrap it in a checked `ExecutionException` instead. Either way, the exception isn't lost — it's delivered to whoever waits for the result.

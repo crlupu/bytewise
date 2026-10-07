@@ -27,6 +27,11 @@ steps:
       - text: "`pop` returns a copy, not the original"
         feedback: Java returns the reference itself.
     explanation: Those references are **obsolete** — they'll never be dereferenced again — but the GC can't know that.
+    details: |
+      The stack keeps elements in an array and tracks how many are in use with `size`.
+      Popping decrements `size` but leaves the reference in the array slot, so the object is still reachable from the stack and can never be collected.
+      The garbage collector can't know that slots past `size` are logically dead — only the programmer does.
+      Classes that manage their own memory, like this one, are where memory leaks hide.
 
   - type: explanation
     title: Null out what you manage yourself

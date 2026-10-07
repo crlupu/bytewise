@@ -45,3 +45,7 @@ steps:
       - text: Create a new instance per type
         feedback: Works, but wasteful; erasure lets one instance be shared.
     explanation: "`Collections.reverseOrder()` and `Collections.emptySet()` use the same trick."
+    details: |
+      Because of erasure, a `UnaryOperator<String>` and a `UnaryOperator<Integer>` are the same class at run time.
+      An identity function doesn't depend on the type at all, so one shared instance can be handed out for every `T` with an unchecked cast that's provably safe.
+      The generic factory method hides that cast and gives each caller the type it asked for — avoiding a new object per type.

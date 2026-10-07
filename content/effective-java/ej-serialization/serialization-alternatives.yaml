@@ -20,6 +20,11 @@ steps:
       - text: Nothing, as long as the classes are from the JDK
         feedback: Bombs can be built from JDK classes alone.
     explanation: A stream of about 5,700 bytes built from nested HashSets can keep `hashCode` computations running practically forever.
+    details: |
+      Deserializing a `HashSet` calls `hashCode` on every element to rebuild the hash table.
+      A stream can describe sets nested inside each other many levels deep in very few bytes, and computing the hash code of such a structure repeats work exponentially.
+      A small input can therefore keep a server's CPU busy practically forever — a denial-of-service with no exploit code at all.
+      This is why the safest policy is not to deserialize untrusted data.
 
   - type: explanation
     title: Use something else

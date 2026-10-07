@@ -47,6 +47,10 @@ steps:
       - text: It works, because of the cast inside the class
         feedback: That cast is unchecked; the array is still an `Object[]` at run time.
     explanation: Fine inside the class, as long as the array never leaves it. That's how `ArrayList` works.
+    details: |
+      `(T[]) new Object[10]` is an unchecked cast that does nothing at run time — the array is really an `Object[]`.
+      Inside the class that's harmless, because everything treats elements as `T` without caring about the array's class.
+      But the caller's code assigns the result to `String[]`, and the compiler inserts a check there; an `Object[]` isn't a `String[]`, so it throws `ClassCastException`.
 
   - type: blank
     prompt: Let the caller supply the array type.

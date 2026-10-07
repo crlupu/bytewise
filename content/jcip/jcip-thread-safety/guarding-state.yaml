@@ -40,6 +40,10 @@ steps:
     explanation: |
       The invariant "`lastFactors` are the factors of `lastNumber`" spans both fields.
       **To preserve state consistency, update related state variables in a single atomic operation.**
+    details: |
+      Each `AtomicReference` update is atomic on its own, but the servlet updates two of them in sequence.
+      Between `lastNumber.set` and `lastFactors.set`, another thread can read the new number with the old factors and return wrong results.
+      The invariant spans both variables, so both must be read and written under one lock — or combined into one immutable object behind a single reference.
 
   - type: explanation
     title: Invariants need one lock
@@ -85,3 +89,7 @@ steps:
         correct: true
       - text: Yes — the object becomes inaccessible to other threads
         feedback: Locks are a convention. Unsynchronized code can still read and write the fields.
+    details: |
+      Intrinsic locks are purely cooperative: holding an object's lock only stops other threads from acquiring that same lock.
+      Code that reads or writes the fields without synchronizing isn't affected at all.
+      Thread safety comes from every access to shared state using the same lock, consistently — which is why documenting the guarding lock matters.

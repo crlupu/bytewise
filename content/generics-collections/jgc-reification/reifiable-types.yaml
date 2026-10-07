@@ -53,3 +53,7 @@ steps:
         correct: true
       - text: The cast throws `ClassCastException`
         feedback: The run-time check only sees `List`, which matches.
+    details: |
+      At run time, the cast only checks what it can: that `obj` is a `List`. It can't check the element type, which was erased, so it succeeds with an unchecked warning.
+      `l` now claims to be a `List<String>` but holds `Integer`s.
+      The first time code reads an element as a `String`, the compiler's hidden cast fails with `ClassCastException`, far from the faulty cast.

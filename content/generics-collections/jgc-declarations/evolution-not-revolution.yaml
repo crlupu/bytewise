@@ -24,6 +24,10 @@ steps:
         correct: true
       - text: "`false`"
         feedback: After erasure, both are plain `ArrayList` at run time.
+    details: |
+      Generic type arguments are erased during compilation, so at run time both lists are instances of the same class, `java.util.ArrayList`.
+      There's no `ArrayList<String>.class` — only `ArrayList.class`.
+      This is what let generic code interoperate with pre-generics libraries without recompiling them, but it's also why the JVM can't check generic types for you at run time.
 
   - type: explanation
     title: Unchecked warnings mark the gaps
@@ -48,6 +52,10 @@ steps:
       - text: It doesn't compile
         feedback: It compiles — with an unchecked warning at line 3.
     explanation: This is heap pollution. The failure shows up far from the bug.
+    details: |
+      Line 2 assigns to a raw `List`, which turns off generic checks, and line 3 adds an `Integer` with only an unchecked warning — the list has no idea its elements should be strings.
+      Line 4 calls `get(0)`, and the compiler has inserted a cast to `String` there, which fails with `ClassCastException`.
+      The error is reported far from the real mistake. That's heap pollution, and why unchecked warnings deserve attention.
 
   - type: choice
     prompt: When is it fine to suppress an unchecked warning?

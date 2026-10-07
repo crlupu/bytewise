@@ -54,6 +54,10 @@ steps:
       - text: "Yes"
         feedback: The compiler doesn't reason about when an exception can be thrown, so it assumes the `try` may have assigned it.
     explanation: Compute the value in a helper method that returns it from `try` or `catch`, and assign the field once.
+    details: |
+      The compiler checks that a `final` field is definitely assigned exactly once on every path.
+      If `getUserIdFromEnvironment()` throws after the assignment — or the compiler can't rule it out — the catch block would assign a second time.
+      The compiler's analysis doesn't reason about where exceptions can occur, so it rejects the code. Computing the value in a helper method that returns from both branches avoids the problem.
 
   - type: blank
     prompt: Assign the final field once, from a helper.

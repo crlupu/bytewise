@@ -73,6 +73,8 @@ const exerciseBase = {
   prompt: md,
   /** Shown after a correct answer: why it is correct. */
   explanation: md.optional(),
+  /** A longer explanation behind an "Explain in detail" button after a correct answer: a few sentences, one per line, each shown as a paragraph. */
+  details: md.optional(),
   /** Shown after a wrong answer when nothing more specific is authored. */
   feedback: md.optional(),
   /** Revealed one at a time on request. */

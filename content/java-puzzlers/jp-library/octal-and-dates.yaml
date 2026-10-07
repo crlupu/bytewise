@@ -46,6 +46,10 @@ steps:
         feedback: Month 12 is the thirteenth month, which rolls over into January of the next year.
       - text: It throws an exception
         feedback: "`Calendar` is lenient by default and rolls over instead."
+    details: |
+      `Calendar` numbers months from 0, so 12 means a thirteenth month.
+      By default it's lenient: instead of rejecting the value, it rolls the excess into the next year, giving January 31, 2000.
+      `java.time.LocalDate.of(1999, 12, 31)` counts months from 1 and throws on invalid values — one of many reasons to use `java.time`.
 
   - type: choice
     prompt: Which call gives December 31, 1999?

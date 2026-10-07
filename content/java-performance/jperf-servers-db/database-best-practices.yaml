@@ -32,6 +32,10 @@ steps:
         correct: true
       - text: A faster CPU on the application server
         feedback: The time goes to network round trips, not computation.
+    details: |
+      Each `executeUpdate` sends one statement and waits for the database's reply: a full network round trip, often around a millisecond or more.
+      10,000 inserts therefore spend most of their 20 seconds waiting on the network, not doing work.
+      Batching sends hundreds of inserts in one round trip, cutting the waiting by the same factor.
 
   - type: explanation
     title: Short transactions, lean fetches

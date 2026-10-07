@@ -49,6 +49,10 @@ steps:
         feedback: 27 fails `n < 20`, so iteration stops before it.
       - text: It runs forever
         feedback: The three-argument `iterate` (Java 9+) takes a stop condition, like a `for` loop.
+    details: |
+      The three-argument `Stream.iterate(seed, hasNext, next)` works like a `for` loop: start at 1, continue while `n < 20`, step with `n * 3`.
+      It produces 1, 3 and 9; the next value, 27, fails the condition, so the stream ends.
+      The two-argument version has no condition and is infinite, so it needs a `limit` or a short-circuiting terminal operation.
 
   - type: choice
     prompt: Which of these never terminates?

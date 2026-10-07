@@ -45,6 +45,10 @@ steps:
         correct: true
       - text: All 16 combinations, always
         feedback: For many inputs that grows too fast; exceptional values don't need combining.
+    details: |
+      Testing every combination of four partitions for each input means 16 tests, and it grows fast with more inputs.
+      Exceptional values like null or negative ages usually make the method fail the same way regardless of the other input, so one test each is enough.
+      Then combine only the valid partitions that the rules actually connect — say, age groups with countries that have different age limits.
 
   - type: match
     prompt: Match each input with sensible partitions.

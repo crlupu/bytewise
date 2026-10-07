@@ -19,6 +19,10 @@ steps:
         correct: true
       - text: "`idFuture.thenApply(this::fetchUser)`"
         feedback: "That gives `CompletableFuture<CompletableFuture<User>>`."
+    details: |
+      `thenApply` wraps whatever the function returns in a new future, so a function returning `CompletableFuture<User>` gives `CompletableFuture<CompletableFuture<User>>`.
+      `thenCompose` expects a function that returns a future, and flattens the result to `CompletableFuture<User>` — just as `flatMap` flattens nested streams or optionals.
+      Use `thenApply` for plain transformations and `thenCompose` when the next step is itself asynchronous.
 
   - type: explanation
     title: Combine independent work
@@ -42,6 +46,10 @@ steps:
         feedback: "`thenApply` adds one first: (20 + 1) × 2."
       - text: "22"
         feedback: "`thenCombine` multiplies the two results."
+    details: |
+      `supplyAsync(() -> 20)` produces 20, and `thenApply(x -> x + 1)` turns it into 21.
+      Meanwhile the second `supplyAsync` produces 2 independently. `thenCombine` waits for both and applies `(x, y) -> x * y` to 21 and 2.
+      21 × 2 = 42. The two suppliers can run at the same time; only the combining step waits for both.
 
   - type: explanation
     title: Recover from failure

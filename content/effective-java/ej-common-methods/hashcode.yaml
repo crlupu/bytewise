@@ -29,6 +29,11 @@ steps:
     hints:
       - Which method does `HashMap.get` call first?
     explanation: Almost certainly `null`. (Occasionally the identity hashes collide — making the bug intermittent, which is worse.)
+    details: |
+      `HashMap.get` first computes the key's hash code to pick a bucket, and only then calls `equals` on keys in that bucket.
+      Without an override, `hashCode` comes from `Object` and is based on identity, so two equal points almost always get different codes and land in different buckets.
+      `get` looks in the wrong bucket, never calls `equals`, and returns `null`.
+      Whenever you override `equals`, override `hashCode` from the same fields.
 
   - type: explanation
     title: Writing hashCode
@@ -51,6 +56,10 @@ steps:
     explanation: |
       `return 42` is *legal* but every point lands in one bucket and the map degrades into a list. `Objects.hash` is
       concise but allocates an array per call; the hand-written form is fastest.
+    details: |
+      The only hard rule is that equal objects must return equal hash codes, so even `return 42` is legal — it just sends every point to one bucket and turns lookups from constant time into a linear scan.
+      A good hash spreads unequal objects across many values. Multiplying by 31 mixes the fields so that `(1, 2)` and `(2, 1)` usually differ.
+      `Objects.hash(x, y)` gives the same quality in one line, at the cost of an array allocation and boxing per call — fine unless the method is very hot.
 
   - type: blank
     prompt: Complete the contract.
@@ -72,6 +81,11 @@ steps:
       - text: "`false`"
         correct: true
     explanation: Mutating a field `hashCode` uses, while the object sits in a hash collection, strands it in the wrong bucket.
+    details: |
+      When `p` was added, the set stored it in the bucket for the hash code of "Ada".
+      Changing the name changes the hash code, so `contains(p)` looks in the bucket for "Grace", finds nothing and returns `false` — even though the very same object is in the set.
+      The object is stranded: it can't be found or removed, and iterating still shows it.
+      Don't mutate fields used by `equals` and `hashCode` while an object is a key or element of a hash-based collection; immutable keys avoid this entirely.
 
   - type: choice
     prompt: May you leave a significant field out of `hashCode` to make it faster?

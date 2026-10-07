@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: How to add a null check in `formatAddress`
         feedback: That hides the symptom; the bad data may break something else next.
+    details: |
+      The exception tells you where null was used, not where it came from.
+      Adding a null check in `formatAddress` hides the symptom, and the missing address may break something else — an invoice, a shipment — later.
+      Trace back: find where the customer was created or loaded, and why the address wasn't set. Fix that, and add a test that would have caught it.
 
   - type: explanation
     title: Reproduce first

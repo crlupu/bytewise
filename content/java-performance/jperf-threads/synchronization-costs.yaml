@@ -43,6 +43,10 @@ steps:
         correct: true
       - text: The JVM adds hidden locks to every field
         feedback: There are no hidden locks; this is a hardware effect.
+    details: |
+      CPU caches move memory in 64-byte cache lines, and a core must own a line exclusively to write to it.
+      If two counters share a line, each write by one core invalidates the other core's copy, and the line bounces back and forth.
+      The threads share no data logically, but contend physically — false sharing. Padding the fields onto separate lines, or `@Contended`, removes the contention.
 
   - type: match
     prompt: Match each problem with a fix.

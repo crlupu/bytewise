@@ -23,6 +23,10 @@ steps:
       - text: Yes
         feedback: For-each requires an array or an `Iterable`.
     explanation: "Workaround: `for (ProcessHandle ph : (Iterable<ProcessHandle>) ProcessHandle.allProcesses()::iterator)` — legal, but ugly."
+    details: |
+      The for-each loop requires an array or an `Iterable`, and `Stream` doesn't implement `Iterable` — even though it has an `iterator()` method.
+      The workaround casts a method reference, `allProcesses()::iterator`, to `Iterable`, which works because `Iterable` has a single abstract method; but it's ugly and surprising.
+      That's why a public method that returns a sequence should usually return a `Collection`: it can be looped over and streamed.
 
   - type: explanation
     title: Return a Collection

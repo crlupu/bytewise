@@ -44,6 +44,10 @@ steps:
         correct: true
       - text: The JVM exits normally
         feedback: The JVM exits only when all non-daemon threads have finished — and idle pool threads never do.
+    details: |
+      The JVM exits only when all non-daemon threads have finished.
+      Executor worker threads are non-daemon by default, and an idle pool keeps them waiting for new tasks.
+      So without `shutdown()`, `main` returns but the process lives on. Always shut down executors you create.
 
   - type: choice
     prompt: Why prefer `ScheduledThreadPoolExecutor` over the old `java.util.Timer`?

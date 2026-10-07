@@ -45,6 +45,10 @@ steps:
         correct: true
       - text: Use a single-threaded executor
         feedback: That's the worst case — any dependent task deadlocks.
+    details: |
+      Thread starvation deadlock happens when tasks in a pool wait for other tasks in the same pool that can't run because every thread is occupied by a waiting task.
+      An unbounded pool can always start the dependent task.
+      With a bounded pool, it must be big enough for the longest chain of dependencies, or dependent work must go to a separate pool.
 
   - type: explanation
     title: Long tasks block short ones

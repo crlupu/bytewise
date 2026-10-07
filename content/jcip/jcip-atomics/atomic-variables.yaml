@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: "`AtomicReference` locks both fields"
         feedback: No locks are involved; it's a single CAS on a reference.
+    details: |
+      The invariant `lower <= upper` involves two values, so updating them as two separate atomic variables leaves a moment where one has changed and the other hasn't.
+      Putting both bounds in one immutable object and holding it in a single `AtomicReference` makes the pair change in one step: a thread builds a new range, checks the invariant on it, and CASes the reference.
+      If another thread changed the range in the meantime, the CAS fails and the thread retries with fresh values — no lock, and no half-updated state is ever visible.
 
   - type: explanation
     title: Not for map keys

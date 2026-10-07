@@ -28,6 +28,11 @@ steps:
         feedback: That would hide future, genuinely dangerous warnings in the whole class.
       - text: Leave the warning
         feedback: Then real problems get lost among warnings you know are harmless.
+    details: |
+      Each unchecked warning marks a place where a `ClassCastException` could happen at run time.
+      If you've proved one can't, suppress it — but on the smallest scope, so that new warnings elsewhere in the method still show up.
+      Suppressing on a whole class hides future mistakes; leaving proven-safe warnings unsuppressed buries real ones in noise.
+      The comment explaining why it's safe helps the next reader and forces you to actually make the argument.
 
   - type: order
     prompt: Order these scopes from narrowest (best) to widest.

@@ -24,6 +24,10 @@ steps:
         correct: true
       - text: It succeeds, and fails when the element is read
         feedback: A checked list knows its element type at run time and checks each insert.
+    details: |
+      A checked list remembers its element class at run time and checks every insertion with `Class.cast`.
+      So even when the list is accessed through a raw `List` that bypasses compile-time checks, `add(42)` throws `ClassCastException` right there.
+      Without the wrapper, the `Integer` would slip in and the failure would surface later, wherever someone reads the element as a `String`.
 
   - type: explanation
     title: Hand checked collections to legacy code

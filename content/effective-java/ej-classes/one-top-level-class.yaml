@@ -31,6 +31,11 @@ steps:
     hints:
       - When `Main` refers to `Utensil`, the compiler finds `Utensil.java`, which defines both classes.
     explanation: "`pancake`. With `javac Main.java Dessert.java`, compilation fails with duplicate classes; with `javac Dessert.java Main.java`, it prints `potpie`."
+    details: |
+      `Main.java` refers to `Utensil` and `Dessert`, and both `Utensil.java` and `Dessert.java` define classes with those names but different content.
+      Whichever file the compiler sees first defines the classes; `javac Main.java Utensil.java` compiles `Utensil.java`'s versions, which print `pancake`.
+      Swap the file order and you get `potpie`, or a duplicate-class error — the program's meaning depends on the build command.
+      One top-level class per file, named after the file, makes this impossible.
 
   - type: explanation
     title: Behaviour depends on compile order

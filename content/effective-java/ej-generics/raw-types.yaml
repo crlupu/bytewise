@@ -29,6 +29,10 @@ steps:
       - text: It runs without error
         feedback: The compiler-inserted cast to `String` fails when the `Integer` comes out.
     explanation: The raw parameter silently accepted an `Integer` into a list of strings.
+    details: |
+      A raw `List` parameter switches off generic type checking for that call, so the compiler only warns, and an `Integer` goes into a list declared to hold strings.
+      The failure appears later and elsewhere: when code reads `strings.get(0)`, the compiler-inserted cast to `String` throws `ClassCastException`.
+      That distance between the bug and the crash is what makes raw types dangerous. With `List<?>` or `List<Object>` as the parameter type, the bad call either wouldn't compile or wouldn't accept the list.
 
   - type: explanation
     title: "Use List<?> instead"
@@ -60,6 +64,10 @@ steps:
       - text: "`int numElementsInCommon(Set<Object> s1, Set<Object> s2)`"
         feedback: A `Set<String>` is not a `Set<Object>`, so callers couldn't pass their sets.
     explanation: The unbounded wildcard `?` is the safe version of "any type".
+    details: |
+      `Set<?>` means "a set of some type I don't know". You can read elements as `Object` and call methods like `contains` and `size`, but you can't add anything except `null`.
+      That's exactly what counting common elements needs, and the restriction is what keeps it type-safe.
+      A raw `Set` would allow adding anything, silently corrupting a caller's `Set<String>`.
 
   - type: choice
     prompt: Where must you still write raw types?

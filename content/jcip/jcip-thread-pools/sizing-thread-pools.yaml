@@ -35,6 +35,10 @@ steps:
       - W/C = 90 ÷ 10 = 9.
       - 8 × 1 × (1 + 9).
     explanation: 8 × 1 × (1 + 90/10) = 80 threads.
+    details: |
+      The formula is threads = CPUs × target utilisation × (1 + wait time / compute time).
+      Each task waits 90 ms for every 10 ms of computing, so a ratio of 9; with 8 CPUs at 100%: 8 × 1 × (1 + 9) = 80.
+      Intuitively, each thread uses a CPU only a tenth of the time, so you need ten threads per core to keep it busy.
 
   - type: predict
     prompt: Same tasks, but you only want the CPUs **50%** busy, to leave headroom. How many threads?
@@ -62,6 +66,10 @@ steps:
         correct: true
       - text: Yes, CPU is all that matters
         feedback: Memory, file handles, sockets and database connections all limit how much concurrency helps.
+    details: |
+      The formula assumes the waiting is free, but here tasks wait on a database pool of 10 connections.
+      Only 10 tasks can run their queries at once; the other 70 threads just queue for connections, consuming memory without adding throughput.
+      When tasks depend on a limited resource, the resource's size bounds useful concurrency.
 
   - type: blank
     prompt: Find the number of processors at run time.

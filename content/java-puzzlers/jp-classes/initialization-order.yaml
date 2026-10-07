@@ -31,6 +31,10 @@ steps:
       - text: "`96`"
         feedback: "`INSTANCE` is created first, while `CURRENT_YEAR` is still 0."
     explanation: Declare `INSTANCE` after the fields its constructor uses — or avoid constructors that depend on other static state.
+    details: |
+      Static fields are initialized in the order they appear. `INSTANCE` comes first, so its constructor runs while `CURRENT_YEAR` still holds its default, 0.
+      The constructor computes `0 - 1930` and stores `-1930` in the final field `beltSize`; setting `CURRENT_YEAR` afterwards doesn't change it.
+      If `CURRENT_YEAR` were a compile-time constant like `2026`, it would be inlined and the bug wouldn't appear — which makes it even more surprising when it does.
 
   - type: choice
     prompt: Why isn't `CURRENT_YEAR` a compile-time constant here, set before anything runs?
@@ -69,6 +73,10 @@ steps:
       - text: "`[1]:red`"
         feedback: "`makeName` runs inside `super()`, before `this.color = color`."
     explanation: Compute such values lazily, in `toString`, or make the class or method `final`.
+    details: |
+      `new ColorPoint("red")` first runs `Point()`, before `ColorPoint`'s constructor body has assigned `color`.
+      `Point()` calls `makeName()`, which dispatches to the subclass override, which reads `color` — still `null`.
+      The name "[1]:null" is stored in a final field and never recomputed. That's why constructors must not call overridable methods.
 
   - type: order
     prompt: Put the steps of `new ColorPoint("red")` in order.

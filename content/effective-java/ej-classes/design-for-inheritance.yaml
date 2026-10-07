@@ -40,6 +40,11 @@ steps:
         feedback: "`Sub`'s constructor body hasn't run yet when `Super()` calls `overrideMe`."
       - text: It doesn't compile
     explanation: "Constructors must not call overridable methods — directly or indirectly. The same goes for `clone` and `readObject`."
+    details: |
+      Java runs constructors from the top of the hierarchy down, and fields of `Sub` are only assigned after `super()` returns.
+      But virtual method calls dispatch to the subclass even during construction, so `Super()` runs `Sub.overrideMe()` while `instant` is still `null`.
+      It prints `null` once, then the real instant after construction; if `overrideMe` called a method on `instant`, it would throw `NullPointerException` instead.
+      A constructor may only call methods that are private, final or static — those can't be overridden.
 
   - type: choice
     prompt: How should you test a class designed for inheritance?

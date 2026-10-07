@@ -23,6 +23,10 @@ steps:
         correct: true
       - text: "`ordinal()` is slow"
         feedback: It's just a field read; the problem is meaning, not speed.
+    details: |
+      `ordinal()` returns the constant's position in the declaration, so `numberOfMusicians()` written as `ordinal() + 1` silently depends on the order of the source code.
+      Reorder constants and every count changes; two ensembles with eight musicians can't both exist, since positions are unique; and a 12-musician ensemble needs dummy constants for 9 to 11.
+      Storing the count in a constructor parameter and a `final` field makes each constant say what it means, independent of order.
 
   - type: explanation
     title: Store values in fields

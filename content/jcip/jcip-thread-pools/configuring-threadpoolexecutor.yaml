@@ -41,6 +41,10 @@ steps:
       - text: Ten
         feedback: Extra threads beyond the core are only created when the queue is **full** — and an unbounded queue never is.
     explanation: A common configuration surprise. With an unbounded queue, the maximum pool size has no effect.
+    details: |
+      `ThreadPoolExecutor` starts threads up to the core size, then queues further tasks, and creates extra threads up to the maximum only when the queue is full.
+      An unbounded `LinkedBlockingQueue` is never full, so the pool never grows beyond its 2 core threads, and 98 tasks wait in the queue.
+      The maximum of 10 has no effect. Use a bounded queue, or set the core size to the size you actually want.
 
   - type: explanation
     title: When the queue fills up
@@ -68,6 +72,10 @@ steps:
         correct: true
       - text: It makes tasks run faster
     explanation: Overload moves from the pool to the work queue to the application to the TCP layer, and eventually to the client.
+    details: |
+      Under caller-runs, when the pool and queue are full, the thread that submits the task runs it itself.
+      In a server, that submitting thread is the one accepting connections, so while it runs the task it accepts none.
+      New requests queue up in the TCP backlog, and if that fills, clients are refused — overload is pushed outward step by step instead of crashing the server.
 
   - type: blank
     prompt: A custom thread factory can name threads and install an exception handler.

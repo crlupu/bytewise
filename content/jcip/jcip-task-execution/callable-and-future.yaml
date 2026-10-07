@@ -28,6 +28,10 @@ steps:
         feedback: The page still can't finish before the 10 s download does.
       - text: Half the time
     explanation: The real payoff comes from many independent, similar tasks — one per image, rendered as each arrives.
+    details: |
+      Rendering text (1 s) and downloading images (10 s) in parallel takes about 10 s, instead of 11 s sequentially — a saving of about 1 s.
+      Parallelizing two unequal tasks gains at most the shorter one's time.
+      The big win comes from splitting the 10 s download into one task per image, running many at once and rendering each image as it arrives.
 
   - type: explanation
     title: Time budgets

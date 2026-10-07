@@ -135,3 +135,7 @@ steps:
         feedback: A timed-out "charge the card" may have succeeded. Retrying could charge twice.
       - text: Only calls that returned 200
     explanation: For non-idempotent operations, use an idempotency key so the server can recognise a repeat.
+    details: |
+      A timeout doesn't tell you whether the operation happened — the request may have reached the server and succeeded, with only the response lost.
+      Retrying an idempotent operation, like a read or "set price to 10", is harmless, since doing it twice has the same effect as once.
+      Retrying "charge the card" or "add 10" could do it twice; an idempotency key lets the server recognise and ignore the duplicate.

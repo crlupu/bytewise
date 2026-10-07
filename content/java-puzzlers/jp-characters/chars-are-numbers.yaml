@@ -28,6 +28,10 @@ steps:
       - text: "169169"
         feedback: "The first line uses double quotes — those are strings."
     explanation: "Start with an empty string to force concatenation: `\"\" + 'H' + 'a'`."
+    details: |
+      In Java, `+` means string concatenation only if at least one operand is a `String`.
+      `'H'` and `'a'` are `char`s, which are numeric types, so they are promoted to `int` and added: 72 + 97 = 169.
+      The first line uses double quotes, so it concatenates. Prefix an empty string or use `String.valueOf` when you want characters joined.
 
   - type: predict
     prompt: What does this print?
@@ -80,3 +84,7 @@ steps:
         feedback: "`+` runs before `==`, so the whole expression is a boolean: `(\"Animals are equal: \" + pig) == dog`."
       - text: "Animals are equal: false"
         feedback: The prefix is part of the comparison, so it never gets printed.
+    details: |
+      `+` has higher precedence than `==`, so the expression is `("Animals are equal: " + pig) == dog`.
+      That compares two different `String` objects by reference, which is false, and `println` prints just `false` — the prefix never appears.
+      Even with parentheses, `pig == dog` would be false: `dog` is built at run time, so it's a different object from the interned `pig`. Use `equals`.

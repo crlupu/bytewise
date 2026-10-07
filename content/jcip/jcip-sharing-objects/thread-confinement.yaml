@@ -61,3 +61,7 @@ steps:
       - text: There's no danger
         feedback: Values live as long as the thread does; call `remove()` when the task is done.
     explanation: "`ThreadLocal`s are like global variables: use them sparingly."
+    details: |
+      A pool reuses its threads for many tasks, and a `ThreadLocal` value lives as long as its thread.
+      A value set by one task — a user ID, a transaction — is still there when the next unrelated task runs on that thread, leaking data between requests.
+      It also keeps objects alive for the pool's lifetime. Clear thread-local values in a `finally` block at the end of each task.

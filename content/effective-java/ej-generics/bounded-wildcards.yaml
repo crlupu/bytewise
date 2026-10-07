@@ -58,6 +58,10 @@ steps:
       - text: "`<T extends Comparable<T>> T max(List<T> list)`"
         feedback: This rejects types like `ScheduledFuture`, which is comparable to a supertype (`Delayed`) rather than to itself.
     explanation: Comparables and comparators are always consumers, so `Comparable<? super T>` is the rule.
+    details: |
+      `Comparable<? super T>` lets `T` inherit its comparison from a supertype: `ScheduledFuture` is comparable to `Delayed`, not to itself, so `Comparable<T>` would reject it.
+      `List<? extends T>` lets you pass a list of any subtype of `T`.
+      The rule of thumb is PECS — producers extend, consumers super: the list produces `T`s for `max` to read, while the comparator consumes them.
 
   - type: choice
     prompt: "Choosing between `<E> void swap(List<E> list, int i, int j)` and `void swap(List<?> list, int i, int j)` for a public API?"

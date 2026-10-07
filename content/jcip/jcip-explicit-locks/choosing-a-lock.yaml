@@ -27,6 +27,10 @@ steps:
       - text: Fair locks use more memory
         feedback: The cost is in latency between release and the next acquisition, not memory.
     explanation: In JCIP's benchmarks fair locks were dramatically slower — sometimes by two orders of magnitude.
+    details: |
+      When a lock is released, a fair lock hands it to the longest-waiting thread, which must first be woken by the OS — a delay of microseconds or more.
+      A nonfair lock lets a thread that happens to be running and asking at that moment take it immediately, using the lock while the woken thread is still starting.
+      That barging fills the gap and greatly increases throughput, at the cost of no ordering guarantee.
 
   - type: choice
     prompt: When does fairness matter?

@@ -58,6 +58,10 @@ steps:
         feedback: "`andThen` runs `f` first: (1 + 1) × 2 = 4. `compose` runs `g` first: 1 × 2 + 1 = 3."
       - text: "4 4"
         feedback: The two methods apply the functions in opposite orders.
+    details: |
+      `f.andThen(g)` applies `f` first, then `g` to the result: (1 + 1) × 2 = 4.
+      `f.compose(g)` applies `g` first, then `f`: (1 × 2) + 1 = 3.
+      `compose` follows mathematical notation, f(g(x)), while `andThen` reads left to right like a pipeline.
 
   - type: choice
     prompt: Which predicate matches apples that are red but not heavy?

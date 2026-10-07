@@ -28,6 +28,10 @@ steps:
         correct: true
       - text: "`name` holds null"
         feedback: "A non-nullable `String` can't hold null; Kotlin inserts a check at the boundary."
+    details: |
+      Kotlin can't know whether a Java method may return null, so it treats Java return types as "platform types" and lets you choose.
+      When you assign the result to a non-nullable `String`, Kotlin inserts a null check at that point.
+      A null from Java therefore fails immediately at the boundary, instead of travelling through Kotlin code that assumes it can't be null.
 
   - type: explanation
     title: Clojure

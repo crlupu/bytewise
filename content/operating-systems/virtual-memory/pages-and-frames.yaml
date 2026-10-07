@@ -25,6 +25,10 @@ steps:
     hints:
       - Divide the address by the page size and drop the remainder.
     explanation: 9,000 ÷ 4,096 = 2 remainder 808, so it's page 2.
+    details: |
+      A virtual address is split into a page number and an offset within the page.
+      With 4,096-byte pages, the page number is the address divided by 4,096, and the offset is the remainder.
+      9,000 / 4,096 is 2, remainder 808, so the address is 808 bytes into page 2. In binary, that's just taking the high bits as the page number and the low 12 bits as the offset.
 
   - type: blank
     prompt: Fill in both parts of the address.

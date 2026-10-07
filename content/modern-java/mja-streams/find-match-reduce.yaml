@@ -57,6 +57,10 @@ steps:
         correct: true
       - text: It doesn't matter; the identity value is only used for empty streams
         feedback: It's the starting value of every partial reduction.
+    details: |
+      A parallel reduction splits the stream into chunks, reduces each chunk starting from the identity value, then combines the partial results.
+      With identity 10, each chunk adds its own 10. For three elements split three ways, that's (10 + 1) + (10 + 2) + (10 + 3) = 36.
+      A true identity, like 0 for addition, leaves results unchanged however many chunks there are, so sequential and parallel agree.
 
   - type: blank
     prompt: Count the dishes with map and reduce.

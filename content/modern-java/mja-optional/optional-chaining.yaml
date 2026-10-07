@@ -38,6 +38,10 @@ steps:
     prompt: "`getCar()` and `getInsurance()` return `Optional`s. Get the insurance name, if any."
     template: "person.getCar().[[flatMap]](Car::getInsurance).map(Insurance::getName).orElse(\"Unknown\")"
     code: true
+    details: |
+      `getCar()` returns `Optional<Car>`, and `Car::getInsurance` returns `Optional<Insurance>`.
+      `map` would wrap that result again, giving `Optional<Optional<Insurance>>`; `flatMap` flattens it to `Optional<Insurance>`.
+      The chain then maps to the name and supplies a default, with no null checks — if any link is empty, the result is "Unknown".
 
   - type: explanation
     title: filter keeps or empties

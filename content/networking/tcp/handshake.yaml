@@ -80,6 +80,10 @@ steps:
     explanation: |
       Each side needs proof the other has its number. Without the final ACK, a delayed duplicate SYN from an old
       connection could make the server open a connection nobody asked for.
+    details: |
+      With only SYN and SYN-ACK, the server never learns that the client received its initial sequence number, so it can't be sure both sides agree on numbering.
+      Worse, a delayed duplicate SYN from an earlier connection could reach the server, which would reply and consider a connection open that the client never wanted.
+      The client's final ACK confirms it's live and has the server's number; without it, the server discards the half-open connection.
 
   - type: match
     prompt: Match each state to its meaning.

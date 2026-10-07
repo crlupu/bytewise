@@ -35,6 +35,10 @@ steps:
       - text: No — servlets are always called from many threads
         feedback: Many threads, yes — but they share nothing, so they can't interfere.
     explanation: "**Stateless objects are always thread-safe.**"
+    details: |
+      The servlet has no fields; everything it touches lives in local variables, which are on each thread's own stack.
+      Two threads running `service` at the same time share nothing, so neither can see or affect the other.
+      Thread-safety problems only arise from shared mutable state, and a stateless object has none.
 
   - type: explanation
     title: Three ways to fix it

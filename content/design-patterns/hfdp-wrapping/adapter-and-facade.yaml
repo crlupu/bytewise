@@ -48,6 +48,10 @@ steps:
         correct: true
       - text: "`order.getCustomer().getAddress().getCountry().getShippingRate()`"
         feedback: It depends on four classes' structure; a change to any breaks it.
+    details: |
+      `order.getCustomer().getAddress().getCountry().getShippingRate()` makes your code depend on four classes and how they're connected.
+      Change how addresses are stored, and this line breaks.
+      `order.shippingCost()` asks the object you have for what you need and lets it navigate its own structure. That's the Principle of Least Knowledge, also known as the Law of Demeter.
 
   - type: choice
     prompt: "`Arrays.asList(array)` lets array data be used where a `List` is expected. Which pattern is that?"

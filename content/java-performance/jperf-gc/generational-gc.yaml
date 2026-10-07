@@ -35,6 +35,10 @@ steps:
         correct: true
       - text: The young generation is always tiny
         feedback: Size matters less than how much survives.
+    details: |
+      A young collection copies the live objects out of eden into a survivor space, then treats all of eden as empty.
+      It never visits the dead objects, so its cost is proportional to what survives, not to how much was allocated.
+      When most young objects are already garbage — the generational hypothesis — that's a tiny amount of copying for a lot of freed memory.
 
   - type: explanation
     title: Stop-the-world pauses

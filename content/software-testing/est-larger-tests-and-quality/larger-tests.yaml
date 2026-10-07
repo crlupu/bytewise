@@ -26,6 +26,10 @@ steps:
         correct: true
       - text: A unit test with the repository mocked
         feedback: The mock never runs the SQL, so it can't see the bug.
+    details: |
+      The bug is in the SQL itself: `>` excludes rows created exactly at the start date.
+      A unit test with a mocked repository never runs the query, so it can't see it.
+      An integration test against a real database, with a row on the boundary, executes the query and fails, revealing the off-by-one.
 
   - type: explanation
     title: System tests and page objects

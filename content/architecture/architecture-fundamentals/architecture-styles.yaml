@@ -115,6 +115,10 @@ steps:
         feedback: They can't be deployed independently and they share a database — they behave as one unit.
       - text: Eleven, counting the database
     explanation: Calling them services doesn't make them independent. Shared data and lockstep deployment make it one quantum — a distributed monolith.
+    details: |
+      An architecture quantum is an independently deployable unit with high functional cohesion.
+      Services that share one database and must be released together can't be deployed or scaled independently, and a schema change affects them all.
+      So the ten "services" are one quantum — a distributed monolith that carries the network costs of microservices without their independence.
 
   - type: choice
     prompt: Which is the strongest reason to choose microservices?

@@ -56,6 +56,11 @@ steps:
     explanation: |
       `final` freezes the reference, not the object. The caller still holds the same `Date` and changed it.
       This is why rule 5 exists.
+    details: |
+      The constructor stores references to the same `Date` objects the caller still holds.
+      `private final` stops `Period` from reassigning those fields, but the objects they point to are mutable, so `end.setTime(0)` changes the period's end from the outside.
+      The cure is a defensive copy in the constructor (and in accessors), or using an immutable type like `Instant` so there's nothing to copy.
+      This is why immutability must hold for the whole object graph a class exposes, not just its own fields.
 
   - type: explanation
     title: Copy mutable parts

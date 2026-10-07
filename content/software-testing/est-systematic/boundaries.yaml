@@ -38,6 +38,10 @@ steps:
         feedback: Both `> 50` and `>= 50` give free shipping for 100.
       - text: An order of 10
         feedback: Both versions charge shipping for 10.
+    details: |
+      The requirement says 50 or more, so the boundary is between 49 and 50.
+      `total > 50` and `total >= 50` agree for every other value: both give free shipping for 100 and both charge for 10.
+      Only an order of exactly 50 tells them apart, which is why the on point of every boundary deserves a test.
 
   - type: explanation
     title: In and out points

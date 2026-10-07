@@ -35,6 +35,10 @@ steps:
       - text: "`Hack`"
         feedback: "`printMessage` is package-private in `click`, so `ClickIt`'s method in `hack` doesn't override it."
     explanation: With `@Override` on `ClickIt.printMessage`, the compiler would have caught it.
+    details: |
+      `printMessage` has no access modifier, so it's package-private in `click`.
+      A class in another package, like `hack`, can't see it, and therefore can't override it: `ClickIt.printMessage` is a brand-new method that happens to share the name.
+      `doIt` calls `CodeTalk.printMessage`, which prints "Click". `@Override` on the subclass method would have flagged the mistake.
 
   - type: explanation
     title: Fields are hidden

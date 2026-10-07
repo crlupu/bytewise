@@ -19,6 +19,10 @@ steps:
         correct: true
       - text: The JVM reserves the extra for itself
         feedback: The cost is in reference size, not a reservation.
+    details: |
+      With heaps below about 32 GB, the JVM stores object references in 32 bits and scales them by 8, addressing up to 32 GB — compressed oops.
+      Past that limit it must use full 64-bit references, so every reference field and array slot doubles in size.
+      An object-heavy heap can lose 20–30% of its capacity, so 32 GB can hold less than 31 GB. Stay below the threshold, or go well above it.
 
   - type: explanation
     title: Create less

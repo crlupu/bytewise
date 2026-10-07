@@ -44,6 +44,10 @@ steps:
         correct: true
       - text: "`orElse` can't take a method call"
         feedback: It can — and that call always runs, which is the problem.
+    details: |
+      `orElse(loadDefault())` evaluates its argument before the method is even called, so `loadDefault()` runs whether or not the optional has a value.
+      `orElseGet(this::loadDefault)` passes a supplier, which is called only when the optional is empty.
+      For constants it doesn't matter; for anything expensive or with side effects, use `orElseGet`.
 
   - type: choice
     prompt: Where is `Optional` meant to be used?

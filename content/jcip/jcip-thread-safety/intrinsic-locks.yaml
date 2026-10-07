@@ -77,6 +77,10 @@ steps:
     explanation: |
       **Check-then-act** is another classic race. Holding the lock across both the check and the act
       makes them atomic together.
+    details: |
+      Because `withdraw` is synchronized, the check and the subtraction happen together under the lock.
+      The first thread checks 100 >= 80, withdraws, and leaves 20; the second then checks 20 >= 80, which fails, so nothing happens.
+      Without the lock, both could check 100 before either subtracts, leaving -60.
 
   - type: explanation
     title: Atomics need no lock
@@ -125,3 +129,7 @@ steps:
     explanation: |
       **Reentrancy** means locks are acquired per thread, not per call. The JVM keeps an owner and a count; the lock is
       released when the count returns to zero.
+    details: |
+      Calling `super.doSomething()` from the subclass's synchronized method needs the same lock — `this` — that the thread already holds.
+      Intrinsic locks are reentrant: the JVM records the owning thread and a count, so the owner can acquire the lock again and it's released only when the count returns to zero.
+      Without reentrancy, this ordinary pattern would deadlock against itself.

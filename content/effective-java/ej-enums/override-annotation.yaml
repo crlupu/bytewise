@@ -39,6 +39,11 @@ steps:
     hints:
       - "`HashSet` calls `equals(Object)`. Which method did `Bigram` define?"
     explanation: "`equals(Bigram)` **overloads** `equals(Object)` rather than overriding it, so the set uses identity — all 260 objects are distinct."
+    details: |
+      `Bigram` declares `equals(Bigram b)`, which takes a `Bigram`, not an `Object`. It's an overload, not an override.
+      `HashSet` calls `equals(Object)`, which is still `Object`'s identity comparison, so the 26 bigrams added ten times each are 260 different objects.
+      Note `hashCode` is overridden correctly, so they land in the same buckets — but equality never matches.
+      Writing `@Override` on the method would make this a compile error, because nothing in a superclass has that signature.
 
   - type: explanation
     title: "@Override catches it"

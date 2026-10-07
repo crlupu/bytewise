@@ -38,6 +38,10 @@ steps:
         correct: true
       - text: A deadlock
         feedback: The owner is making progress; it's just slow. In a deadlock, the owners wait for each other.
+    details: |
+      The owner isn't stuck — it's RUNNABLE — but it holds the lock while waiting for a slow remote service.
+      Every other thread that needs the lock is BLOCKED behind it, so the whole application runs at the speed of that one remote call.
+      It isn't a deadlock, because the owner will eventually finish. The fix is to make the call outside the lock.
 
   - type: explanation
     title: Profilers show lock contention

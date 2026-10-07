@@ -29,6 +29,10 @@ steps:
         feedback: Only warnings — that's why it's dangerous.
       - text: It prints 42
     explanation: Storing into a generic varargs array is unsafe.
+    details: |
+      A varargs parameter of generic type is really an array, here a `List<String>[]`, and arrays of generics can't enforce their element type at run time.
+      Assigning it to `Object[]` and storing a `List<Integer>` succeeds silently — that's heap pollution.
+      When code later reads `stringLists[0].get(0)` as a `String`, the cast the compiler inserted fails with `ClassCastException`, even though the method contains no visible cast.
 
   - type: explanation
     title: "When it's safe"
@@ -55,6 +59,10 @@ steps:
       - text: Returns two strings
         feedback: "`pickTwo` can't know T at run time, so the compiler creates an `Object[]` for its call to `toArray`."
     explanation: Returning the varargs array lets heap pollution escape up the call stack.
+    details: |
+      Inside `pickTwo`, `T` is erased, so the compiler creates the varargs array for `toArray(a, b)` as an `Object[]`.
+      `toArray` returns that array, `pickTwo` returns it as `T[]`, and the caller's code casts it to `String[]` — which fails, because an `Object[]` isn't a `String[]`.
+      The bug shows up two calls away from its cause. Never return a generic varargs array, or pass it to code that might.
 
   - type: blank
     prompt: Mark a provably safe generic varargs method.

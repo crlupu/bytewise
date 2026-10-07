@@ -54,6 +54,10 @@ steps:
       - text: Retry immediately, faster
         feedback: That keeps them perfectly in step.
     explanation: Ethernet uses the same idea — randomised exponential back-off after collisions.
+    details: |
+      Both threads detect the conflict at the same moment, back off for the same time, and try again in step — so they collide again, forever.
+      Neither is blocked, so it's livelock rather than deadlock.
+      A random component in the wait breaks the symmetry: one thread retries a little earlier, gets through, and the other then succeeds.
 
   - type: blank
     prompt: Complete the definition.

@@ -28,6 +28,10 @@ steps:
         correct: true
       - text: "It throws `Exception: I'm not coming out`"
         feedback: The field initializer runs before the constructor body, so the body is never reached.
+    details: |
+      Instance field initializers run as part of every constructor, before its body.
+      So creating a `Reluctant` first creates another `Reluctant` for `internal`, which creates another, and so on, without ever reaching the `throw`.
+      The recursion ends with `StackOverflowError`, which is an `Error`, not the `Exception` the constructor declares.
 
   - type: explanation
     title: One close per try

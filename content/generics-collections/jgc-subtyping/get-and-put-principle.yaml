@@ -23,6 +23,10 @@ steps:
       - text: "`nums.add(null);`"
         correct: true
         feedback: "`null` belongs to every type, so it's the one value you can add."
+    details: |
+      `List<? extends Number>` may actually be a `List<Integer>`, a `List<Double>` or any other list of numbers.
+      Whatever it is, its elements are `Number`s, so reading is safe.
+      But adding `1` would be wrong if it were a `List<Double>`, and the compiler can't know, so it forbids adding anything except `null`, which belongs to every type.
 
   - type: explanation
     title: super for putting

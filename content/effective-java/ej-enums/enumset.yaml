@@ -33,6 +33,11 @@ steps:
     hints:
       - 1 | 4 in binary is 001 | 100.
     explanation: 101 in binary — 5. Readable to a computer, not to a person reading a log.
+    details: |
+      Each style constant is a power of two — `BOLD = 1 << 0` is 1, `UNDERLINE = 1 << 2` is 4 — so each occupies its own bit.
+      OR-ing them sets both bits, giving binary 101, which is 5.
+      It's compact and fast, but a 5 in a log or debugger tells you nothing, and nothing stops passing an unrelated int.
+      `EnumSet` stores the same bits internally while giving you readable output and type safety.
 
   - type: explanation
     title: EnumSet is the modern way

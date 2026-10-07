@@ -52,6 +52,10 @@ steps:
         correct: true
       - text: The change is a 3% improvement
         feedback: Run-to-run variation can easily be 3%.
+    details: |
+      Two runs of the same benchmark rarely give the same number: JIT decisions, GC timing, CPU frequency and other processes all add noise.
+      A 3% difference from one run may be entirely noise.
+      Repeat each version many times and compare the distributions, for example with a t-test or by checking that confidence intervals don't overlap.
 
   - type: blank
     prompt: Name the latency percentile that 99 in 100 requests beat.

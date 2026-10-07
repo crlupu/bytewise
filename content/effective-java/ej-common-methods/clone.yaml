@@ -22,6 +22,11 @@ steps:
       - text: It throws `CloneNotSupportedException`
         feedback: Only if `Stack` doesn't implement `Cloneable`.
     explanation: The fix is `result.elements = elements.clone();` — and mutable fields must not be `final`, or you can't reassign them.
+    details: |
+      `Object.clone` makes a shallow, field-by-field copy, so the clone's `elements` field points to the very same array as the original.
+      Push onto the clone and you overwrite the original's slots; pop from one and the other's `size` no longer matches its contents.
+      A correct `clone` must deep-copy mutable state: `result.elements = elements.clone()`.
+      This is one of the many traps that make copy constructors or static copy factories a better choice for most classes.
 
   - type: explanation
     title: Prefer copy constructors

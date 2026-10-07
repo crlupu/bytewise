@@ -28,6 +28,10 @@ steps:
       - text: "`UnsupportedOperationException`"
         feedback: Only changes through `view` are blocked.
     explanation: "For a true snapshot, use `List.copyOf(base)`."
+    details: |
+      `Collections.unmodifiableList` doesn't copy anything; it wraps the original list and blocks modifications made through the wrapper.
+      `base` is still the same mutable list underneath, so adding "y" to it shows up in `view`.
+      That's useful for handing out a read-only window onto changing data. For a snapshot that can never change, use `List.copyOf(base)`.
 
   - type: explanation
     title: Synchronized wrappers

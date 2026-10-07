@@ -36,6 +36,10 @@ steps:
       - text: Yes, just as with `execute`
         feedback: Only tasks run with `execute` reach the handler.
     explanation: If nobody ever calls `get`, the exception disappears without a trace.
+    details: |
+      `submit` wraps the task in a `FutureTask`, which catches everything the task throws and stores it as the future's outcome.
+      The worker thread itself never sees an uncaught exception, so the uncaught-exception handler isn't called.
+      The exception reappears only when someone calls `get()`, wrapped in an `ExecutionException`. If no one does, it's lost without a trace — a common reason background failures go unnoticed.
 
   - type: match
     prompt: Match each submission method to where a task's exception goes.

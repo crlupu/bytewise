@@ -64,3 +64,7 @@ steps:
         feedback: The common indentation is stripped; only the extra two spaces on the second line stay.
       - text: "`Hello, World` on one line"
         feedback: The line break is part of the text block.
+    details: |
+      A text block removes the indentation common to all its content lines and the closing delimiter.
+      Here "Hello," is indented 4 spaces and "World" 6, and the closing quotes are on the last line, so 4 spaces are stripped from each line.
+      That leaves "Hello," flush left and "  World" with two spaces. To keep more indentation, move the closing `"""` further left on its own line.

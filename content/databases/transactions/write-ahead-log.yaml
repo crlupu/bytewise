@@ -68,6 +68,10 @@ steps:
       - text: Nothing extra
     explanation: |
       Steal → undo, no-force → redo. Most databases choose steal/no-force for speed, so they need both — which is what ARIES provides.
+    details: |
+      With a steal policy, a page holding changes from a transaction that hasn't committed can be written to disk to free buffer space.
+      If the system crashes before that transaction commits, the data files contain changes that must not survive.
+      The log has the before-images of those changes, and recovery uses them to undo uncommitted work. With no-force, committed changes may be missing from the data files, which is why redo is needed too.
 
   - type: blank
     prompt: Complete the rule that gives the log its name.

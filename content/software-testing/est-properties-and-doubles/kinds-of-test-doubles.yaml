@@ -45,3 +45,7 @@ steps:
         correct: true
       - text: Stub the mailer to return true
         feedback: The interesting behaviour is the call itself, so verify it.
+    details: |
+      The method's observable behaviour is the email it sends — there's no return value or state to assert on.
+      A mock mailer records calls, so the test can verify `send` was called once, with the customer's address and the right content.
+      Stubbing only controls what dependencies return; for side effects like sending, verifying the interaction is the assertion.

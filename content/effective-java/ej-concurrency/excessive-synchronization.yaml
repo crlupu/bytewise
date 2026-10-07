@@ -36,6 +36,11 @@ steps:
         correct: true
       - text: "`ConcurrentModificationException`"
     explanation: Both failures share one cause — calling an alien method inside a synchronized region.
+    details: |
+      The main thread holds the `observers` lock while it calls each observer's `added` method.
+      The observer submits the unsubscribe call to another thread and waits for it to finish, but that thread needs the same lock to remove the observer — and the main thread won't release it until `added` returns.
+      Each waits for the other forever.
+      Calling alien code — methods you don't control, like callbacks — while holding a lock invites exactly this; take a snapshot of the list, release the lock, then notify.
 
   - type: explanation
     title: Keep synchronized blocks small

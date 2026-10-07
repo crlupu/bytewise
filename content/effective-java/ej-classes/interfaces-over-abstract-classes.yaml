@@ -59,3 +59,7 @@ steps:
       - text: Interfaces can't have method bodies
         feedback: Since Java 8 they can — default and static methods.
     explanation: Defaults help, but the skeletal class can hold fields and override `Object`'s methods.
+    details: |
+      Interfaces can't declare instance fields, so any shared behaviour needing state has to live elsewhere.
+      And an interface may not provide default implementations of `equals`, `hashCode` or `toString` — `Object`'s versions always win.
+      A skeletal implementation class like `AbstractList` fills that gap: implementers extend it to get state and the `Object` methods for free, while the interface still defines the type.

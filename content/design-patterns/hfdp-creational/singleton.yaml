@@ -35,6 +35,10 @@ steps:
         correct: true
       - text: Nothing; static methods are synchronized
         feedback: They're not, unless you declare them so.
+    details: |
+      Both threads can check `instance == null` before either assigns it, so both create a `Singleton` and each caller gets a different object.
+      Worse, without synchronization, one thread may see a partly constructed object.
+      An enum, an eagerly initialized static field, or the holder-class idiom gives thread-safe single instances without explicit locking.
 
   - type: blank
     prompt: The simplest thread-safe singleton.

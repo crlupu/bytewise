@@ -41,6 +41,10 @@ steps:
         correct: true
       - text: The database needs a bigger cache
         feedback: Each query may be fast; the problem is running a thousand of them.
+    details: |
+      Running the same query once per order means the code loaded the orders, then looped over them and fetched each order's items separately — usually through a lazy association.
+      That's 1 + N queries, each paying a network round trip.
+      A join fetch, batch fetching or a single `IN` query loads all the items at once. Profilers that list SQL statements make this pattern obvious.
 
   - type: match
     prompt: Match each question with sampling or instrumenting.

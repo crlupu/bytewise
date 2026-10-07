@@ -81,6 +81,10 @@ steps:
     explanation: |
       11 — a **lost update**, the same race as `count++` in Java, now between transactions. Fixes: an atomic
       `UPDATE ... SET n = n + 1`, `SELECT ... FOR UPDATE`, optimistic locking with a version column, or a stricter level.
+    details: |
+      Both transactions read 10, both compute 11 in the application, and both write 11; the second write overwrites the first.
+      Read committed only prevents reading uncommitted data — both reads saw the committed value 10 — so nothing stops this.
+      Fixes: let the database do the arithmetic, `UPDATE counter SET n = n + 1`; lock the row with `SELECT ... FOR UPDATE`; or use optimistic locking with a version column so the second write fails.
 
   - type: choice
     prompt: |
@@ -96,6 +100,11 @@ steps:
     explanation: |
       **Write skew**: each transaction's read was true when made, but their writes together broke an invariant
       spanning several rows. Serializable isolation (or explicit locks on the rows read) prevents it.
+    details: |
+      Under snapshot isolation, each transaction reads from a snapshot taken when it started, and only conflicting writes to the same row are detected.
+      Both doctors see two on call, and each updates a different row — their own — so there's no write conflict and both commit.
+      The result breaks the rule "at least one on call", which spans rows neither transaction wrote together.
+      Serializable isolation, or explicitly locking the rows read, prevents this write skew.
 
   - type: order
     prompt: Order the levels from weakest to strongest.

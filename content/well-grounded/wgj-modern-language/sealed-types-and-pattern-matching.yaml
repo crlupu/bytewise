@@ -38,6 +38,10 @@ steps:
         feedback: "Cases are tried in order. 42 matches the guarded case first."
       - text: It doesn't compile — two cases for `Integer`
         feedback: The first is guarded by `when`, so the second still matters.
+    details: |
+      A pattern-matching switch tries cases in order and takes the first match.
+      42 is an `Integer` and 42 > 10, so the guarded case matches: "big int". 7 is an `Integer` but fails the guard, so it falls to `case Integer i`: "int".
+      "hey" is a `String` with length 3: "string 3". The compiler also rejects a case that can never match because an earlier one covers it.
 
   - type: explanation
     title: Exhaustive switches
@@ -54,6 +58,10 @@ steps:
       - text: It compiles; triangles fall through to an exception at run time
         feedback: Exhaustiveness is checked at compile time — that's the main benefit.
     explanation: This is the compiler-checked alternative to the visitor pattern.
+    details: |
+      Without a `default`, the compiler checks that the switch covers every permitted subtype of the sealed interface.
+      Adding `Triangle` to `permits` makes every such switch incomplete, so they fail to compile until a `case Triangle` is added.
+      That's the safety a `default` branch would throw away — it would silently send triangles to whatever the default does.
 
   - type: blank
     prompt: Test and bind in one step.

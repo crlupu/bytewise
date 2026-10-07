@@ -42,6 +42,10 @@ steps:
         correct: true
       - text: "16"
         feedback: Threads beyond the core size are added only when the queue is full — and an unbounded queue never is.
+    details: |
+      `ThreadPoolExecutor` starts threads up to the core size, queues further tasks, and adds threads beyond the core only when the queue rejects a task.
+      An unbounded `LinkedBlockingQueue` never rejects anything, so the pool stays at 4 threads however many tasks pile up.
+      To grow to 16, use a bounded queue — or simply set the core size to the number of threads you want.
 
   - type: blank
     prompt: Get the number of cores at run time.

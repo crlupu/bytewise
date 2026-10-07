@@ -43,6 +43,10 @@ steps:
       - text: Queues need locks by definition
         feedback: "`ConcurrentLinkedQueue` is lock-free."
     explanation: The Michael–Scott queue handles it by letting any thread finish another thread's half-done insert, helping it along.
+    details: |
+      A stack changes one reference per operation — the top — so a single CAS publishes the whole change.
+      Adding to a linked queue changes two: the old tail's `next` and the queue's `tail` pointer, and no CAS can update both at once.
+      The Michael–Scott algorithm lets the queue sit in an intermediate state where `next` is set but `tail` lags; any thread that sees this state first helps finish the other thread's insert by advancing `tail`, then does its own work.
 
   - type: explanation
     title: The ABA problem
@@ -59,6 +63,10 @@ steps:
       - text: Java's CAS checks the full history
         feedback: CAS only compares current values.
     explanation: In languages where nodes are freed and recycled manually, ABA is a classic source of bugs.
+    details: |
+      ABA happens when a thread reads value A, another thread changes it to B and back to A, and the first thread's CAS succeeds because it only sees A again — even though the structure changed.
+      In C, a freed node's memory can be reused for a new node at the same address, which is how this arises in practice.
+      In Java, a node can't be reused while any thread still holds a reference to it, because the garbage collector won't free it, so the classic ABA scenario can't occur for references.
 
   - type: blank
     prompt: A reference paired with a version counter.

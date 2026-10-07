@@ -36,6 +36,10 @@ steps:
     hints:
       - Can you find everyone called *Sarah* quickly in a phone book sorted by surname?
     explanation: An index serves queries on a **leading** prefix of its columns — the first column, the first two, and so on.
+    details: |
+      A two-column index sorts entries by `subsidiary_id` first, and by `employee_id` only within each subsidiary — like a phone book sorted by surname, then first name.
+      You can quickly find a subsidiary, or a subsidiary and employee, because those are contiguous ranges.
+      Searching by `employee_id` alone is like finding everyone named "Ada" in a phone book: the matches are scattered, so the index can't narrow the search.
 
   - type: predict
     prompt: |
@@ -71,6 +75,11 @@ steps:
       - text: "`(date_of_birth, subsidiary_id)`"
         feedback: The range on the leading column means scanning every subsidiary's entries for those dates.
     explanation: Index for **equality first, then for ranges.** Columns after a range can only filter, not narrow the scan.
+    details: |
+      The query filters on `subsidiary_id = ?` and a range of `date_of_birth`.
+      With `(subsidiary_id, date_of_birth)`, the index jumps to the subsidiary and then reads one contiguous range of birthdays within it.
+      With the columns reversed, the range on birthdays comes first and covers entries for every subsidiary, so the database must read the whole range and filter out other subsidiaries.
+      Hence: equality columns first, the range column last.
 
   - type: explanation
     title: Use leading columns

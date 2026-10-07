@@ -23,6 +23,10 @@ steps:
         correct: true
       - text: A negative number
         feedback: "`MIN_VALUE - 1` overflows to `MAX_VALUE`."
+    details: |
+      `Integer.MIN_VALUE - 1` is mathematically -2,147,483,649, which doesn't fit in an `int`, so it wraps around to `Integer.MAX_VALUE`.
+      The comparator returns a large positive number, claiming the smallest `int` is greater than 1.
+      Subtraction is only safe when both values are small enough that their difference can't overflow; `Integer.compare` is always safe.
 
   - type: choice
     prompt: "Sorting `[5, -2000000000, 2000000000]` with `(a, b) -> a - b`, what can you expect?"

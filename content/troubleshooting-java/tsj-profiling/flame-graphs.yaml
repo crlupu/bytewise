@@ -28,6 +28,10 @@ steps:
         feedback: Deep stacks aren't expensive if they're narrow.
       - text: The leftmost box
         feedback: Horizontal order is alphabetical; it doesn't mean "first".
+    details: |
+      In a flame graph, a box's width is the share of samples in which that method appeared anywhere on the stack.
+      A wide box at the top, with nothing above it, means the CPU was executing that method's own code in many samples: it's where time is actually spent.
+      A wide box lower down only means time was spent somewhere beneath it; follow it up to find the plateau.
 
   - type: match
     prompt: Match each feature of a flame graph with its meaning.

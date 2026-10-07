@@ -63,3 +63,7 @@ steps:
         feedback: They can, as long as the variables are effectively final.
       - text: "`Runnable` can't print"
         feedback: "`Runnable.run()` can run any code."
+    details: |
+      A lambda captures the value of a local variable, not the variable itself, so the variable must not change after capture — it must be effectively final.
+      Reassigning `port` after the lambda is created would make the captured copy and the variable disagree, so the compiler rejects it.
+      Fields aren't subject to this rule, because the lambda captures `this` and reads the field's current value.

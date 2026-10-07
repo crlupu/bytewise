@@ -77,6 +77,10 @@ steps:
       - text: SJF switches to the short jobs at time 4
         feedback: That needs preemption — stopping a running job. Plain SJF doesn't do that.
     explanation: Relax the "all arrive together" assumption and SJF loses its advantage.
+    details: |
+      SJF only chooses among jobs that have already arrived, and it never interrupts a running job.
+      At time 0 only A is present, so A starts and runs to completion; B and C, arriving at 4, must wait behind it.
+      The convoy effect returns. A preemptive policy like STCF would stop A when the shorter jobs arrive and run them first.
 
   - type: explanation
     title: Preemption

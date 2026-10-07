@@ -27,6 +27,10 @@ steps:
         correct: true
       - text: The method threw an exception
         feedback: Deoptimization is about broken compile-time assumptions, not exceptions.
+    details: |
+      C2 optimizes based on what it has seen. If a call site has only ever met one implementation of an interface, it calls that implementation directly and may inline it.
+      When a plugin loads a second implementation, that assumption is no longer true, so the JVM marks the compiled method "not entrant": new calls go back to the interpreter.
+      After gathering a fresh profile, it recompiles with a type check for both implementations.
 
   - type: match
     prompt: Match each call site with how C2 can handle it.

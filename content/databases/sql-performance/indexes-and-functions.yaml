@@ -43,6 +43,10 @@ steps:
       - Leave the column bare, and move the work to the other side of the comparison.
     explanation: |
       Express conditions as a range on the **bare column**. That's what "sargable" (search-argument-able) means.
+    details: |
+      An index on `sale_date` is sorted by the raw column value.
+      A condition like `DATE(sale_date) = '2026-10-04'` or `TRUNC(sale_date)` applies a function to every row's value, and the index isn't sorted by the function's result, so it can't be used.
+      Writing the condition as a half-open range on the bare column — from midnight up to, but not including, the next midnight — reads exactly one slice of the index.
 
   - type: explanation
     title: LIKE stops at the first wildcard
@@ -80,6 +84,10 @@ steps:
         feedback: Many databases allow it — by converting implicitly, which is the problem.
       - text: Indexes don't work on long values
     explanation: An implicit conversion is a hidden function on the column. Compare with a value of the column's own type — `'4155550100'`.
+    details: |
+      When you compare a text column to a number, the database must convert one side.
+      Most convert the column, effectively evaluating `TO_NUMBER(phone)` for every row, which hides the column inside a function and rules out the index.
+      It can also fail on values that aren't numeric. Comparing with a string literal, `'4155550100'`, keeps the column bare.
 
   - type: match
     prompt: Match each slow condition to its index-friendly rewrite.

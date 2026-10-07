@@ -52,3 +52,7 @@ steps:
         correct: true
       - text: About 300 ms
         feedback: That's the sequential time. In parallel, you wait for the slowest one.
+    details: |
+      Sequentially, the request waits for each call in turn: 100 + 100 + 100 = 300 ms.
+      If the three calls are independent, starting all three at once means waiting only as long as the slowest — about 100 ms.
+      Fan-out with `CompletableFuture.allOf` or with virtual threads, then combine the results.

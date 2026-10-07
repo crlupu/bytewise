@@ -31,6 +31,10 @@ steps:
     explanation: |
       200 ÷ 20 = 10 seconds. After that, your service can't answer *anything* — even requests that never touch the
       broken dependency. Your callers then start waiting on you.
+    details: |
+      Each request that calls the hanging dependency holds a thread forever, because without a timeout it never returns.
+      At 20 such requests per second, the 200 threads are used up in 200 / 20 = 10 seconds.
+      After that, every new request waits for a thread that never frees up — including requests that don't use the broken dependency at all.
 
   - type: explanation
     title: Failures cascade

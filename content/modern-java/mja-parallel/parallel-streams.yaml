@@ -52,6 +52,10 @@ steps:
       - text: "`forEach` doesn't run in parallel"
         feedback: It does, which is the problem.
     explanation: "Use `LongStream.rangeClosed(1, n).parallel().sum()`."
+    details: |
+      `forEach` runs the lambda on several threads at once, and `acc.add` does `total += value` — a read-modify-write on a shared field.
+      Concurrent updates overwrite each other, so the total comes out wrong, and differently on each run.
+      Parallel streams must avoid shared mutable state; let the stream compute the result, as with `.sum()` or `.reduce(0L, Long::sum)`.
 
   - type: choice
     prompt: Which tends to benefit from `.parallel()`?

@@ -132,6 +132,8 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
   const [phase, setPhase] = useState<Phase>("answering");
   const [verdict, setVerdict] = useState<(Verdict & { right?: boolean[] }) | null>(null);
   const [hints, setHints] = useState(0);
+  const [showDetails, setShowDetails] = useState(false);
+  const detailsRef = useRef<HTMLElement>(null);
   const attempts = useRef(0);
   const reducedMotion = useReducedMotion();
 
@@ -249,6 +251,22 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
         <div>
           <p className="feedback__title">{attempts.current === 1 ? "Correct" : "That's it"}</p>
           {step.explanation && <Html className="feedback__body prose" html={step.explanation} />}
+          {step.details && !showDetails && (
+            <button
+              type="button"
+              className="btn btn--plain btn--sm feedback__more"
+              aria-expanded={false}
+              aria-controls={`${step.id}-details`}
+              onClick={() => {
+                setShowDetails(true);
+                // Let it render, then bring it into view above the bottom bar.
+                requestAnimationFrame(() => detailsRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" }));
+              }}
+            >
+              <ReadIcon aria-hidden />
+              Explain in detail
+            </button>
+          )}
         </div>
       </div>
     ) : phase === "wrong" ? (
@@ -295,6 +313,15 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
             </p>
           )}
           {input}
+          {showDetails && step.details && (
+            <section className="details" id={`${step.id}-details`} ref={detailsRef} aria-label="In detail" tabIndex={-1}>
+              <p className="details__title">
+                <ReadIcon aria-hidden />
+                In detail
+              </p>
+              <Html className="prose" html={step.details} />
+            </section>
+          )}
           {step.hints.length > 0 && (
             <div className="step__hint-row">
               {hints < step.hints.length && phase !== "correct" && (

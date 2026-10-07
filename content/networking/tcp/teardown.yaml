@@ -67,6 +67,9 @@ steps:
     explanation: |
       If the last ACK is lost, the other side resends its FIN — someone has to be around to answer.
       And waiting 2×MSL guarantees no old segment can be mistaken for part of a new connection.
+    details: |
+      If the final ACK is lost, the other side retransmits its FIN; the side in TIME_WAIT is still there to acknowledge it, so both close cleanly.
+      And segments from this connection may still be in the network. Waiting twice the maximum segment lifetime ensures they've expired before the same address and port pair can be reused, so they can't be mistaken for part of a new connection.
 
   - type: match
     prompt: Match each state to its meaning.

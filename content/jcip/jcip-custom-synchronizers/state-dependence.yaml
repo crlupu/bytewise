@@ -47,6 +47,10 @@ steps:
       - text: It's just a Java rule with no reason
         feedback: Without the lock, a notify could happen between your check and your wait — and you'd sleep forever.
     explanation: Calling `wait` without holding the lock throws `IllegalMonitorStateException`.
+    details: |
+      The predicate — for example, "the buffer isn't empty" — reads state guarded by the lock, so it must be checked while holding the lock.
+      `wait` then releases that lock atomically as the thread goes to sleep, and reacquires it before returning.
+      Without the lock, another thread could make the predicate true and notify between your check and your `wait`, and you'd sleep through the signal forever.
 
   - type: blank
     prompt: Wait for a condition properly.

@@ -25,6 +25,10 @@ steps:
       - text: No — at least one write must happen first
         feedback: That reasoning assumes a single global order of operations. Without synchronization, there isn't one.
     explanation: Every combination — (1, 0), (0, 1), (1, 1) and (0, 0) — is possible.
+    details: |
+      Without synchronization, the compiler and CPU may reorder independent actions, and writes can sit in a processor's store buffer before other cores see them.
+      Thread A may effectively read `b` before its own write to `a` is visible, and thread B likewise — so both read the initial 0s.
+      Only a happens-before relationship, created by locks, `volatile`, thread start and join and the like, rules out such outcomes.
 
   - type: explanation
     title: Happens-before

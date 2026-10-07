@@ -49,6 +49,10 @@ steps:
       - text: Yes, call `writeLock().lock()` while holding the read lock
         feedback: That deadlocks — the writer waits for all readers to leave, including itself.
     explanation: Downgrading — taking the read lock while holding the write lock, then releasing the write lock — is allowed.
+    details: |
+      If two threads each hold the read lock and both try to upgrade, each waits for the other to release its read lock before the write lock can be granted.
+      Neither will, so they deadlock.
+      `ReentrantReadWriteLock` therefore doesn't allow upgrading: release the read lock, acquire the write lock, and re-check the state, since it may have changed in between.
 
   - type: blank
     prompt: Get the shared lock.

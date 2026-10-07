@@ -30,6 +30,10 @@ steps:
         correct: true
       - text: It's allowed
         feedback: Enums can't be subclassed by other enums.
+    details: |
+      Every enum implicitly extends `java.lang.Enum`, and Java allows only one superclass, so an enum can't extend another enum.
+      Enum constants are also a closed set chosen at compile time; allowing extension would mean a `BasicOperation` variable could hold constants it doesn't know about.
+      The workaround is to have both enums implement a shared interface, like `Operation`, and write code against the interface.
 
   - type: blank
     prompt: A method that takes all the constants of any enum implementing `Operation`.

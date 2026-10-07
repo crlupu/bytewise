@@ -84,6 +84,10 @@ steps:
     hints:
       - Out of every 5 ms, how many are spent switching?
     explanation: 1 ms out of every 5 ms — 20%. That's why slices are usually 10 ms or more.
+    details: |
+      Each cycle is 4 ms of useful work plus 1 ms of switching, so 5 ms in total.
+      1 ms out of 5 is 20% spent switching instead of running jobs.
+      Longer slices amortize the switch: with 49 ms slices, it would be 2%. The trade-off is that each job waits longer for its turn, which hurts response time.
 
   - type: match
     prompt: Match each change to its effect.

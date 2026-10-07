@@ -54,6 +54,10 @@ steps:
       - text: "`2026-03-29T01:30Z[Europe/London]`"
         feedback: 01:30 doesn't exist that day. One real hour after 00:30 GMT is 02:30 BST.
     explanation: "`plusDays(1)` instead keeps the wall-clock time — 00:30 the next day — even though only 23 hours pass."
+    details: |
+      At 01:00 GMT on that date, UK clocks jump to 02:00 BST, so local times between 01:00 and 01:59 don't exist.
+      `ZonedDateTime.plusHours(1)` adds one hour of real elapsed time: 00:30 GMT plus an hour is 01:30 GMT, which is shown as 02:30 BST, with offset +01:00.
+      `plusDays(1)` instead keeps the local time, giving 00:30 the next day — only 23 real hours later. Choose based on whether you mean elapsed time or calendar time.
 
   - type: choice
     prompt: How should a server store the time an event happened?

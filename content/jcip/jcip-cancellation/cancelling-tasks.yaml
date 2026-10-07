@@ -34,6 +34,10 @@ steps:
         feedback: Nothing stops a thread immediately; it delivers an interrupt.
       - text: Nothing
         feedback: "`cancel(false)` does nothing to a running task; `cancel(true)` interrupts it."
+    details: |
+      The executor owns its worker threads, and its policy is that interrupting one means "cancel what you're running".
+      So `cancel(true)` can interrupt the thread safely: the task is expected to stop, and the pool knows how to handle an interrupted worker.
+      You shouldn't interrupt a thread you don't own this way, because you don't know what its interruption policy is.
 
   - type: explanation
     title: Some blocking ignores interrupts

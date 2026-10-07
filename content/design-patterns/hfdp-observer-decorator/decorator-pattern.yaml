@@ -33,6 +33,10 @@ steps:
       - text: "0.99"
         feedback: Each decorator adds its own cost to the wrapped drink's.
     explanation: 0.99 + 0.20 + 0.20 + 0.10 = 1.49 — though in real money code, use `BigDecimal`.
+    details: |
+      Each decorator's `cost()` returns the wrapped beverage's cost plus its own.
+      The innermost `DarkRoast` costs 0.99; the first `Mocha` makes it 1.19; the second, 1.39; the `Whip`, 1.49.
+      The calls nest outward like layers of an onion, and new toppings need no changes to existing classes.
 
   - type: explanation
     title: The Open-Closed Principle

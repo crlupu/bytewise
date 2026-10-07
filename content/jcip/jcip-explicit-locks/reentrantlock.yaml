@@ -26,6 +26,10 @@ steps:
       - text: The JVM releases it automatically, as with synchronized
         feedback: That's the safety net `synchronized` gives you and `Lock` doesn't.
     explanation: This is why explicit locks are more dangerous — a bug that's easy to miss in review.
+    details: |
+      An intrinsic lock is released automatically when execution leaves the `synchronized` block, however it leaves.
+      An explicit `Lock` is released only when `unlock()` is called. If an exception skips that call, the lock stays held forever, and every thread that later needs it blocks.
+      The program doesn't crash; it hangs, often far from the cause. Always put `unlock()` in a `finally` block.
 
   - type: explanation
     title: Ways to acquire

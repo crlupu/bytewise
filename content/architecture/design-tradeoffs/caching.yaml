@@ -135,3 +135,7 @@ steps:
     explanation: |
       *Request coalescing* (also called single-flight) and *jittered expiry* are the standard fixes; refreshing hot
       entries shortly before they expire is a third.
+    details: |
+      A cache stampede happens when a popular entry expires and many requests miss at the same moment, all hitting the database to recompute the same value.
+      Request coalescing lets the first request recompute while the others wait for its result.
+      Jittered TTLs stop many entries that were cached together from all expiring at the same time.

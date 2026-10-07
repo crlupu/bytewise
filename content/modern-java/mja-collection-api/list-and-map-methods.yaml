@@ -60,6 +60,10 @@ steps:
         correct: true
       - text: "`{java=1}`"
         feedback: The second call finds the key and adds 1 + 1.
+    details: |
+      On the first call, "java" is absent, so `merge` simply stores 1.
+      On the second, "java" maps to 1, so `merge` calls `Integer::sum` with the old value 1 and the new value 1, storing 2.
+      That's the counting idiom in one line. If the function returns `null`, `merge` removes the entry instead.
 
   - type: match
     prompt: Match each method with when it calls its function.

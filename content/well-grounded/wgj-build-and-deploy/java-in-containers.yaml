@@ -27,6 +27,10 @@ steps:
       - text: None; the heap fits exactly
         feedback: The JVM uses memory outside the heap too.
     explanation: "Something like `-XX:MaxRAMPercentage=75` leaves room for the rest."
+    details: |
+      `-Xmx` limits only the heap. The JVM also needs memory for metaspace, thread stacks, the JIT's code cache, GC data structures and direct buffers — often hundreds of megabytes.
+      With the heap allowed to fill the whole limit, the process eventually exceeds it, and the kernel's OOM killer terminates it with no Java stack trace.
+      Leaving headroom with `-XX:MaxRAMPercentage` avoids that.
 
   - type: blank
     prompt: Give the heap three quarters of the container's memory.

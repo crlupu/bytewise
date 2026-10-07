@@ -28,6 +28,10 @@ steps:
         correct: true
       - text: It's a ritual with no real purpose
         feedback: A test that never failed hasn't shown it can fail.
+    details: |
+      A test that passes before the code exists may not be testing anything — a wrong assertion, a test that never runs, or one that checks the wrong thing.
+      Seeing it fail for the right reason proves it can detect the missing behaviour.
+      Then, when it passes, you know your new code made the difference.
 
   - type: explanation
     title: Tests drive the design

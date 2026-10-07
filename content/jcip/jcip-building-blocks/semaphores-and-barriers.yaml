@@ -29,6 +29,10 @@ steps:
       - text: Yes — it blocks in `acquire()` until something is removed, even though "a" is already present
         correct: true
     explanation: The permit is taken before checking membership. If the add then fails because "a" exists, the permit is given back — but only after `acquire` succeeded.
+    details: |
+      `BoundedHashSet.add` acquires a permit before it even tries to add, because it can't know in advance whether the element is new.
+      With both permits taken by "a" and "b", the third call blocks in `acquire()` — even though adding "a" again wouldn't grow the set.
+      If it got a permit, the failed add would release it again. This conservative design keeps the bound simple and safe at the cost of an occasional unnecessary wait.
 
   - type: choice
     prompt: What's a binary semaphore (one permit)?

@@ -53,6 +53,10 @@ steps:
         feedback: That creates two ways to say "absent" and makes the map hard to use.
       - text: "An `Optional<Integer>` return, when `OptionalInt` exists"
         feedback: Boxed primitives inside optionals cost twice; use `OptionalInt`, `OptionalLong`, `OptionalDouble`.
+    details: |
+      `Optional` is designed for return values: it makes "there may be no result" visible in the signature and forces callers to deal with it.
+      As a field or parameter type it adds an allocation and indirection without that benefit; as a collection element it's redundant, since an empty collection already expresses absence.
+      And `Optional<Integer>` boxes twice — use `OptionalInt` for primitives.
 
   - type: choice
     prompt: A method declared to return `Optional<T>` hits a case with no value. What must it never return?
