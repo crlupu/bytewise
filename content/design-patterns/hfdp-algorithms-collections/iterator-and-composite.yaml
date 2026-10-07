@@ -1,0 +1,54 @@
+title: Iterator and Composite
+summary: An iterator traverses any collection the same way; a composite lets clients treat a tree of objects and single objects alike.
+duration: 6
+tags: [design patterns, head first, iterator, composite, single responsibility, behavioral, structural]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 9, The Iterator and Composite Patterns" }
+steps:
+  - type: explanation
+    title: Two menus, two structures
+    body: |
+      One menu keeps items in an array, another in an `ArrayList`.
+      The waitress needs a different loop for each.
+      An iterator hides how each menu stores its items.
+
+  - type: blank
+    prompt: Loop over any menu the same way.
+    template: |
+      Iterator<MenuItem> it = menu.createIterator();
+      while (it.[[hasNext]]()) print(it.next());
+    code: true
+
+  - type: explanation
+    title: Single Responsibility
+    body: |
+      A class should have only one reason to change.
+      Storing items and traversing them are separate jobs.
+      The iterator takes traversal out of the collection.
+
+  - type: explanation
+    title: Composite builds trees
+    body: |
+      Menus can contain menu items — and other menus.
+      `MenuComponent` is the common type for both.
+      `print()` on a menu prints its children, recursively.
+
+  - type: match
+    prompt: Match each role in Composite.
+    pairs:
+      - left: Component
+        right: "`MenuComponent`, the common interface"
+      - left: Leaf
+        right: "`MenuItem`, with no children"
+      - left: Composite
+        right: "`Menu`, holding child components"
+
+  - type: choice
+    prompt: Where else do you see Composite?
+    options:
+      - text: A file system — directories contain files and other directories
+        correct: true
+      - text: UI toolkits — panels contain buttons and other panels
+        correct: true
+      - text: A singly used configuration object
+        feedback: There's no part–whole tree there.

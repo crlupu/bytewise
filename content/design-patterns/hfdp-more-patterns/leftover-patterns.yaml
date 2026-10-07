@@ -1,0 +1,49 @@
+title: Builder, Chain of Responsibility, Visitor and more
+summary: A quick tour of the patterns the main chapters leave out, and the problem each one solves.
+duration: 6
+tags: [design patterns, head first, builder, chain of responsibility, visitor, flyweight, prototype, memento]
+sources:
+  - { book: head-first-design-patterns, ref: "Appendix, Leftover Patterns" }
+steps:
+  - type: explanation
+    title: Builder and Prototype
+    body: |
+      Builder assembles a complex object step by step, then `build()`s it.
+      Prototype creates new objects by copying an existing one.
+      Both are alternatives to complicated constructors.
+
+  - type: explanation
+    title: Chain of Responsibility
+    body: |
+      A request passes along a chain of handlers.
+      Each handles it or passes it on.
+      Servlet filters and logging handlers work this way.
+
+  - type: explanation
+    title: Visitor, Memento, Flyweight
+    body: |
+      Visitor adds operations to a fixed class hierarchy without changing it.
+      Memento saves and restores an object's state, for undo.
+      Flyweight shares many fine-grained objects to save memory.
+
+  - type: match
+    prompt: Match each problem with the pattern.
+    pairs:
+      - left: An object with ten optional settings
+        right: Builder
+      - left: Spam filter, then virus scan, then routing, each deciding whether to pass the email on
+        right: Chain of Responsibility
+      - left: A new report over every node type in a fixed syntax tree
+        right: Visitor
+      - left: Restoring a game to a saved point
+        right: Memento
+      - left: Thousands of trees in a forest sharing one model and texture
+        right: Flyweight
+
+  - type: choice
+    prompt: Java 21's sealed interfaces and pattern-matching `switch` replace which pattern in many cases?
+    options:
+      - text: Visitor
+        correct: true
+      - text: Singleton
+        feedback: That's about instance count, not operations over a hierarchy.

@@ -1,0 +1,54 @@
+title: The Command pattern
+summary: Wrap a request in an object with `execute()`, so it can be stored, queued, logged and undone.
+duration: 6
+tags: [design patterns, head first, command, undo, behavioral]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 6, The Command Pattern" }
+steps:
+  - type: explanation
+    title: A remote with programmable slots
+    body: |
+      A remote control has buttons for lights, fans and stereos from different makers.
+      The remote shouldn't know how each device works.
+      Each button holds a command object with `execute()`.
+
+  - type: match
+    prompt: Match each role with the remote example.
+    pairs:
+      - left: Command
+        right: "`LightOnCommand`, with `execute()`"
+      - left: Receiver
+        right: "`Light`, which does the real work"
+      - left: Invoker
+        right: The remote control, which calls `execute()`
+      - left: Client
+        right: The code that creates commands and assigns them to slots
+
+  - type: explanation
+    title: Undo
+    body: |
+      Add `undo()` to the command interface.
+      `LightOnCommand.undo()` turns the light off.
+      The invoker remembers the last command and calls its `undo()`.
+
+  - type: blank
+    prompt: Undo the last command.
+    template: "public void undoButtonPressed() { lastCommand.[[undo]](); }"
+    code: true
+
+  - type: explanation
+    title: Commands as data
+    body: |
+      A command object can be queued, run on another thread, or logged.
+      A macro command runs a list of commands.
+      Replaying a log of commands rebuilds state after a crash.
+
+  - type: choice
+    prompt: Which are uses of Command?
+    options:
+      - text: Undo and redo in an editor
+        correct: true
+      - text: Tasks submitted to a thread pool as `Runnable`s
+        correct: true
+      - text: Converting a legacy interface to a new one
+        feedback: That's Adapter.

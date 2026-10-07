@@ -1,0 +1,5 @@
+title: Principles and Strategy
+summary: Chapter 1 — encapsulate what varies, program to interfaces, favour composition, and the Strategy pattern that follows from them.
+lessons:
+  - strategy-pattern
+  - design-principles

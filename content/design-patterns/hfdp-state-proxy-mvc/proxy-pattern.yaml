@@ -1,0 +1,55 @@
+title: The Proxy pattern
+summary: A proxy stands in for another object with the same interface, to reach it remotely, create it lazily, or check access.
+duration: 5
+tags: [design patterns, head first, proxy, remote proxy, virtual proxy, protection proxy, structural]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 11, The Proxy Pattern" }
+steps:
+  - type: explanation
+    title: A stand-in
+    body: |
+      A proxy implements the same interface as the real subject.
+      Clients can't tell them apart.
+      The proxy controls when and how the real object is used.
+
+  - type: match
+    prompt: Match each kind of proxy with its job.
+    pairs:
+      - left: Remote proxy
+        right: Represents an object in another process or machine
+      - left: Virtual proxy
+        right: Delays creating an expensive object until it's needed
+      - left: Protection proxy
+        right: Checks the caller's rights before each call
+      - left: Caching proxy
+        right: Returns stored results for repeated requests
+
+  - type: explanation
+    title: Dynamic proxies
+    body: |
+      `java.lang.reflect.Proxy` creates a proxy class at run time.
+      Every call goes to your `InvocationHandler`.
+      Frameworks use this for transactions, security and lazy loading.
+
+  - type: choice
+    prompt: In Hibernate, an entity's lazy `orders` collection isn't loaded until first accessed. Which kind of proxy is that?
+    options:
+      - text: A virtual proxy
+        correct: true
+      - text: A remote proxy
+        feedback: The data is in the database, but the point of the proxy is delaying the load.
+
+  - type: explanation
+    title: Proxy versus Decorator
+    body: |
+      Both wrap an object with the same interface.
+      A decorator adds behaviour.
+      A proxy controls access to the object.
+
+  - type: choice
+    prompt: A wrapper checks that the user is an admin before forwarding `deleteAccount()`. Which pattern?
+    options:
+      - text: Protection proxy
+        correct: true
+      - text: Decorator
+        feedback: It doesn't add features; it guards access.

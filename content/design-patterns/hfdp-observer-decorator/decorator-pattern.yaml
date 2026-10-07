@@ -1,0 +1,58 @@
+title: The Decorator pattern
+summary: Wrap an object in another of the same type that adds behaviour before or after delegating — open for extension, closed for modification.
+duration: 6
+tags: [design patterns, head first, decorator, open closed principle, structural]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 3, The Decorator Pattern" }
+steps:
+  - type: explanation
+    title: Class explosion
+    body: |
+      A coffee shop has drinks and toppings: milk, mocha, soy, whip.
+      A subclass per combination gives hundreds of classes.
+      A price change touches many of them.
+
+  - type: explanation
+    title: Wrap instead
+    body: |
+      A decorator is a `Beverage` that holds another `Beverage`.
+      `Mocha.cost()` returns the wrapped drink's cost plus mocha.
+      Wrap as many layers as you need.
+
+  - type: predict
+    prompt: "`DarkRoast` costs 0.99, `Mocha` adds 0.20, `Whip` adds 0.10. What is the cost?"
+    code: |
+      Beverage b = new Whip(new Mocha(new Mocha(new DarkRoast())));
+      System.out.println(b.cost());
+    language: java
+    options:
+      - text: "1.49"
+        correct: true
+      - text: "1.29"
+        feedback: There are two `Mocha` wrappers, each adding 0.20.
+      - text: "0.99"
+        feedback: Each decorator adds its own cost to the wrapped drink's.
+    explanation: 0.99 + 0.20 + 0.20 + 0.10 = 1.49 — though in real money code, use `BigDecimal`.
+
+  - type: explanation
+    title: The Open-Closed Principle
+    body: |
+      Classes should be open for extension but closed for modification.
+      New toppings are new decorators; existing classes don't change.
+      Apply it where change is likely, not everywhere.
+
+  - type: choice
+    prompt: Which Java API is built from decorators?
+    options:
+      - text: "`java.io` streams, like `new BufferedInputStream(new FileInputStream(f))`"
+        correct: true
+      - text: "`java.lang.Math`"
+        feedback: It's a set of static functions.
+
+  - type: choice
+    prompt: What's a downside of Decorator?
+    options:
+      - text: Many small wrapper objects, and code that checks for a concrete type breaks
+        correct: true
+      - text: You can't add behaviour at run time
+        feedback: That's exactly what it allows.

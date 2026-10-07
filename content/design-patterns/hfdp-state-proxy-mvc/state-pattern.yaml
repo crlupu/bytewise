@@ -1,0 +1,57 @@
+title: The State pattern
+summary: Give each state its own class, and let the object delegate to its current state — no more giant conditionals.
+duration: 6
+tags: [design patterns, head first, state, state machine, behavioral]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 10, The State Pattern" }
+steps:
+  - type: explanation
+    title: Conditionals everywhere
+    body: |
+      A gumball machine has states: no coin, has coin, sold, sold out.
+      Every action — insert, eject, turn crank — becomes an `if` per state.
+      Adding a state touches every method.
+
+  - type: explanation
+    title: A class per state
+    body: |
+      `NoCoinState`, `HasCoinState` and the others implement a `State` interface.
+      The machine holds its current state and delegates each action to it.
+      States switch the machine to the next state.
+
+  - type: predict
+    prompt: The machine is in `NoCoinState`. What happens on `turnCrank()`?
+    code: |
+      class NoCoinState implements State {
+        public void insertCoin() { machine.setState(machine.getHasCoinState()); }
+        public void turnCrank() { System.out.println("You turned, but there's no coin"); }
+      }
+    language: java
+    options:
+      - text: It prints "You turned, but there's no coin", and the state doesn't change
+        correct: true
+      - text: It dispenses a gumball
+        feedback: Only `HasCoinState.turnCrank()` moves towards dispensing.
+
+  - type: order
+    prompt: Put a successful purchase's state changes in order.
+    items:
+      - "`NoCoinState`"
+      - "`HasCoinState`, after inserting a coin"
+      - "`SoldState`, after turning the crank"
+      - "`NoCoinState` again, after dispensing"
+
+  - type: explanation
+    title: State versus Strategy
+    body: |
+      Both delegate to an object behind an interface.
+      In Strategy, the client usually picks the behaviour.
+      In State, the states change themselves as things happen.
+
+  - type: choice
+    prompt: What's the main difference between State and Strategy?
+    options:
+      - text: In State, the object's state objects swap themselves as events occur; in Strategy, the client sets the behaviour
+        correct: true
+      - text: State uses inheritance and Strategy uses composition
+        feedback: Both use composition.

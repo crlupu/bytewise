@@ -1,0 +1,52 @@
+title: The Template Method pattern
+summary: A superclass method fixes the steps of an algorithm and lets subclasses fill some of them in — "don't call us, we'll call you".
+duration: 5
+tags: [design patterns, head first, template method, hooks, hollywood principle, behavioral]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 8, The Template Method Pattern" }
+steps:
+  - type: explanation
+    title: Same steps, different details
+    body: |
+      Making coffee and making tea: boil water, brew, pour, add condiments.
+      Only brewing and condiments differ.
+      `prepareRecipe()` in a base class fixes the order.
+
+  - type: explanation
+    title: Abstract steps and hooks
+    body: |
+      Steps that must differ are abstract: `brew()`, `addCondiments()`.
+      Hooks are optional steps with a default, like `customerWantsCondiments()` returning true.
+      Make the template method `final` so the order can't change.
+
+  - type: blank
+    prompt: Stop subclasses from changing the algorithm's order.
+    template: "public [[final]] void prepareRecipe() { boilWater(); brew(); pourInCup(); addCondiments(); }"
+    code: true
+
+  - type: explanation
+    title: The Hollywood Principle
+    body: |
+      "Don't call us, we'll call you."
+      The base class calls the subclass's steps when it needs them.
+      Low-level classes plug in; they don't drive.
+
+  - type: match
+    prompt: Match each part with its role.
+    pairs:
+      - left: "`prepareRecipe()`"
+        right: The template method — fixes the steps
+      - left: "`brew()`"
+        right: An abstract step subclasses must supply
+      - left: "`customerWantsCondiments()`"
+        right: A hook subclasses may override
+      - left: "`boilWater()`"
+        right: A shared concrete step
+
+  - type: choice
+    prompt: How do Template Method and Strategy differ?
+    options:
+      - text: Template Method varies steps through inheritance; Strategy varies a whole algorithm through composition
+        correct: true
+      - text: They're the same pattern
+        feedback: Both vary behaviour, but by different mechanisms.

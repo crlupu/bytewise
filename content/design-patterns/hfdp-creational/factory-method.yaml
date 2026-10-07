@@ -1,0 +1,52 @@
+title: Simple Factory and Factory Method
+summary: Move `new` out of client code — into one factory object, or into a method subclasses override to decide which class to create.
+duration: 6
+tags: [design patterns, head first, factory method, simple factory, creational]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 4, The Factory Pattern" }
+steps:
+  - type: explanation
+    title: new ties you to a class
+    body: |
+      `new CheesePizza()` hard-codes a concrete class.
+      An `if` chain choosing pizzas changes every time the menu does.
+      Encapsulate object creation, since that's what varies.
+
+  - type: explanation
+    title: Simple Factory
+    body: |
+      Put the `if` chain in one `SimplePizzaFactory.createPizza(type)`.
+      Clients ask the factory and get a `Pizza`.
+      Not a formal pattern, but a useful idiom.
+
+  - type: explanation
+    title: Factory Method
+    body: |
+      `PizzaStore` declares an abstract `createPizza(type)`.
+      `NYPizzaStore` and `ChicagoPizzaStore` override it to make their own styles.
+      `orderPizza()` stays the same and calls the factory method.
+
+  - type: blank
+    prompt: Let subclasses decide which pizza to create.
+    template: "protected [[abstract]] Pizza createPizza(String type);"
+    code: true
+
+  - type: choice
+    prompt: What does Factory Method rely on to choose the concrete class?
+    options:
+      - text: Inheritance — each subclass overrides the factory method
+        correct: true
+      - text: A map of class names to constructors
+        feedback: That's one way to build a factory, but Factory Method uses subclassing.
+
+  - type: match
+    prompt: Match each role with the pizza example.
+    pairs:
+      - left: Creator
+        right: "`PizzaStore`, with abstract `createPizza`"
+      - left: Concrete creator
+        right: "`NYPizzaStore`"
+      - left: Product
+        right: "`Pizza`"
+      - left: Concrete product
+        right: "`NYStyleCheesePizza`"

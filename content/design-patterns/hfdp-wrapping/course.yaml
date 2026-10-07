@@ -1,0 +1,5 @@
+title: Command, Adapter and Facade
+summary: Chapters 6–7 — turning requests into objects, converting one interface to another, and simplifying a subsystem behind one.
+lessons:
+  - command-pattern
+  - adapter-and-facade

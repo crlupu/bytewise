@@ -1,0 +1,55 @@
+title: Patterns in the real world
+summary: A pattern is a solution to a problem in a context. Use one when the problem is there, keep it simple otherwise, and recognise anti-patterns.
+duration: 5
+tags: [design patterns, head first, anti patterns, simplicity, pattern catalog]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 13, Better Living with Patterns" }
+steps:
+  - type: explanation
+    title: Problem, context, solution
+    body: |
+      A pattern names a solution to a recurring problem in a given context.
+      The name gives a team a shared vocabulary.
+      "Use an Observer here" says a lot in four words.
+
+  - type: match
+    prompt: Match each pattern with its category in the classic catalogue.
+    pairs:
+      - left: Factory Method
+        right: Creational
+      - left: Decorator
+        right: Structural
+      - left: Observer
+        right: Behavioral
+      - left: Singleton
+        right: Creational, too
+
+  - type: explanation
+    title: Keep it simple
+    body: |
+      Patterns add classes and indirection.
+      Use one when the flexibility it buys is actually needed.
+      Refactor towards a pattern when change shows up, not in advance.
+
+  - type: choice
+    prompt: A junior developer wraps every class in a factory, a strategy and an observer "for flexibility". What's the problem?
+    options:
+      - text: Complexity without need — patterns should solve real problems, not be applied by default
+        correct: true
+      - text: Nothing; more patterns mean better design
+        feedback: Each adds indirection that costs readers time.
+
+  - type: explanation
+    title: Anti-patterns
+    body: |
+      An anti-pattern is a common solution that looks good but causes harm.
+      The golden hammer: using one favourite tool for everything.
+      Naming them helps teams avoid them.
+
+  - type: choice
+    prompt: Which is an anti-pattern?
+    options:
+      - text: The golden hammer — forcing one familiar technology onto every problem
+        correct: true
+      - text: The Strategy pattern
+        feedback: Strategy is a pattern; it can be misused, but it isn't harmful by nature.

@@ -1,0 +1,5 @@
+title: Template Method, Iterator and Composite
+summary: Chapters 8–9 — algorithms with replaceable steps, uniform traversal of collections, and trees of objects treated like single ones.
+lessons:
+  - template-method
+  - iterator-and-composite

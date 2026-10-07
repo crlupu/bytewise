@@ -1,0 +1,58 @@
+title: The Strategy pattern
+summary: Pull a varying behaviour out into its own family of classes behind an interface, and let the object hold one it can swap.
+duration: 5
+tags: [design patterns, head first, strategy, composition, behavioral]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 1, Intro to Design Patterns" }
+steps:
+  - type: explanation
+    title: Inheritance spreads the wrong behaviour
+    body: |
+      `Duck` has `fly()`, so every subclass inherits it.
+      Then rubber ducks fly.
+      Overriding `fly()` to do nothing in each such subclass doesn't scale.
+
+  - type: explanation
+    title: Encapsulate what varies
+    body: |
+      Flying varies between ducks; being a duck doesn't.
+      Move flying into a `FlyBehavior` interface with classes like `FlyWithWings` and `FlyNoWay`.
+      Each duck holds a `FlyBehavior` and delegates to it.
+
+  - type: blank
+    prompt: Delegate flying to the duck's behaviour object.
+    template: "public void performFly() { [[flyBehavior]].fly(); }"
+    code: true
+
+  - type: choice
+    prompt: A model duck should start grounded and get a rocket later, at run time. What does Strategy allow?
+    options:
+      - text: "`duck.setFlyBehavior(new FlyRocketPowered())` — swap the behaviour object"
+        correct: true
+      - text: Create a new subclass at run time
+        feedback: Classes are fixed at compile time; objects can be swapped any time.
+
+  - type: explanation
+    title: The pattern
+    body: |
+      Strategy defines a family of algorithms, each in its own class.
+      They share an interface, so they're interchangeable.
+      The client picks one without depending on which.
+
+  - type: match
+    prompt: Match each piece of Strategy with its role in the duck example.
+    pairs:
+      - left: Strategy interface
+        right: "`FlyBehavior`"
+      - left: Concrete strategy
+        right: "`FlyWithWings`"
+      - left: Context
+        right: "`Duck`, which holds a `FlyBehavior`"
+
+  - type: choice
+    prompt: Which standard Java type is used as a strategy?
+    options:
+      - text: "`Comparator`, passed to `sort`"
+        correct: true
+      - text: "`String`"
+        feedback: A `String` is a value, not an interchangeable algorithm.

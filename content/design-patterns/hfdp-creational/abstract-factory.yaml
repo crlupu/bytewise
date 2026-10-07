@@ -1,0 +1,53 @@
+title: Abstract Factory and Dependency Inversion
+summary: An abstract factory creates a whole family of related objects; both it and Factory Method follow "depend on abstractions, not concrete classes".
+duration: 5
+tags: [design patterns, head first, abstract factory, dependency inversion, creational]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 4, Abstract Factory and the Dependency Inversion Principle" }
+steps:
+  - type: explanation
+    title: Families of products
+    body: |
+      New York pizzas need New York dough, sauce and cheese.
+      Chicago pizzas need Chicago ones.
+      Mixing them is a bug.
+
+  - type: explanation
+    title: One factory per family
+    body: |
+      `PizzaIngredientFactory` has `createDough()`, `createSauce()`, `createCheese()`.
+      `NYPizzaIngredientFactory` returns the New York versions of all of them.
+      A pizza uses whichever factory it's given.
+
+  - type: match
+    prompt: Match each pattern with how it creates objects.
+    pairs:
+      - left: Factory Method
+        right: A subclass overrides one method to create one product
+      - left: Abstract Factory
+        right: An object with several methods creates a family of products
+      - left: Simple Factory
+        right: One class with an `if` chain
+
+  - type: explanation
+    title: Dependency Inversion
+    body: |
+      High-level code shouldn't depend on low-level classes.
+      Both should depend on abstractions.
+      `PizzaStore` depends on `Pizza`, and so do the concrete pizzas.
+
+  - type: choice
+    prompt: Which follows the Dependency Inversion Principle?
+    options:
+      - text: "`OrderService` depends on a `PaymentGateway` interface that `StripeGateway` implements"
+        correct: true
+      - text: "`OrderService` calls `new StripeGateway()`"
+        feedback: The high-level service depends on a low-level concrete class.
+
+  - type: choice
+    prompt: A UI toolkit needs buttons, menus and scrollbars that all match one theme. Which pattern fits?
+    options:
+      - text: Abstract Factory — one factory per theme creating the whole matching family
+        correct: true
+      - text: Singleton
+        feedback: That ensures one instance; it doesn't keep a family consistent.

@@ -1,0 +1,57 @@
+title: Singleton
+summary: Ensure a class has one instance and a global access point — and make it thread-safe, ideally with an enum or a holder class.
+duration: 5
+tags: [design patterns, head first, singleton, thread safety, creational]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 5, The Singleton Pattern" }
+  - { book: effective-java, ref: "Item 3" }
+steps:
+  - type: explanation
+    title: One and only one
+    body: |
+      Some objects must be unique: a registry, a hardware driver, a configuration.
+      A private constructor stops others from calling `new`.
+      A static method returns the single instance.
+
+  - type: explanation
+    title: Lazy creation can race
+    body: |
+      `if (instance == null) instance = new Singleton();` isn't thread-safe.
+      Two threads can both see null and both create one.
+      The fix: eager creation, a holder class, or an enum.
+
+  - type: choice
+    prompt: Two threads call this at the same time on first use. What can happen?
+    code: |
+      public static Singleton getInstance() {
+        if (instance == null) {
+          instance = new Singleton();
+        }
+        return instance;
+      }
+    language: java
+    options:
+      - text: Both create an instance, and callers end up with different objects
+        correct: true
+      - text: Nothing; static methods are synchronized
+        feedback: They're not, unless you declare them so.
+
+  - type: blank
+    prompt: The simplest thread-safe singleton.
+    template: "public [[enum]] Elvis { INSTANCE; public void sing() { ... } }"
+    code: true
+
+  - type: explanation
+    title: Use it sparingly
+    body: |
+      A singleton is global state in disguise.
+      It hides dependencies and makes tests share state.
+      Often, one instance passed in by dependency injection is better.
+
+  - type: choice
+    prompt: Why are singletons often called an anti-pattern?
+    options:
+      - text: They're hidden global state, which couples code and makes testing hard
+        correct: true
+      - text: They use too much memory
+        feedback: One instance uses less, not more.

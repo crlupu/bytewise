@@ -1,0 +1,54 @@
+title: Design principles behind the patterns
+summary: Encapsulate what varies, program to an interface, favour composition over inheritance, and strive for loose coupling — the patterns apply these again and again.
+duration: 5
+tags: [design patterns, head first, design principles, composition, interfaces, coupling]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 1, Design principles" }
+  - { book: head-first-design-patterns, ref: "Chapter 2, The power of Loose Coupling" }
+steps:
+  - type: explanation
+    title: Three principles from chapter one
+    body: |
+      Identify what varies and separate it from what stays the same.
+      Program to an interface, not an implementation.
+      Favour composition over inheritance.
+
+  - type: match
+    prompt: Match each principle with the code it favours.
+    pairs:
+      - left: Program to an interface
+        right: "`List<Item> items = new ArrayList<>();`"
+      - left: Favour composition
+        right: A `Duck` that has a `FlyBehavior`
+      - left: Encapsulate what varies
+        right: Pricing rules in their own classes
+
+  - type: explanation
+    title: Composition is flexible
+    body: |
+      Inheritance fixes behaviour at compile time.
+      Composition lets an object get its behaviour from parts, swappable at run time.
+      HAS-A can be better than IS-A.
+
+  - type: choice
+    prompt: Why favour composition over inheritance?
+    options:
+      - text: Behaviour can change at run time, and classes aren't locked into a deep hierarchy
+        correct: true
+      - text: Inheritance is slower
+        feedback: Performance isn't the reason; flexibility is.
+
+  - type: explanation
+    title: Loose coupling
+    body: |
+      Loosely coupled objects interact, but know little about each other.
+      Change one and the others don't need to change.
+      Interfaces are the main tool.
+
+  - type: choice
+    prompt: Which design is more loosely coupled?
+    options:
+      - text: "`ReportService` depends on a `Storage` interface"
+        correct: true
+      - text: "`ReportService` creates and calls `S3Storage` directly"
+        feedback: It's tied to one storage class; changing storage means changing the service.

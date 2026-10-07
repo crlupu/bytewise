@@ -1,0 +1,6 @@
+title: State, Proxy and MVC
+summary: Chapters 10–12 — objects that change behaviour with their state, stand-ins that control access, and patterns combined in Model-View-Controller.
+lessons:
+  - state-pattern
+  - proxy-pattern
+  - model-view-controller

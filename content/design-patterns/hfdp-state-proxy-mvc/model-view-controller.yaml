@@ -1,0 +1,47 @@
+title: Model-View-Controller
+summary: MVC is a compound of patterns — the view observes the model, the controller is the view's strategy, and the view is a composite.
+duration: 5
+tags: [design patterns, head first, mvc, compound patterns, observer, strategy, composite]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 12, Compound Patterns" }
+steps:
+  - type: explanation
+    title: Three roles
+    body: |
+      The model holds data and rules, and knows nothing about the screen.
+      The view displays the model.
+      The controller turns user input into actions on the model.
+
+  - type: order
+    prompt: Put an MVC interaction in order.
+    items:
+      - The user clicks a button in the view
+      - The view tells the controller
+      - The controller updates the model
+      - The model notifies its observers
+      - The view reads the model and redraws
+
+  - type: explanation
+    title: Patterns inside
+    body: |
+      The view observes the model: Observer.
+      The view delegates input handling to a swappable controller: Strategy.
+      The view's widgets nest inside each other: Composite.
+
+  - type: match
+    prompt: Match each pattern with where it appears in MVC.
+    pairs:
+      - left: Observer
+        right: The view and controller are notified when the model changes
+      - left: Strategy
+        right: The view can be given a different controller
+      - left: Composite
+        right: The view is a tree of nested components
+
+  - type: choice
+    prompt: Why keep the model free of view code?
+    options:
+      - text: The same model can serve several views — web, mobile, tests — and be tested on its own
+        correct: true
+      - text: It makes the view faster
+        feedback: The benefit is separation, not speed.

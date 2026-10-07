@@ -1,0 +1,58 @@
+title: Adapter and Facade
+summary: An adapter makes one interface look like another a client expects; a facade gives a complex subsystem one simple interface.
+duration: 6
+tags: [design patterns, head first, adapter, facade, least knowledge, structural]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 7, The Adapter and Facade Patterns" }
+steps:
+  - type: explanation
+    title: Adapter converts
+    body: |
+      Your code expects a `Duck`, but you have a `Turkey`.
+      `TurkeyAdapter implements Duck` and holds a turkey.
+      `quack()` calls `gobble()`; `fly()` calls `fly()` a few times.
+
+  - type: blank
+    prompt: Adapt a turkey to the duck interface.
+    template: "public void quack() { turkey.[[gobble]](); }"
+    code: true
+
+  - type: explanation
+    title: Facade simplifies
+    body: |
+      Watching a movie takes the projector, amplifier, player, lights and screen.
+      `HomeTheaterFacade.watchMovie()` drives them all in the right order.
+      The parts stay available for anyone who needs them.
+
+  - type: match
+    prompt: Match each pattern with its intent.
+    pairs:
+      - left: Adapter
+        right: Convert an interface into the one a client expects
+      - left: Facade
+        right: Give a subsystem one simpler interface
+      - left: Decorator
+        right: Add behaviour without changing the interface
+
+  - type: explanation
+    title: Principle of Least Knowledge
+    body: |
+      Talk only to your immediate friends.
+      `a.getB().getC().doIt()` reaches through strangers.
+      Ask `a` to do it instead.
+
+  - type: choice
+    prompt: Which call follows the Principle of Least Knowledge?
+    options:
+      - text: "`order.shippingCost()`"
+        correct: true
+      - text: "`order.getCustomer().getAddress().getCountry().getShippingRate()`"
+        feedback: It depends on four classes' structure; a change to any breaks it.
+
+  - type: choice
+    prompt: "`Arrays.asList(array)` lets array data be used where a `List` is expected. Which pattern is that?"
+    options:
+      - text: Adapter
+        correct: true
+      - text: Facade
+        feedback: It doesn't simplify a subsystem; it converts one interface to another.

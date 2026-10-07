@@ -1,0 +1,5 @@
+title: More patterns and using them well
+summary: Chapter 13 and the appendix — Builder, Chain of Responsibility, Visitor and others, and when a pattern helps or hurts.
+lessons:
+  - leftover-patterns
+  - patterns-in-the-real-world

@@ -1374,6 +1374,87 @@ effective-software-testing:
     aliases: [shrinks]
     def: What a property-testing tool does with a failing input — tries smaller ones until it finds the simplest that still fails.
 
+head-first-design-patterns:
+  - term: Design pattern
+    aliases: [design patterns]
+    def: A named, reusable solution to a problem that keeps recurring in a particular context.
+  - term: Strategy
+    aliases: [Strategy pattern]
+    def: A pattern that puts each variant of an algorithm in its own class behind a shared interface, so the client can swap them.
+  - term: Observer
+    aliases: [Observer pattern, observers]
+    def: A pattern in which a subject notifies a list of registered observers whenever its state changes.
+  - term: Subject
+    def: In Observer, the object being watched, which keeps the list of observers and notifies them.
+  - term: Open-Closed Principle
+    def: Classes should be open for extension but closed for modification — add behaviour with new code, not by editing old code.
+  - term: Factory Method
+    aliases: [factory method pattern]
+    def: A pattern in which a superclass calls an abstract creation method, and subclasses override it to decide which class to instantiate.
+  - term: Abstract Factory
+    aliases: [abstract factories]
+    def: An object with several creation methods that produces a whole family of related objects that belong together.
+  - term: Simple Factory
+    def: One class whose method decides which concrete class to instantiate. An idiom rather than a formal pattern.
+  - term: Dependency Inversion Principle
+    aliases: [Dependency Inversion]
+    def: High-level code and low-level code should both depend on abstractions, not on each other's concrete classes.
+  - term: Command
+    aliases: [Command pattern, command object, command objects]
+    def: A pattern that wraps a request in an object with `execute()`, so it can be stored, queued, logged or undone.
+  - term: Invoker
+    def: In Command, the object that triggers a command's `execute()` without knowing what it does — like a remote control button.
+  - term: Receiver
+    def: In Command, the object that does the real work when a command executes — like the light a command turns on.
+  - term: Adapter pattern
+    aliases: [TurkeyAdapter]
+    def: A wrapper that converts one interface into another a client expects, like a plug adapter.
+  - term: Facade
+    aliases: [facades]
+    def: A class that offers one simple interface to a complicated subsystem, while leaving the subsystem usable directly.
+  - term: Principle of Least Knowledge
+    aliases: [Law of Demeter]
+    def: Talk only to your immediate friends — avoid long chains like `a.getB().getC().doIt()`.
+  - term: Template Method
+    aliases: [template method pattern]
+    def: A superclass method that fixes the steps of an algorithm and leaves some steps for subclasses to fill in.
+  - term: Hook
+    aliases: [hooks]
+    def: In Template Method, an optional step with a default implementation that subclasses may override.
+  - term: Hollywood Principle
+    def: '"Don''t call us, we''ll call you" — high-level code calls low-level components when needed, not the other way round.'
+  - term: Iterator
+    aliases: [Iterator pattern]
+    def: An object that walks through a collection's elements one by one without exposing how they're stored.
+  - term: Composite
+    aliases: [Composite pattern]
+    def: A pattern that arranges objects in trees, so clients treat a group and a single object the same way.
+  - term: Single Responsibility Principle
+    def: A class should have only one reason to change.
+  - term: State pattern
+    def: A pattern that gives each state of an object its own class; the object delegates to its current state, which can switch it to another.
+  - term: Proxy
+    aliases: [proxies, virtual proxy, remote proxy, protection proxy, caching proxy]
+    def: A stand-in with the same interface as a real object that controls access to it — remotely, lazily, or with permission checks.
+  - term: Dynamic proxy
+    aliases: [dynamic proxies]
+    def: A proxy class generated at run time by `java.lang.reflect.Proxy`, sending every call to an `InvocationHandler`.
+  - term: MVC
+    aliases: [Model-View-Controller]
+    def: Separating an application into a model (data and rules), views (display) and controllers (input handling).
+  - term: Chain of Responsibility
+    def: Passing a request along a chain of handlers until one deals with it.
+  - term: Visitor
+    aliases: [Visitor pattern]
+    def: A pattern that adds operations to a fixed class hierarchy by putting each operation in a visitor class with one method per type.
+  - term: Memento
+    def: An object that captures another object's state so it can be restored later, without exposing its internals.
+  - term: Prototype
+    def: Creating new objects by copying an existing instance.
+  - term: Anti-pattern
+    aliases: [anti-patterns, golden hammer]
+    def: A common solution that seems reasonable but causes more problems than it solves, like the golden hammer — one tool for everything.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

@@ -1,0 +1,5 @@
+title: Observer and Decorator
+summary: Chapters 2–3 — keeping objects informed without coupling them, and adding behaviour by wrapping objects.
+lessons:
+  - observer-pattern
+  - decorator-pattern

@@ -1,0 +1,53 @@
+title: The Observer pattern
+summary: A subject keeps a list of observers and notifies them when its state changes; it knows only that they implement an interface.
+duration: 5
+tags: [design patterns, head first, observer, publish subscribe, loose coupling, behavioral]
+sources:
+  - { book: head-first-design-patterns, ref: "Chapter 2, The Observer Pattern" }
+steps:
+  - type: explanation
+    title: Many displays, one data source
+    body: |
+      A weather station has new readings.
+      Several displays need them, and more will be added.
+      Hard-coding each display into the station couples them.
+
+  - type: explanation
+    title: Subscribe and notify
+    body: |
+      Observers register with the subject.
+      When the subject changes, it calls `update()` on each.
+      Observers can join or leave at any time.
+
+  - type: order
+    prompt: Put the Observer flow in order.
+    items:
+      - A display calls `station.registerObserver(this)`
+      - The station gets new measurements
+      - The station calls `notifyObservers()`
+      - Each registered display's `update()` runs
+
+  - type: match
+    prompt: Match each role with the weather example.
+    pairs:
+      - left: Subject
+        right: "`WeatherData`"
+      - left: Observer interface
+        right: "`Observer`, with `update()`"
+      - left: Concrete observer
+        right: "`CurrentConditionsDisplay`"
+
+  - type: explanation
+    title: Push or pull
+    body: |
+      The subject can push the new data in `update(temp, humidity)`.
+      Or observers can pull what they need with getters.
+      Pull keeps `update()` stable when the data changes.
+
+  - type: choice
+    prompt: Where does Java use Observer?
+    options:
+      - text: Event listeners, like `button.addActionListener(...)`
+        correct: true
+      - text: "`ArrayList.add`"
+        feedback: Nothing is notified there.

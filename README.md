@@ -47,7 +47,7 @@ trade-off scenarios (architecture).
 
 ## Content and the books behind it
 
-177 lessons in 39 courses. Most courses follow a standard book; each lesson names the
+321 lessons in 92 courses. Most courses follow a standard book; each lesson names the
 chapter or item it teaches in `sources`, shown on the course page, on the lesson's
 completion screen and in Search's Library. The lessons are written fresh — the books
 are where to go for the full treatment.
@@ -61,6 +61,14 @@ threads). Each lesson has a short explanation and practice exercises.
 |---|---|
 | Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |
 | Java Concurrency in Practice | *Java Concurrency in Practice* (Goetz et al.) — every chapter |
+| Java Puzzlers | *Java Puzzlers* (Bloch & Gafter) — every output checked on Java 21 |
+| Modern Java in Action | *Modern Java in Action*, 2nd ed. (Urma, Fusco & Mycroft) |
+| Java Generics and Collections | *Java Generics and Collections* (Naftalin & Wadler) |
+| The Well-Grounded Java Developer | *The Well-Grounded Java Developer*, 2nd ed. (Evans, Clark & Verburg) |
+| Java Performance | *Java Performance*, 2nd ed. (Oaks) |
+| Troubleshooting Java | *Troubleshooting Java* (Spilcă) |
+| Effective Software Testing | *Effective Software Testing* (Aniche) |
+| Head First Design Patterns | *Head First Design Patterns*, 2nd ed. (Freeman & Robson) |
 | Databases | *SQL Performance Explained* (Winand), *High-Performance Java Persistence* (Mihalcea), *Database Internals* (Petrov) |
 | Operating systems | *Operating Systems: Three Easy Pieces* (Arpaci-Dusseau) |
 | Networking | *Computer Networking: A Top-Down Approach* (Kurose & Ross) |

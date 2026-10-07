@@ -1,0 +1,6 @@
+title: Factories and Singleton
+summary: Chapters 4–5 — Simple Factory, Factory Method, Abstract Factory, the Dependency Inversion Principle, and Singleton.
+lessons:
+  - factory-method
+  - abstract-factory
+  - singleton
