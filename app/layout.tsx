@@ -15,7 +15,15 @@ const jetbrainsMono = localFont({ src: "./fonts/JetBrainsMono-latin.woff2", weig
 export const metadata: Metadata = {
   title: "Bytewise",
   description: "Short, interactive lessons on software engineering: Java, databases, operating systems, networking and architecture.",
-  icons: { icon: [{ url: `${BASE}/icon.svg`, type: "image/svg+xml" }], apple: [{ url: `${BASE}/icon.svg` }] },
+  icons: {
+    icon: [
+      { url: `${BASE}/icon.svg`, type: "image/svg+xml" },
+      { url: `${BASE}/icon-192.png`, type: "image/png", sizes: "192x192" },
+    ],
+    // iOS ignores SVG here; it needs a full-bleed PNG and rounds the corners itself.
+    apple: [{ url: `${BASE}/apple-touch-icon.png`, sizes: "180x180" }],
+  },
+  manifest: `${BASE}/manifest.webmanifest`,
   appleWebApp: { capable: true, title: "Bytewise", statusBarStyle: "default" },
 };
 
