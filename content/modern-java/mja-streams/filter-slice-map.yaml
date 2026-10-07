@@ -1,0 +1,76 @@
+title: Filter, slice and map
+summary: "`filter` and `distinct` drop elements, `takeWhile`, `dropWhile`, `limit` and `skip` slice, and `map` and `flatMap` transform."
+duration: 6
+tags: [java, modern java, streams, filter, map, flatmap, takewhile]
+sources:
+  - { book: modern-java-in-action, ref: "§5.1–5.3, Filtering, slicing and mapping" }
+steps:
+  - type: explanation
+    title: Slicing a sorted stream
+    body: |
+      `takeWhile` keeps elements until the first one that fails the test.
+      `dropWhile` skips elements until the first one that fails.
+      Unlike `filter`, both stop looking after that.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of(1, 2, 3, 4, 1, 2)
+          .takeWhile(i -> i < 3)
+          .toList());
+    language: java
+    options:
+      - text: "`[1, 2]`"
+        correct: true
+      - text: "`[1, 2, 1, 2]`"
+        feedback: "That's `filter`. `takeWhile` stops at 3, the first element that fails."
+      - text: "`[3, 4, 1, 2]`"
+        feedback: "That's `dropWhile`."
+
+  - type: match
+    prompt: Match each operation with what it does to `[1, 2, 3, 4, 5]`.
+    pairs:
+      - left: "`limit(2)`"
+        right: "`[1, 2]`"
+      - left: "`skip(2)`"
+        right: "`[3, 4, 5]`"
+      - left: "`dropWhile(i -> i < 4)`"
+        right: "`[4, 5]`"
+      - left: "`filter(i -> i % 2 == 1)`"
+        right: "`[1, 3, 5]`"
+
+  - type: explanation
+    title: map transforms each element
+    body: |
+      `map` applies a function to every element.
+      One element in, one element out.
+      `words.stream().map(String::length)` gives a stream of lengths.
+
+  - type: explanation
+    title: flatMap flattens
+    body: |
+      Sometimes each element maps to several values.
+      `map` would give a stream of streams.
+      `flatMap` merges them into one stream.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of("hello", "world")
+          .map(w -> w.split(""))
+          .flatMap(Arrays::stream)
+          .distinct()
+          .collect(Collectors.joining()));
+    language: java
+    options:
+      - text: "`helowrd`"
+        correct: true
+      - text: "`helloworld`"
+        feedback: "`distinct` removes the repeated letters, keeping first occurrences."
+      - text: Something like `[Ljava.lang.String;@...`
+        feedback: That's what you'd get with `map(Arrays::stream)` — a stream of streams. `flatMap` flattens it.
+
+  - type: blank
+    prompt: Turn a list of lists into one stream of elements.
+    template: "lists.stream().[[flatMap]](List::stream)"
+    code: true

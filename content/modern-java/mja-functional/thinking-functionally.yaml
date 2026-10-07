@@ -1,0 +1,57 @@
+title: Thinking functionally
+summary: A function with no side effects, whose result depends only on its arguments, is easy to test, reuse and run in parallel.
+duration: 5
+tags: [java, modern java, functional programming, side effects, referential transparency, immutability]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 18, Thinking functionally" }
+steps:
+  - type: explanation
+    title: No side effects
+    body: |
+      A side effect changes something outside the function: a field, a file, a shared list.
+      A side-effect-free function only computes its result.
+      It can't interfere with other code, even in another thread.
+
+  - type: explanation
+    title: Referential transparency
+    body: |
+      Same arguments, same result, every time.
+      Then any call can be replaced by its value.
+      `Random.nextInt()` and `LocalDate.now()` aren't referentially transparent.
+
+  - type: choice
+    prompt: Which methods are referentially transparent?
+    options:
+      - text: "`Math.max(a, b)`"
+        correct: true
+      - text: "`String.toUpperCase()` on an immutable string"
+        correct: true
+      - text: "`list.add(x)`"
+        feedback: It changes the list — a side effect.
+      - text: "`System.currentTimeMillis()`"
+        feedback: It returns something different each call.
+
+  - type: explanation
+    title: Declarative over imperative
+    body: |
+      Imperative code says how: loop, test, add.
+      Declarative code says what: filter the expensive ones.
+      Streams are declarative.
+
+  - type: choice
+    prompt: "A method mutates its argument list and also returns it. What's the functional alternative?"
+    options:
+      - text: Return a new list and leave the argument unchanged
+        correct: true
+      - text: Make the parameter `final`
+        feedback: "`final` stops reassigning the parameter, not changing the list it points to."
+
+  - type: match
+    prompt: Match each style with a description.
+    pairs:
+      - left: Imperative
+        right: Step by step, changing variables
+      - left: Declarative
+        right: Describe the result you want
+      - left: Functional
+        right: Compose side-effect-free functions

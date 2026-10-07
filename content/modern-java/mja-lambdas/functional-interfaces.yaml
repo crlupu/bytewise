@@ -1,0 +1,65 @@
+title: The standard functional interfaces
+summary: "`Predicate`, `Consumer`, `Function`, `Supplier` and their primitive versions cover most lambdas."
+duration: 5
+tags: [java, modern java, lambdas, functional interfaces, java util function]
+sources:
+  - { book: modern-java-in-action, ref: "§3.4, Using functional interfaces" }
+steps:
+  - type: explanation
+    title: One abstract method
+    body: |
+      A functional interface has exactly one abstract method.
+      Its signature, the function descriptor, is what a lambda must match.
+      `@FunctionalInterface` makes the compiler check it.
+
+  - type: match
+    prompt: Match each interface with its function descriptor.
+    pairs:
+      - left: "`Predicate<T>`"
+        right: "`T -> boolean`"
+      - left: "`Consumer<T>`"
+        right: "`T -> void`"
+      - left: "`Function<T, R>`"
+        right: "`T -> R`"
+      - left: "`Supplier<T>`"
+        right: "`() -> T`"
+
+  - type: choice
+    prompt: Which interface fits `() -> new ArrayList<String>()`?
+    options:
+      - text: "`Supplier<List<String>>`"
+        correct: true
+      - text: "`Function<String, List<String>>`"
+        feedback: A `Function` takes one argument; this lambda takes none.
+      - text: "`Consumer<List<String>>`"
+        feedback: A `Consumer` takes an argument and returns nothing.
+
+  - type: explanation
+    title: Primitive versions avoid boxing
+    body: |
+      `Predicate<Integer>` boxes every `int` it tests.
+      `IntPredicate` takes the `int` directly.
+      Use the primitive versions on hot paths.
+
+  - type: choice
+    prompt: "You test millions of `int`s with `i -> i % 2 == 0`. Which type avoids boxing?"
+    options:
+      - text: "`IntPredicate`"
+        correct: true
+      - text: "`Predicate<Integer>`"
+        feedback: Each call would box the `int` into an `Integer`.
+      - text: "`Function<Integer, Boolean>`"
+        feedback: That boxes both the argument and the result.
+
+  - type: explanation
+    title: Two arguments
+    body: |
+      `BiFunction<T, U, R>` takes two arguments.
+      `BinaryOperator<T>` is a `BiFunction` whose inputs and result share a type.
+      `reduce` takes one.
+
+  - type: blank
+    prompt: Declare a function that adds two integers.
+    template: "[[BinaryOperator]]<Integer> add = (a, b) -> a + b;"
+    code: true
+    caseSensitive: true

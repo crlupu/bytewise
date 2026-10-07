@@ -1,0 +1,64 @@
+title: When parallel streams help
+summary: "`.parallel()` splits work across cores, but boxing, hard-to-split sources and shared state can make it slower or wrong."
+duration: 6
+tags: [java, modern java, streams, parallel, performance]
+sources:
+  - { book: modern-java-in-action, ref: "§7.1, Parallel streams" }
+  - { book: effective-java, ref: "Item 48" }
+steps:
+  - type: explanation
+    title: One call, many threads
+    body: |
+      `.parallel()` splits the source into chunks.
+      Each chunk runs on the common fork/join pool.
+      The partial results are combined at the end.
+
+  - type: explanation
+    title: Measure before you parallelize
+    body: |
+      Splitting and merging cost time.
+      Boxing, small inputs and sources that split badly can eat the gain.
+      `ArrayList` and `IntStream.range` split well; `LinkedList` and `iterate` don't.
+
+  - type: match
+    prompt: Match each source with how well it splits.
+    pairs:
+      - left: "`IntStream.rangeClosed`"
+        right: Excellent — just halve the range
+      - left: "`ArrayList`"
+        right: Excellent — index into the middle
+      - left: "`LinkedList`"
+        right: Poor — must walk to the middle
+      - left: "`Stream.iterate`"
+        right: Poor — each element depends on the last
+
+  - type: explanation
+    title: Shared state breaks it
+    body: |
+      A lambda that updates a shared variable races with itself.
+      Parallel results come out wrong, and differently each run.
+      Keep pipelines free of side effects; let `reduce` and `collect` combine.
+
+  - type: choice
+    prompt: What's wrong here?
+    code: |
+      Accumulator acc = new Accumulator();
+      LongStream.rangeClosed(1, n).parallel().forEach(acc::add);
+      return acc.total;
+    language: java
+    options:
+      - text: Several threads update `acc.total` at once, so additions are lost
+        correct: true
+      - text: "`forEach` doesn't run in parallel"
+        feedback: It does, which is the problem.
+    explanation: "Use `LongStream.rangeClosed(1, n).parallel().sum()`."
+
+  - type: choice
+    prompt: Which tends to benefit from `.parallel()`?
+    options:
+      - text: An expensive computation per element over a large `ArrayList`
+        correct: true
+      - text: Summing 100 `Integer`s from a `LinkedList`
+        feedback: Too little work, boxing, and a source that splits poorly.
+      - text: A pipeline with `findFirst` on an ordered stream
+        feedback: Keeping encounter order forces coordination between threads.

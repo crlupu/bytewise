@@ -1,0 +1,7 @@
+title: Behaviour parameterization and lambdas
+summary: Chapters 2–3 — passing code as an argument, lambda syntax, functional interfaces, method references and composition.
+lessons:
+  - behavior-parameterization
+  - lambda-syntax
+  - functional-interfaces
+  - method-references-and-composition

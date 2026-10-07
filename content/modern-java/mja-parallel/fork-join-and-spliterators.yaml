@@ -1,0 +1,56 @@
+title: Fork/join and spliterators
+summary: Parallel streams run on a fork/join pool that splits work recursively and lets idle threads steal tasks; a spliterator says how to split.
+duration: 5
+tags: [java, modern java, fork join, work stealing, spliterator]
+sources:
+  - { book: modern-java-in-action, ref: "§7.2–7.3, The fork/join framework and Spliterator" }
+steps:
+  - type: explanation
+    title: Split until small, then compute
+    body: |
+      A `RecursiveTask` checks whether its work is small enough.
+      If not, it splits in two, forks one half and computes the other.
+      Then it joins the results.
+
+  - type: order
+    prompt: Put the steps of a `RecursiveTask.compute()` in order.
+    items:
+      - Check whether the task is small enough
+      - If not, split it into two subtasks
+      - Fork the left subtask
+      - Compute the right subtask directly
+      - Join the left result and combine
+
+  - type: explanation
+    title: Work stealing balances the load
+    body: |
+      Each worker thread has its own deque of tasks.
+      An idle thread steals from the tail of a busy one's deque.
+      So uneven subtasks still keep every core busy.
+
+  - type: choice
+    prompt: Why split into many small tasks rather than one per core?
+    options:
+      - text: Tasks take different times; many small ones let idle threads steal work and finish together
+        correct: true
+      - text: The JVM limits each task's size
+        feedback: There's no such limit; it's about balancing the load.
+
+  - type: explanation
+    title: A spliterator splits the source
+    body: |
+      `Spliterator` is the iterator behind parallel streams.
+      Its `trySplit` hands off part of the elements.
+      Characteristics like `SIZED` and `ORDERED` let the stream optimize.
+
+  - type: match
+    prompt: Match each piece with its job.
+    pairs:
+      - left: "`trySplit()`"
+        right: Hand part of the elements to another task
+      - left: "`tryAdvance()`"
+        right: Process the next element
+      - left: "`estimateSize()`"
+        right: Say how many elements remain
+      - left: "`characteristics()`"
+        right: Declare properties like `ORDERED` and `SIZED`

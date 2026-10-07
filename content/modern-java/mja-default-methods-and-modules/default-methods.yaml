@@ -1,0 +1,56 @@
+title: Default methods
+summary: An interface can ship a method body, so adding a method no longer breaks every class that implements it.
+duration: 5
+tags: [java, modern java, default methods, interfaces, api evolution]
+sources:
+  - { book: modern-java-in-action, ref: "§13.1–13.3, Evolving APIs and default methods" }
+steps:
+  - type: explanation
+    title: Adding to an interface used to break code
+    body: |
+      Add an abstract method to a published interface, and every implementation stops compiling.
+      Java 8 needed `stream()` on every `Collection`.
+      Default methods made that possible.
+
+  - type: explanation
+    title: A body in the interface
+    body: |
+      `default` marks a method with an implementation in the interface.
+      Implementing classes inherit it.
+      They can override it like any other method.
+
+  - type: blank
+    prompt: Give `Sized` an `isEmpty` that implementations get for free.
+    template: |
+      interface Sized {
+        int size();
+        [[default]] boolean isEmpty() { return size() == 0; }
+      }
+    code: true
+
+  - type: choice
+    prompt: Which are uses of default methods?
+    options:
+      - text: Adding `stream()` to `Collection` without breaking existing implementations
+        correct: true
+      - text: Making a method optional, like `Iterator.remove()` throwing `UnsupportedOperationException` by default
+        correct: true
+      - text: Storing per-object state in the interface
+        feedback: Interfaces still can't have instance fields; default methods can only use other methods.
+
+  - type: explanation
+    title: Interfaces vs abstract classes
+    body: |
+      A class can implement many interfaces but extend only one class.
+      Abstract classes can still hold state; interfaces can't.
+      Default methods give a form of multiple inheritance of behaviour.
+
+  - type: match
+    prompt: Match each feature with where it's allowed.
+    pairs:
+      - left: Instance fields
+        right: Abstract classes only
+      - left: Method bodies
+        right: Both
+      - left: Being one of several supertypes of a class
+        right: Interfaces only

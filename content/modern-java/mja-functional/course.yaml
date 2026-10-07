@@ -1,0 +1,5 @@
+title: Functional programming in Java
+summary: Chapters 18–19 — side-effect-free functions, referential transparency, recursion, higher-order functions, currying and laziness.
+lessons:
+  - thinking-functionally
+  - functional-techniques

@@ -1,0 +1,65 @@
+title: Higher-order functions, currying and laziness
+summary: Functions that take and return functions, curried functions that take one argument at a time, and lazily evaluated structures.
+duration: 6
+tags: [java, modern java, functional programming, higher order functions, currying, laziness, recursion]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 19, Functional programming techniques" }
+steps:
+  - type: explanation
+    title: Functions are values
+    body: |
+      A higher-order function takes or returns a function.
+      `Comparator.comparing` takes a key extractor and returns a comparator.
+      `Function.andThen` returns a new function.
+
+  - type: choice
+    prompt: Which of these are higher-order functions?
+    options:
+      - text: "`Comparator.comparing(Function)`"
+        correct: true
+      - text: "`Stream.map(Function)`"
+        correct: true
+      - text: "`Math.sqrt(double)`"
+        feedback: It takes and returns a number.
+
+  - type: explanation
+    title: Currying
+    body: |
+      A curried function takes its arguments one at a time.
+      `x -> y -> x + y` takes `x` and returns a function waiting for `y`.
+      Fixing the first argument gives a reusable function.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Function<Integer, Function<Integer, Integer>> add = x -> y -> x + y;
+      Function<Integer, Integer> addThree = add.apply(3);
+      System.out.println(addThree.apply(4));
+    language: java
+    options:
+      - text: "7"
+        correct: true
+      - text: "3"
+        feedback: "`add.apply(3)` is a function; applying it to 4 adds them."
+      - text: It doesn't compile
+        feedback: Lambdas can return lambdas.
+
+  - type: explanation
+    title: Recursion and laziness
+    body: |
+      Functional code prefers recursion to loops over mutable counters.
+      Java doesn't optimize tail calls, so deep recursion can overflow the stack.
+      Streams give laziness: elements are computed only when needed.
+
+  - type: choice
+    prompt: Why is `IntStream.rangeClosed(1, n).reduce(1, (a, b) -> a * b)` safer than a recursive factorial in Java for large `n`?
+    options:
+      - text: Recursion uses a stack frame per call, and Java has no tail-call optimization
+        correct: true
+      - text: Streams use less memory per multiplication
+        feedback: The arithmetic is the same; the difference is the call stack.
+
+  - type: blank
+    prompt: Fix the first argument of a curried function.
+    template: "Function<Double, Double> celsiusToF = curriedConverter.[[apply]](9.0 / 5);"
+    code: true

@@ -1,0 +1,68 @@
+title: Joining, summarizing and toMap
+summary: "`joining` concatenates, `summarizingInt` gives count, sum, min, average and max at once, and `toMap` needs a merge function for duplicate keys."
+duration: 5
+tags: [java, modern java, collectors, joining, tomap, summarizing]
+sources:
+  - { book: modern-java-in-action, ref: "§6.2, Reducing and summarizing" }
+steps:
+  - type: explanation
+    title: joining builds strings
+    body: |
+      `joining()` concatenates `CharSequence`s.
+      `joining(", ")` adds a delimiter between them.
+      `joining(", ", "[", "]")` adds a prefix and suffix too.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of("a", "b", "c")
+          .collect(Collectors.joining(", ", "[", "]")));
+    language: java
+    options:
+      - text: "`[a, b, c]`"
+        correct: true
+      - text: "`[a], [b], [c]`"
+        feedback: The prefix and suffix wrap the whole result, not each element.
+
+  - type: explanation
+    title: Several statistics in one pass
+    body: |
+      `summarizingInt(Dish::calories)` returns an `IntSummaryStatistics`.
+      It holds the count, sum, min, max and average together.
+      One pass instead of five.
+
+  - type: explanation
+    title: toMap rejects duplicate keys
+    body: |
+      `toMap(keyFn, valueFn)` throws `IllegalStateException` on a repeated key.
+      Pass a third argument, a merge function, to combine the values.
+      `Integer::sum` adds them.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      Stream.of("a", "b", "a").collect(Collectors.toMap(x -> x, x -> 1));
+    language: java
+    options:
+      - text: "`IllegalStateException: Duplicate key a`"
+        correct: true
+      - text: "`{a=1, b=1}` — the second `a` replaces the first"
+        feedback: "That's what `HashMap.put` does, but `toMap` refuses to guess."
+      - text: "`{a=2, b=1}`"
+        feedback: That needs a merge function like `Integer::sum`.
+
+  - type: blank
+    prompt: Count words, adding up duplicates.
+    template: "words.collect(Collectors.toMap(w -> w, w -> 1, Integer::[[sum]]))"
+    code: true
+
+  - type: choice
+    prompt: Which collectors count words correctly?
+    options:
+      - text: "`groupingBy(w -> w, counting())`"
+        correct: true
+      - text: "`toMap(w -> w, w -> 1L, Long::sum)`"
+        correct: true
+        feedback: It works, though `groupingBy` says it more directly.
+      - text: "`toMap(w -> w, w -> 1)`"
+        feedback: That throws on the first repeated word.

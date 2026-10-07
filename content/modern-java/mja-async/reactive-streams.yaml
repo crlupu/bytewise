@@ -1,0 +1,50 @@
+title: Reactive streams and back-pressure
+summary: The Flow API connects publishers and subscribers, and the subscriber says how many items it can take.
+duration: 5
+tags: [java, modern java, reactive, flow api, back pressure, publisher subscriber]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 17, Reactive programming" }
+steps:
+  - type: explanation
+    title: Push, but not too fast
+    body: |
+      A publisher pushes items to subscribers as they happen.
+      A fast publisher can drown a slow subscriber.
+      Back-pressure lets the subscriber control the rate.
+
+  - type: explanation
+    title: The Flow interfaces
+    body: |
+      `Publisher` accepts a `Subscriber`.
+      It hands the subscriber a `Subscription`.
+      The subscriber calls `request(n)` when it's ready for `n` more items.
+
+  - type: order
+    prompt: Put the reactive-streams handshake in order.
+    items:
+      - The subscriber calls `publisher.subscribe(subscriber)`
+      - The publisher calls `onSubscribe(subscription)`
+      - The subscriber calls `subscription.request(n)`
+      - The publisher calls `onNext(item)` up to n times
+      - The publisher calls `onComplete()` or `onError(e)`
+
+  - type: match
+    prompt: Match each Flow interface with its role.
+    pairs:
+      - left: "`Publisher`"
+        right: Produces items
+      - left: "`Subscriber`"
+        right: Consumes items
+      - left: "`Subscription`"
+        right: The link that carries `request` and `cancel`
+      - left: "`Processor`"
+        right: Both a subscriber and a publisher, in the middle
+
+  - type: choice
+    prompt: How does a slow subscriber avoid being overwhelmed?
+    options:
+      - text: It requests only as many items as it can handle, with `request(n)`
+        correct: true
+      - text: It throws an exception when items arrive too fast
+        feedback: That ends the stream. Back-pressure is about asking for less.
+    explanation: Java's `Flow` only defines the interfaces; libraries like Reactor and RxJava implement them.

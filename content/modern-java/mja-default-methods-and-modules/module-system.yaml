@@ -1,0 +1,57 @@
+title: The Java module system
+summary: A module declares what it needs and what it exposes in `module-info.java`; everything else stays hidden, even public classes.
+duration: 5
+tags: [java, modern java, modules, jpms, encapsulation]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 14, The Java Module System" }
+steps:
+  - type: explanation
+    title: Packages weren't enough
+    body: |
+      Before Java 9, a public class was visible to everyone.
+      Internal packages, like `sun.misc`, got used and couldn't change.
+      Modules add a boundary around a group of packages.
+
+  - type: explanation
+    title: module-info.java
+    body: |
+      `requires` names the modules this one depends on.
+      `exports` names the packages others may use.
+      Unexported packages are hidden, public classes included.
+
+  - type: blank
+    prompt: Let other modules use the API package.
+    template: |
+      module com.example.shop {
+        requires java.sql;
+        [[exports]] com.example.shop.api;
+      }
+    code: true
+
+  - type: match
+    prompt: Match each directive with its meaning.
+    pairs:
+      - left: "`requires`"
+        right: I depend on this module
+      - left: "`exports`"
+        right: Other modules may use this package
+      - left: "`requires transitive`"
+        right: My users get this dependency too
+      - left: "`opens`"
+        right: Allow reflection into this package at run time
+
+  - type: choice
+    prompt: "A module has a public class `com.example.shop.internal.Pricing`, but doesn't export `com.example.shop.internal`. Can another module use it?"
+    options:
+      - text: No — unexported packages are inaccessible, even their public classes
+        correct: true
+      - text: Yes, it's public
+        feedback: With modules, `public` means public within the module unless the package is exported.
+
+  - type: choice
+    prompt: Why does a library like Hibernate need `opens` rather than `exports`?
+    options:
+      - text: It reflects into private fields at run time, which `exports` doesn't allow
+        correct: true
+      - text: It compiles against your classes
+        feedback: It doesn't compile against them; it accesses them reflectively.

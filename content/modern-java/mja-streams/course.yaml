@@ -1,0 +1,7 @@
+title: Streams
+summary: Chapters 4–5 — what a stream is, and filtering, slicing, mapping, finding, reducing and building streams.
+lessons:
+  - streams-vs-collections
+  - filter-slice-map
+  - find-match-reduce
+  - numeric-and-built-streams

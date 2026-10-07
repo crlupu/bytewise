@@ -1,0 +1,70 @@
+title: Method references and composing functions
+summary: "`String::length` is shorthand for a lambda, and comparators, predicates and functions combine with `thenComparing`, `and` and `andThen`."
+duration: 6
+tags: [java, modern java, method references, comparator, composition]
+sources:
+  - { book: modern-java-in-action, ref: "§3.6, Method references" }
+  - { book: modern-java-in-action, ref: "§3.8, Useful methods to compose lambda expressions" }
+steps:
+  - type: explanation
+    title: Name the method instead
+    body: |
+      When a lambda only calls one method, name that method.
+      `s -> s.length()` becomes `String::length`.
+      `() -> new Apple()` becomes `Apple::new`.
+
+  - type: match
+    prompt: Match each lambda with its method reference.
+    pairs:
+      - left: "`s -> Integer.parseInt(s)`"
+        right: "`Integer::parseInt`"
+      - left: "`s -> s.toUpperCase()`"
+        right: "`String::toUpperCase`"
+      - left: "`x -> System.out.println(x)`"
+        right: "`System.out::println`"
+      - left: "`() -> new ArrayList<>()`"
+        right: "`ArrayList::new`"
+
+  - type: explanation
+    title: Build comparators from keys
+    body: |
+      `comparing(Apple::weight)` sorts by a key.
+      `.reversed()` flips it.
+      `.thenComparing(Apple::country)` breaks ties.
+
+  - type: blank
+    prompt: Sort heaviest first, then by country.
+    template: "inventory.sort(comparing(Apple::weight).[[reversed]]().thenComparing(Apple::country));"
+    code: true
+
+  - type: explanation
+    title: Compose functions
+    body: |
+      `f.andThen(g)` applies `f` first, then `g`.
+      `f.compose(g)` applies `g` first, then `f`.
+      Predicates combine with `and`, `or` and `negate`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Function<Integer, Integer> f = x -> x + 1;
+      Function<Integer, Integer> g = x -> x * 2;
+      System.out.println(f.andThen(g).apply(1) + " " + f.compose(g).apply(1));
+    language: java
+    options:
+      - text: "4 3"
+        correct: true
+      - text: "3 4"
+        feedback: "`andThen` runs `f` first: (1 + 1) × 2 = 4. `compose` runs `g` first: 1 × 2 + 1 = 3."
+      - text: "4 4"
+        feedback: The two methods apply the functions in opposite orders.
+
+  - type: choice
+    prompt: Which predicate matches apples that are red but not heavy?
+    options:
+      - text: "`redApple.and(heavyApple.negate())`"
+        correct: true
+      - text: "`redApple.negate().and(heavyApple)`"
+        feedback: That's "not red, and heavy".
+      - text: "`redApple.or(heavyApple).negate()`"
+        feedback: That's "neither red nor heavy".

@@ -1,0 +1,60 @@
+title: When defaults clash
+summary: Classes win over interfaces, more specific interfaces win over less specific ones, and otherwise you must choose explicitly.
+duration: 5
+tags: [java, modern java, default methods, diamond problem, inheritance]
+sources:
+  - { book: modern-java-in-action, ref: "§13.4, Resolution rules" }
+steps:
+  - type: explanation
+    title: Three rules
+    body: |
+      First, a method in a class or superclass beats any default.
+      Second, a default in a more specific interface wins, so `B extends A` beats `A`.
+      Otherwise, the class must override and choose.
+
+  - type: predict
+    prompt: What does `new C().hello()` return?
+    code: |
+      interface A { default String hello() { return "A"; } }
+      interface B extends A { default String hello() { return "B"; } }
+      class C implements A, B { }
+    language: java
+    options:
+      - text: "`\"B\"`"
+        correct: true
+      - text: "`\"A\"`"
+        feedback: "`B` extends `A`, so `B`'s default is more specific."
+      - text: It doesn't compile
+        feedback: There's a most specific interface, so there's no conflict.
+
+  - type: predict
+    prompt: What does `new E().hello()` return?
+    code: |
+      interface A { default String hello() { return "A"; } }
+      interface B extends A { default String hello() { return "B"; } }
+      class D implements A { public String hello() { return "D"; } }
+      class E extends D implements B { }
+    language: java
+    options:
+      - text: "`\"D\"`"
+        correct: true
+      - text: "`\"B\"`"
+        feedback: A method from a class always beats an interface default — rule one.
+
+  - type: explanation
+    title: Unrelated defaults must be resolved
+    body: |
+      If `A` and `B` are unrelated and both define `hello()`, the class doesn't compile.
+      Override it and pick one with `A.super.hello()`.
+
+  - type: blank
+    prompt: Choose `B`'s version explicitly.
+    template: "public String hello() { return B.[[super]].hello(); }"
+    code: true
+
+  - type: order
+    prompt: Put the resolution rules in order of priority.
+    items:
+      - A method declared in the class or a superclass
+      - The default in the most specific interface
+      - An explicit choice the class must make by overriding

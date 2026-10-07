@@ -1,0 +1,64 @@
+title: Find, match and reduce
+summary: "`anyMatch`, `allMatch` and `findFirst` short-circuit; `reduce` combines every element into one value."
+duration: 5
+tags: [java, modern java, streams, reduce, findfirst, anymatch, optional]
+sources:
+  - { book: modern-java-in-action, ref: "§5.4–5.5, Finding, matching and reducing" }
+steps:
+  - type: explanation
+    title: Matching short-circuits
+    body: |
+      `anyMatch` stops at the first match.
+      `allMatch` and `noneMatch` stop at the first counterexample.
+      They return a `boolean`.
+
+  - type: choice
+    prompt: Which call checks that no dish has more than 1,000 calories?
+    options:
+      - text: "`menu.stream().noneMatch(d -> d.calories() > 1000)`"
+        correct: true
+      - text: "`menu.stream().allMatch(d -> d.calories() <= 1000)`"
+        correct: true
+      - text: "`menu.stream().anyMatch(d -> d.calories() <= 1000)`"
+        feedback: That's true as soon as one dish is light enough.
+
+  - type: explanation
+    title: Finding returns an Optional
+    body: |
+      `findFirst` and `findAny` might find nothing.
+      So they return `Optional<T>`, not `T` or null.
+      `findAny` is cheaper in parallel streams, when order doesn't matter.
+
+  - type: explanation
+    title: reduce folds a stream into one value
+    body: |
+      `reduce(identity, op)` starts with an identity value and combines each element into it.
+      `reduce(0, Integer::sum)` adds them up.
+      Without an identity value, it returns an `Optional`, since the stream may be empty.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of(1, 2, 3, 4).reduce(0, Integer::sum));
+      System.out.println(Stream.of(1, 2, 3).reduce(Integer::max));
+    language: java
+    options:
+      - text: "`10`, then `Optional[3]`"
+        correct: true
+      - text: "`10`, then `3`"
+        feedback: "Without an identity value, `reduce` returns an `Optional`."
+      - text: "`Optional[10]`, then `Optional[3]`"
+        feedback: "With an identity value, there's always a result, so it's returned directly."
+
+  - type: choice
+    prompt: "Why must the identity value really be neutral? Consider `Stream.of(1, 2, 3).parallel().reduce(10, Integer::sum)`."
+    options:
+      - text: In parallel, each chunk starts from the identity value, so 10 can be added several times — it printed 36, not 16
+        correct: true
+      - text: It doesn't matter; the identity value is only used for empty streams
+        feedback: It's the starting value of every partial reduction.
+
+  - type: blank
+    prompt: Count the dishes with map and reduce.
+    template: "menu.stream().map(d -> 1).reduce([[0]], Integer::sum)"
+    code: true

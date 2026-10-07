@@ -1,0 +1,74 @@
+title: removeIf, replaceAll, compute and merge
+summary: Collections gained methods that replace error-prone loops — removing while iterating, and updating map entries in one call.
+duration: 6
+tags: [java, modern java, collections, removeif, map, merge, computeifabsent]
+sources:
+  - { book: modern-java-in-action, ref: "§8.2–8.3, Working with List, Set and Map" }
+steps:
+  - type: explanation
+    title: Don't remove inside for-each
+    body: |
+      Removing from a list inside a for-each loop throws `ConcurrentModificationException`.
+      `removeIf(predicate)` does it safely.
+      `replaceAll(fn)` transforms every element in place.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<Integer> l = new ArrayList<>(List.of(1, 2, 3, 4));
+      l.removeIf(i -> i % 2 == 0);
+      l.replaceAll(i -> i * 10);
+      System.out.println(l);
+    language: java
+    options:
+      - text: "`[10, 30]`"
+        correct: true
+      - text: "`[20, 40]`"
+        feedback: "`removeIf` removes the even numbers, leaving 1 and 3."
+      - text: "`ConcurrentModificationException`"
+        feedback: These methods iterate internally and are safe.
+
+  - type: explanation
+    title: Map defaults and grouping
+    body: |
+      `getOrDefault(key, d)` returns `d` when the key is missing.
+      `computeIfAbsent(key, k -> new ArrayList<>())` creates a value only when needed.
+      It returns the value, so you can add to it straight away.
+
+  - type: blank
+    prompt: Add a friend to someone's list, creating the list if needed.
+    template: "friends.[[computeIfAbsent]](name, k -> new ArrayList<>()).add(friend);"
+    code: true
+
+  - type: explanation
+    title: merge combines values
+    body: |
+      `merge(key, value, fn)` puts `value` if the key is absent.
+      Otherwise it combines the old and new values with `fn`.
+      If `fn` returns null, the entry is removed.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Map<String, Integer> counts = new HashMap<>();
+      counts.merge("java", 1, Integer::sum);
+      counts.merge("java", 1, Integer::sum);
+      System.out.println(counts);
+    language: java
+    options:
+      - text: "`{java=2}`"
+        correct: true
+      - text: "`{java=1}`"
+        feedback: The second call finds the key and adds 1 + 1.
+
+  - type: match
+    prompt: Match each method with when it calls its function.
+    pairs:
+      - left: "`computeIfAbsent`"
+        right: Only when the key is missing
+      - left: "`computeIfPresent`"
+        right: Only when the key is present
+      - left: "`compute`"
+        right: Always
+      - left: "`merge`"
+        right: Only when there's an old value to combine

@@ -1,0 +1,6 @@
+title: Default methods and modules
+summary: Chapters 13–14 — evolving interfaces with default methods, the rules when two defaults clash, and the Java module system.
+lessons:
+  - default-methods
+  - resolution-rules
+  - module-system

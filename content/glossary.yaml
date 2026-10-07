@@ -994,6 +994,55 @@ java-puzzlers:
     aliases: [most specific]
     def: "The rule the compiler uses to choose between overloads: if one's parameters could be passed to the other, it's more specific and wins."
 
+modern-java-in-action:
+  - term: Behavior parameterization
+    aliases: [behaviour parameterization]
+    def: Passing the part of a method that varies — a test, a comparison, an action — as an argument, so one method serves many uses.
+  - term: Lambda
+    aliases: [lambda expression, lambda expressions, lambdas]
+    def: 'An anonymous function: parameters, an arrow and a body, like `a -> a.weight() > 150`. It can be passed wherever a functional interface is expected.'
+  - term: Function descriptor
+    def: The signature of a functional interface's single abstract method, written like `T -> boolean`. A lambda must match it.
+  - term: Target type
+    def: The functional interface a lambda is converted to, taken from where the lambda appears — an assignment, an argument or a cast.
+  - term: Effectively final
+    def: A local variable that's never reassigned after it's initialized, even without the `final` keyword. Lambdas and inner classes can only use such variables.
+  - term: Internal iteration
+    def: The library loops over the data for you, as streams do. You describe what to do with each element, not how to step through them.
+  - term: Intermediate operation
+    aliases: [intermediate operations]
+    def: A stream operation, like `filter` or `map`, that returns another stream. It does nothing until a terminal operation runs.
+  - term: Terminal operation
+    aliases: [terminal operations]
+    def: A stream operation, like `collect`, `forEach` or `findFirst`, that produces a result and runs the pipeline. The stream can't be used again afterwards.
+  - term: Short-circuiting
+    def: Stopping as soon as the answer is known — `findFirst`, `anyMatch` and `limit` don't process the rest of the stream.
+  - term: Spliterator
+    def: The "splittable iterator" behind streams. It walks through elements and can hand off part of them to another thread.
+  - term: Currying
+    aliases: [curried]
+    def: Turning a function of several arguments into a chain of one-argument functions, `x -> y -> x + y`, so you can fix the first argument early.
+  - term: Referential transparency
+    aliases: [referentially transparent]
+    def: A function that always returns the same result for the same arguments and has no side effects, so any call can be replaced by its value.
+  - term: Higher-order function
+    aliases: [higher-order functions]
+    def: A function that takes a function as an argument or returns one, like `Comparator.comparing` or `Stream.map`.
+  - term: CompletableFuture
+    code: true
+    def: A future you can complete, and chain work onto with `thenApply`, `thenCompose` and `thenCombine`, so no thread has to block waiting for it.
+  - term: Reactive streams
+    aliases: [Flow API]
+    def: A standard for asynchronous streams with back-pressure — the subscriber requests items as it's ready. Java has it as `java.util.concurrent.Flow`.
+  - term: Module
+    aliases: [modules, module-info.java]
+    def: A named group of packages with a `module-info.java` that declares what it requires and which packages it exports. Unexported packages are hidden.
+  - term: Identity value
+    def: The starting value of a reduction, which leaves any element unchanged when combined with it — 0 for addition, 1 for multiplication, "" for concatenation.
+  - term: Daylight saving time
+    aliases: [DST, clock change]
+    def: Moving clocks forward in spring and back in autumn. Some local times are skipped and some happen twice; `ZonedDateTime` handles both.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

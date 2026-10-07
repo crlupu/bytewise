@@ -1,0 +1,70 @@
+title: Composing CompletableFutures
+summary: "`thenApply` transforms, `thenCompose` chains another async call, `thenCombine` joins two independent ones, and `exceptionally` recovers."
+duration: 6
+tags: [java, modern java, completablefuture, thencompose, thencombine, asynchronous]
+sources:
+  - { book: modern-java-in-action, ref: "§16.4, Pipelining asynchronous tasks" }
+steps:
+  - type: explanation
+    title: Transform or chain
+    body: |
+      `thenApply(f)` applies a plain function to the result.
+      `thenCompose(f)` is for a function that returns another future.
+      It flattens, like `flatMap`.
+
+  - type: choice
+    prompt: "`fetchUser(id)` returns `CompletableFuture<User>`. Starting from `CompletableFuture<String> idFuture`, which gives `CompletableFuture<User>`?"
+    options:
+      - text: "`idFuture.thenCompose(this::fetchUser)`"
+        correct: true
+      - text: "`idFuture.thenApply(this::fetchUser)`"
+        feedback: "That gives `CompletableFuture<CompletableFuture<User>>`."
+
+  - type: explanation
+    title: Combine independent work
+    body: |
+      `a.thenCombine(b, fn)` waits for both futures.
+      Then it applies `fn` to the two results.
+      `a` and `b` run at the same time.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      CompletableFuture<Integer> f = CompletableFuture.supplyAsync(() -> 20)
+          .thenApply(x -> x + 1)
+          .thenCombine(CompletableFuture.supplyAsync(() -> 2), (x, y) -> x * y);
+      System.out.println(f.join());
+    language: java
+    options:
+      - text: "42"
+        correct: true
+      - text: "40"
+        feedback: "`thenApply` adds one first: (20 + 1) × 2."
+      - text: "22"
+        feedback: "`thenCombine` multiplies the two results."
+
+  - type: explanation
+    title: Recover from failure
+    body: |
+      `exceptionally(fn)` replaces an exception with a value.
+      `handle((value, error) -> ...)` sees both outcomes.
+      `allOf` waits for many futures; `anyOf` for the first.
+
+  - type: match
+    prompt: Match each method with its use.
+    pairs:
+      - left: "`thenApply`"
+        right: Transform the result
+      - left: "`thenCompose`"
+        right: Start a dependent async call
+      - left: "`thenCombine`"
+        right: Merge two independent results
+      - left: "`exceptionally`"
+        right: Supply a fallback on failure
+      - left: "`allOf`"
+        right: Wait for a whole list of futures
+
+  - type: blank
+    prompt: Fall back to -1 if the lookup fails.
+    template: "price.[[exceptionally]](t -> -1.0)"
+    code: true

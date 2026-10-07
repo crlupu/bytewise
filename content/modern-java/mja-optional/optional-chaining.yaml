@@ -1,0 +1,66 @@
+title: Chaining Optionals
+summary: "`map`, `flatMap` and `filter` let you navigate possibly-missing values without a single null check."
+duration: 5
+tags: [java, modern java, optional, flatmap, map, filter]
+sources:
+  - { book: modern-java-in-action, ref: "§11.3, Patterns for adopting Optionals" }
+steps:
+  - type: explanation
+    title: map works inside the box
+    body: |
+      `optional.map(f)` applies `f` if there's a value.
+      If it's empty, the result is empty too.
+      No `if (x != null)` needed.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Optional<String> some = Optional.of("java");
+      Optional<String> none = Optional.empty();
+      System.out.println(some.map(String::length).orElse(0) + " " + none.map(String::length).orElse(-1));
+    language: java
+    options:
+      - text: "4 -1"
+        correct: true
+      - text: "4 0"
+        feedback: "The empty one falls through to its own `orElse(-1)`."
+      - text: It throws `NoSuchElementException`
+        feedback: "`map` on an empty Optional just returns another empty one."
+
+  - type: explanation
+    title: flatMap avoids nesting
+    body: |
+      If `f` itself returns an `Optional`, `map` gives `Optional<Optional<T>>`.
+      `flatMap` unwraps one level.
+      Chain `flatMap` along a path of optional links.
+
+  - type: blank
+    prompt: "`getCar()` and `getInsurance()` return `Optional`s. Get the insurance name, if any."
+    template: "person.getCar().[[flatMap]](Car::getInsurance).map(Insurance::getName).orElse(\"Unknown\")"
+    code: true
+
+  - type: explanation
+    title: filter keeps or empties
+    body: |
+      `filter(p)` keeps the value only if it matches.
+      Otherwise it returns an empty Optional.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Optional.of("x").filter(s -> s.length() > 3).orElse("short"));
+    language: java
+    options:
+      - text: "`short`"
+        correct: true
+      - text: "`x`"
+        feedback: "`\"x\"` fails the test, so the Optional becomes empty."
+
+  - type: choice
+    prompt: "Which line is an anti-pattern?"
+    options:
+      - text: "`if (opt.isPresent()) return opt.get(); else return \"none\";`"
+        correct: true
+      - text: "`return opt.orElse(\"none\");`"
+        feedback: That's the idiomatic version.
+    explanation: "`isPresent` plus `get` is just a null check in disguise."

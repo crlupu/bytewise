@@ -1,0 +1,5 @@
+title: Collecting data
+summary: Chapter 6 — summarizing, joining, grouping, partitioning and building maps with collectors.
+lessons:
+  - grouping-and-partitioning
+  - summarizing-and-to-map

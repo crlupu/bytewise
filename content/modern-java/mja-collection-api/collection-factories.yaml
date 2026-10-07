@@ -1,0 +1,69 @@
+title: List.of, Set.of and Map.of
+summary: The factory methods make small immutable collections that reject nulls and, for sets and maps, duplicates.
+duration: 5
+tags: [java, modern java, collections, immutable, list of, map of]
+sources:
+  - { book: modern-java-in-action, ref: "§8.1, Collection factories" }
+steps:
+  - type: explanation
+    title: Small collections in one line
+    body: |
+      `List.of("a", "b")`, `Set.of(1, 2)` and `Map.of("k", 1)` create collections directly.
+      They're immutable: `add`, `remove` and `set` throw.
+      For more than ten map entries, use `Map.ofEntries`.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      List<Integer> list = List.of(1, 2);
+      list.add(3);
+    language: java
+    options:
+      - text: "`UnsupportedOperationException`"
+        correct: true
+      - text: "`list` becomes `[1, 2, 3]`"
+        feedback: "`List.of` lists are immutable."
+      - text: It doesn't compile
+        feedback: "`add` is part of the `List` interface, so the call compiles; it fails at run time."
+
+  - type: explanation
+    title: No nulls, no duplicates
+    body: |
+      The factories throw `NullPointerException` for a null element.
+      `Set.of` and `Map.of` throw `IllegalArgumentException` for duplicates.
+      Even `contains(null)` throws on these lists.
+
+  - type: match
+    prompt: Match each call with what happens.
+    pairs:
+      - left: "`List.of(1, null)`"
+        right: "`NullPointerException`"
+      - left: "`Map.of(\"a\", 1, \"a\", 2)`"
+        right: "`IllegalArgumentException`"
+      - left: "`List.of(1).contains(null)`"
+        right: "`NullPointerException`, too"
+      - left: "`List.of(1, 1)`"
+        right: "`[1, 1]` — lists allow duplicates"
+
+  - type: explanation
+    title: Arrays.asList is different
+    body: |
+      `Arrays.asList` is a fixed-size view of an array.
+      You can `set` elements, which writes through to the array.
+      You can't `add` or `remove`.
+
+  - type: choice
+    prompt: "`List<Integer> l = Arrays.asList(1, 2, 3);` Which calls work?"
+    options:
+      - text: "`l.set(0, 9)`"
+        correct: true
+      - text: "`l.add(4)`"
+        feedback: The list is fixed-size.
+      - text: "`l.remove(0)`"
+        feedback: The list is fixed-size.
+
+  - type: blank
+    prompt: Make a mutable copy you can add to.
+    template: "List<String> names = new [[ArrayList]]<>(List.of(\"Ann\", \"Bo\"));"
+    code: true
+    caseSensitive: true

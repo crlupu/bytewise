@@ -1,0 +1,56 @@
+title: Optional instead of null
+summary: "`Optional<T>` makes \"there may be no value\" part of the type, so callers can't forget to handle it."
+duration: 5
+tags: [java, modern java, optional, "null"]
+sources:
+  - { book: modern-java-in-action, ref: "§11.1–11.3, Optional" }
+  - { book: effective-java, ref: "Item 55" }
+steps:
+  - type: explanation
+    title: Null hides in every type
+    body: |
+      Any reference can be null, and the type doesn't say so.
+      Forgetting a check gives a `NullPointerException` far from the cause.
+      `Optional<Car>` says outright that there may be no car.
+
+  - type: explanation
+    title: Three ways to make one
+    body: |
+      `Optional.of(x)` requires a non-null `x`.
+      `Optional.ofNullable(x)` gives an empty Optional for null.
+      `Optional.empty()` is explicitly empty.
+
+  - type: match
+    prompt: Match each call with its result.
+    pairs:
+      - left: "`Optional.of(null)`"
+        right: "`NullPointerException`"
+      - left: "`Optional.ofNullable(null)`"
+        right: "`Optional.empty`"
+      - left: "`Optional.of(\"car\")`"
+        right: "`Optional[car]`"
+
+  - type: explanation
+    title: Getting the value out
+    body: |
+      `orElse(d)` returns the value or a default.
+      `orElseGet(supplier)` computes the default only when needed.
+      `orElseThrow()` throws when empty.
+
+  - type: choice
+    prompt: "Why prefer `orElseGet(this::loadDefault)` to `orElse(loadDefault())` when `loadDefault` is expensive?"
+    options:
+      - text: "`orElse` evaluates its argument every time, even when a value is present"
+        correct: true
+      - text: "`orElse` can't take a method call"
+        feedback: It can — and that call always runs, which is the problem.
+
+  - type: choice
+    prompt: Where is `Optional` meant to be used?
+    options:
+      - text: As a method's return type when there may be no result
+        correct: true
+      - text: As a field type in every class
+        feedback: "It isn't `Serializable`, and it adds an object per field. Use it for return values."
+      - text: As a method parameter
+        feedback: Callers then have to wrap arguments. Overloads or a nullable parameter are clearer.

@@ -1,0 +1,62 @@
+title: Pass the behaviour, not a flag
+summary: Instead of a method per filter, or a flag per variation, pass the varying behaviour in as an argument.
+duration: 5
+tags: [java, modern java, lambdas, behavior parameterization, strategy]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 2, Passing code with behavior parameterization" }
+steps:
+  - type: explanation
+    title: Requirements keep changing
+    body: |
+      First the farmer wants green apples.
+      Then heavy ones, then green and heavy ones.
+      A new method for each, or a boolean flag for each, doesn't scale.
+
+  - type: choice
+    prompt: What's wrong with `filterApples(inventory, GREEN, 150, true)`?
+    options:
+      - text: The caller can't tell what `true` means, and each new criterion adds another parameter
+        correct: true
+      - text: It's slower than separate methods
+        feedback: Speed isn't the issue; readability and flexibility are.
+
+  - type: explanation
+    title: Pass a predicate
+    body: |
+      Write one `filter` that takes the test as a parameter.
+      The test is an object with one method, like `test(Apple a)`.
+      The filtering loop stays the same; only the behaviour changes.
+
+  - type: choice
+    prompt: Which signature parameterizes the behaviour?
+    options:
+      - text: "`List<Apple> filter(List<Apple> list, Predicate<Apple> p)`"
+        correct: true
+      - text: "`List<Apple> filter(List<Apple> list, String color, int weight)`"
+        feedback: That still hard-codes which attributes can be tested.
+      - text: "`List<Apple> filterGreenHeavy(List<Apple> list)`"
+        feedback: One method per combination is what we're trying to avoid.
+
+  - type: explanation
+    title: Lambdas make it short
+    body: |
+      Before Java 8, you passed an anonymous class.
+      Five lines of ceremony wrapped one line of logic.
+      A lambda is just the logic: `a -> a.weight() > 150`.
+
+  - type: blank
+    prompt: Keep only the heavy apples.
+    template: "filter(inventory, a -> a.weight() [[>]] 150)"
+    code: true
+
+  - type: match
+    prompt: Match each approach with its main drawback.
+    pairs:
+      - left: One method per criterion
+        right: Duplicated loops
+      - left: A flag per criterion
+        right: Unreadable calls
+      - left: An anonymous class per criterion
+        right: Verbose
+      - left: A lambda per criterion
+        right: Hardly any — that's the point

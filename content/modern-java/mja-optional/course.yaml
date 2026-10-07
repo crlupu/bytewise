@@ -1,0 +1,5 @@
+title: Optional
+summary: Chapter 11 — modelling absence in the type, and chaining operations without null checks.
+lessons:
+  - optional-basics
+  - optional-chaining

@@ -1,0 +1,63 @@
+title: LocalDate, LocalDateTime and Instant
+summary: java.time separates human dates and times from machine instants, and every object is immutable.
+duration: 5
+tags: [java, modern java, java time, localdate, instant, immutability]
+sources:
+  - { book: modern-java-in-action, ref: "§12.1, LocalDate, LocalTime, LocalDateTime, Instant, Duration, and Period" }
+steps:
+  - type: explanation
+    title: Pick the type for the meaning
+    body: |
+      `LocalDate` is a date on a calendar, like a birthday.
+      `LocalDateTime` adds a time, but no zone.
+      `Instant` is a point on the timeline, in seconds since 1970 UTC.
+
+  - type: match
+    prompt: Match each value with the type to store it in.
+    pairs:
+      - left: A birthday
+        right: "`LocalDate`"
+      - left: The moment an order was placed
+        right: "`Instant`"
+      - left: A meeting at 10:00 in Paris
+        right: "`ZonedDateTime`"
+      - left: Opening time of every store
+        right: "`LocalTime`"
+
+  - type: explanation
+    title: Immutable, so assign the result
+    body: |
+      `plusDays`, `withMonth` and friends return a new object.
+      The original is unchanged.
+      Forgetting to use the result is a common bug.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      LocalDate d = LocalDate.of(2026, 10, 7);
+      d.plusDays(1);
+      System.out.println(d);
+    language: java
+    options:
+      - text: "`2026-10-07`"
+        correct: true
+      - text: "`2026-10-08`"
+        feedback: "`plusDays` returns a new date; `d` itself never changes."
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(LocalDate.of(2024, 1, 31).plusMonths(1));
+    language: java
+    options:
+      - text: "`2024-02-29`"
+        correct: true
+      - text: "`2024-03-02`"
+        feedback: "`java.time` clamps to the last valid day rather than rolling over."
+      - text: It throws `DateTimeException`
+        feedback: "`of(2024, 2, 31)` would throw, but `plusMonths` adjusts to the end of the month."
+
+  - type: blank
+    prompt: Get tomorrow's date.
+    template: "LocalDate tomorrow = LocalDate.now().[[plusDays]](1);"
+    code: true

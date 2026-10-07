@@ -1,0 +1,65 @@
+title: Lambda syntax and where it fits
+summary: A lambda is an anonymous function with parameters, an arrow and a body, usable wherever a functional interface is expected.
+duration: 5
+tags: [java, modern java, lambdas, syntax, effectively final]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 3, Lambda expressions" }
+steps:
+  - type: explanation
+    title: Parameters, arrow, body
+    body: |
+      `(a, b) -> a.compareTo(b)` has a parameter list, an arrow and a body.
+      A single expression is returned automatically.
+      A block in braces needs an explicit `return`.
+
+  - type: choice
+    prompt: Which of these are valid lambdas?
+    options:
+      - text: "`() -> {}`"
+        correct: true
+      - text: "`(String s) -> s.length()`"
+        correct: true
+      - text: "`s -> { return s.length(); }`"
+        correct: true
+      - text: "`(Integer i) -> return \"Alan\" + i;`"
+        feedback: "`return` is a statement, so it needs braces: `(Integer i) -> { return \"Alan\" + i; }`."
+      - text: "`s -> { \"Iron Man\"; }`"
+        feedback: A block needs statements; a bare string isn't one. Write `s -> "Iron Man"` or add `return`.
+
+  - type: explanation
+    title: The target type gives it meaning
+    body: |
+      A lambda has no type of its own.
+      It takes the type the context expects: a functional interface.
+      The same lambda can be a `Callable` in one place and a `PrivilegedAction` in another.
+
+  - type: choice
+    prompt: Why doesn't `Object o = () -> System.out.println("hi");` compile?
+    options:
+      - text: "`Object` isn't a functional interface, so the lambda has no target type"
+        correct: true
+      - text: Lambdas can't print
+        feedback: They can do anything a method body can.
+    explanation: "Cast it to give it a target: `Object o = (Runnable) () -> System.out.println(\"hi\");`."
+
+  - type: explanation
+    title: Captured variables must be effectively final
+    body: |
+      A lambda can use local variables from the enclosing method.
+      But only if they're never reassigned.
+      It captures a copy of the value, not the variable.
+
+  - type: choice
+    prompt: Why doesn't this compile?
+    code: |
+      int port = 1337;
+      Runnable r = () -> System.out.println(port);
+      port = 31337;
+    language: java
+    options:
+      - text: "`port` is reassigned, so it isn't effectively final"
+        correct: true
+      - text: Lambdas can't use local variables
+        feedback: They can, as long as the variables are effectively final.
+      - text: "`Runnable` can't print"
+        feedback: "`Runnable.run()` can run any code."

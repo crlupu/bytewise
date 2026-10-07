@@ -1,0 +1,70 @@
+title: What a stream is
+summary: A stream is a lazy, one-shot pipeline over a source; the collection holds data, the stream computes with it.
+duration: 5
+tags: [java, modern java, streams, laziness, internal iteration]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 4, Introducing streams" }
+steps:
+  - type: explanation
+    title: Describe the query, not the loop
+    body: |
+      A stream pipeline says what you want: filter, map, collect.
+      The library does the looping, called internal iteration.
+      That leaves it free to reorder, fuse or parallelize the work.
+
+  - type: explanation
+    title: Nothing runs until the end
+    body: |
+      `filter` and `map` are intermediate operations; they return a stream.
+      They do nothing until a terminal operation, like `collect` or `findFirst`, asks.
+      Then each element flows through the whole pipeline, one at a time.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Stream.of("a", "bb", "ccc")
+          .filter(s -> { System.out.print("f" + s + " "); return s.length() > 1; })
+          .map(s -> { System.out.print("m" + s + " "); return s.toUpperCase(); })
+          .findFirst()
+          .ifPresent(System.out::println);
+    language: java
+    options:
+      - text: "`fa fbb mbb BB`"
+        correct: true
+      - text: "`fa fbb fccc mbb mccc BB`"
+        feedback: "Elements go through the pipeline one at a time, and `findFirst` stops as soon as it has one. `ccc` is never touched."
+      - text: "`BB`"
+        feedback: The lambdas do print — but only for the elements actually processed.
+    explanation: This is short-circuiting. Laziness means a stream does only the work the terminal operation needs.
+
+  - type: explanation
+    title: A stream is used once
+    body: |
+      A stream can be traversed only once.
+      A second terminal operation throws `IllegalStateException`.
+      Get a new stream from the source instead.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      Stream<String> s = names.stream();
+      s.forEach(System.out::println);
+      s.forEach(System.out::println);
+    language: java
+    options:
+      - text: The names print once, then `IllegalStateException`
+        correct: true
+      - text: The names print twice
+        feedback: A stream is consumed by its terminal operation.
+
+  - type: match
+    prompt: Sort these operations.
+    pairs:
+      - left: "`filter`"
+        right: Intermediate
+      - left: "`collect`"
+        right: Terminal
+      - left: "`sorted`"
+        right: Intermediate, but must see every element first
+      - left: "`findFirst`"
+        right: Terminal, short-circuiting

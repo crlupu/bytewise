@@ -1,0 +1,5 @@
+title: Parallel data processing
+summary: Chapter 7 — parallel streams, when they help, and the fork/join framework underneath.
+lessons:
+  - parallel-streams
+  - fork-join-and-spliterators

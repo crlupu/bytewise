@@ -1,0 +1,6 @@
+title: Asynchronous and reactive programming
+summary: Chapters 15–17 — futures, composing CompletableFutures, handling their errors, and reactive streams.
+lessons:
+  - futures-and-completable-futures
+  - composing-futures
+  - reactive-streams

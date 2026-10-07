@@ -1,0 +1,5 @@
+title: Collection API enhancements
+summary: Chapter 8 — immutable collection factories, removeIf and replaceAll, and Map's compute, merge and getOrDefault.
+lessons:
+  - collection-factories
+  - list-and-map-methods

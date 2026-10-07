@@ -1,0 +1,61 @@
+title: From Future to CompletableFuture
+summary: A `Future` can only be waited on; a `CompletableFuture` lets you say what happens when the result arrives.
+duration: 5
+tags: [java, modern java, completablefuture, future, asynchronous]
+sources:
+  - { book: modern-java-in-action, ref: "Chapter 15, Concepts behind CompletableFuture and reactive programming" }
+  - { book: modern-java-in-action, ref: "§16.1–16.2, CompletableFuture" }
+steps:
+  - type: explanation
+    title: Future blocks
+    body: |
+      `executor.submit(task)` returns a `Future`.
+      `future.get()` blocks until the result is ready.
+      You can't say "when it's done, do this" without a waiting thread.
+
+  - type: explanation
+    title: CompletableFuture reacts
+    body: |
+      `CompletableFuture.supplyAsync(supplier)` runs the supplier on a pool.
+      `thenApply`, `thenAccept` and friends register what happens next.
+      No thread has to sit and wait.
+
+  - type: blank
+    prompt: Start a price lookup without blocking.
+    template: "CompletableFuture<Double> price = CompletableFuture.[[supplyAsync]](() -> shop.getPrice(product));"
+    code: true
+
+  - type: choice
+    prompt: Where does `supplyAsync(supplier)` run the supplier, if you don't pass an executor?
+    options:
+      - text: On the common `ForkJoinPool`
+        correct: true
+      - text: On a new thread each time
+        feedback: It reuses the common pool's threads.
+      - text: On the calling thread
+        feedback: Then it wouldn't be asynchronous.
+    explanation: For blocking I/O, pass your own executor sized for it — the common pool has only about one thread per core.
+
+  - type: explanation
+    title: join or get
+    body: |
+      `join()` waits like `get()`.
+      It throws an unchecked `CompletionException` instead of checked exceptions.
+      That makes it easy to use inside lambdas.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      try {
+        CompletableFuture.supplyAsync(() -> {
+          throw new IllegalStateException("boom");
+        }).join();
+      } catch (CompletionException e) {
+        System.out.println(e.getCause());
+      }
+    language: java
+    options:
+      - text: "`java.lang.IllegalStateException: boom`"
+        correct: true
+      - text: Nothing; the exception is lost on the other thread
+        feedback: "The future completes exceptionally, and `join` rethrows it wrapped in a `CompletionException`."

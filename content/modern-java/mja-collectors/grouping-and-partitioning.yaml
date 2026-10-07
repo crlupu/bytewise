@@ -1,0 +1,70 @@
+title: Grouping and partitioning
+summary: "`groupingBy` builds a map from a key to the elements with that key; a second collector says what to keep per group."
+duration: 6
+tags: [java, modern java, collectors, groupingby, partitioningby]
+sources:
+  - { book: modern-java-in-action, ref: "§6.3–6.4, Grouping and partitioning" }
+steps:
+  - type: explanation
+    title: groupingBy makes a map
+    body: |
+      `groupingBy(classifier)` applies the classifier to each element.
+      Elements with the same result go into the same list.
+      You get a `Map<K, List<T>>`.
+
+  - type: blank
+    prompt: Group dishes by their type.
+    template: "Map<Dish.Type, List<Dish>> byType = menu.stream().collect(Collectors.[[groupingBy]](Dish::type));"
+    code: true
+
+  - type: explanation
+    title: A second collector per group
+    body: |
+      Pass another collector to say what to do with each group.
+      `counting()` counts, `mapping` transforms, `maxBy` picks one.
+      Collectors nest as deep as you like.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of("apple", "avocado", "banana", "cherry")
+          .collect(Collectors.groupingBy(w -> w.charAt(0), Collectors.counting())));
+    language: java
+    options:
+      - text: "`{a=2, b=1, c=1}`"
+        correct: true
+      - text: "`{a=[apple, avocado], b=[banana], c=[cherry]}`"
+        feedback: "That's plain `groupingBy`. With `counting()`, each group becomes its size."
+      - text: "`4`"
+        feedback: The result is a map from first letter to count.
+
+  - type: explanation
+    title: partitioningBy splits in two
+    body: |
+      `partitioningBy` takes a predicate.
+      It always returns a map with both `true` and `false` keys.
+      Even an empty side is present.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Stream.of(1, 2, 3, 4, 5)
+          .collect(Collectors.partitioningBy(i -> i % 2 == 0)));
+    language: java
+    options:
+      - text: "`{false=[1, 3, 5], true=[2, 4]}`"
+        correct: true
+      - text: "`[2, 4]`"
+        feedback: "That's `filter`. Partitioning keeps both sides."
+
+  - type: match
+    prompt: Match each collector with what you get per group.
+    pairs:
+      - left: "`groupingBy(f)`"
+        right: A list of the elements
+      - left: "`groupingBy(f, counting())`"
+        right: How many there are
+      - left: "`groupingBy(f, mapping(g, toSet()))`"
+        right: A set of transformed elements
+      - left: "`groupingBy(f, maxBy(cmp))`"
+        right: The largest, as an `Optional`

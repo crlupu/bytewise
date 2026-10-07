@@ -1,0 +1,64 @@
+title: Durations, periods, adjusters and zones
+summary: Duration measures time, Period measures calendar units, TemporalAdjusters find dates like "last day of the month", and ZonedDateTime handles daylight saving.
+duration: 6
+tags: [java, modern java, java time, duration, period, time zones, dst]
+sources:
+  - { book: modern-java-in-action, ref: "§12.2–12.3, Manipulating dates and Working with time zones" }
+steps:
+  - type: explanation
+    title: Duration and Period
+    body: |
+      `Duration` is an amount of time in seconds and nanoseconds.
+      `Period` is years, months and days.
+      A month isn't a fixed number of seconds, so the two stay separate.
+
+  - type: match
+    prompt: Match each expression with its printed form.
+    pairs:
+      - left: "`Duration.ofMinutes(90)`"
+        right: "`PT1H30M`"
+      - left: "`Period.between(Jan 15, Mar 10)` (same year)"
+        right: "`P1M24D`"
+      - left: "`Duration.between(09:00, 17:30)`"
+        right: "`PT8H30M`"
+
+  - type: explanation
+    title: Adjusters find dates
+    body: |
+      `date.with(TemporalAdjusters.lastDayOfMonth())` jumps to the month's end.
+      Others find the next Monday or the first day of next year.
+      You can write your own.
+
+  - type: blank
+    prompt: Find the last day of this month.
+    template: "LocalDate end = today.with(TemporalAdjusters.[[lastDayOfMonth]]());"
+    code: true
+
+  - type: explanation
+    title: Zones know about daylight saving
+    body: |
+      `ZonedDateTime` follows a zone's rules, like `Europe/London`.
+      Adding an hour across a clock change moves the wall clock by two.
+      `LocalDateTime` knows nothing about this.
+
+  - type: predict
+    prompt: In London, clocks jump from 01:00 to 02:00 on 29 March 2026. What does this print?
+    code: |
+      ZonedDateTime t = ZonedDateTime.of(
+          LocalDateTime.of(2026, 3, 29, 0, 30), ZoneId.of("Europe/London"));
+      System.out.println(t.plusHours(1));
+    language: java
+    options:
+      - text: "`2026-03-29T02:30+01:00[Europe/London]`"
+        correct: true
+      - text: "`2026-03-29T01:30Z[Europe/London]`"
+        feedback: 01:30 doesn't exist that day. One real hour after 00:30 GMT is 02:30 BST.
+    explanation: "`plusDays(1)` instead keeps the wall-clock time — 00:30 the next day — even though only 23 hours pass."
+
+  - type: choice
+    prompt: How should a server store the time an event happened?
+    options:
+      - text: As an `Instant`, converting to a zone only for display
+        correct: true
+      - text: As a `LocalDateTime` in the server's zone
+        feedback: It loses the zone, and becomes ambiguous during clock changes or if the server moves.
