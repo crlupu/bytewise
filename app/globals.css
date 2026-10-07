@@ -3447,3 +3447,21 @@ body {
     background: var(--glass-hover);
   }
 }
+
+/* ---- Long words never widen the page ----
+   A long number, URL or identifier wraps onto the next line instead of
+   pushing the layout sideways. `anywhere` (unlike `break-word`) also lets
+   flex items such as answer options shrink to fit. Code blocks keep their
+   own horizontal scrolling. */
+body {
+  overflow-wrap: anywhere;
+  overflow-x: clip;
+}
+:not(pre) > code {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+pre,
+pre code {
+  overflow-wrap: normal;
+}
