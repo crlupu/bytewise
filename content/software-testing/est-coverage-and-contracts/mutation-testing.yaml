@@ -1,0 +1,46 @@
+title: Mutation testing
+summary: A tool makes small changes to your code; if no test fails, your tests didn't really check that behaviour.
+duration: 5
+tags: [testing, effective software testing, mutation testing, pitest, test quality]
+sources:
+  - { book: effective-software-testing, ref: "§3.11, Mutation testing" }
+steps:
+  - type: explanation
+    title: Test the tests
+    body: |
+      Coverage says code ran, not that it was checked.
+      Mutation testing changes the code — `<` to `<=`, `+` to `-`, a return to null.
+      Each change is a mutant; the tests should fail.
+
+  - type: explanation
+    title: Killed or surviving
+    body: |
+      If a test fails, the mutant is killed — good.
+      If all pass, the mutant survives: nothing checks that behaviour.
+      Tools like PIT report the survivors.
+
+  - type: choice
+    prompt: "PIT reports a surviving mutant that changed `if (total > 50)` to `if (total >= 50)`. What does it tell you?"
+    options:
+      - text: No test checks a total of exactly 50 — the boundary is untested
+        correct: true
+      - text: The code has a bug
+        feedback: Maybe, maybe not. It tells you the tests can't tell the two versions apart.
+
+  - type: match
+    prompt: Match each mutation with what it checks your tests for.
+    pairs:
+      - left: "`<` becomes `<=`"
+        right: Boundary values
+      - left: "`return x` becomes `return 0`"
+        right: Assertions on the result
+      - left: A method call is removed
+        right: Checks on side effects
+
+  - type: choice
+    prompt: Why isn't mutation testing run on every commit in most projects?
+    options:
+      - text: It runs the test suite once per mutant, which can take a long time
+        correct: true
+      - text: It changes the production code permanently
+        feedback: Mutants live only in memory during the run.

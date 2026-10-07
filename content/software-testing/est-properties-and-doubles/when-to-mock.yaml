@@ -1,0 +1,53 @@
+title: What to mock, and what not to
+summary: Mock slow, external or hard-to-control dependencies; use real objects for entities, value objects and simple collaborators.
+duration: 5
+tags: [testing, effective software testing, mocks, test doubles, coupling]
+sources:
+  - { book: effective-software-testing, ref: "§6.3–6.4, What to mock and what not to mock" }
+steps:
+  - type: explanation
+    title: Mock the edges
+    body: |
+      Mock what's slow, external or hard to set up: databases, web services, the clock.
+      Don't mock entities, value objects or simple helpers.
+      Their real versions are faster to use than to fake.
+
+  - type: match
+    prompt: Mock it or use the real thing?
+    pairs:
+      - left: A payment gateway's HTTP client
+        right: Mock it — it's external and slow
+      - left: A `Money` value object
+        right: Use the real one — it's a simple value
+      - left: The system clock
+        right: Pass a fixed `Clock`
+      - left: An `Order` entity
+        right: Use the real one — it's your domain logic
+
+  - type: explanation
+    title: Mocks couple tests to code
+    body: |
+      A mock-heavy test knows exactly which calls happen, in which order.
+      Refactor the internals, and it breaks even though behaviour didn't change.
+      Verify only the interactions that matter.
+
+  - type: choice
+    prompt: "A test verifies that `calculateTotal` calls `item.getPrice()` exactly 3 times. What's the risk?"
+    options:
+      - text: Caching the price, a harmless refactoring, breaks the test
+        correct: true
+      - text: None; it's very precise
+        feedback: It's precise about implementation, not behaviour — the total is what matters.
+
+  - type: explanation
+    title: Own what you mock
+    body: |
+      Mocking a third-party API encodes your guess about how it behaves.
+      Wrap it in your own small interface and mock that.
+      Test the wrapper against the real thing in an integration test.
+
+  - type: blank
+    prompt: Make time controllable in tests.
+    template: "public InvoiceService([[Clock]] clock) { this.clock = clock; }"
+    code: true
+    caseSensitive: true

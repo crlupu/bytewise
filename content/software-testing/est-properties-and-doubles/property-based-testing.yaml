@@ -1,0 +1,59 @@
+title: Property-based testing
+summary: State a property that holds for every valid input; the framework generates hundreds of inputs and shrinks any failure to the smallest example.
+duration: 6
+tags: [testing, effective software testing, property based testing, jqwik, generators, shrinking]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 5, Property-based testing" }
+steps:
+  - type: explanation
+    title: From examples to properties
+    body: |
+      An example test checks one input you chose.
+      A property says what's true for all inputs in a class.
+      jqwik generates the inputs; you write the rule.
+
+  - type: blank
+    prompt: Mark a jqwik property test.
+    template: |
+      [[@Property]]
+      void reverseTwiceIsIdentity(@ForAll List<Integer> list) {
+        assertThat(reverse(reverse(list))).isEqualTo(list);
+      }
+    code: true
+    caseSensitive: true
+
+  - type: explanation
+    title: Shrinking finds the simplest failure
+    body: |
+      When a property fails, the framework shrinks the input.
+      It tries smaller lists and smaller numbers that still fail.
+      You get the minimal counterexample, like `[0, -1]`.
+
+  - type: choice
+    prompt: Which are good properties of `sort(list)`?
+    options:
+      - text: Every element is less than or equal to the next
+        correct: true
+      - text: The result has the same elements as the input, the same number of times
+        correct: true
+      - text: "`sort([3, 1, 2])` is `[1, 2, 3]`"
+        feedback: That's a single example, not a property.
+
+  - type: explanation
+    title: Constrain the inputs
+    body: |
+      Generated inputs must be valid for the method.
+      Annotations like `@IntRange(min = 1, max = 99)` limit them.
+      Or write a custom generator for complex objects.
+
+  - type: match
+    prompt: Match each kind of property with an example.
+    pairs:
+      - left: Round trip
+        right: "`decode(encode(x))` equals `x`"
+      - left: Invariant
+        right: A sorted list stays sorted after inserting
+      - left: Oracle
+        right: The fast implementation agrees with a slow, obvious one
+      - left: Idempotence
+        right: Sorting twice equals sorting once

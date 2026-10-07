@@ -1,0 +1,52 @@
+title: Test-driven development
+summary: Write a failing test, make it pass in the simplest way, then refactor — in small steps, letting tests shape the design.
+duration: 5
+tags: [testing, effective software testing, tdd, red green refactor]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 8, Test-driven development" }
+steps:
+  - type: explanation
+    title: Red, green, refactor
+    body: |
+      Red: write a small test for behaviour that doesn't exist yet, and watch it fail.
+      Green: write just enough code to pass it.
+      Refactor: clean up, with the tests as a safety net.
+
+  - type: order
+    prompt: Put a TDD cycle in order.
+    items:
+      - Write a test for the next small behaviour
+      - Run it and see it fail
+      - Write the simplest code that passes
+      - Run all tests and see them pass
+      - Refactor while they stay green
+
+  - type: choice
+    prompt: Why watch the new test fail first?
+    options:
+      - text: It proves the test can detect the missing behaviour — a test that passes from the start might check nothing
+        correct: true
+      - text: It's a ritual with no real purpose
+        feedback: A test that never failed hasn't shown it can fail.
+
+  - type: explanation
+    title: Tests drive the design
+    body: |
+      Writing the test first makes you use the API before it exists.
+      Awkward tests reveal awkward interfaces early.
+      Small steps keep you close to working code.
+
+  - type: explanation
+    title: Not a dogma
+    body: |
+      TDD helps most when the design is unclear or the logic is tricky.
+      For a well-understood change, tests written right after work too.
+      What matters is the tests exist and are good.
+
+  - type: choice
+    prompt: When does TDD help most?
+    options:
+      - text: When you're unsure how to structure the code or the rules are complex
+        correct: true
+      - text: When writing a trivial getter
+        feedback: There's little design or logic to drive.

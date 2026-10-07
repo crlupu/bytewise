@@ -1,0 +1,57 @@
+title: Partitioning the input
+summary: Split each input into classes that the program should treat the same way, then test one value from each class and their combinations.
+duration: 6
+tags: [testing, effective software testing, specification based testing, equivalence partitioning]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 2, Specification-based testing" }
+steps:
+  - type: explanation
+    title: Read the requirement
+    body: |
+      Start from what the method should do, not from its code.
+      List each input and what values it can take.
+      Note the outputs and the rules connecting them.
+
+  - type: explanation
+    title: Find the partitions
+    body: |
+      A partition is a set of inputs the program should handle alike.
+      For a string: null, empty, one character, many characters.
+      One test per partition is usually enough.
+
+  - type: choice
+    prompt: "`substringsBetween(str, open, close)` returns the substrings between `open` and `close` tags. Which are distinct partitions of `str`?"
+    options:
+      - text: "Null"
+        correct: true
+      - text: Empty string
+        correct: true
+      - text: A string with no tags in it
+        correct: true
+      - text: "`\"abc\"` and `\"xyz\"`"
+        feedback: Both are strings without tags — the same partition, so one test covers both.
+
+  - type: explanation
+    title: Combine wisely
+    body: |
+      Testing every combination of every partition explodes.
+      Test exceptional values, like null, once, not combined with everything.
+      Combine the partitions that interact.
+
+  - type: choice
+    prompt: "A method takes `age` and `country`. You have 4 partitions for each. How should you combine them?"
+    options:
+      - text: Test null and invalid values on their own, then combine the valid partitions that the rules connect
+        correct: true
+      - text: All 16 combinations, always
+        feedback: For many inputs that grows too fast; exceptional values don't need combining.
+
+  - type: match
+    prompt: Match each input with sensible partitions.
+    pairs:
+      - left: A list
+        right: Null, empty, one element, many elements
+      - left: A number of items to buy
+        right: Negative, zero, positive
+      - left: A file path
+        right: Missing, empty file, readable file, unreadable file

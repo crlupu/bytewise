@@ -1,0 +1,6 @@
+title: Larger tests and test quality
+summary: Chapters 9–10 — integration, SQL and system tests, and keeping test code clean, readable and free of flakiness.
+lessons:
+  - larger-tests
+  - test-code-quality
+  - flaky-tests

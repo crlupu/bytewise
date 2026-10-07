@@ -1,0 +1,47 @@
+title: Flaky tests
+summary: A test that sometimes passes and sometimes fails destroys trust. Find the source — time, order, concurrency, shared state — and remove it.
+duration: 5
+tags: [testing, effective software testing, flaky tests, determinism, test isolation]
+sources:
+  - { book: effective-software-testing, ref: "§10.1.5, Flaky tests" }
+steps:
+  - type: explanation
+    title: Flakiness ruins trust
+    body: |
+      If a red build might be noise, people stop looking at red builds.
+      Then real failures slip through.
+      Fix or remove flaky tests quickly.
+
+  - type: explanation
+    title: Common causes
+    body: |
+      Depending on the current time or a random value.
+      Depending on test order or data left by another test.
+      Waiting a fixed time for something asynchronous.
+
+  - type: match
+    prompt: Match each flaky test with its fix.
+    pairs:
+      - left: Fails on the last day of the month
+        right: Inject a fixed `Clock`
+      - left: Passes alone, fails after another test
+        right: Reset shared state before each test
+      - left: "`Thread.sleep(100)` then checks an async result"
+        right: Wait for the condition, with a timeout
+      - left: Fails when iteration order of a `HashSet` changes
+        right: Don't assert on an unspecified order
+
+  - type: explanation
+    title: Make it deterministic
+    body: |
+      Same code, same result, every run.
+      Control time, randomness and concurrency from the test.
+      Isolate each test's data.
+
+  - type: choice
+    prompt: A test fails 1 time in 50 on CI. What do you do?
+    options:
+      - text: Investigate the cause and make the test deterministic, quarantining it meanwhile if it blocks everyone
+        correct: true
+      - text: Add automatic retries until it passes
+        feedback: Retries hide the flakiness — and possibly a real race in the production code.

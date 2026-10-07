@@ -1,0 +1,47 @@
+title: Dummies, stubs, fakes, mocks and spies
+summary: A test double stands in for a real dependency; each kind does a different job, from filling a parameter to recording every call.
+duration: 5
+tags: [testing, effective software testing, test doubles, mocks, stubs, fakes, mockito]
+sources:
+  - { book: effective-software-testing, ref: "§6.1, Dummies, fakes, stubs, spies, and mocks" }
+steps:
+  - type: explanation
+    title: Why doubles
+    body: |
+      A real database or payment service makes tests slow and flaky.
+      A double replaces it with something you control.
+      You decide what it returns and can check how it was used.
+
+  - type: match
+    prompt: Match each kind of double with what it does.
+    pairs:
+      - left: Dummy
+        right: Fills a parameter that's never used
+      - left: Stub
+        right: Returns canned answers
+      - left: Fake
+        right: A simple working version, like an in-memory repository
+      - left: Mock
+        right: Records calls so the test can verify them
+      - left: Spy
+        right: Wraps a real object and records calls to it
+
+  - type: explanation
+    title: Stubbing with Mockito
+    body: |
+      `when(repo.findById(1)).thenReturn(Optional.of(order))` stubs a call.
+      `verify(mailer).send(any())` checks a call happened.
+      Stubbing controls inputs; verifying checks outputs.
+
+  - type: blank
+    prompt: Make the stubbed repository return an order.
+    template: "[[when]](repo.findById(1)).thenReturn(Optional.of(order));"
+    code: true
+
+  - type: choice
+    prompt: "A method should email the customer when an order ships. Nothing is returned. How do you test it?"
+    options:
+      - text: Mock the mailer and verify `send` was called with the right address
+        correct: true
+      - text: Stub the mailer to return true
+        feedback: The interesting behaviour is the call itself, so verify it.

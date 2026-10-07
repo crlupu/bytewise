@@ -1,0 +1,6 @@
+title: Systematic testing
+summary: Chapters 1–2 — why testing needs a method, and deriving tests from the specification with partitions and boundaries.
+lessons:
+  - testing-systematically
+  - partitions
+  - boundaries

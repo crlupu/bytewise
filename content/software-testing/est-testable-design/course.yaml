@@ -1,0 +1,6 @@
+title: Testable design and TDD
+summary: Chapters 7–8 — separating domain from infrastructure, dependency injection, observability, and test-driven development.
+lessons:
+  - domain-and-infrastructure
+  - controllability-and-observability
+  - test-driven-development

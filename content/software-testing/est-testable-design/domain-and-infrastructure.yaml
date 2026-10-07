@@ -1,0 +1,46 @@
+title: Separate domain from infrastructure
+summary: Keep business rules in plain classes, and push databases, files and HTTP behind interfaces — then the rules can be tested without them.
+duration: 5
+tags: [testing, effective software testing, testability, hexagonal architecture, ports and adapters]
+sources:
+  - { book: effective-software-testing, ref: "§7.1, Separating infrastructure code from domain code" }
+steps:
+  - type: explanation
+    title: Mixed code is hard to test
+    body: |
+      A method that queries the database, applies discounts and sends an email does three things.
+      To test the discount rule, you need a database and a mail server.
+      Separate the rule, and it's a plain unit test.
+
+  - type: explanation
+    title: Ports and adapters
+    body: |
+      The domain declares the interfaces it needs, like `OrderRepository`.
+      Adapters implement them with JDBC, HTTP or files.
+      Tests plug in fakes or mocks.
+
+  - type: choice
+    prompt: "`InvoiceGenerator` creates `new JdbcInvoiceDao()` inside its constructor. What's the testability problem?"
+    options:
+      - text: Tests can't replace the DAO, so every test needs a real database
+        correct: true
+      - text: JDBC classes can't be instantiated in tests
+        feedback: They can — but then you're testing against a database.
+
+  - type: blank
+    prompt: Take the dependency from outside instead.
+    template: "public InvoiceGenerator([[InvoiceDao]] dao) { this.dao = dao; }"
+    code: true
+    caseSensitive: true
+
+  - type: match
+    prompt: Match each part with where it belongs.
+    pairs:
+      - left: The rule for 10% off orders above 100
+        right: Domain
+      - left: Writing an order to PostgreSQL
+        right: Infrastructure — a persistence adapter
+      - left: The `OrderRepository` interface
+        right: Domain — it's a port the domain needs
+      - left: Calling the payment provider's REST API
+        right: Infrastructure — an HTTP adapter

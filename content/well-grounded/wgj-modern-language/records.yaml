@@ -8,7 +8,7 @@ steps:
   - type: explanation
     title: Data in one line
     body: |
-      `record Point(int x, int y) {}` declares two private final fields.
+      A record class, like `record Point(int x, int y) {}`, declares two private final fields.
       You get a constructor, accessors `x()` and `y()`, and `equals`, `hashCode` and `toString`.
       All from the component list.
 

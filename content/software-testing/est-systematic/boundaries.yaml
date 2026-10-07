@@ -1,0 +1,52 @@
+title: Boundary testing
+summary: Bugs cluster where one partition meets the next. Test the on point and the off point of every boundary.
+duration: 5
+tags: [testing, effective software testing, boundary testing, off by one]
+sources:
+  - { book: effective-software-testing, ref: "§2.2, Boundary analysis" }
+steps:
+  - type: explanation
+    title: Bugs live at the edges
+    body: |
+      `<` instead of `<=` is one of the most common bugs.
+      It only shows up for the value right on the boundary.
+      So test both sides of every boundary.
+
+  - type: explanation
+    title: On and off points
+    body: |
+      The on point is the value on the boundary itself.
+      The off point is the closest value on the other side.
+      For `x >= 18`, the on point is 18 and the off point is 17.
+
+  - type: match
+    prompt: "Match each condition with its on point and off point (integers)."
+    pairs:
+      - left: "`x >= 18`"
+        right: 18 and 17
+      - left: "`x > 100`"
+        right: 100 and 101
+      - left: "`x <= 0`"
+        right: 0 and 1
+
+  - type: choice
+    prompt: "A shop gives free shipping for orders of 50 or more. The code says `total > 50`. Which test catches the bug?"
+    options:
+      - text: An order of exactly 50
+        correct: true
+      - text: An order of 100
+        feedback: Both `> 50` and `>= 50` give free shipping for 100.
+      - text: An order of 10
+        feedback: Both versions charge shipping for 10.
+
+  - type: explanation
+    title: In and out points
+    body: |
+      Also test a value well inside each partition.
+      It checks the normal behaviour isn't broken.
+      Boundaries plus one typical value make a strong set.
+
+  - type: blank
+    prompt: "For `age >= 18`, the off point is…"
+    template: "assertFalse(isAdult([[17]]));"
+    code: true

@@ -1,0 +1,51 @@
+title: Design by contract
+summary: Pre-conditions say what a method needs, post-conditions what it promises, and invariants what's always true of an object.
+duration: 5
+tags: [testing, effective software testing, design by contract, preconditions, postconditions, invariants]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 4, Designing contracts" }
+steps:
+  - type: explanation
+    title: Three kinds of promise
+    body: |
+      A pre-condition must hold when the method is called: `amount > 0`.
+      A post-condition must hold when it returns: the balance went up by `amount`.
+      An invariant holds before and after every public method: the balance is never negative.
+
+  - type: match
+    prompt: "Match each statement about `withdraw(amount)` with its kind."
+    pairs:
+      - left: "`amount` must be positive"
+        right: Pre-condition
+      - left: The balance decreased by exactly `amount`
+        right: Post-condition
+      - left: The balance is never below zero
+        right: Invariant
+
+  - type: explanation
+    title: Check, and fail loudly
+    body: |
+      Check pre-conditions at the start and throw if they're broken.
+      `IllegalArgumentException` for bad arguments, `IllegalStateException` for bad state.
+      Failing fast puts the error next to its cause.
+
+  - type: blank
+    prompt: Reject a non-positive amount.
+    template: "if (amount <= 0) throw new [[IllegalArgumentException]](\"amount must be positive\");"
+    code: true
+    caseSensitive: true
+
+  - type: explanation
+    title: Contracts guide tests
+    body: |
+      Each pre-condition needs a test that breaks it and expects the exception.
+      Each post-condition is an assertion.
+      Invariants can be asserted after every operation.
+
+  - type: choice
+    prompt: "What's the difference between a contract check and input validation?"
+    options:
+      - text: Validation handles bad user input as a normal case; a contract violation means a bug in the calling code
+        correct: true
+      - text: There's no difference
+        feedback: A user typing a bad date is expected; a caller passing null where the contract forbids it is a programming error.

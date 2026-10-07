@@ -1,0 +1,53 @@
+title: Integration, SQL and system tests
+summary: Test SQL against a real database, test across components where units can't reveal bugs, and keep system tests few and maintainable with page objects.
+duration: 5
+tags: [testing, effective software testing, integration tests, sql, system tests, page objects]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 9, Writing larger tests" }
+steps:
+  - type: explanation
+    title: When units aren't enough
+    body: |
+      Some bugs only appear when parts work together.
+      A query can be correct Java and wrong SQL.
+      Write larger tests where the risk is in the integration.
+
+  - type: explanation
+    title: Test SQL for real
+    body: |
+      Run repository tests against the same database you use in production.
+      Reset the data before each test.
+      Apply partitions and boundaries to queries too: no rows, one row, many.
+
+  - type: choice
+    prompt: A query uses `WHERE created > ?`, but should include the start date. What test catches it?
+    options:
+      - text: An integration test with a row created exactly at the start date
+        correct: true
+      - text: A unit test with the repository mocked
+        feedback: The mock never runs the SQL, so it can't see the bug.
+
+  - type: explanation
+    title: System tests and page objects
+    body: |
+      System tests drive the real UI with a tool like Selenium.
+      Page objects wrap each page's buttons and fields in a class.
+      When the HTML changes, only the page object changes.
+
+  - type: match
+    prompt: Match each test with what it's best at.
+    pairs:
+      - left: Unit test
+        right: Business rules in one class
+      - left: SQL integration test
+        right: Queries, mappings and constraints
+      - left: System test
+        right: A critical user journey, end to end
+
+  - type: choice
+    prompt: Why keep system tests few?
+    options:
+      - text: They're slow, brittle and hard to debug when they fail
+        correct: true
+      - text: They find fewer bugs than unit tests
+        feedback: They can find integration bugs others miss — the cost is speed and maintenance.

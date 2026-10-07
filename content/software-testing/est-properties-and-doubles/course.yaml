@@ -1,0 +1,6 @@
+title: Properties and test doubles
+summary: Chapters 5–6 — property-based testing, and stubs, mocks, fakes and spies.
+lessons:
+  - property-based-testing
+  - kinds-of-test-doubles
+  - when-to-mock

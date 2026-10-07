@@ -1,0 +1,6 @@
+title: Coverage and contracts
+summary: Chapters 3–4 — structural testing and code coverage criteria, mutation testing, and design by contract.
+lessons:
+  - code-coverage
+  - mutation-testing
+  - design-by-contract

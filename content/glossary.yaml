@@ -225,10 +225,10 @@ effective-java:
   - term: Overriding
     def: A subclass redefining an inherited method. Which one runs is decided at run time from the object's actual class.
   - term: Precondition
-    aliases: [preconditions]
+    aliases: [preconditions, pre-condition, pre-conditions]
     def: What must be true when a method is called, e.g. "index must be non-negative". Check them at the start and throw if violated.
   - term: Postcondition
-    aliases: [postconditions]
+    aliases: [postconditions, post-condition, post-conditions]
     def: What a method guarantees is true when it returns.
   - term: Boxed primitive
     aliases: [boxed primitives, boxed type, boxed types]
@@ -1079,8 +1079,8 @@ well-grounded-java:
   - term: Preview feature
     aliases: [preview features, previews]
     def: A finished but not yet final language or API feature, switched on with `--enable-preview`, so it can be tried and changed before it's permanent.
-  - term: Record
-    aliases: [records]
+  - term: Record class
+    aliases: [record classes, Java record]
     def: A class declared by its components, `record Point(int x, int y)`, that gets final fields, a constructor, accessors, `equals`, `hashCode` and `toString` automatically.
   - term: Compact constructor
     def: A record constructor written without a parameter list, used to validate or normalize arguments before the fields are assigned.
@@ -1301,6 +1301,78 @@ troubleshooting-java:
     def: Thrown when the JVM can't allocate memory. Its message says which area ran out — heap, metaspace, or native threads.
   - term: VisualVM
     def: A free graphical tool for monitoring and profiling running JVMs — CPU, memory, threads and heap dumps.
+
+effective-software-testing:
+  - term: Testing pyramid
+    aliases: [test pyramid]
+    def: The guideline to have many fast unit tests, fewer integration tests and only a few slow system tests.
+  - term: Specification-based testing
+    def: Deriving tests from the requirements — inputs, partitions and boundaries — before looking at the code.
+  - term: Structural testing
+    def: Using the code's structure, usually through coverage, to find behaviour the specification-based tests missed.
+  - term: Partition
+    aliases: [partitions, equivalence partitioning, equivalence class]
+    def: A set of inputs the program should treat the same way. Testing one value per partition covers the class.
+  - term: Boundary
+    aliases: [boundaries, boundary testing]
+    def: Where one partition meets the next, like 17 and 18 for "adult if 18 or older". Off-by-one bugs live there.
+  - term: On point
+    aliases: [off point, on and off points]
+    def: For a boundary, the on point is the value on it and the off point the nearest value on the other side — both deserve a test.
+  - term: Code coverage
+    aliases: [coverage]
+    def: How much of the code the tests executed — by lines, branches or conditions. It shows what's untested, not what's tested well.
+  - term: Branch coverage
+    aliases: [line coverage, condition coverage]
+    def: Line coverage counts executed lines; branch coverage requires each decision to go both ways; condition coverage each boolean condition.
+  - term: MC/DC
+    aliases: [modified condition/decision coverage]
+    def: A coverage criterion requiring that each condition be shown, by a pair of tests, to change the decision's outcome on its own.
+  - term: Mutation testing
+    aliases: [mutant, mutants]
+    def: Introducing small deliberate bugs (mutants) into the code and checking that some test fails for each. Survivors reveal weak tests.
+  - term: Design by contract
+    def: Stating each method's pre-conditions, post-conditions and the class's invariants explicitly, and checking them.
+  - term: Test double
+    aliases: [test doubles, double, doubles]
+    def: Any object that stands in for a real dependency in a test — a dummy, stub, fake, mock or spy.
+  - term: Stub
+    aliases: [stubs, stubbing, stubbed]
+    def: A test double that returns pre-programmed answers to calls.
+  - term: Mock
+    aliases: [mocks, mocking, mocked]
+    def: A test double that records the calls it receives so the test can verify them.
+  - term: Fake
+    aliases: [fakes]
+    def: A test double with a real but simplified implementation, like an in-memory repository.
+  - term: Spy
+    aliases: [spies]
+    def: A wrapper around a real object that records calls while still doing the real work.
+  - term: Ports and adapters
+    aliases: [hexagonal architecture, adapter, adapters, port]
+    def: Keeping domain code behind interfaces (ports) it defines, implemented by infrastructure (adapters) like databases and HTTP clients.
+  - term: Controllability
+    def: How easily a test can put a class in the state it needs — easy when dependencies are passed in.
+  - term: Observability
+    def: How easily a test can see what a class did — easy when it returns results or exposes state.
+  - term: TDD
+    aliases: [test-driven development]
+    def: Writing a failing test first, making it pass with the simplest code, then refactoring — in small, repeated steps.
+  - term: Arrange, act, assert
+    aliases: [arrange-act-assert, AAA]
+    def: The three parts of a clear test — set up the inputs, call the code, check the outcome.
+  - term: Test smell
+    aliases: [test smells]
+    def: A pattern in test code that makes tests hard to read, maintain or trust — duplication, unclear assertions, mystery guests.
+  - term: Flaky test
+    aliases: [flaky tests, flaky, flakiness]
+    def: A test that passes or fails on the same code depending on timing, order or environment.
+  - term: Page object
+    aliases: [page objects]
+    def: A class wrapping one page of a UI for system tests, so tests call `loginPage.signIn(...)` instead of finding buttons.
+  - term: Shrinking
+    aliases: [shrinks]
+    def: What a property-testing tool does with a failing input — tries smaller ones until it finds the simplest that still fails.
 
 general:
   - term: JIT

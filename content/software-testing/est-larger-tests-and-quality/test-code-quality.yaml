@@ -1,0 +1,56 @@
+title: Clean test code
+summary: Tests are code too — make each one fast, isolated and readable, with clear names and assertions, and avoid common test smells.
+duration: 5
+tags: [testing, effective software testing, test smells, readability, arrange act assert]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 10, Test code quality" }
+steps:
+  - type: explanation
+    title: Arrange, act, assert
+    body: |
+      Arrange the inputs, act by calling the code, assert on the outcome.
+      Keep the three parts visible.
+      One behaviour per test makes failures easy to read.
+
+  - type: order
+    prompt: Put the parts of a test in order.
+    items:
+      - Arrange the objects and inputs
+      - Act by calling the method under test
+      - Assert on the result
+
+  - type: explanation
+    title: Common test smells
+    body: |
+      Excessive duplication makes changes painful.
+      Unclear assertions make failures cryptic.
+      Mystery guests — hidden files or shared data — make tests confusing.
+
+  - type: match
+    prompt: Match each smell with its fix.
+    pairs:
+      - left: The same setup copied into twenty tests
+        right: A test data builder or helper method
+      - left: "`assertTrue(result.equals(expected))`"
+        right: "`assertEquals(expected, result)`, which shows both values on failure"
+      - left: The test reads a file no one can find
+        right: Create the data inside the test
+      - left: One test checks five unrelated behaviours
+        right: Split it into five tests
+
+  - type: explanation
+    title: Names are documentation
+    body: |
+      A good test name says the situation and the expectation.
+      `discountAppliedWhenTotalAboveHundred` beats `test3`.
+      The failing test's name should tell you what broke.
+
+  - type: choice
+    prompt: Which test name is best?
+    options:
+      - text: "`freeShippingForOrdersOfFiftyOrMore`"
+        correct: true
+      - text: "`testShipping2`"
+        feedback: It says nothing about the behaviour.
+      - text: "`shippingTest`"
+        feedback: Which shipping behaviour?

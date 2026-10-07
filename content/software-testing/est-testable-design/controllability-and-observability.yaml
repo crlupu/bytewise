@@ -1,0 +1,52 @@
+title: Controllability and observability
+summary: A testable class lets the test put it in any state and see what it did — through injected dependencies and returned values.
+duration: 5
+tags: [testing, effective software testing, testability, dependency injection, observability, static methods]
+sources:
+  - { book: effective-software-testing, ref: "§7.2–7.3, Dependency injection and observability" }
+steps:
+  - type: explanation
+    title: Controllability
+    body: |
+      A test must be able to set up the situation it wants.
+      Dependencies passed in can be replaced.
+      Hidden ones — `new`, static calls, singletons — can't.
+
+  - type: match
+    prompt: Easy or hard to control in a test?
+    pairs:
+      - left: A dependency passed to the constructor
+        right: Easy — pass a double
+      - left: "`LocalDate.now()` called inside the method"
+        right: Hard — the date changes every day
+      - left: A static `Database.query(...)` call
+        right: Hard — can't be swapped
+      - left: A `Clock` passed in
+        right: Easy — use `Clock.fixed(...)`
+
+  - type: explanation
+    title: Observability
+    body: |
+      A test must be able to see the outcome.
+      Return a value, or expose state through a getter.
+      A `void` method that changes something private is hard to check.
+
+  - type: choice
+    prompt: "`void process(List<Order> orders)` marks some orders as invalid internally. How can you make it easier to test?"
+    options:
+      - text: Return the invalid orders, or the result of processing, so the test can assert on it
+        correct: true
+      - text: Use reflection in the test to read the private field
+        feedback: That ties the test to private details and breaks on refactoring.
+
+  - type: explanation
+    title: Hard to test is a design smell
+    body: |
+      If a class needs ten mocks, it does too much.
+      If you can't observe its effect, its responsibilities are unclear.
+      Listen to the tests: they point at the design.
+
+  - type: blank
+    prompt: Fix the date in a test.
+    template: "Clock clock = Clock.[[fixed]](Instant.parse(\"2026-10-07T10:00:00Z\"), ZoneOffset.UTC);"
+    code: true

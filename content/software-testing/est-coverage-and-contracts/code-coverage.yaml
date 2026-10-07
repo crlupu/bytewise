@@ -1,0 +1,55 @@
+title: Code coverage criteria
+summary: Line coverage is weak, branch coverage is better, and MC/DC makes each condition prove it matters — but coverage shows what's untested, not what's tested well.
+duration: 6
+tags: [testing, effective software testing, code coverage, branch coverage, mcdc, structural testing]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 3, Structural testing and code coverage" }
+steps:
+  - type: explanation
+    title: Use coverage to find gaps
+    body: |
+      After specification-based tests, run a coverage tool like JaCoCo.
+      Uncovered code is behaviour you forgot.
+      Ask why it wasn't covered, then write a test for it.
+
+  - type: explanation
+    title: Criteria get stronger
+    body: |
+      Line coverage: each line ran.
+      Branch coverage: each `if` went both ways.
+      Condition + branch: each condition was both true and false too.
+
+  - type: choice
+    prompt: "`if (a > 0 && b > 0) x = 1;` — one test with `a = 1, b = 1` runs every line. What does it miss?"
+    options:
+      - text: The false branch, and the cases where only one condition is false
+        correct: true
+      - text: Nothing — 100% line coverage
+        feedback: Lines aren't branches. The `if` never took its false path.
+
+  - type: explanation
+    title: MC/DC
+    body: |
+      Modified condition/decision coverage asks more.
+      For each condition, find two tests where only it changes, and the outcome changes too.
+      That proves every condition matters, in about n + 1 tests.
+
+  - type: match
+    prompt: Match each criterion with what it requires.
+    pairs:
+      - left: Line coverage
+        right: Every line executed
+      - left: Branch coverage
+        right: Every decision both true and false
+      - left: Condition + branch coverage
+        right: Every condition and every decision both true and false
+      - left: MC/DC
+        right: Every condition shown to independently change the outcome
+
+  - type: choice
+    prompt: A team requires 100% line coverage. Is that a good goal?
+    options:
+      - text: Not on its own — tests can run every line without checking results, and chasing the last few percent wastes effort
+        correct: true
+      - text: Yes, it guarantees the code is tested
+        feedback: A test with no assertions can cover everything.

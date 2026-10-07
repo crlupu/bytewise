@@ -1,0 +1,53 @@
+title: Test systematically, not by intuition
+summary: Exhaustive testing is impossible, so choose tests by a method — from the specification, then from the code — and know what each kind of test is for.
+duration: 5
+tags: [testing, effective software testing, test pyramid, unit tests, systematic testing]
+sources:
+  - { book: effective-software-testing, ref: "Chapter 1, Effective and systematic software testing" }
+steps:
+  - type: explanation
+    title: You can't test everything
+    body: |
+      A method taking two `int`s has 2⁶⁴ possible inputs.
+      You need to choose a few that are likely to find bugs.
+      A method beats intuition: it's repeatable and doesn't forget cases.
+
+  - type: order
+    prompt: Put the book's testing workflow in order.
+    items:
+      - Write tests from the requirements (specification-based)
+      - Check which code they didn't reach and add tests (structural)
+      - Consider contracts and properties for what's left
+      - Automate everything so it runs on each change
+
+  - type: explanation
+    title: The testing pyramid
+    body: |
+      Most tests should be small unit tests: fast and precise.
+      Fewer integration tests check that parts work together.
+      A handful of system tests drive the whole thing.
+
+  - type: match
+    prompt: Match each test level with its trait.
+    pairs:
+      - left: Unit test
+        right: Milliseconds; pinpoints the faulty class
+      - left: Integration test
+        right: Real database or service; slower
+      - left: System test
+        right: The whole app, as a user would; slowest and most brittle
+
+  - type: explanation
+    title: Passing tests don't prove correctness
+    body: |
+      Tests show the presence of bugs, never their absence.
+      And software can be bug-free yet still not what users need.
+      Testing is one tool among reviews, types and monitoring.
+
+  - type: choice
+    prompt: "All 500 tests pass. What can you conclude?"
+    options:
+      - text: The behaviours those tests check work — nothing more
+        correct: true
+      - text: The software has no bugs
+        feedback: Tests only check what they check.
