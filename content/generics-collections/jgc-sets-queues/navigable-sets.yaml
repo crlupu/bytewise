@@ -1,0 +1,58 @@
+title: Sorted and navigable sets
+summary: A TreeSet answers "what's the closest element to x?" with ceiling, floor, higher and lower, and gives live views of ranges.
+duration: 5
+tags: [java, collections, treeset, navigableset, sortedset, ranges]
+sources:
+  - { book: java-generics-collections, ref: "§13.2, SortedSet and NavigableSet" }
+steps:
+  - type: explanation
+    title: Closest matches
+    body: |
+      `ceiling(x)` is the smallest element ≥ x; `floor(x)` the largest ≤ x.
+      `higher` and `lower` are the strict versions.
+      They return null when there's no such element.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      TreeSet<Integer> s = new TreeSet<>(List.of(1, 5, 9, 13));
+      System.out.println(s.ceiling(6) + " " + s.floor(6));
+    language: java
+    options:
+      - text: "9 5"
+        correct: true
+      - text: "5 9"
+        feedback: "`ceiling` rounds up to 9; `floor` rounds down to 5."
+      - text: "6 6"
+        feedback: 6 isn't in the set; these find its nearest neighbours.
+
+  - type: explanation
+    title: Range views
+    body: |
+      `headSet(x)` is everything below x; `tailSet(x)` is x and above.
+      `subSet(a, b)` is from a up to b.
+      They're live views, backed by the original set.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      TreeSet<Integer> s = new TreeSet<>(List.of(1, 5, 9, 13));
+      System.out.println(s.headSet(9) + " " + s.tailSet(9));
+    language: java
+    options:
+      - text: "`[1, 5] [9, 13]`"
+        correct: true
+      - text: "`[1, 5, 9] [13]`"
+        feedback: "By default `headSet` excludes its bound and `tailSet` includes it."
+
+  - type: match
+    prompt: Match each call on `{1, 5, 9, 13}` with its result.
+    pairs:
+      - left: "`higher(9)`"
+        right: "13"
+      - left: "`lower(9)`"
+        right: "5"
+      - left: "`first()`"
+        right: "1"
+      - left: "`ceiling(14)`"
+        right: "null"

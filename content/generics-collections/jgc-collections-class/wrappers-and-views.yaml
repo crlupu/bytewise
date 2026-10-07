@@ -1,0 +1,54 @@
+title: Unmodifiable views and synchronized wrappers
+summary: An unmodifiable view still shows changes to the original; a synchronized wrapper needs manual locking to iterate.
+duration: 5
+tags: [java, collections, unmodifiable, synchronized, views, immutability]
+sources:
+  - { book: java-generics-collections, ref: "§17.3, Wrappers" }
+steps:
+  - type: explanation
+    title: Unmodifiable isn't immutable
+    body: |
+      `Collections.unmodifiableList(list)` blocks changes through the view.
+      But whoever holds the original can still change it.
+      The view shows those changes.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<String> base = new ArrayList<>(List.of("x"));
+      List<String> view = Collections.unmodifiableList(base);
+      base.add("y");
+      System.out.println(view);
+    language: java
+    options:
+      - text: "`[x, y]`"
+        correct: true
+      - text: "`[x]`"
+        feedback: The view is backed by `base`, not a copy.
+      - text: "`UnsupportedOperationException`"
+        feedback: Only changes through `view` are blocked.
+    explanation: "For a true snapshot, use `List.copyOf(base)`."
+
+  - type: explanation
+    title: Synchronized wrappers
+    body: |
+      `Collections.synchronizedList` locks around each method call.
+      Iterating takes many calls, so you must hold the lock yourself.
+      Concurrent collections usually serve better.
+
+  - type: blank
+    prompt: Iterate a synchronized list safely.
+    template: "[[synchronized]] (syncList) { for (String s : syncList) use(s); }"
+    code: true
+
+  - type: match
+    prompt: Match each factory with what you get.
+    pairs:
+      - left: "`Collections.unmodifiableList(l)`"
+        right: A read-only view of `l`
+      - left: "`List.copyOf(l)`"
+        right: An immutable copy
+      - left: "`Collections.emptyList()`"
+        right: A shared, immutable empty list
+      - left: "`Collections.synchronizedList(l)`"
+        right: "`l` with each call locked"

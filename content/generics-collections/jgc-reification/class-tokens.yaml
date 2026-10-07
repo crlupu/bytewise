@@ -1,0 +1,42 @@
+title: Class tokens
+summary: Passing a `Class<T>` gives generic code the run-time type that erasure took away.
+duration: 4
+tags: [java, generics, reflection, class literal, type token]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 7, Reflection" }
+steps:
+  - type: explanation
+    title: Class is generic too
+    body: |
+      `String.class` has type `Class<String>`.
+      `cls.cast(obj)` returns a `T`, checked at run time.
+      `cls.isInstance(obj)` tests without casting.
+
+  - type: blank
+    prompt: Cast safely with a class token.
+    template: "static <T> T as(Object o, Class<T> type) { return type.[[cast]](o); }"
+    code: true
+
+  - type: explanation
+    title: Tokens make arrays and instances
+    body: |
+      `Array.newInstance(cls, n)` creates a real `T[]`.
+      `cls.getDeclaredConstructor().newInstance()` makes an object.
+      Generic code can't do either with `T` alone.
+
+  - type: choice
+    prompt: What does `getClass()` return for a `String s`?
+    options:
+      - text: "`Class<? extends String>`"
+        correct: true
+      - text: "`Class<String>`"
+        feedback: "`s` might hold a subclass in general, so the type is a wildcard. (For the final `String` it's always `String.class` in practice.)"
+
+  - type: choice
+    prompt: "Why can't a class token represent `List<String>`?"
+    options:
+      - text: There's only one `Class` object for `List`, shared by every parameterization
+        correct: true
+      - text: "`List` is an interface"
+        feedback: "Interfaces have class objects too: `List.class`."
+    explanation: "Libraries like Jackson use a super type token — `new TypeReference<List<String>>() {}` — to capture the full type."

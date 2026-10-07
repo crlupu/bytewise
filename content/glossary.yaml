@@ -1043,6 +1043,35 @@ modern-java-in-action:
     aliases: [DST, clock change]
     def: Moving clocks forward in spring and back in autumn. Some local times are skipped and some happen twice; `ZonedDateTime` handles both.
 
+java-generics-collections:
+  - term: Substitution Principle
+    def: A value of a subtype may be used wherever a value of its supertype is expected. An `Integer` can go anywhere a `Number` can.
+  - term: Get and Put Principle
+    def: Use `? extends T` for a structure you only get values out of, `? super T` for one you only put values into, and no wildcard when you do both. Effective Java calls it PECS.
+  - term: Generic array creation
+    def: '`new T[n]` or `new List<String>[n]` — illegal, because an array must know its element type at run time and these types are erased.'
+  - term: Class token
+    aliases: [class tokens]
+    def: A `Class<T>` object, like `String.class`, passed to generic code so it can check, cast or create `T`s at run time.
+  - term: Checked collection
+    aliases: [checked collections, checked list]
+    def: A wrapper from `Collections.checkedList` and friends that checks the type of every element added, so heap pollution fails at the insert.
+  - term: Stable sort
+    aliases: [stable]
+    def: A sort that keeps equal elements in their original relative order. Java's sorts of objects are stable.
+  - term: Binary heap
+    aliases: [heap-ordered]
+    def: A tree stored in an array where each parent is no larger than its children, so the smallest element is always at the front. `PriorityQueue` is one.
+  - term: LRU cache
+    aliases: [least-recently-used cache]
+    def: A bounded cache that evicts the entry that hasn't been used for the longest time. `LinkedHashMap` in access order makes one easy.
+  - term: Navigable set
+    aliases: [NavigableSet, navigable map, NavigableMap]
+    def: A sorted set or map with methods to find the closest element — `ceiling`, `floor`, `higher`, `lower` — and to take ranges.
+  - term: Unmodifiable view
+    aliases: [unmodifiable views, read-only view]
+    def: A wrapper that refuses changes but is backed by the original collection, so changes made through the original still show.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

@@ -1,0 +1,5 @@
+title: The Collections Framework
+summary: Chapters 10–12 — the main interfaces, iterators and their fail-fast behaviour, and choosing implementations by cost.
+lessons:
+  - main-interfaces
+  - iterators-and-fail-fast

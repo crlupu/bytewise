@@ -1,0 +1,6 @@
+title: Reification and reflection
+summary: Chapters 6–7 — which types exist at run time, why you can't make generic arrays, and class tokens.
+lessons:
+  - reifiable-types
+  - generic-arrays
+  - class-tokens

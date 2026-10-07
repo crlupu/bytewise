@@ -1,0 +1,5 @@
+title: The Collections class
+summary: Chapter 17 — sorting and searching, unmodifiable and synchronized wrappers, and the empty and singleton collections.
+lessons:
+  - algorithms
+  - wrappers-and-views

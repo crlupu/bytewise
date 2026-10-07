@@ -1,0 +1,54 @@
+title: The Get and Put Principle
+summary: Use `? extends T` when you only get values out, `? super T` when you only put values in, and no wildcard when you do both.
+duration: 6
+tags: [java, generics, wildcards, extends, super, pecs]
+sources:
+  - { book: java-generics-collections, ref: "§2.4, The Get and Put Principle" }
+  - { book: effective-java, ref: "Item 31" }
+steps:
+  - type: explanation
+    title: extends for getting
+    body: |
+      A `List<? extends Number>` could be a list of `Integer`, `Double` or any other number.
+      Whatever you get from it is a `Number`.
+      But you can't add to it: you don't know which kind it holds.
+
+  - type: choice
+    prompt: "Given `List<? extends Number> nums`, which lines compile?"
+    options:
+      - text: "`Number n = nums.get(0);`"
+        correct: true
+      - text: "`nums.add(1);`"
+        feedback: "The list might be a `List<Double>`, so adding an `Integer` isn't allowed."
+      - text: "`nums.add(null);`"
+        correct: true
+        feedback: "`null` belongs to every type, so it's the one value you can add."
+
+  - type: explanation
+    title: super for putting
+    body: |
+      A `List<? super Integer>` could be a list of `Integer`, `Number` or `Object`.
+      Any of those can hold an `Integer`, so you can add one.
+      What you get back is only known to be an `Object`.
+
+  - type: blank
+    prompt: Copy from a source you read to a destination you write.
+    template: "static <T> void copy(List<? [[super]] T> dst, List<? extends T> src)"
+    code: true
+
+  - type: explanation
+    title: Both? No wildcard
+    body: |
+      If a method both gets and puts, use the exact type, like `List<T>`.
+      Wildcards are for parameters, not return types.
+      Callers shouldn't have to deal with wildcards in what they get back.
+
+  - type: match
+    prompt: Match each method with its best parameter type.
+    pairs:
+      - left: "`double sum(… numbers)` — reads only"
+        right: "`Collection<? extends Number>`"
+      - left: "`void fill(… target)` — adds `Integer`s only"
+        right: "`Collection<? super Integer>`"
+      - left: "`void sortInPlace(… list)` — reads and writes"
+        right: "`List<T>`"

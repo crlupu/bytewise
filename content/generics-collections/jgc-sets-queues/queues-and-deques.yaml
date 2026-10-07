@@ -1,0 +1,68 @@
+title: Queues, priority queues and deques
+summary: A PriorityQueue hands out the smallest element first; ArrayDeque is the fast stack and queue; offer, poll and peek don't throw.
+duration: 5
+tags: [java, collections, queue, priorityqueue, deque, arraydeque]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 14, Queues" }
+steps:
+  - type: explanation
+    title: Two styles of method
+    body: |
+      `add`, `remove` and `element` throw when they can't succeed.
+      `offer`, `poll` and `peek` return false or null instead.
+      Use the second set for bounded or possibly empty queues.
+
+  - type: match
+    prompt: Match each throwing method with its non-throwing twin.
+    pairs:
+      - left: "`add(e)`"
+        right: "`offer(e)`"
+      - left: "`remove()`"
+        right: "`poll()`"
+      - left: "`element()`"
+        right: "`peek()`"
+
+  - type: explanation
+    title: Priority order
+    body: |
+      A `PriorityQueue` is a binary heap.
+      `poll` always returns the smallest element, by natural order or a comparator.
+      Iterating it does not give sorted order.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      PriorityQueue<Integer> pq = new PriorityQueue<>(List.of(5, 1, 4));
+      System.out.print(pq.poll());
+      System.out.print(pq.poll());
+      System.out.print(pq.poll());
+    language: java
+    options:
+      - text: "145"
+        correct: true
+      - text: "514"
+        feedback: A priority queue isn't first-in, first-out; the smallest comes out first.
+      - text: "541"
+        feedback: By default the smallest comes first. Use `Comparator.reverseOrder()` for largest first.
+
+  - type: explanation
+    title: ArrayDeque for stacks and queues
+    body: |
+      `Deque` adds and removes at both ends.
+      `ArrayDeque` is faster than `Stack` and `LinkedList`.
+      `push` and `pop` work at the front.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Deque<Integer> d = new ArrayDeque<>();
+      d.push(1);
+      d.push(2);
+      d.offerLast(3);
+      System.out.println(d + " " + d.pop());
+    language: java
+    options:
+      - text: "`[2, 1, 3] 2`"
+        correct: true
+      - text: "`[1, 2, 3] 1`"
+        feedback: "`push` adds to the front, so 2 goes before 1."

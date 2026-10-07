@@ -1,0 +1,61 @@
+title: Choosing a Set
+summary: HashSet is fastest, LinkedHashSet keeps insertion order, TreeSet keeps sorted order, and EnumSet is a bit vector for enums.
+duration: 5
+tags: [java, collections, set, hashset, treeset, linkedhashset, enumset]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 13, Sets" }
+steps:
+  - type: explanation
+    title: Three orders
+    body: |
+      `HashSet` has no defined order.
+      `LinkedHashSet` iterates in insertion order.
+      `TreeSet` iterates in sorted order.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<String> words = List.of("b", "a", "c");
+      System.out.println(new LinkedHashSet<>(words) + " " + new TreeSet<>(words));
+    language: java
+    options:
+      - text: "`[b, a, c] [a, b, c]`"
+        correct: true
+      - text: "`[a, b, c] [a, b, c]`"
+        feedback: "`LinkedHashSet` keeps the order elements were added in."
+      - text: "`[b, a, c] [b, a, c]`"
+        feedback: "`TreeSet` sorts."
+
+  - type: explanation
+    title: EnumSet for enums
+    body: |
+      `EnumSet` stores enum constants as bits in a `long`.
+      It's tiny and very fast.
+      Use it instead of bit flags.
+
+  - type: match
+    prompt: Match each need with the set to use.
+    pairs:
+      - left: Fastest lookups, order doesn't matter
+        right: "`HashSet`"
+      - left: Remove duplicates but keep the original order
+        right: "`LinkedHashSet`"
+      - left: Always iterate alphabetically
+        right: "`TreeSet`"
+      - left: A set of days of the week
+        right: "`EnumSet`"
+
+  - type: choice
+    prompt: What must elements of a `HashSet` get right?
+    options:
+      - text: "`equals` and `hashCode`, consistently"
+        correct: true
+      - text: "`compareTo`"
+        feedback: That's what a `TreeSet` uses.
+    explanation: And don't change an element in a way that changes its hash code while it's in the set — the set won't find it again.
+
+  - type: blank
+    prompt: Make a set of weekend days.
+    template: "Set<DayOfWeek> weekend = [[EnumSet]].of(SATURDAY, SUNDAY);"
+    code: true
+    caseSensitive: true

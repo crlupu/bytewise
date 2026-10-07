@@ -1,0 +1,55 @@
+title: Reifiable types
+summary: A type is reifiable if it fully exists at run time; `instanceof` and casts only work properly with those.
+duration: 5
+tags: [java, generics, reification, erasure, instanceof, casts]
+sources:
+  - { book: java-generics-collections, ref: "§6.1–6.3, Reifiable types, instance tests and casts" }
+steps:
+  - type: explanation
+    title: What survives erasure
+    body: |
+      Primitives, plain classes, raw types and `List<?>` exist fully at run time.
+      They're reifiable.
+      `List<String>` isn't: at run time it's just `List`.
+
+  - type: match
+    prompt: Is each type reifiable?
+    pairs:
+      - left: "`int`"
+        right: Yes — a primitive
+      - left: "`List<?>`"
+        right: Yes — unbounded wildcard
+      - left: "`List<String>`"
+        right: No — the type argument is erased
+      - left: "`String[]`"
+        right: Yes — an array of a reifiable type
+
+  - type: explanation
+    title: instanceof needs reifiable types
+    body: |
+      `o instanceof List<String>` can't be checked at run time.
+      The compiler rejects it, unless the static type already guarantees it.
+      Test `o instanceof List<?>` instead.
+
+  - type: choice
+    prompt: "With `Object o`, which test compiles?"
+    options:
+      - text: "`o instanceof List<?>`"
+        correct: true
+      - text: "`o instanceof List<String>`"
+        feedback: The run time can't tell a `List<String>` from a `List<Integer>`.
+
+  - type: explanation
+    title: Unchecked casts lie
+    body: |
+      `(List<String>) obj` compiles with a warning.
+      At run time, it only checks that `obj` is a `List`.
+      A wrong element type slips through.
+
+  - type: choice
+    prompt: "`List<String> l = (List<String>) obj;` where `obj` is actually a `List<Integer>`. What happens?"
+    options:
+      - text: The cast succeeds; a `ClassCastException` comes later, when a string is read
+        correct: true
+      - text: The cast throws `ClassCastException`
+        feedback: The run-time check only sees `List`, which matches.

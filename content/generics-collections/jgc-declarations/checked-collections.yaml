@@ -1,0 +1,46 @@
+title: Checked collections and honest generics
+summary: "`Collections.checkedList` checks every insert at run time, catching heap pollution where it starts."
+duration: 4
+tags: [java, generics, checked collections, heap pollution, debugging]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 8, Effective Generics" }
+steps:
+  - type: explanation
+    title: Fail where the bug is
+    body: |
+      Heap pollution fails late, where you read the bad element.
+      `Collections.checkedList(list, String.class)` checks every add.
+      The exception points at the line that inserts the wrong type.
+
+  - type: predict
+    prompt: Where does this fail?
+    code: |
+      List<String> safe = Collections.checkedList(new ArrayList<>(), String.class);
+      List raw = safe;
+      raw.add(42);
+    language: java
+    options:
+      - text: "`ClassCastException` at `raw.add(42)`"
+        correct: true
+      - text: It succeeds, and fails when the element is read
+        feedback: A checked list knows its element type at run time and checks each insert.
+
+  - type: explanation
+    title: Hand checked collections to legacy code
+    body: |
+      When you pass a generic collection to old, raw-typed code, wrap it.
+      Then any wrong insert fails immediately.
+      There are checked versions of every collection interface.
+
+  - type: choice
+    prompt: When are checked collections most useful?
+    options:
+      - text: When passing collections to legacy or untrusted code that uses raw types
+        correct: true
+      - text: For every collection in new code
+        feedback: Fully generic code with no unchecked warnings is already safe; checks add cost for no gain.
+
+  - type: blank
+    prompt: Wrap a set so only `Integer`s can go in.
+    template: "Set<Integer> s = Collections.[[checkedSet]](new HashSet<>(), Integer.class);"
+    code: true

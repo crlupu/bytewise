@@ -1,0 +1,54 @@
+title: Sorting, searching and shuffling
+summary: "`Collections` has the algorithms: sort is stable, binarySearch needs a sorted list, and the result of a miss encodes where the element would go."
+duration: 5
+tags: [java, collections, sort, binarysearch, algorithms]
+sources:
+  - { book: java-generics-collections, ref: "§17.1, Generic Algorithms" }
+steps:
+  - type: explanation
+    title: Stable sort
+    body: |
+      `Collections.sort` and `List.sort` are stable.
+      Equal elements keep their relative order.
+      So you can sort by one key, then by another.
+
+  - type: choice
+    prompt: You sort employees by name, then sort the result by department. What's the order within each department?
+    options:
+      - text: By name, because the sort is stable
+        correct: true
+      - text: Unspecified
+        feedback: Java's object sorts are guaranteed stable.
+
+  - type: explanation
+    title: binarySearch needs sorted input
+    body: |
+      `binarySearch` halves the list each step.
+      On an unsorted list the result is meaningless.
+      A miss returns `-(insertion point) - 1`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<Integer> l = List.of(1, 3, 5, 7);
+      System.out.println(Collections.binarySearch(l, 5) + " " + Collections.binarySearch(l, 4));
+    language: java
+    options:
+      - text: "2 -3"
+        correct: true
+      - text: "2 -1"
+        feedback: "4 would go at index 2, so the miss returns -(2) - 1 = -3."
+      - text: "3 -1"
+        feedback: Indexes start at 0, so 5 is at index 2.
+
+  - type: match
+    prompt: Match each method with what it does.
+    pairs:
+      - left: "`Collections.shuffle(list)`"
+        right: Randomly permutes
+      - left: "`Collections.reverse(list)`"
+        right: Reverses in place
+      - left: "`Collections.frequency(c, x)`"
+        right: Counts occurrences of x
+      - left: "`Collections.max(c)`"
+        right: Finds the largest by natural order

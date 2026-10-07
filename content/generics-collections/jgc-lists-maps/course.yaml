@@ -1,0 +1,6 @@
+title: Lists and maps
+summary: Chapters 15–16 — ArrayList versus LinkedList, and HashMap, LinkedHashMap, TreeMap and the special-purpose maps.
+lessons:
+  - choosing-a-list
+  - choosing-a-map
+  - special-maps

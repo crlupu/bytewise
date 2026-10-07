@@ -1,0 +1,59 @@
+title: The main interfaces
+summary: Collection splits into List, Set and Queue; Map stands apart. Pick the interface for the behaviour, then the class for the cost.
+duration: 5
+tags: [java, collections, interfaces, list, set, queue, map]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 10, The Main Interfaces of the Java Collections Framework" }
+steps:
+  - type: explanation
+    title: Behaviour first
+    body: |
+      `List` keeps order and allows duplicates.
+      `Set` forbids duplicates.
+      `Queue` hands elements out in a processing order; `Map` links keys to values.
+
+  - type: match
+    prompt: Match each need with the interface.
+    pairs:
+      - left: A playlist, in order, songs may repeat
+        right: "`List`"
+      - left: Tags on a post, no repeats
+        right: "`Set`"
+      - left: Jobs waiting to be processed
+        right: "`Queue`"
+      - left: Phone numbers by name
+        right: "`Map`"
+
+  - type: explanation
+    title: Declare the interface
+    body: |
+      Declare variables and parameters as the interface: `List<String> names`.
+      Choose the class only where you create it.
+      Then you can switch implementations in one place.
+
+  - type: explanation
+    title: Implementations differ in cost
+    body: |
+      `ArrayList` gets by index in constant time; `LinkedList` must walk.
+      `HashSet` finds in constant time; `TreeSet` takes log n but keeps order.
+      The interface hides these costs, so know them.
+
+  - type: match
+    prompt: Match each operation with its typical cost.
+    pairs:
+      - left: "`ArrayList.get(i)`"
+        right: O(1)
+      - left: "`LinkedList.get(i)`"
+        right: O(n)
+      - left: "`TreeSet.contains(x)`"
+        right: O(log n)
+      - left: "`HashSet.contains(x)`"
+        right: O(1) on average
+
+  - type: choice
+    prompt: Which declaration is best for a method parameter?
+    options:
+      - text: "`void print(Collection<String> items)`"
+        correct: true
+      - text: "`void print(ArrayList<String> items)`"
+        feedback: Callers with a `Set` or a `LinkedList` couldn't use it.

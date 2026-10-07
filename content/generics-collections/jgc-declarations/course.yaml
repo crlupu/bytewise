@@ -1,0 +1,6 @@
+title: Declarations and evolution
+summary: Chapters 4–5 and 8 — declaring generic classes and methods, migrating legacy code, and keeping generic code honest.
+lessons:
+  - generic-declarations
+  - evolution-not-revolution
+  - checked-collections

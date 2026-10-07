@@ -1,0 +1,56 @@
+title: Comparable and bounded type variables
+summary: "`<T extends Comparable<? super T>>` says T can be compared with itself — even when the comparison is inherited."
+duration: 6
+tags: [java, generics, comparable, bounds, comparator]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 3, Comparison and bounds" }
+steps:
+  - type: explanation
+    title: Bounds restrict a type variable
+    body: |
+      `<T extends Comparable<T>>` accepts only types that can compare with themselves.
+      Inside the method, you can call `compareTo` on a `T`.
+      Without the bound, `T` is just an `Object`.
+
+  - type: choice
+    prompt: Why does a generic `max` need a bound on `T`?
+    options:
+      - text: Without it, the compiler doesn't know a `T` has `compareTo`
+        correct: true
+      - text: To make it run faster
+        feedback: Bounds only affect type checking.
+
+  - type: explanation
+    title: Why ? super T
+    body: |
+      Suppose `Fruit` implements `Comparable<Fruit>`, and `Apple extends Fruit`.
+      `Apple` is a `Comparable<Fruit>`, not a `Comparable<Apple>`.
+      `Comparable<? super T>` accepts it.
+
+  - type: choice
+    prompt: "`class Fruit implements Comparable<Fruit>` and `class Apple extends Fruit`. Which signature lets you find the max of a `List<Apple>`?"
+    options:
+      - text: "`<T extends Comparable<? super T>> T max(Collection<? extends T> c)`"
+        correct: true
+      - text: "`<T extends Comparable<T>> T max(Collection<T> c)`"
+        feedback: "`Apple` doesn't implement `Comparable<Apple>`, so it doesn't fit `T extends Comparable<T>`."
+
+  - type: explanation
+    title: Comparators are consistent with equals, or not
+    body: |
+      Sorted sets and maps use `compareTo`, not `equals`, to find duplicates.
+      If the two disagree, a `TreeSet` and a `HashSet` of the same elements differ.
+      Keep `compareTo` consistent with `equals`.
+
+  - type: choice
+    prompt: "`new BigDecimal(\"1.0\")` and `new BigDecimal(\"1.00\")` are not `equals`, but `compareTo` says 0. How many elements end up in a `TreeSet` of both?"
+    options:
+      - text: One
+        correct: true
+      - text: Two
+        feedback: That's the `HashSet` answer. A `TreeSet` sees `compareTo == 0` as a duplicate.
+
+  - type: blank
+    prompt: Bound `T` so it can be compared with itself or a supertype.
+    template: "static <T extends Comparable<? [[super]] T>> void sort(List<T> list)"
+    code: true

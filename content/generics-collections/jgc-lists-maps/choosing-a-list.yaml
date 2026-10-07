@@ -1,0 +1,53 @@
+title: ArrayList or LinkedList?
+summary: ArrayList wins almost always — fast indexing and cache-friendly iteration; LinkedList only wins at inserting through an iterator.
+duration: 5
+tags: [java, collections, list, arraylist, linkedlist, copyonwritearraylist]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 15, Lists" }
+steps:
+  - type: explanation
+    title: Array-backed
+    body: |
+      `ArrayList` keeps elements in an array.
+      `get(i)` is instant; adding at the end is usually instant too.
+      Inserting at the front shifts everything along.
+
+  - type: explanation
+    title: Linked
+    body: |
+      `LinkedList` links nodes together.
+      Inserting where an iterator stands is instant.
+      But `get(i)` walks from an end, and each node costs extra memory.
+
+  - type: match
+    prompt: Match each operation with the faster list.
+    pairs:
+      - left: "`get(5000)`"
+        right: "`ArrayList` — constant time"
+      - left: Inserting in the middle with a `ListIterator` already there
+        right: "`LinkedList` — no shifting"
+      - left: Iterating over every element
+        right: "`ArrayList` — contiguous memory"
+
+  - type: choice
+    prompt: You need a queue. Which class?
+    options:
+      - text: "`ArrayDeque`"
+        correct: true
+      - text: "`LinkedList`"
+        feedback: It works, but `ArrayDeque` is faster and uses less memory.
+
+  - type: explanation
+    title: Copy-on-write for read-mostly
+    body: |
+      `CopyOnWriteArrayList` copies its array on every write.
+      Reads and iteration need no locks and never throw.
+      Use it when reads vastly outnumber writes, like listener lists.
+
+  - type: choice
+    prompt: Which suits `CopyOnWriteArrayList`?
+    options:
+      - text: A list of event listeners, registered rarely and notified often
+        correct: true
+      - text: A log buffer that receives thousands of appends a second
+        feedback: Every append would copy the whole array.

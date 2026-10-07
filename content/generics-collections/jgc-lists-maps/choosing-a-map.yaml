@@ -1,0 +1,59 @@
+title: HashMap, LinkedHashMap and TreeMap
+summary: The map counterparts of the three sets — plus LinkedHashMap's access order, which makes an LRU cache in a few lines.
+duration: 6
+tags: [java, collections, map, hashmap, linkedhashmap, treemap, lru cache]
+sources:
+  - { book: java-generics-collections, ref: "§16.1–16.3, Map implementations" }
+steps:
+  - type: explanation
+    title: Same orders as the sets
+    body: |
+      `HashMap` has no order.
+      `LinkedHashMap` keeps insertion order.
+      `TreeMap` keeps keys sorted, with navigation like `TreeSet`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      TreeMap<String, Integer> m = new TreeMap<>(Map.of("b", 2, "a", 1, "c", 3));
+      System.out.println(m.firstKey() + " " + m.headMap("c"));
+    language: java
+    options:
+      - text: "`a {a=1, b=2}`"
+        correct: true
+      - text: "`b {b=2, a=1}`"
+        feedback: A `TreeMap` sorts its keys, whatever order they came in.
+
+  - type: explanation
+    title: Access order makes an LRU cache
+    body: |
+      `new LinkedHashMap<>(16, 0.75f, true)` orders entries by last access.
+      Override `removeEldestEntry` to evict when it's too big.
+      That's a least-recently-used cache.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Map<String, Integer> lru = new LinkedHashMap<>(16, 0.75f, true) {
+        protected boolean removeEldestEntry(Map.Entry<String, Integer> e) {
+          return size() > 2;
+        }
+      };
+      lru.put("a", 1);
+      lru.put("b", 2);
+      lru.get("a");
+      lru.put("c", 3);
+      System.out.println(lru.keySet());
+    language: java
+    options:
+      - text: "`[a, c]`"
+        correct: true
+      - text: "`[b, c]`"
+        feedback: "Reading `a` made it the most recently used, so `b` is evicted."
+      - text: "`[a, b, c]`"
+        feedback: "`removeEldestEntry` keeps the size at 2."
+
+  - type: blank
+    prompt: Create a map ordered by access instead of insertion.
+    template: "new LinkedHashMap<>(16, 0.75f, [[true]])"
+    code: true

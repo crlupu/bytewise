@@ -1,0 +1,6 @@
+title: Subtyping, wildcards and bounds
+summary: Chapters 2–3 — why a List of Integer isn't a List of Number, the Get and Put Principle, and bounds for comparison.
+lessons:
+  - subtyping-and-substitution
+  - get-and-put-principle
+  - comparison-and-bounds

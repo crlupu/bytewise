@@ -1,0 +1,56 @@
+title: A List of Integer isn't a List of Number
+summary: Generic types are invariant, unlike arrays — and that's what keeps them type-safe.
+duration: 5
+tags: [java, generics, subtyping, invariance, arrays, covariance]
+sources:
+  - { book: java-generics-collections, ref: "§2.1–2.5, Subtyping and wildcards" }
+steps:
+  - type: explanation
+    title: The Substitution Principle
+    body: |
+      A value of a subtype can go wherever its supertype is expected.
+      `Integer` is a subtype of `Number`, so an `Integer` can be added to a `List<Number>`.
+      But that doesn't make `List<Integer>` a subtype of `List<Number>`.
+
+  - type: choice
+    prompt: Why doesn't `List<Number> nums = ints;` compile, where `ints` is a `List<Integer>`?
+    options:
+      - text: Through `nums` you could add a `Double` to a list that must hold only `Integer`s
+        correct: true
+      - text: "`Integer` isn't a subtype of `Number`"
+        feedback: It is. The problem is what you could then put into the list.
+    explanation: "Generic types are invariant: `List<A>` and `List<B>` are unrelated unless `A` and `B` are the same."
+
+  - type: explanation
+    title: Arrays are covariant
+    body: |
+      `Integer[]` is a subtype of `Number[]` and `Object[]`.
+      So the bad store compiles.
+      The array checks each store at run time and throws `ArrayStoreException`.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      Object[] arr = new Integer[1];
+      arr[0] = "hello";
+    language: java
+    options:
+      - text: "`ArrayStoreException` at run time"
+        correct: true
+      - text: It doesn't compile
+        feedback: Arrays are covariant, so the compiler allows it.
+      - text: The array now holds a string
+        feedback: An `Integer[]` knows its element type and refuses the string.
+    explanation: Generics catch this at compile time instead. That's one reason to prefer lists to arrays.
+
+  - type: match
+    prompt: Match each type relationship with whether it holds.
+    pairs:
+      - left: "`Integer[]` is a subtype of `Number[]`"
+        right: True — arrays are covariant
+      - left: "`List<Integer>` is a subtype of `List<Number>`"
+        right: False — generics are invariant
+      - left: "`List<Integer>` is a subtype of `List<? extends Number>`"
+        right: True — that's what wildcards are for
+      - left: "`ArrayList<Integer>` is a subtype of `List<Integer>`"
+        right: True — the class hierarchy still applies

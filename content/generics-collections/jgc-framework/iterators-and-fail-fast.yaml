@@ -1,0 +1,64 @@
+title: Iterators and fail-fast behaviour
+summary: Changing a collection while iterating over it throws `ConcurrentModificationException`, unless you go through the iterator.
+duration: 5
+tags: [java, collections, iterator, fail fast, concurrentmodificationexception]
+sources:
+  - { book: java-generics-collections, ref: "§11.1, Iterable and Iterators" }
+  - { book: java-generics-collections, ref: "§11.5, Collections and Thread Safety" }
+steps:
+  - type: explanation
+    title: Fail-fast iterators
+    body: |
+      Most collections count their structural changes.
+      Their iterators check the count on every step.
+      A change from outside the iterator throws `ConcurrentModificationException`.
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      List<Integer> list = new ArrayList<>(List.of(1, 2, 3));
+      for (Integer i : list) {
+        if (i == 1) list.remove(i);
+      }
+    language: java
+    options:
+      - text: "`ConcurrentModificationException`"
+        correct: true
+      - text: "`list` becomes `[2, 3]`"
+        feedback: The for-each loop's hidden iterator notices the change on its next step.
+
+  - type: explanation
+    title: Remove through the iterator
+    body: |
+      `iterator.remove()` deletes the last element returned.
+      The iterator knows about the change, so nothing is thrown.
+      `removeIf` does the same in one call.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<Integer> list = new ArrayList<>(List.of(1, 2, 3));
+      for (Iterator<Integer> it = list.iterator(); it.hasNext(); ) {
+        if (it.next() == 2) it.remove();
+      }
+      System.out.println(list);
+    language: java
+    options:
+      - text: "`[1, 3]`"
+        correct: true
+      - text: "`ConcurrentModificationException`"
+        feedback: Removing through the iterator itself is allowed.
+
+  - type: choice
+    prompt: Is fail-fast behaviour a reliable way to detect races between threads?
+    options:
+      - text: No — it's best-effort, for catching bugs; it isn't guaranteed
+        correct: true
+      - text: Yes, it always throws when another thread modifies the collection
+        feedback: The check isn't synchronized, so it can miss changes.
+    explanation: For concurrent access, use concurrent collections, whose iterators are weakly consistent and never throw.
+
+  - type: blank
+    prompt: Remove the empty strings safely.
+    template: "names.[[removeIf]](String::isEmpty);"
+    code: true

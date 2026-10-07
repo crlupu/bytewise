@@ -1,0 +1,60 @@
+title: Evolution, not revolution
+summary: Generics were added with erasure so old and new code interoperate; raw types and unchecked warnings are the price.
+duration: 5
+tags: [java, generics, erasure, raw types, migration, unchecked warnings]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 5, Evolution, Not Revolution" }
+steps:
+  - type: explanation
+    title: Erasure keeps old code working
+    body: |
+      Generic types exist only at compile time.
+      The compiler erases `List<String>` to `List` in the bytecode.
+      So a pre-generics library and generic code can call each other.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<String> strings = new ArrayList<>();
+      List<Integer> ints = new ArrayList<>();
+      System.out.println(strings.getClass() == ints.getClass());
+    language: java
+    options:
+      - text: "`true`"
+        correct: true
+      - text: "`false`"
+        feedback: After erasure, both are plain `ArrayList` at run time.
+
+  - type: explanation
+    title: Unchecked warnings mark the gaps
+    body: |
+      Passing a raw `List` where a `List<String>` is expected compiles with an unchecked warning.
+      The compiler can't prove the types are right.
+      If they're wrong, the error comes later, somewhere else.
+
+  - type: predict
+    prompt: Where does this fail?
+    code: |
+      List<String> strings = new ArrayList<>();
+      List raw = strings;           // line 2
+      raw.add(42);                  // line 3
+      String s = strings.get(0);    // line 4
+    language: java
+    options:
+      - text: "`ClassCastException` at line 4"
+        correct: true
+      - text: "`ClassCastException` at line 3"
+        feedback: The raw list has no idea its elements should be strings, so the add succeeds.
+      - text: It doesn't compile
+        feedback: It compiles — with an unchecked warning at line 3.
+    explanation: This is heap pollution. The failure shows up far from the bug.
+
+  - type: choice
+    prompt: When is it fine to suppress an unchecked warning?
+    options:
+      - text: When you've proven the cast is safe, with `@SuppressWarnings("unchecked")` on the smallest possible scope and a comment saying why
+        correct: true
+      - text: Whenever the code works in tests
+        feedback: The point of the warning is that tests may not hit the bad case.
+      - text: On the whole class, to keep the build quiet
+        feedback: That hides future warnings too.

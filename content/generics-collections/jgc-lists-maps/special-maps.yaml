@@ -1,0 +1,53 @@
+title: Special-purpose maps
+summary: EnumMap for enum keys, IdentityHashMap for reference equality, WeakHashMap for keys that may be collected, ConcurrentHashMap for threads.
+duration: 5
+tags: [java, collections, map, enummap, identityhashmap, weakhashmap, concurrenthashmap]
+sources:
+  - { book: java-generics-collections, ref: "§16.2–16.4, Special maps and ConcurrentMap" }
+steps:
+  - type: explanation
+    title: Keys by identity
+    body: |
+      `IdentityHashMap` compares keys with `==`, not `equals`.
+      Two equal but distinct strings are two keys.
+      It's for graph algorithms and serialization, not general use.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Map<String, Integer> m = new IdentityHashMap<>();
+      m.put(new String("k"), 1);
+      m.put(new String("k"), 2);
+      System.out.println(m.size());
+    language: java
+    options:
+      - text: "2"
+        correct: true
+      - text: "1"
+        feedback: That's what `HashMap` would give. Here the two strings are different objects, so they're different keys.
+
+  - type: explanation
+    title: Weak keys
+    body: |
+      `WeakHashMap` doesn't keep its keys alive.
+      When nothing else refers to a key, the entry disappears.
+      Useful for metadata attached to objects you don't own.
+
+  - type: explanation
+    title: Enum keys and threads
+    body: |
+      `EnumMap` is an array indexed by ordinal: compact and fast.
+      `ConcurrentHashMap` allows many threads to read and write at once.
+      Its `merge` and `compute` are atomic.
+
+  - type: match
+    prompt: Match each need with a map.
+    pairs:
+      - left: Counts per `DayOfWeek`
+        right: "`EnumMap`"
+      - left: Tracking objects already visited, even if they're equal to others
+        right: "`IdentityHashMap`"
+      - left: Extra data per object, forgotten when the object is garbage collected
+        right: "`WeakHashMap`"
+      - left: A cache shared by request threads
+        right: "`ConcurrentHashMap`"

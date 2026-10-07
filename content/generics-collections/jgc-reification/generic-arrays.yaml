@@ -1,0 +1,55 @@
+title: Why you can't make generic arrays
+summary: Arrays check their element type at run time, which erased generics can't provide — so `new T[n]` is illegal.
+duration: 5
+tags: [java, generics, arrays, reification, varargs]
+sources:
+  - { book: java-generics-collections, ref: "§6.4–6.6, Array creation and the Principle of Truth in Advertising" }
+  - { book: effective-java, ref: "Item 28" }
+steps:
+  - type: explanation
+    title: Arrays reify; generics erase
+    body: |
+      An array knows its element type and checks every store.
+      `new T[n]` would need to know `T` at run time.
+      It can't, so the compiler forbids generic array creation.
+
+  - type: choice
+    prompt: Which of these compile?
+    options:
+      - text: "`List<String> l = new ArrayList<>();`"
+        correct: true
+      - text: "`List<?>[] a = new List<?>[10];`"
+        correct: true
+      - text: "`T[] a = new T[10];`"
+        feedback: "\"generic array creation\" — `T` is erased."
+      - text: "`List<String>[] a = new List<String>[10];`"
+        feedback: "`List<String>` isn't reifiable, so neither is an array of it."
+
+  - type: explanation
+    title: Prefer lists to arrays
+    body: |
+      A `List<T>` gives you the safety arrays can't.
+      If you need an array, pass in an array or a class token.
+      `list.toArray(new String[0])` lets the caller supply the type.
+
+  - type: explanation
+    title: Truth in advertising
+    body: |
+      An `Object[]` cast to `T[]` lies about its type.
+      If it escapes the class, callers get a `ClassCastException`.
+      Keep such arrays private.
+
+  - type: choice
+    prompt: "A class stores `T[] items = (T[]) new Object[10];` and returns it from `public T[] toArray()`. What happens when a caller does `String[] s = box.toArray();`?"
+    options:
+      - text: "`ClassCastException` — the array is really an `Object[]`"
+        correct: true
+      - text: It works, because of the cast inside the class
+        feedback: That cast is unchecked; the array is still an `Object[]` at run time.
+    explanation: Fine inside the class, as long as the array never leaves it. That's how `ArrayList` works.
+
+  - type: blank
+    prompt: Let the caller supply the array type.
+    template: "String[] arr = list.toArray(new [[String]][0]);"
+    code: true
+    caseSensitive: true

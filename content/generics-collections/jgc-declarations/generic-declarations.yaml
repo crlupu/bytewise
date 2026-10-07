@@ -1,0 +1,51 @@
+title: Declaring generic classes and methods
+summary: Type parameters belong to instances, so static members can't use them; generic methods declare their own.
+duration: 5
+tags: [java, generics, type parameters, static, generic methods, inference]
+sources:
+  - { book: java-generics-collections, ref: "Chapter 4, Declarations" }
+steps:
+  - type: explanation
+    title: Type parameters are per instance
+    body: |
+      `class Box<T>` means each `Box` has its own `T`.
+      A static field or method is shared by all boxes.
+      So it can't refer to `T`.
+
+  - type: choice
+    prompt: "Why doesn't `static T defaultValue;` compile inside `class Box<T>`?"
+    options:
+      - text: A static field is shared by `Box<String>` and `Box<Integer>`, so it can't have either type
+        correct: true
+      - text: Static fields can't be generic at all
+        feedback: "A static field can have a concrete generic type like `List<String>`. It just can't use the class's `T`."
+
+  - type: explanation
+    title: Generic methods have their own
+    body: |
+      A method can declare type parameters before its return type.
+      `static <T> List<T> listOf(T... items)` works in any class.
+      The compiler infers `T` from the arguments.
+
+  - type: blank
+    prompt: Declare a generic static method.
+    template: "static [[<T>]] T first(List<T> list) { return list.get(0); }"
+    code: true
+    caseSensitive: true
+
+  - type: explanation
+    title: Inference and explicit arguments
+    body: |
+      Usually the compiler works out `T`.
+      When it can't, give it: `Collections.<String>emptyList()`.
+      The diamond `new ArrayList<>()` infers constructor arguments.
+
+  - type: match
+    prompt: Match each declaration with where its type parameter can be used.
+    pairs:
+      - left: "`class Box<T>`"
+        right: Instance fields and methods of `Box`
+      - left: "`static <T> T pick(T a, T b)`"
+        right: Only inside `pick`
+      - left: "`interface Source<T>`"
+        right: The interface's methods and implementors

@@ -1,0 +1,6 @@
+title: Sets and queues
+summary: Chapters 13–14 — HashSet, LinkedHashSet, TreeSet and EnumSet; navigable sets; priority queues and deques.
+lessons:
+  - choosing-a-set
+  - navigable-sets
+  - queues-and-deques
