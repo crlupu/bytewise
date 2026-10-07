@@ -171,8 +171,9 @@ answer, a filled meter, a finished lesson. The one filled button on a screen is 
 in light mode and lime (`#A6EE6A`) in dark mode. Amber means "not yet" (a wrong answer,
 items due, the streak spark); red is for destructive actions only.
 
-Home is a bento grid (continue, streak, review, accuracy) above each topic's courses as
-rows with thin progress bars; a course is a path of lessons joined by a line; a
+Home is a bento grid (continue, streak, review, accuracy) above the library: one card
+per book or topic, marked with a monogram tile in the logo's style. A card opens the
+topic's page (`/topic/<id>/`), which lists its courses as rows with thin progress bars; a course is a path of lessons joined by a line; a
 lesson's actions sit in a bottom sheet. Type is Inter Tight with JetBrains Mono for
 code and labels, self-hosted from `app/fonts` through `next/font/local`. A floating tab bar on
 phones, a sidebar from 1056px, 44px touch targets, hover styles only behind

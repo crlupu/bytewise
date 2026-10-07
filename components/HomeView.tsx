@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { ChevronIcon, PlayIcon } from "@/components/icons";
+import { booksOf } from "@/components/Books";
 import { Meter, PageHead, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
 import { dueItems, progress, streak, useHydrated, useProgress } from "@/lib/progress";
-import { continueTarget, courseProgress, lessonSteps } from "@/lib/status";
+import { continueTarget, lessonSteps } from "@/lib/status";
 import type { Catalog } from "@/lib/types";
 
 const SPARK = "M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z";
@@ -18,10 +19,17 @@ function Spark({ size = 16 }: { size?: number }) {
   );
 }
 
+const SMALL = new Set(["in", "of", "the", "and", "a", "for", "to"]);
+/** Two letters for a book's mark: initials, or the first two letters of a one-word title. */
+function monogram(title: string) {
+  const words = title.replace(/[^\w\s]/g, " ").split(/\s+/).filter((w) => w && !SMALL.has(w.toLowerCase()));
+  return words.length > 1 ? (words[0][0] + words[1][0]).toUpperCase() : (words[0] ?? "").slice(0, 2).replace(/^./, (c) => c.toUpperCase());
+}
+
 /**
  * Home is a bento grid: what to do next as the big tile, then the streak,
- * the review queue and accuracy at a glance. Below it, every course as a
- * row with a thin progress bar.
+ * the review queue and accuracy at a glance. Below it, the library: one
+ * card per book (or topic), each opening the list of its courses.
  */
 export function HomeView({ catalog }: { catalog: Catalog }) {
   const p = useProgress();
@@ -103,32 +111,38 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
         </Link>
       </div>
 
-      <section aria-label="Topics">
-        {catalog.topics.map((t) => (
-          <div className="topic" key={t.id}>
-            <h2 className="section-title">{t.title}</h2>
-            <p className="topic__summary">{t.summary}</p>
-            <ul className="rows">
-              {t.courses.map((c) => {
-                const cp = courseProgress(c, p);
-                return (
-                  <li key={c.id}>
-                    <Link href={`/course/${c.id}/`} className="row">
-                      <span className="row__head">
-                        <span className="row__title">{c.title}</span>
-                        <span className="row__count figure">
-                          {cp.done} of {plural(cp.total, "lesson")}
-                        </span>
-                      </span>
-                      <span className="row__sub">{c.summary}</span>
-                      <Meter value={cp.pct} label={`${c.title} progress`} />
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+      <section aria-label="Books">
+        <h2 className="section-title">Library</h2>
+        <ul className="shelf">
+          {catalog.topics.map((t) => {
+            const lessons = t.courses.flatMap((c) => c.lessons);
+            const done = lessons.filter((l) => p.lessons[l.key]?.completed).length;
+            const used = booksOf(lessons.map((l) => l.sources), catalog.books);
+            const by =
+              used.length === 1
+                ? used[0].authors.split(/,|&/)[0].trim() + (/[,&]/.test(used[0].authors) ? " et al." : "")
+                : used.length
+                  ? plural(used.length, "book")
+                  : t.summary;
+            return (
+              <li key={t.id}>
+                <Link href={`/topic/${t.id}/`} className="book">
+                  <span className="book__mark" aria-hidden>
+                    {monogram(t.title)}
+                  </span>
+                  <span className="book__title">{t.title}</span>
+                  <span className="book__by">{by}</span>
+                  <span className="book__foot">
+                    <Meter value={lessons.length ? (done / lessons.length) * 100 : 0} label={`${t.title} progress`} />
+                    <span className="figure">
+                      {done}/{lessons.length}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </section>
     </>
   );

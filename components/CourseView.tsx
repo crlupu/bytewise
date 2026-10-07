@@ -39,7 +39,7 @@ export function CourseView({
 
   return (
     <>
-      <PageHead title={course.title} subtitle={topicTitle} back={{ href: "/", label: "Learn" }} lede={course.summary}>
+      <PageHead title={course.title} subtitle={topicTitle} back={{ href: `/topic/${course.topicId}/`, label: topicTitle }} lede={course.summary}>
         {touched && (
           <button type="button" className="btn btn--plain btn--sm" onClick={() => setEditing((e) => !e)}>
             {editing ? "Done" : "Edit"}
