@@ -1,0 +1,55 @@
+title: Investigating locks
+summary: Thread states tell you who is running, who is waiting for a lock, and who is waiting to be woken up.
+duration: 5
+tags: [java, troubleshooting, threads, locks, thread states, contention]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 9, Investigating locks in multithreaded architectures" }
+steps:
+  - type: explanation
+    title: Thread states
+    body: |
+      RUNNABLE threads are running or ready to run.
+      BLOCKED threads wait to enter a `synchronized` block.
+      WAITING and TIMED_WAITING threads wait to be woken, by `notify`, `unpark` or a timeout.
+
+  - type: match
+    prompt: Match each situation with the thread state you'd see.
+    pairs:
+      - left: Waiting to enter a `synchronized` method another thread is in
+        right: BLOCKED
+      - left: Called `queue.take()` on an empty queue
+        right: WAITING
+      - left: Called `Thread.sleep(1000)`
+        right: TIMED_WAITING
+      - left: Computing a hash
+        right: RUNNABLE
+
+  - type: explanation
+    title: Find the owner
+    body: |
+      A blocked thread shows the lock it wants.
+      Another thread's stack shows it holds that lock.
+      What is the owner doing, and why so long?
+
+  - type: choice
+    prompt: Fifty threads are BLOCKED on the same lock. The owner is RUNNABLE inside a `synchronized` method, calling a remote service. What's the problem?
+    options:
+      - text: Slow I/O while holding a lock — everyone waits for the network call
+        correct: true
+      - text: A deadlock
+        feedback: The owner is making progress; it's just slow. In a deadlock, the owners wait for each other.
+
+  - type: explanation
+    title: Profilers show lock contention
+    body: |
+      A profiler can count how often and how long threads waited on each lock.
+      The most contended lock is the first to fix.
+      Shrink what's inside it, or stop sharing the data.
+
+  - type: choice
+    prompt: How do you fix a lock held during a slow remote call?
+    options:
+      - text: Make the call outside the lock, and lock only to update shared state
+        correct: true
+      - text: Add more threads
+        feedback: They'd all queue on the same lock.

@@ -1,0 +1,5 @@
+title: Remote debugging and logs
+summary: Chapters 4–5 — attaching a debugger to a running JVM, and logging that helps investigations instead of hindering them.
+lessons:
+  - remote-debugging
+  - logging-well

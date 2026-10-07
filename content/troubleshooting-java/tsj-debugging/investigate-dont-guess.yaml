@@ -1,0 +1,55 @@
+title: Investigate, don't guess
+summary: Reading code tells you what it should do; running it under a debugger, profiler or with logs tells you what it does.
+duration: 5
+tags: [java, troubleshooting, debugging, investigation, root cause]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 1, Revealing an app's obscurities" }
+steps:
+  - type: explanation
+    title: Code hides its behaviour
+    body: |
+      A method call can hide a lot: interfaces, frameworks, proxies and config.
+      Reading alone means guessing which path runs.
+      Investigation means watching the code run.
+
+  - type: match
+    prompt: Match each question with the best tool.
+    pairs:
+      - left: Which branch does this request actually take?
+        right: A debugger with a breakpoint
+      - left: Why is this endpoint slow in production?
+        right: A profiler
+      - left: What happened overnight when the job failed?
+        right: The logs
+      - left: Why are all threads stuck?
+        right: A thread dump
+
+  - type: explanation
+    title: Find the root cause
+    body: |
+      The place an exception appears is often not where the bug is.
+      A null may have been stored long before it was read.
+      Trace back to where the wrong state was created.
+
+  - type: choice
+    prompt: A `NullPointerException` is thrown in `formatAddress(customer)`. What's the first thing to find out?
+    options:
+      - text: Where the customer's address was set to null — the code that created that state
+        correct: true
+      - text: How to add a null check in `formatAddress`
+        feedback: That hides the symptom; the bad data may break something else next.
+
+  - type: explanation
+    title: Reproduce first
+    body: |
+      A bug you can trigger on demand is half fixed.
+      Narrow the input or steps until it happens every time.
+      Then a test can prove the fix.
+
+  - type: order
+    prompt: Put the steps of an investigation in order.
+    items:
+      - Reproduce the problem reliably
+      - Observe what the code actually does
+      - Trace back to the root cause
+      - Fix it and add a test that would have caught it

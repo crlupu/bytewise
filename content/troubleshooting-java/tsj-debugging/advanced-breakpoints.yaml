@@ -1,0 +1,52 @@
+title: Conditional breakpoints and more
+summary: Stop only when a condition holds, log instead of stopping, change values on the fly, and drop a frame to replay a method.
+duration: 5
+tags: [java, troubleshooting, debugger, conditional breakpoints, logpoints, drop frame]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 3, Finding problem root causes using advanced debugging techniques" }
+steps:
+  - type: explanation
+    title: Conditional breakpoints
+    body: |
+      A loop runs ten thousand times, and you care about one.
+      Give the breakpoint a condition, like `order.id == 4711`.
+      It pauses only then — but checking slows the loop.
+
+  - type: blank
+    prompt: Make a breakpoint stop only for negative totals.
+    template: "Condition: total [[<]] 0"
+    code: true
+
+  - type: explanation
+    title: Breakpoints that don't stop
+    body: |
+      A breakpoint can log a message and carry on.
+      It's a print statement without editing or rebuilding.
+      Useful when stopping would change timing.
+
+  - type: explanation
+    title: Change state, replay a frame
+    body: |
+      You can set a variable's value while paused.
+      Drop frame rewinds to the start of the current method.
+      Together they let you try a fix without restarting.
+
+  - type: match
+    prompt: Match each feature with when it helps.
+    pairs:
+      - left: Conditional breakpoint
+        right: The bug shows up on one iteration of many
+      - left: Logging breakpoint
+        right: Pausing would change the timing
+      - left: Setting a variable
+        right: Testing what would happen with a different value
+      - left: Drop frame
+        right: Running a method again after stepping past the interesting part
+
+  - type: choice
+    prompt: What can't drop frame undo?
+    options:
+      - text: Side effects already done, like writing to a database or changing a shared object
+        correct: true
+      - text: Local variable values in the frame
+        feedback: Those are reset when the frame restarts.

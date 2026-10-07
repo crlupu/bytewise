@@ -1,0 +1,57 @@
+title: Reading flame graphs
+summary: In a flame graph, width is time and height is call depth; look for wide plateaus near the top.
+duration: 5
+tags: [java, troubleshooting, profiling, flame graph, visualization]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 8, Using advanced visualization tools for profiled data" }
+steps:
+  - type: explanation
+    title: Width is time
+    body: |
+      Each box is a method; the boxes above it are what it called.
+      A box's width is the share of samples it appeared in.
+      Left-to-right order is alphabetical, not time.
+
+  - type: explanation
+    title: Look for plateaus
+    body: |
+      A wide box with nothing on top is time spent in that method itself.
+      That's where the CPU actually goes.
+      Narrow towers are deep but cheap.
+
+  - type: choice
+    prompt: In a CPU flame graph, which box deserves attention first?
+    options:
+      - text: A wide box at the top of a stack, with nothing above it
+        correct: true
+      - text: The tallest, narrowest tower
+        feedback: Deep stacks aren't expensive if they're narrow.
+      - text: The leftmost box
+        feedback: Horizontal order is alphabetical; it doesn't mean "first".
+
+  - type: match
+    prompt: Match each feature of a flame graph with its meaning.
+    pairs:
+      - left: Width of a box
+        right: Share of samples containing that method
+      - left: Height of a stack
+        right: Call depth
+      - left: A box's children
+        right: The methods it called
+      - left: Horizontal position
+        right: Alphabetical, to merge identical stacks
+
+  - type: explanation
+    title: Other views
+    body: |
+      A call tree shows the same data as an indented list.
+      A hot-methods list sorts by self time.
+      Flame graphs make the overall shape visible at a glance.
+
+  - type: choice
+    prompt: "`JSON.serialize` is 40% wide, and almost all of that is its child `Reflection.getFields`. What's the likely fix?"
+    options:
+      - text: Cache the field metadata so reflection isn't repeated for every object
+        correct: true
+      - text: Buy a faster CPU
+        feedback: The graph points at a specific, avoidable cost.

@@ -1,0 +1,63 @@
+title: Finding deadlocks in thread dumps
+summary: Take a thread dump, and the JVM names the deadlocked threads and the locks in their cycle.
+duration: 6
+tags: [java, troubleshooting, deadlock, thread dump, jstack]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 10, Investigating deadlocks with thread dumps" }
+steps:
+  - type: explanation
+    title: Get a thread dump
+    body: |
+      `jstack <pid>` or `jcmd <pid> Thread.print` prints every thread's stack.
+      A profiler can also take one, and `kill -3` writes one to the console.
+      Take two or three, seconds apart, to see what's stuck.
+
+  - type: explanation
+    title: Deadlock is a cycle
+    body: |
+      Thread A holds lock 1 and wants lock 2.
+      Thread B holds lock 2 and wants lock 1.
+      Neither can move, ever.
+
+  - type: widget
+    widget: locks
+    prompt: |
+      A transfer locks the source account, then the destination. T1 transfers from **A** to **B**; T2 from **B** to **A**.
+      **Make them deadlock**, as they did in production.
+    config:
+      threads:
+        - { name: T1, ops: [lock A, lock B, transfer, unlock B, unlock A] }
+        - { name: T2, ops: [lock B, lock A, transfer, unlock A, unlock B] }
+    goal:
+      deadlock: true
+    hints:
+      - Let each thread take its first lock before either takes its second.
+    explanation: "This is what the thread dump would show: T1 holds A and waits for B, T2 holds B and waits for A."
+
+  - type: choice
+    prompt: In a thread dump, how do you find a deadlock?
+    options:
+      - text: Look for "Found one Java-level deadlock", which lists each thread, the lock it holds and the lock it waits for
+        correct: true
+      - text: Look for threads that are RUNNABLE
+        feedback: Deadlocked threads are BLOCKED or WAITING, not running.
+
+  - type: explanation
+    title: Break the cycle
+    body: |
+      Make every thread take locks in the same order — for example, by account ID.
+      Or use `tryLock` with a timeout.
+      Then the cycle can't form.
+
+  - type: widget
+    widget: locks
+    prompt: |
+      The fix: both transfers lock the account with the **lower ID first** — here always A, then B.
+      Try to deadlock them, then run both to completion.
+    config:
+      threads:
+        - { name: T1, ops: [lock A, lock B, transfer, unlock B, unlock A] }
+        - { name: T2, ops: [lock A, lock B, transfer, unlock B, unlock A] }
+    goal:
+      finished: true
+    explanation: Whoever gets A first also gets B; the other waits for A while holding nothing.

@@ -1,0 +1,53 @@
+title: Sampling, then profiling
+summary: Sample first to find where to look; then instrument that part to count calls exactly — and see the SQL your app really sends.
+duration: 6
+tags: [java, troubleshooting, profiling, sampling, instrumentation, sql, n plus one]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 7, Finding hidden issues using profiling techniques" }
+steps:
+  - type: explanation
+    title: Sampling is cheap and broad
+    body: |
+      Sampling reads the threads' stacks at intervals.
+      It shows where time goes across the whole app.
+      It can't tell you how many times a method was called.
+
+  - type: explanation
+    title: Instrumenting is exact and narrow
+    body: |
+      Instrumenting adds counting code to the methods you choose.
+      You get exact call counts and times.
+      It's slow, so limit it to the packages you care about.
+
+  - type: order
+    prompt: Put the profiling workflow in order.
+    items:
+      - Sample the whole app to find the slow area
+      - Instrument just the packages in that area
+      - Read exact call counts and durations
+      - Change the code and measure again
+
+  - type: explanation
+    title: See the hidden queries
+    body: |
+      Frameworks generate SQL you never wrote.
+      Profilers can list every query with its count and time.
+      One query run a thousand times is the N+1 problem.
+
+  - type: choice
+    prompt: The profiler shows `SELECT * FROM item WHERE order_id = ?` ran 1,000 times for one page load. What's wrong?
+    options:
+      - text: An N+1 query — items are loaded lazily, one query per order, instead of in one query
+        correct: true
+      - text: The database needs a bigger cache
+        feedback: Each query may be fast; the problem is running a thousand of them.
+
+  - type: match
+    prompt: Match each question with sampling or instrumenting.
+    pairs:
+      - left: Which part of the app is slow?
+        right: Sampling
+      - left: How many times is `calculateTax` called per request?
+        right: Instrumenting
+      - left: Is it slow everywhere or in one module?
+        right: Sampling, too

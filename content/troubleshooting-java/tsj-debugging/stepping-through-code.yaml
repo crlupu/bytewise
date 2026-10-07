@@ -1,0 +1,56 @@
+title: Breakpoints and stepping
+summary: Pause at a line, read the variables and the call stack, then step over, into or out of calls.
+duration: 5
+tags: [java, troubleshooting, debugger, breakpoints, stepping, call stack]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 2, Understanding your app's logic through debugging techniques" }
+steps:
+  - type: explanation
+    title: Pause and look
+    body: |
+      A breakpoint pauses the thread that reaches that line.
+      You can read every variable in scope.
+      The call stack shows how execution got there.
+
+  - type: explanation
+    title: Three ways to step
+    body: |
+      Step over runs the current line, calls included, and stops at the next.
+      Step into enters the method called on this line.
+      Step out finishes the current method and stops in its caller.
+
+  - type: match
+    prompt: Match each goal with the step to use.
+    pairs:
+      - left: Skip a library call you trust
+        right: Step over
+      - left: See what your own helper method does
+        right: Step into
+      - left: You're deep in a method and have seen enough
+        right: Step out
+      - left: Get to the next breakpoint
+        right: Resume
+
+  - type: explanation
+    title: The call stack is a trail
+    body: |
+      Each frame on the stack is a method waiting for the one above it.
+      Clicking a frame shows its local variables.
+      That's how you find who passed the bad value.
+
+  - type: choice
+    prompt: Execution paused in `save(order)`, and `order.total` is wrong. How do you find where the total came from?
+    options:
+      - text: Select the caller's frame in the call stack and look at its variables
+        correct: true
+      - text: Restart the app and add print statements
+        feedback: Slower, and the stack already holds the answer.
+
+  - type: choice
+    prompt: The debugger is paused. What happens to other threads in the app?
+    options:
+      - text: Depending on the setting, only this thread stops, or all threads do
+        correct: true
+      - text: Nothing ever stops except the current thread
+        feedback: Most IDEs can suspend all threads at a breakpoint; it's configurable.
+    explanation: Pausing a thread that holds a lock can stall others — remember this when debugging concurrent code.

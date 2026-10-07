@@ -1255,6 +1255,53 @@ java-performance:
     aliases: [NIO]
     def: I/O where a thread asks which sockets are ready instead of waiting on one, so a few threads can serve many connections.
 
+troubleshooting-java:
+  - term: Root cause
+    def: The original mistake behind a failure — often far from where the error appears, like the code that stored a null rather than the line that read it.
+  - term: Breakpoint
+    aliases: [breakpoints]
+    def: A marker on a line of code that pauses a thread when it gets there, so you can inspect variables and the call stack.
+  - term: Conditional breakpoint
+    aliases: [conditional breakpoints]
+    def: A breakpoint that pauses only when an expression you give is true.
+  - term: Call stack
+    aliases: [stack frame, stack frames]
+    def: The chain of method calls that led to the current line, one frame per method, each with its own local variables.
+  - term: Step over
+    aliases: [step into, step out]
+    def: 'Debugger moves: step over runs the current line; step into enters the method it calls; step out finishes the current method.'
+  - term: Drop frame
+    def: A debugger action that rewinds to the start of the current method, so it can run again. Side effects already done stay done.
+  - term: JDWP
+    aliases: [Java Debug Wire Protocol, remote debugging]
+    def: The protocol debuggers use to talk to a JVM. Starting a JVM with the JDWP agent opens a port a remote debugger can attach to.
+  - term: Log level
+    aliases: [log levels]
+    def: How serious a log message is — ERROR, WARN, INFO, DEBUG, TRACE. Configuration decides which levels are written.
+  - term: Trace ID
+    aliases: [request ID, correlation ID]
+    def: An identifier attached to every log line of one request, even across services, so its whole story can be found.
+  - term: Structured logging
+    aliases: [structured logs]
+    def: Writing log entries as fields, usually JSON, instead of free text, so they can be searched and filtered.
+  - term: Instrumentation
+    aliases: [instrumenting, instrumented]
+    def: Adding measuring code to methods so a profiler can count every call exactly, at a cost in speed.
+  - term: Flame graph
+    aliases: [flame graphs]
+    def: A chart of stack samples where each box is a method, its width the share of time it appeared in, and the boxes above it what it called.
+  - term: Thread dump
+    aliases: [thread dumps]
+    def: A snapshot of every thread in a JVM — its state, its stack, the locks it holds and the lock it's waiting for.
+  - term: BLOCKED
+    code: true
+    def: The state of a thread waiting to enter a `synchronized` block or method that another thread holds.
+  - term: OutOfMemoryError
+    code: true
+    def: Thrown when the JVM can't allocate memory. Its message says which area ran out — heap, metaspace, or native threads.
+  - term: VisualVM
+    def: A free graphical tool for monitoring and profiling running JVMs — CPU, memory, threads and heap dumps.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

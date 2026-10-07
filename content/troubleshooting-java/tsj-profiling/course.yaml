@@ -1,0 +1,6 @@
+title: Profiling
+summary: Chapters 6–8 — finding resource problems with a profiler, sampling versus instrumenting, spotting SQL and hidden calls, and reading flame graphs.
+lessons:
+  - resource-consumption
+  - sampling-and-instrumenting
+  - flame-graphs

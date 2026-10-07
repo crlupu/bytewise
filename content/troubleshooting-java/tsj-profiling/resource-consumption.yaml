@@ -1,0 +1,55 @@
+title: Spotting abnormal resource use
+summary: A profiler like VisualVM shows CPU and memory over time; the shape of the curve tells you what kind of problem you have.
+duration: 5
+tags: [java, troubleshooting, profiling, visualvm, cpu, memory leak]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 6, Identifying resource consumption problems using profiling techniques" }
+steps:
+  - type: explanation
+    title: Start with the shape
+    body: |
+      Connect a profiler and watch CPU, heap and threads over time.
+      Normal heap use is a sawtooth: it rises, then drops at each GC.
+      A sawtooth whose low points keep rising means memory isn't freed.
+
+  - type: match
+    prompt: Match each pattern with what it suggests.
+    pairs:
+      - left: Heap low points rise after every GC
+        right: A memory leak
+      - left: CPU at 100% while no requests arrive
+        right: A busy loop or a runaway background task
+      - left: Thread count climbs steadily
+        right: Threads created but never ended
+      - left: CPU low, responses slow
+        right: Threads waiting — on locks, I/O or other services
+
+  - type: explanation
+    title: Then find the culprit
+    body: |
+      A CPU sample shows which methods use the time.
+      A memory sample shows which classes fill the heap.
+      Start from the biggest number and drill into its call tree.
+
+  - type: choice
+    prompt: The heap graph is a steady sawtooth that returns to the same low point. What does that mean?
+    options:
+      - text: Normal behaviour — objects are allocated and collected
+        correct: true
+      - text: A memory leak
+        feedback: A leak shows as low points that keep rising.
+
+  - type: explanation
+    title: Profile somewhere safe
+    body: |
+      Profilers add overhead and can attach agents to the JVM.
+      Reproduce the problem in a test environment when you can.
+      In production, prefer low-overhead tools like JFR.
+
+  - type: choice
+    prompt: The CPU is at 100% with no traffic. What do you look at first in the profiler?
+    options:
+      - text: The CPU sampler's hottest methods and their threads
+        correct: true
+      - text: The heap histogram
+        feedback: That's for memory. Start with where the CPU time goes.

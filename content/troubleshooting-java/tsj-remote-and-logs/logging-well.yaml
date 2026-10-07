@@ -1,0 +1,59 @@
+title: Logs that help
+summary: Use levels deliberately, log context with every message, keep secrets out, and remember that logging costs time and disk.
+duration: 6
+tags: [java, troubleshooting, logging, log levels, observability, security]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 5, Making the most of logs" }
+steps:
+  - type: explanation
+    title: Logs show the past
+    body: |
+      A debugger shows the present; logs show what already happened.
+      They're often all you have for a production incident.
+      Write them for the person investigating at 3 a.m.
+
+  - type: match
+    prompt: Match each message with a log level.
+    pairs:
+      - left: Payment provider unreachable; order not charged
+        right: ERROR
+      - left: Retrying a call after a timeout
+        right: WARN
+      - left: Order 4711 placed
+        right: INFO
+      - left: Cart contents before computing discount
+        right: DEBUG
+
+  - type: explanation
+    title: Context makes logs useful
+    body: |
+      "Payment failed" is little help without which order and which user.
+      Include identifiers, and a request or trace ID that ties lines together.
+      Structured (JSON) logs make them searchable.
+
+  - type: choice
+    prompt: Which log line is most useful?
+    options:
+      - text: "`Payment failed orderId=4711 provider=acme status=503 traceId=9f2c`"
+        correct: true
+      - text: "`Error!`"
+        feedback: It says something went wrong, but not what or where.
+      - text: "`Payment failed`"
+        feedback: Better, but you can't tell which order or why.
+
+  - type: explanation
+    title: Mind security and cost
+    body: |
+      Never log passwords, tokens, or full card numbers.
+      Logs are copied, shipped and kept far longer than the data they mention.
+      Heavy logging in hot paths also costs CPU and disk.
+
+  - type: choice
+    prompt: Which values must never be logged?
+    options:
+      - text: An access token
+        correct: true
+      - text: A user's password
+        correct: true
+      - text: An order ID
+        feedback: Identifiers like this are exactly what investigations need.

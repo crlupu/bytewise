@@ -1,0 +1,5 @@
+title: Troubleshooting Java
+summary: Laurențiu Spilcă on finding out what code really does — debuggers, remote debugging, logs, profilers, thread dumps and heap dumps.
+order: 9
+courses: [tsj-debugging, tsj-remote-and-logs, tsj-profiling, tsj-threads-and-memory]
+glossary: [jcip, java-performance]

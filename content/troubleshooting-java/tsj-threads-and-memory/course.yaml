@@ -1,0 +1,6 @@
+title: Threads, deadlocks and memory
+summary: Chapters 9–11 — investigating locks, finding deadlocks in thread dumps, and diagnosing memory problems with heap dumps.
+lessons:
+  - investigating-locks
+  - deadlocks-in-thread-dumps
+  - memory-issues

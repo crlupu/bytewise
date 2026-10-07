@@ -1,0 +1,55 @@
+title: Diagnosing memory problems
+summary: An OutOfMemoryError names the area that ran out; a heap dump shows which objects filled it and what keeps them alive.
+duration: 6
+tags: [java, troubleshooting, memory, outofmemoryerror, heap dump, memory leak]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 11, Finding memory-related issues in an app's execution" }
+steps:
+  - type: explanation
+    title: Read the error's message
+    body: |
+      "Java heap space" means live objects filled the heap.
+      "Metaspace" means too many classes were loaded.
+      "unable to create native thread" means the OS refused another thread.
+
+  - type: match
+    prompt: Match each `OutOfMemoryError` message with a likely cause.
+    pairs:
+      - left: Java heap space
+        right: Too many live objects — a leak, or the heap is too small
+      - left: Metaspace
+        right: Classes loaded over and over, often by redeploys or generated proxies
+      - left: unable to create native thread
+        right: Too many threads for the OS or the container
+      - left: GC overhead limit exceeded
+        right: The JVM spends almost all its time collecting and freeing almost nothing
+
+  - type: explanation
+    title: Capture a heap dump
+    body: |
+      Start the JVM with `-XX:+HeapDumpOnOutOfMemoryError`.
+      Or take one from a running app with `jcmd <pid> GC.heap_dump`.
+      The dump can be as large as the heap, and contains its data.
+
+  - type: explanation
+    title: Find what holds the memory
+    body: |
+      Open the dump in a tool like Eclipse MAT or VisualVM.
+      Sort by retained size to see the biggest owners.
+      Follow the path from a GC root to see why they're alive.
+
+  - type: choice
+    prompt: The dump shows a static `Map` in a cache class retaining 2 GB of `Session` objects. What's the likely bug?
+    options:
+      - text: Sessions are added to the cache but never removed
+        correct: true
+      - text: The heap is too small for normal operation
+        feedback: The static map keeps growing because nothing removes entries — a bigger heap only delays the crash.
+
+  - type: choice
+    prompt: Why must heap dumps be handled carefully?
+    options:
+      - text: They contain every object's data — passwords, tokens and personal data included
+        correct: true
+      - text: Opening them can crash the application
+        feedback: They're analysed offline; the concern is what's inside them.

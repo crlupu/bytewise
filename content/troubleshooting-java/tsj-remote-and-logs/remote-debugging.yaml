@@ -1,0 +1,49 @@
+title: Remote debugging
+summary: Start a JVM with the JDWP agent, and your IDE can debug it over the network — in a test environment, never in production.
+duration: 5
+tags: [java, troubleshooting, remote debugging, jdwp, environments]
+sources:
+  - { book: troubleshooting-java, ref: "Chapter 4, Debugging apps remotely" }
+steps:
+  - type: explanation
+    title: Debug where the bug happens
+    body: |
+      Some bugs only show up in a shared test environment.
+      Its data, config or neighbours differ from your laptop.
+      Remote debugging connects your IDE to that JVM.
+
+  - type: explanation
+    title: The JDWP agent
+    body: |
+      Start the app with `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005`.
+      The JVM listens on port 5005 for a debugger.
+      `suspend=y` waits for the debugger before running anything.
+
+  - type: blank
+    prompt: Make the JVM listen for a debugger on port 5005.
+    template: "java -agentlib:[[jdwp]]=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar app.jar"
+    code: true
+    caseSensitive: true
+
+  - type: explanation
+    title: Never in production
+    body: |
+      A breakpoint pauses real users' requests.
+      An open debug port lets anyone who reaches it run code in your JVM.
+      Use it in test environments, behind a firewall or SSH tunnel.
+
+  - type: choice
+    prompt: Why shouldn't you remote-debug a production service?
+    options:
+      - text: Breakpoints freeze real requests, and the debug port is a remote-code-execution hole
+        correct: true
+      - text: Production JVMs can't load the JDWP agent
+        feedback: They can — that's why it's dangerous.
+
+  - type: choice
+    prompt: When is `suspend=y` useful?
+    options:
+      - text: When the bug happens during start-up, before you could attach
+        correct: true
+      - text: Always, so you don't miss anything
+        feedback: The app would sit waiting for a debugger every time it starts.
