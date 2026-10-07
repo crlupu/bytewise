@@ -18,6 +18,8 @@ export const TopicFile = z
   .object({
     title: z.string().min(1),
     summary: z.string().min(1),
+    /** Two letters for the card's monogram, when the title's initials would be ambiguous. */
+    mark: z.string().min(1).max(3).optional(),
     /** Position on the home screen; lower comes first. */
     order: z.number().int(),
     /** The topic's courses, in the order they are shown. */

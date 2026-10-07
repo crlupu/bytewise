@@ -338,7 +338,7 @@ async function load(): Promise<Loaded> {
       problems.push(...issues(topicFile, tp.error));
       continue;
     }
-    const topic: TopicMeta = { id: topicId, title: tp.data.title, summary: tp.data.summary, courses: [] };
+    const topic: TopicMeta = { id: topicId, title: tp.data.title, summary: tp.data.summary, mark: tp.data.mark, courses: [] };
     order.set(topicId, tp.data.order);
     glossaryBooks.set(topicId, new Set(["general", ...tp.data.glossary]));
     tp.data.glossary.forEach((b, bi) => {

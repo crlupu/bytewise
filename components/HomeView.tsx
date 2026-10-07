@@ -118,17 +118,19 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
             const lessons = t.courses.flatMap((c) => c.lessons);
             const done = lessons.filter((l) => p.lessons[l.key]?.completed).length;
             const used = booksOf(lessons.map((l) => l.sources), catalog.books);
-            const by =
-              used.length === 1
-                ? used[0].authors.split(/,|&/)[0].trim() + (/[,&]/.test(used[0].authors) ? " et al." : "")
-                : used.length
-                  ? plural(used.length, "book")
-                  : t.summary;
+            // A topic built on one book (others only cited in passing) shows that book's author.
+            const main = used.find((b) => lessons.filter((l) => l.sources.some((s) => s.book === b.id)).length > lessons.length / 2);
+            const lead = used.length === 1 ? used[0] : main;
+            const by = lead
+              ? lead.authors.split(/,|&/)[0].trim() + (/[,&]/.test(lead.authors) ? " et al." : "")
+              : used.length
+                ? plural(used.length, "book")
+                : t.summary;
             return (
               <li key={t.id}>
                 <Link href={`/topic/${t.id}/`} className="book">
                   <span className="book__mark" aria-hidden>
-                    {monogram(t.title)}
+                    {t.mark ?? monogram(t.title)}
                   </span>
                   <span className="book__title">{t.title}</span>
                   <span className="book__by">{by}</span>

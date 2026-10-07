@@ -94,7 +94,7 @@ export type LessonMeta = {
 export type Lesson = LessonMeta & { body: Step[] };
 
 export type CourseMeta = { id: string; topicId: string; title: string; summary: string; lessons: LessonMeta[] };
-export type TopicMeta = { id: string; title: string; summary: string; courses: CourseMeta[] };
+export type TopicMeta = { id: string; title: string; summary: string; mark?: string; courses: CourseMeta[] };
 export type Catalog = { topics: TopicMeta[]; books: Record<string, Book> };
 
 export const isExercise = (s: Step): s is ExerciseStep => s.type !== "explanation";

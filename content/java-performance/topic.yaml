@@ -1,5 +1,6 @@
 title: Java Performance
 summary: Scott Oaks on measuring and tuning the JVM — benchmarks, profilers, the JIT compiler, garbage collectors, memory, threads, databases and the standard library.
+mark: JPf
 order: 8
 courses: [jperf-testing, jperf-toolbox, jperf-jit, jperf-gc, jperf-memory, jperf-threads, jperf-servers-db, jperf-se-api]
 glossary: [effective-java, jcip]
