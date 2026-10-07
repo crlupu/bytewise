@@ -1,0 +1,65 @@
+title: Constructors and resources that leak
+summary: An instance initializer that builds its own class recurses forever, and closing two streams in one finally can leak one.
+duration: 5
+tags: [java, puzzlers, exceptions, constructors, resources, try with resources]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 40, The Reluctant Constructor" }
+  - { book: java-puzzlers, ref: "Puzzle 41, Field and Stream" }
+steps:
+  - type: explanation
+    title: Field initializers run in every constructor
+    body: |
+      Instance field initializers run before the constructor body.
+      If one creates another instance of the same class, that one does too.
+      The recursion ends in `StackOverflowError`.
+
+  - type: predict
+    prompt: What happens on `new Reluctant()`?
+    code: |
+      class Reluctant {
+        private Reluctant internal = new Reluctant();
+        public Reluctant() throws Exception {
+          throw new Exception("I'm not coming out");
+        }
+      }
+    language: java
+    options:
+      - text: "`StackOverflowError`"
+        correct: true
+      - text: "It throws `Exception: I'm not coming out`"
+        feedback: The field initializer runs before the constructor body, so the body is never reached.
+
+  - type: explanation
+    title: One close per try
+    body: |
+      Closing two streams in one `finally` is fragile.
+      If the first `close` throws, the second never runs.
+      Try-with-resources closes each one, in reverse order.
+
+  - type: choice
+    prompt: What's wrong with this?
+    code: |
+      } finally {
+        if (in != null) in.close();
+        if (out != null) out.close();
+      }
+    language: java
+    options:
+      - text: If `in.close()` throws, `out` is never closed
+        correct: true
+      - text: Nothing; `finally` always runs
+        feedback: It runs, but it can stop part way through like any other block.
+
+  - type: blank
+    prompt: Let Java close both streams.
+    template: "[[try]] (InputStream in = open(src); OutputStream out = create(dst)) { in.transferTo(out); }"
+    code: true
+
+  - type: order
+    prompt: With two resources in try-with-resources, put the events in order.
+    items:
+      - Open `in`
+      - Open `out`
+      - Run the block
+      - Close `out`
+      - Close `in`

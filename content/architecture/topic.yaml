@@ -1,4 +1,4 @@
 title: Software architecture
 summary: Designing systems — the choices, and what each one costs.
-order: 7
+order: 15
 courses: [architecture-fundamentals, design-tradeoffs, stability-patterns, domain-modeling]

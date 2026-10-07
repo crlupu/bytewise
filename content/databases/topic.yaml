@@ -1,4 +1,4 @@
 title: Databases
 summary: How data is stored, found quickly and kept consistent.
-order: 4
+order: 12
 courses: [btree-indexes, sql-performance, java-persistence, transactions]

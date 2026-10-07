@@ -1,0 +1,58 @@
+title: Boxing in collections
+summary: "`remove(i - 1)` on a `Set<Short>` removes an `Integer`, which is never there."
+duration: 4
+tags: [java, puzzlers, boxing, collections, generics, remove]
+sources:
+  - { book: java-puzzlers, ref: "Chapter 9, More Library Puzzlers" }
+steps:
+  - type: explanation
+    title: Arithmetic promotes to int
+    body: |
+      `i - 1` on a `short` gives an `int`.
+      Passed to `remove(Object)`, it's boxed as an `Integer`.
+      An `Integer` never equals a `Short`, even with the same value.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Set<Short> s = new HashSet<>();
+      for (short i = 0; i < 100; i++) {
+        s.add(i);
+        s.remove(i - 1);
+      }
+      System.out.println(s.size());
+    language: java
+    options:
+      - text: "100"
+        correct: true
+      - text: "1"
+        feedback: "`i - 1` is an `int`, so `remove` looks for an `Integer` and finds nothing."
+    explanation: "`remove` takes `Object`, not `E`, so the compiler can't catch this. Cast: `s.remove((short) (i - 1))`."
+
+  - type: explanation
+    title: List.remove is overloaded
+    body: |
+      `List<Integer>` has `remove(int index)` and `remove(Object o)`.
+      `list.remove(1)` removes the element at index 1.
+      To remove the value 1, pass `Integer.valueOf(1)`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      List<Integer> list = new ArrayList<>(List.of(3, 2, 1));
+      list.remove(1);
+      System.out.println(list);
+    language: java
+    options:
+      - text: "`[3, 1]`"
+        correct: true
+      - text: "`[3, 2]`"
+        feedback: "`remove(int)` is chosen over `remove(Object)` because it needs no boxing — so it removes index 1."
+
+  - type: choice
+    prompt: Why doesn't `Set<E>.remove` take an `E`?
+    options:
+      - text: It was declared as `remove(Object)` for compatibility and flexibility, so the compiler accepts any type
+        correct: true
+      - text: Because sets can only hold objects
+        feedback: That's true of all collections, but it doesn't explain the parameter type.

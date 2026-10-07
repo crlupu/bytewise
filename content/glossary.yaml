@@ -954,6 +954,46 @@ learning-ddd:
     aliases: [domain events]
     def: A record of something meaningful that happened in the business, named in the past tense — `OrderPlaced`.
 
+java-puzzlers:
+  - term: Sign extension
+    aliases: [sign-extends, sign-extend, sign-extended]
+    def: Widening a signed number by copying its top (sign) bit into the new bits, so negative numbers stay negative. `(long) -1` is all ones.
+  - term: Zero extension
+    aliases: [zero-extends, zero-extend, zero-extended]
+    def: Widening by filling the new bits with zeros. Java does it when widening a `char`, which is unsigned.
+  - term: Two's complement
+    def: How Java stores integers. The top bit counts as a large negative value, so there's one more negative number than positive, and `-Integer.MIN_VALUE` overflows back to itself.
+  - term: Overflow
+    aliases: [overflows, overflowed]
+    def: A result too big for its type. Java's integer arithmetic wraps around silently, so `Integer.MAX_VALUE + 1` is `Integer.MIN_VALUE`.
+  - term: NaN
+    def: '"Not a Number": the `double` or `float` result of things like `0.0 / 0.0`. It isn''t equal to anything, itself included.'
+  - term: Unicode escape
+    aliases: [unicode escapes]
+    def: '`\uXXXX` in source code. The compiler replaces it with the character before reading the program, so it works — and causes trouble — even in strings and comments.'
+  - term: Narrowing conversion
+    aliases: [narrowing, narrows, narrowed]
+    def: Converting to a type with fewer bits, like `int` to `short`. The high bits are thrown away, so the value can change completely.
+  - term: Widening conversion
+    aliases: [widening, widened]
+    def: Converting to a type with more bits, like `int` to `long`. The value is kept; integers are sign- or zero-extended.
+  - term: Compound assignment
+    aliases: [compound assignment operator]
+    def: '`+=`, `-=`, `*=` and friends. `x += y` means `x = (T) (x + y)`, with a hidden cast to `x`''s type.'
+  - term: Octal literal
+    aliases: [octal]
+    def: An integer literal with a leading zero, read in base 8. `010` is 8.
+  - term: Obscuring
+    def: When a name could mean a variable or a type, Java takes the variable. Following the naming conventions avoids it.
+  - term: Shadowing
+    aliases: [shadows, shadowed]
+    def: A declaration that makes an outer one with the same name unreachable by its simple name — a local variable over a field, or your own `String` class over `java.lang.String`.
+  - term: Hiding
+    def: A subclass field, or static method, with the same name as one in its superclass. Unlike overriding, which one you get depends on the declared type.
+  - term: Most specific overload
+    aliases: [most specific]
+    def: "The rule the compiler uses to choose between overloads: if one's parameters could be passed to the other, it's more specific and wins."
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

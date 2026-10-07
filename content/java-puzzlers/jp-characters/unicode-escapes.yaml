@@ -1,0 +1,51 @@
+title: Unicode escapes run first
+summary: The compiler turns `\u0022` into a quote before it reads your program — even inside strings and comments.
+duration: 4
+tags: [java, puzzlers, unicode, escapes, compiler]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 14, Escape Rout" }
+  - { book: java-puzzlers, ref: "Puzzle 16, Line Printer" }
+steps:
+  - type: explanation
+    title: Escapes are translated before parsing
+    body: |
+      `\uXXXX` is replaced by its character before the compiler sees tokens.
+      So `\u0022` is a real double quote, not a character in a string.
+      It can end a string literal early.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println("a\u0022.length() + \u0022b".length());
+    language: java
+    options:
+      - text: "2"
+        correct: true
+      - text: "26"
+        feedback: "`\\u0022` is a quote, so the code is really `\"a\".length() + \"b\".length()`."
+      - text: "16"
+        feedback: The escapes aren't characters inside the string; they end and start strings.
+
+  - type: explanation
+    title: Even comments aren't safe
+    body: |
+      `\u000A` is a line break.
+      Inside a `//` comment, it ends the comment.
+      The rest of the line becomes code.
+
+  - type: choice
+    prompt: "What happens to a line comment containing `\\u000A`, like `// see c:\\unix\\u000A files`?"
+    options:
+      - text: It fails to compile — `\unix` isn't a valid escape, and `\u000A` would end the comment anyway
+        correct: true
+      - text: Nothing; comments are ignored
+        feedback: Unicode escapes are processed before comments are recognized.
+    explanation: In source code, use `\n`, `\t` and `\"` escapes, which work inside literals only, and keep `\u` for characters you can't type.
+
+  - type: choice
+    prompt: When are Unicode escapes the right tool?
+    options:
+      - text: For characters that can't be typed or shown in the source file's encoding, like `\u00e9` in an ASCII-only file
+        correct: true
+      - text: For quotes and line breaks inside string literals
+        feedback: Use `\"` and `\n` — those are processed as part of the literal, not before parsing.

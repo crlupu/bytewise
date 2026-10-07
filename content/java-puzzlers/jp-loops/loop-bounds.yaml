@@ -1,0 +1,76 @@
+title: Loops at the edge of a type
+summary: A loop variable can't exceed its type's maximum, and shift distances wrap around.
+duration: 5
+tags: [java, puzzlers, loops, overflow, byte, shifts]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 24, A Big Delight in Every Byte" }
+  - { book: java-puzzlers, ref: "Puzzle 26, In the Loop" }
+  - { book: java-puzzlers, ref: "Puzzle 27, Shifty i's" }
+steps:
+  - type: explanation
+    title: Comparing byte with int
+    body: |
+      `b == 0x90` compares a `byte` with the `int` 144.
+      A `byte` only goes from -128 to 127.
+      The `byte` is widened with its sign, so the test is never true.
+
+  - type: predict
+    prompt: How many times does this print `Joy!`?
+    code: |
+      for (byte b = Byte.MIN_VALUE; b < Byte.MAX_VALUE; b++) {
+        if (b == 0x90) System.out.print("Joy!");
+      }
+    language: java
+    options:
+      - text: Never
+        correct: true
+      - text: Once
+        feedback: "`0x90` is the `int` 144. No `byte` equals 144; the `byte` with those bits is -112."
+      - text: It doesn't compile
+        feedback: Comparing a `byte` with an `int` is legal; the `byte` is widened.
+    explanation: "Compare like with like: `b == (byte) 0x90`."
+
+  - type: explanation
+    title: i <= MAX_VALUE is always true
+    body: |
+      Every `int` is less than or equal to `Integer.MAX_VALUE`.
+      When `i` reaches it, `i++` wraps to `MIN_VALUE`.
+      So a loop up to and including `MAX_VALUE` never ends.
+
+  - type: predict
+    prompt: What does this do?
+    code: |
+      int count = 0;
+      for (int i = Integer.MAX_VALUE - 100; i <= Integer.MAX_VALUE; i++) count++;
+      System.out.println(count);
+    language: java
+    options:
+      - text: Loops forever
+        correct: true
+      - text: "Prints `101`"
+        feedback: "`i <= Integer.MAX_VALUE` can never be false."
+    explanation: Use a `long` loop variable, or test with `<` and handle the last value separately.
+
+  - type: explanation
+    title: Shift distances are masked
+    body: |
+      For an `int`, only the low five bits of the shift distance count.
+      So `x << 32` is `x << 0`.
+      A loop waiting for `-1 << i` to reach zero never ends.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(-1 << 32);
+    language: java
+    options:
+      - text: "-1"
+        correct: true
+      - text: "0"
+        feedback: An `int` shift uses `32 & 31`, which is 0 — so nothing moves.
+    explanation: "For a `long`, the low six bits count, so `1L << 64` is `1L` too."
+
+  - type: blank
+    prompt: Compare the `byte` with a `byte` constant.
+    template: "if (b == ([[byte]]) 0x90)"
+    code: true

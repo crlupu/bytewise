@@ -1,0 +1,7 @@
+title: Library puzzlers
+summary: Chapters 7 and 9 — equals without hashCode, overloaded equals, octal literals, old dates and comparators that overflow.
+lessons:
+  - equals-and-hashcode
+  - octal-and-dates
+  - comparator-overflow
+  - boxed-collections

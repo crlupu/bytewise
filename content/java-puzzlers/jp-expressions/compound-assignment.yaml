@@ -1,0 +1,76 @@
+title: Compound assignment casts silently
+summary: "`x += i` hides a narrowing cast that `x = x + i` would refuse, and clever XOR swaps break in Java."
+duration: 5
+tags: [java, puzzlers, compound assignment, narrowing, evaluation order]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 9, Tweedledum" }
+  - { book: java-puzzlers, ref: "Puzzle 7, Swap Meat" }
+steps:
+  - type: explanation
+    title: "+= includes a cast"
+    body: |
+      `x += i` means `x = (T) (x + i)`, where `T` is the type of `x`.
+      If `x` is a `short`, the result is narrowed without a word.
+      `x = x + i` would not compile.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      short x = 0;
+      int i = 123456;
+      x += i;
+      System.out.println(x);
+    language: java
+    options:
+      - text: "-7616"
+        correct: true
+      - text: "123456"
+        feedback: That doesn't fit in a `short`. The compound assignment casts the sum down to 16 bits.
+      - text: It doesn't compile
+        feedback: "`x = x + i` wouldn't. `x += i` compiles, because it includes a cast."
+    explanation: Don't use compound assignment on `byte`, `short` or `char` with a wider right-hand side.
+
+  - type: choice
+    prompt: Which line fails to compile?
+    code: |
+      short x = 0;
+      int i = 123456;
+    language: java
+    options:
+      - text: "`x = x + i;`"
+        correct: true
+      - text: "`x += i;`"
+        feedback: That one compiles and silently narrows.
+      - text: "`x++;`"
+        feedback: Increment also narrows silently, so it compiles.
+
+  - type: explanation
+    title: Don't be clever with order
+    body: |
+      Java evaluates operands left to right.
+      It saves `x` before the inner assignments change it.
+      So the C trick `x ^= y ^= x ^= y` doesn't swap in Java.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      int x = 1984, y = 2001;
+      x ^= y ^= x ^= y;
+      System.out.println("x = " + x + "; y = " + y);
+    language: java
+    options:
+      - text: "x = 0; y = 1984"
+        correct: true
+      - text: "x = 2001; y = 1984"
+        feedback: That's what the trick does in some C compilers. Java reads the outer `x` first, before it changes.
+      - text: "x = 1984; y = 2001"
+        feedback: "`y` does change — it ends up holding the original `x`."
+    explanation: Never assign the same variable more than once in one expression. Use a temporary variable to swap.
+
+  - type: order
+    prompt: Put the steps of `x += i` (with `short x`, `int i`) in order.
+    items:
+      - Promote `x` to `int`
+      - Add `i`
+      - Cast the sum to `short`
+      - Store it in `x`

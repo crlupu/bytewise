@@ -1,0 +1,79 @@
+title: Overflow happens before widening
+summary: An `int` expression overflows before it's assigned to a `long`, and `5432l` looks like `54321`.
+duration: 5
+tags: [java, puzzlers, overflow, int, long, literals]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 3, Long Division" }
+  - { book: java-puzzlers, ref: "Puzzle 4, It's Elementary" }
+steps:
+  - type: explanation
+    title: The type comes from the operands
+    body: |
+      `24 * 60 * 60 * 1000 * 1000` multiplies `int`s.
+      The product is an `int`, and it overflows silently.
+      Assigning it to a `long` widens the wrong number.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      final long MICROS_PER_DAY = 24 * 60 * 60 * 1000 * 1000;
+      final long MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
+      System.out.println(MICROS_PER_DAY / MILLIS_PER_DAY);
+    language: java
+    options:
+      - text: "5"
+        correct: true
+      - text: "1000"
+        feedback: That's the right ratio — but the first product overflowed `int` before it reached the `long`.
+      - text: It doesn't compile
+        feedback: Java doesn't reject constant expressions that overflow.
+    explanation: 86,400,000,000 doesn't fit in an `int`; it wraps to 500,654,080, and 500,654,080 / 86,400,000 is 5.
+
+  - type: choice
+    prompt: Which fix makes `MICROS_PER_DAY` correct?
+    options:
+      - text: "`24L * 60 * 60 * 1000 * 1000`"
+        correct: true
+      - text: "`(long) (24 * 60 * 60 * 1000 * 1000)`"
+        feedback: The cast comes after the overflow.
+      - text: "`24 * 60 * 60 * 1000 * 1000L`"
+        feedback: "The first four multiplications still happen in `int`. Here they fit, so it happens to work — but put the `L` first."
+    explanation: Make the first operand a `long`, and every multiplication after it is done in `long`.
+
+  - type: explanation
+    title: Never write lowercase l
+    body: |
+      `5432l` is the `long` 5432.
+      In most fonts it looks like `54321`.
+      Always write the suffix as a capital `L`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(12345 + 5432l);
+    language: java
+    options:
+      - text: "17777"
+        correct: true
+      - text: "66666"
+        feedback: "That's 12345 + 54321. Look again at the last character: it's a lowercase L."
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Integer.MAX_VALUE + 1);
+    language: java
+    options:
+      - text: "-2147483648"
+        correct: true
+      - text: "2147483648"
+        feedback: That doesn't fit in an `int`. Integer arithmetic wraps around.
+      - text: It throws `ArithmeticException`
+        feedback: Only `Math.addExact` and friends throw on overflow.
+    explanation: Use `Math.addExact`, `Math.multiplyExact` and so on when overflow must not pass silently.
+
+  - type: blank
+    prompt: Make the multiplication happen in `long` from the start.
+    template: "long micros = 24[[L]] * 60 * 60 * 1000 * 1000;"
+    code: true
+    caseSensitive: true

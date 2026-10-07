@@ -1,0 +1,8 @@
+title: Expressive puzzlers
+summary: Chapter 2 — remainders, floating point, overflow, mixed types and compound assignment.
+lessons:
+  - remainder-of-negatives
+  - floating-point-money
+  - silent-overflow
+  - mixed-type-surprises
+  - compound-assignment

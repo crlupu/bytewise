@@ -1,0 +1,60 @@
+title: Which overload gets null?
+summary: The compiler picks the most specific applicable overload, at compile time, from the static types.
+duration: 5
+tags: [java, puzzlers, overloading, "null", compile time]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 46, The Case of the Confusing Constructor" }
+steps:
+  - type: explanation
+    title: The most specific overload wins
+    body: |
+      The compiler finds every overload that could accept the arguments.
+      It picks the most specific one: the one whose parameters the others could also accept.
+      `double[]` is more specific than `Object`, because every `double[]` is an `Object`.
+
+  - type: predict
+    prompt: What does `new Confusing(null)` print?
+    code: |
+      class Confusing {
+        Confusing(Object o) { System.out.println("Object"); }
+        Confusing(double[] d) { System.out.println("double array"); }
+      }
+    language: java
+    options:
+      - text: "`double array`"
+        correct: true
+      - text: "`Object`"
+        feedback: "`null` fits both, and `double[]` is the more specific type."
+      - text: It's ambiguous and doesn't compile
+        feedback: It would be ambiguous only if neither type were a subtype of the other.
+
+  - type: explanation
+    title: Overloads are chosen at compile time
+    body: |
+      The choice uses the arguments' declared types, not their runtime types.
+      Cast an argument to steer it: `new Confusing((Object) null)`.
+      Better still, give the methods different names.
+
+  - type: predict
+    prompt: Which method runs?
+    code: |
+      static String kind(Collection<?> c) { return "collection"; }
+      static String kind(List<?> l) { return "list"; }
+
+      Collection<String> c = new ArrayList<>();
+      System.out.println(kind(c));
+    language: java
+    options:
+      - text: "`collection`"
+        correct: true
+      - text: "`list`"
+        feedback: "The object is an `ArrayList`, but its declared type is `Collection` — and overloads are picked from declared types."
+
+  - type: choice
+    prompt: "Two overloads take `String` and `Integer`. What does `f(null)` do?"
+    options:
+      - text: It doesn't compile — neither type is more specific, so the call is ambiguous
+        correct: true
+      - text: It calls the `String` version, declared first
+        feedback: Declaration order never matters.
+    explanation: Avoid overloads with the same number of parameters when an argument could fit both.

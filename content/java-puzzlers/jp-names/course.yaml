@@ -1,0 +1,5 @@
+title: Classier puzzlers
+summary: Chapter 8 — names that obscure and shadow each other, and methods that look overridden but aren't.
+lessons:
+  - obscuring-and-shadowing
+  - not-really-overriding

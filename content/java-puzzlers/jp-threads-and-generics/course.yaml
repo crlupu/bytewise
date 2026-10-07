@@ -1,0 +1,5 @@
+title: Threads and generics puzzlers
+summary: Chapters 9 and 10 — run versus start, the interrupted flag, class-initialization deadlock and raw types.
+lessons:
+  - thread-puzzlers
+  - raw-types-erase-everything

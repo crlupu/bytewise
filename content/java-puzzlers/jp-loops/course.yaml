@@ -1,0 +1,6 @@
+title: Loopy puzzlers
+summary: Chapter 4 — loops that never run, never stop, or count wrong, and the values that cause them.
+lessons:
+  - loop-bounds
+  - looper-values
+  - increments-and-floats

@@ -1,0 +1,71 @@
+title: When methods don't override
+summary: Package-private methods can't be overridden from another package, and fields are hidden, never overridden.
+duration: 5
+tags: [java, puzzlers, overriding, hiding, package private, fields]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 70, Package Deal" }
+  - { book: java-puzzlers, ref: "Puzzle 66, A Private Matter" }
+steps:
+  - type: explanation
+    title: Package-private stays in the package
+    body: |
+      A package-private method is invisible outside its package.
+      A subclass elsewhere can declare one with the same name.
+      It doesn't override; it's a separate method.
+
+  - type: predict
+    prompt: What does `new TypeIt.ClickIt().doIt()` print?
+    code: |
+      package click;
+      public class CodeTalk {
+        public void doIt() { printMessage(); }
+        void printMessage() { System.out.println("Click"); }
+      }
+
+      package hack;
+      public class TypeIt {
+        static class ClickIt extends click.CodeTalk {
+          void printMessage() { System.out.println("Hack"); }
+        }
+      }
+    language: java
+    options:
+      - text: "`Click`"
+        correct: true
+      - text: "`Hack`"
+        feedback: "`printMessage` is package-private in `click`, so `ClickIt`'s method in `hack` doesn't override it."
+    explanation: With `@Override` on `ClickIt.printMessage`, the compiler would have caught it.
+
+  - type: explanation
+    title: Fields are hidden
+    body: |
+      A subclass field with the same name hides the parent's field.
+      Which one you get depends on the declared type.
+      Only methods are chosen at runtime.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Base { String name = "base"; }
+      class Derived extends Base { String name = "derived"; }
+
+      Base b = new Derived();
+      System.out.println(b.name);
+    language: java
+    options:
+      - text: "`base`"
+        correct: true
+      - text: "`derived`"
+        feedback: Field access uses the declared type, `Base`.
+
+  - type: match
+    prompt: Match each case with what happens.
+    pairs:
+      - left: Public instance method, same signature in a subclass
+        right: Overrides
+      - left: Static method, same signature in a subclass
+        right: Hides the method — chosen by declared type
+      - left: Field with the same name in a subclass
+        right: Hides the field — chosen by declared type, too
+      - left: Package-private method, subclass in another package
+        right: Neither — they're unrelated

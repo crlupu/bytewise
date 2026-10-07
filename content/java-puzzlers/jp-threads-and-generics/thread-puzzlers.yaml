@@ -1,0 +1,87 @@
+title: Thread traps
+summary: "`run()` doesn't start a thread, `Thread.interrupted()` clears the flag it reads, and a background thread can deadlock class initialization."
+duration: 6
+tags: [java, puzzlers, threads, interrupts, class initialization, deadlock]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 76, Ping Pong" }
+  - { book: java-puzzlers, ref: "Puzzle 84, Rudely Interrupted" }
+  - { book: java-puzzlers, ref: "Puzzle 85, Lazy Initialization" }
+steps:
+  - type: explanation
+    title: run() is just a method call
+    body: |
+      `start()` creates a new thread that calls `run()`.
+      Calling `run()` yourself runs it in the current thread.
+      Nothing is concurrent, and it finishes before the next line.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      public static synchronized void main(String[] a) {
+        Thread t = new Thread() {
+          public void run() { pong(); }
+        };
+        t.run();
+        System.out.print("Ping");
+      }
+      static synchronized void pong() { System.out.print("Pong"); }
+    language: java
+    options:
+      - text: "`PongPing`, every time"
+        correct: true
+      - text: "`PingPong`, every time"
+        feedback: With `start()`, the new thread would wait for main's lock and print second. But `run()` is a plain call in the main thread.
+      - text: Either, depending on scheduling
+        feedback: "There's only one thread here. `run()` doesn't start one."
+
+  - type: explanation
+    title: interrupted() clears the flag
+    body: |
+      `Thread.interrupted()` is static and resets the current thread's flag.
+      `isInterrupted()` only reads it.
+      Calling `interrupted()` twice gives `true`, then `false`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Thread.currentThread().interrupt();
+      if (Thread.interrupted()) {
+        System.out.println("Interrupted: " + Thread.interrupted());
+      }
+    language: java
+    options:
+      - text: "`Interrupted: false`"
+        correct: true
+      - text: "`Interrupted: true`"
+        feedback: The first call returned `true` and cleared the flag.
+      - text: Nothing
+        feedback: The first call sees the interrupt, so the block runs.
+    explanation: Use `Thread.currentThread().isInterrupted()` to check without clearing.
+
+  - type: explanation
+    title: Class initialization takes a lock
+    body: |
+      A class is initialized once, under a lock.
+      If its static initializer starts a thread and waits for it, and that thread uses the class, it waits too.
+      Neither can finish.
+
+  - type: choice
+    prompt: A static initializer starts a thread that sets a static field of the same class, then calls `join()`. What happens?
+    options:
+      - text: It deadlocks — the thread waits for initialization to finish, and initialization waits for the thread
+        correct: true
+      - text: It works; the thread just sets the field
+        feedback: Touching the class from another thread blocks until initialization completes.
+    explanation: Keep static initializers simple, and never wait on other threads in them.
+
+  - type: match
+    prompt: Match each call with what it does.
+    pairs:
+      - left: "`t.start()`"
+        right: Runs `run()` in a new thread
+      - left: "`t.run()`"
+        right: Runs `run()` in the caller's thread
+      - left: "`Thread.interrupted()`"
+        right: Reads and clears the current thread's flag
+      - left: "`t.isInterrupted()`"
+        right: Reads `t`'s flag without clearing it

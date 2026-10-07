@@ -1,0 +1,83 @@
+title: Mixed types and sign extension
+summary: Hex literals can be negative, casts sign-extend or zero-extend, and the conditional operator picks a type.
+duration: 6
+tags: [java, puzzlers, sign extension, casts, conditional operator, hex]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 5, The Joy of Hex" }
+  - { book: java-puzzlers, ref: "Puzzle 6, Multicast" }
+  - { book: java-puzzlers, ref: "Puzzle 8, Dos Equis" }
+steps:
+  - type: explanation
+    title: Widening copies the sign bit
+    body: |
+      `0xcafebabe` is an `int` with its top bit set, so it's negative.
+      Widening a negative `int` to `long` fills the new bits with ones.
+      That's sign extension.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Long.toHexString(0x100000000L + 0xcafebabe));
+    language: java
+    options:
+      - text: "cafebabe"
+        correct: true
+      - text: "1cafebabe"
+        feedback: "`0xcafebabe` is a negative `int`. Widened, it becomes `0xffffffffcafebabe`, and adding `0x100000000` carries out the leading ones."
+      - text: It doesn't compile
+        feedback: Mixing `int` and `long` is legal; the `int` is widened.
+    explanation: Write `0xcafebabeL` to get the positive `long` you meant. Better still, avoid mixing types in one expression.
+
+  - type: explanation
+    title: char is unsigned
+    body: |
+      Casting from `byte` to `char` sign-extends first.
+      Casting from `char` to `int` zero-extends, because `char` is unsigned.
+      So a chain of casts can change the value.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println((int) (char) (byte) -1);
+    language: java
+    options:
+      - text: "65535"
+        correct: true
+      - text: "-1"
+        feedback: "`char` can't be negative. `(char) -1` is `\\uffff`, and widening a `char` fills with zeros."
+      - text: "255"
+        feedback: The `byte` is sign-extended to 16 bits on its way to `char`, so all 16 bits are set.
+
+  - type: explanation
+    title: The conditional operator picks one type
+    body: |
+      `cond ? a : b` has a single type for both branches.
+      `char` and a constant `int` that fits gives `char`.
+      `char` and an `int` variable gives `int`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      char x = 'X';
+      int i = 0;
+      System.out.print(true ? x : 0);
+      System.out.print(false ? i : x);
+    language: java
+    options:
+      - text: "X88"
+        correct: true
+      - text: "XX"
+        feedback: "In the second expression the other operand is an `int` variable, so the result is `int` — 88, the code of 'X'."
+      - text: "8888"
+        feedback: "In the first expression `0` is a constant that fits in a `char`, so the result stays a `char`."
+    explanation: Give both branches of a conditional the same type.
+
+  - type: match
+    prompt: Match each conversion with what it does to the bits.
+    pairs:
+      - left: "`int` → `long`"
+        right: Sign-extends
+      - left: "`char` → `int`"
+        right: Zero-extends
+      - left: "`int` → `byte`"
+        right: Keeps the low 8 bits

@@ -1,0 +1,79 @@
+title: Initialization order traps
+summary: Static fields initialize in order, so an instance can see a constant before it's set; constructors that call overridable methods see unset fields.
+duration: 6
+tags: [java, puzzlers, initialization, static, constructors, overriding]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 49, Larger Than Life" }
+  - { book: java-puzzlers, ref: "Puzzle 51, What's the Point?" }
+steps:
+  - type: explanation
+    title: Static initializers run top to bottom
+    body: |
+      Static fields are set in the order they're written.
+      Before that, every field holds its default: 0, false or null.
+      Creating an instance early lets its constructor see those defaults.
+
+  - type: predict
+    prompt: In 2026, what does `Elvis.INSTANCE.beltSize()` return?
+    code: |
+      class Elvis {
+        public static final Elvis INSTANCE = new Elvis();
+        private static final int CURRENT_YEAR =
+            Calendar.getInstance().get(Calendar.YEAR);
+        private final int beltSize;
+        private Elvis() { beltSize = CURRENT_YEAR - 1930; }
+        public int beltSize() { return beltSize; }
+      }
+    language: java
+    options:
+      - text: "`-1930`"
+        correct: true
+      - text: "`96`"
+        feedback: "`INSTANCE` is created first, while `CURRENT_YEAR` is still 0."
+    explanation: Declare `INSTANCE` after the fields its constructor uses — or avoid constructors that depend on other static state.
+
+  - type: choice
+    prompt: Why isn't `CURRENT_YEAR` a compile-time constant here, set before anything runs?
+    options:
+      - text: Its value comes from a method call, so it's computed when the class initializes
+        correct: true
+      - text: Because it's private
+        feedback: "Access doesn't matter. `static final int X = 42;` would be a constant and already set."
+
+  - type: explanation
+    title: Constructors calling overridable methods
+    body: |
+      The superclass constructor runs before the subclass's fields are set.
+      If it calls a method the subclass overrides, that method sees null and 0.
+      Never call overridable methods from a constructor.
+
+  - type: predict
+    prompt: What does `new ColorPoint("red")` print?
+    code: |
+      class Point {
+        final int x; final String name;
+        Point() { x = 1; name = makeName(); }
+        String makeName() { return "[" + x + "]"; }
+        public String toString() { return name; }
+      }
+      class ColorPoint extends Point {
+        final String color;
+        ColorPoint(String color) { super(); this.color = color; }
+        @Override String makeName() { return super.makeName() + ":" + color; }
+      }
+      System.out.println(new ColorPoint("red"));
+    language: java
+    options:
+      - text: "`[1]:null`"
+        correct: true
+      - text: "`[1]:red`"
+        feedback: "`makeName` runs inside `super()`, before `this.color = color`."
+    explanation: Compute such values lazily, in `toString`, or make the class or method `final`.
+
+  - type: order
+    prompt: Put the steps of `new ColorPoint("red")` in order.
+    items:
+      - Fields hold their defaults (`color` is null)
+      - "`Point()` runs and calls `makeName()`"
+      - "`ColorPoint.makeName()` reads `color`"
+      - "`this.color = \"red\"` runs"

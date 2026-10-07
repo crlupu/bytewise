@@ -1,0 +1,6 @@
+title: Classy puzzlers
+summary: Chapter 6 — overload resolution, static methods that aren't polymorphic, and initialization order.
+lessons:
+  - overload-resolution
+  - static-is-not-polymorphic
+  - initialization-order

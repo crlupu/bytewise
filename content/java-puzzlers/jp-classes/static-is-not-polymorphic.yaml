@@ -1,0 +1,63 @@
+title: Static methods don't override
+summary: A static method is chosen by the declared type, even when called on an instance — or on null.
+duration: 4
+tags: [java, puzzlers, static, hiding, overriding]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 48, All I Get Is Static" }
+  - { book: java-puzzlers, ref: "Puzzle 54, Null and Void" }
+steps:
+  - type: explanation
+    title: Static methods are hidden, not overridden
+    body: |
+      A subclass's static method with the same signature hides the parent's.
+      Calls are resolved from the declared type, at compile time.
+      The object itself is ignored.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Dog { static void bark() { System.out.print("woof "); } }
+      class Basenji extends Dog { static void bark() { } }
+
+      Dog woofer = new Dog();
+      Dog nipper = new Basenji();
+      woofer.bark();
+      nipper.bark();
+    language: java
+    options:
+      - text: "`woof woof `"
+        correct: true
+      - text: "`woof ` once"
+        feedback: "Both variables are declared as `Dog`, so both calls go to `Dog.bark()`. Basenjis do bark, here."
+    explanation: Always call static methods through the class name, `Dog.bark()`, so nothing looks polymorphic.
+
+  - type: explanation
+    title: Even null works
+    body: |
+      Calling a static method through a reference doesn't use the reference.
+      It isn't even checked for null.
+      The compiler just uses its type.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Null {
+        static void greet() { System.out.println("Hello world!"); }
+      }
+      ((Null) null).greet();
+    language: java
+    options:
+      - text: "`Hello world!`"
+        correct: true
+      - text: It throws `NullPointerException`
+        feedback: The call is resolved to `Null.greet()` from the type; the null is never dereferenced.
+
+  - type: match
+    prompt: Match each kind of method with how a call to it is resolved.
+    pairs:
+      - left: Instance method
+        right: The object's runtime class
+      - left: Static method
+        right: The declared type at compile time
+      - left: Overloaded method
+        right: The arguments' declared types at compile time

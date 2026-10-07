@@ -1,0 +1,78 @@
+title: Values that break loops
+summary: "`i == i + 1`, `i != i` and `i == -i` can all be true. Which values make them so?"
+duration: 6
+tags: [java, puzzlers, loops, nan, infinity, boxing, min value]
+sources:
+  - { book: java-puzzlers, ref: "Puzzles 28–33, Looper and friends" }
+steps:
+  - type: explanation
+    title: Floating point has odd values
+    body: |
+      Infinity plus one is still infinity.
+      Huge doubles are spaced wider than 1, so adding 1 changes nothing.
+      `NaN` is not equal to anything, not even itself.
+
+  - type: match
+    prompt: Match each loop condition with a declaration of `i` that makes it loop forever.
+    pairs:
+      - left: "`while (i == i + 1)`"
+        right: "`double i = Double.POSITIVE_INFINITY;`"
+      - left: "`while (i != i)`"
+        right: "`double i = Double.NaN;`"
+      - left: "`while (i != i + 0)`"
+        right: "`String i = \"\";`"
+    explanation: "For the last one, `i + 0` is string concatenation: `\"\" + 0` is `\"0\"`."
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      double big = 1e16;
+      System.out.println(big == big + 1);
+    language: java
+    options:
+      - text: "true"
+        correct: true
+      - text: "false"
+        feedback: At 10^16, neighbouring doubles are 2 apart. `big + 1` rounds back to `big`.
+
+  - type: explanation
+    title: Two's complement isn't symmetric
+    body: |
+      There's one more negative `int` than positive.
+      `-Integer.MIN_VALUE` overflows back to `MIN_VALUE`.
+      So `Math.abs(Integer.MIN_VALUE)` is negative.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Math.abs(Integer.MIN_VALUE));
+    language: java
+    options:
+      - text: "-2147483648"
+        correct: true
+      - text: "2147483648"
+        feedback: That doesn't fit in an `int`.
+      - text: It throws
+        feedback: "`Math.abs` doesn't check; `Math.absExact` (Java 15+) does."
+
+  - type: explanation
+    title: Boxed values compare identity
+    body: |
+      `<=` and `>=` unbox and compare values.
+      `==` and `!=` on two `Integer`s compare references.
+      So `i <= j && j <= i && i != j` can be true.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Integer a = 127, b = 127, c = 128, d = 128;
+      System.out.println((a == b) + " " + (c == d));
+    language: java
+    options:
+      - text: "true false"
+        correct: true
+      - text: "true true"
+        feedback: Only values from -128 to 127 are cached. 128 is boxed into two different objects.
+      - text: "false false"
+        feedback: Small values come from the cache, so `a` and `b` are the same object.
+    explanation: Compare boxed numbers with `equals`, or unbox them first.

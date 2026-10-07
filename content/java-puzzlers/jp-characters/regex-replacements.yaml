@@ -1,0 +1,65 @@
+title: replaceAll takes a regex
+summary: The first argument of `replaceAll` is a regular expression, and the replacement has its own escape rules.
+duration: 5
+tags: [java, puzzlers, regex, strings, replaceAll]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 20, What's My Class?" }
+  - { book: java-puzzlers, ref: "Puzzle 21, What's My Class, Take 2" }
+steps:
+  - type: explanation
+    title: The dot matches anything
+    body: |
+      `replaceAll(regex, replacement)` reads its first argument as a pattern.
+      In a regex, `.` matches any character.
+      So `replaceAll(".", "/")` replaces every character.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println("com.javapuzzlers.Me".replaceAll(".", "/"));
+    language: java
+    options:
+      - text: "`///////////////////` — one slash per character"
+        correct: true
+      - text: "`com/javapuzzlers/Me`"
+        feedback: "That's what `replace(\".\", \"/\")` would do — it replaces plain text."
+      - text: It throws `PatternSyntaxException`
+        feedback: "`.` is a valid regex; it just means \"any character\"."
+
+  - type: choice
+    prompt: Which calls turn `com.javapuzzlers.Me` into `com/javapuzzlers/Me`?
+    options:
+      - text: "`s.replace(\".\", \"/\")`"
+        correct: true
+      - text: "`s.replaceAll(\"\\\\.\", \"/\")`"
+        correct: true
+      - text: "`s.replaceAll(Pattern.quote(\".\"), \"/\")`"
+        correct: true
+      - text: "`s.replaceAll(\".\", \"/\")`"
+        feedback: An unescaped dot matches every character.
+
+  - type: explanation
+    title: The replacement is special too
+    body: |
+      In the replacement, `\` and `$` have meaning.
+      `$1` inserts a group; a lone `\` escapes the next character.
+      `Matcher.quoteReplacement` makes any string literal.
+
+  - type: choice
+    prompt: "`s.replaceAll(\"\\\\.\", File.separator)` works on Linux. What happens on Windows, where the separator is `\\`?"
+    options:
+      - text: It throws, because a lone backslash in a replacement escapes nothing
+        correct: true
+      - text: It works the same
+        feedback: The replacement string is not plain text.
+    explanation: "Use `Matcher.quoteReplacement(File.separator)`, or simply `s.replace('.', File.separatorChar)`."
+
+  - type: match
+    prompt: Match each method with how it reads its first argument.
+    pairs:
+      - left: "`replace`"
+        right: Plain text
+      - left: "`replaceAll`"
+        right: A regular expression
+      - left: "`split`"
+        right: A regular expression, too

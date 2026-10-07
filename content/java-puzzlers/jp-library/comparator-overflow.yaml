@@ -1,0 +1,56 @@
+title: Comparators that overflow
+summary: "`(a, b) -> a - b` gives the wrong sign when the difference overflows. Use `Integer.compare`."
+duration: 4
+tags: [java, puzzlers, comparator, overflow, sorting]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 65, A Strange Saga of a Suspicious Sort" }
+steps:
+  - type: explanation
+    title: Subtraction can overflow
+    body: |
+      A comparator returns a negative, zero or positive number.
+      `a - b` seems to do that.
+      But when the difference doesn't fit in an `int`, the sign flips.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Comparator<Integer> cmp = (a, b) -> a - b;
+      System.out.println(cmp.compare(Integer.MIN_VALUE, 1));
+    language: java
+    options:
+      - text: "`2147483647`, claiming MIN_VALUE is greater"
+        correct: true
+      - text: A negative number
+        feedback: "`MIN_VALUE - 1` overflows to `MAX_VALUE`."
+
+  - type: choice
+    prompt: "Sorting `[5, -2000000000, 2000000000]` with `(a, b) -> a - b`, what can you expect?"
+    options:
+      - text: A wrong order, because some comparisons have the wrong sign
+        correct: true
+      - text: The right order; overflow only matters at the extremes
+        feedback: Two billion minus minus two billion is already four billion, which overflows.
+    explanation: In fact it gives `[2000000000, -2000000000, 5]`.
+
+  - type: explanation
+    title: Use the library's compare
+    body: |
+      `Integer.compare(a, b)` can't overflow.
+      `Comparator.naturalOrder()` and `comparingInt` use it.
+      Never compare by subtraction.
+
+  - type: choice
+    prompt: Which comparators are safe for any `int`s?
+    options:
+      - text: "`Integer::compare`"
+        correct: true
+      - text: "`Comparator.comparingInt(x -> x)`"
+        correct: true
+      - text: "`(a, b) -> a - b`"
+        feedback: It overflows for values far apart.
+
+  - type: blank
+    prompt: Compare two `int` fields safely.
+    template: "return Integer.[[compare]](a.age, b.age);"
+    code: true

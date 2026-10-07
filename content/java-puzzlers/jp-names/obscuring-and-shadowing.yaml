@@ -1,0 +1,73 @@
+title: Names that hide other names
+summary: A variable beats a type of the same name, a class called String breaks main, and an inherited method hides a static import.
+duration: 6
+tags: [java, puzzlers, names, shadowing, obscuring, static import]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 68, Shades of Gray" }
+  - { book: java-puzzlers, ref: "Puzzle 67, All Strung Out" }
+  - { book: java-puzzlers, ref: "Puzzle 71, Import Duty" }
+steps:
+  - type: explanation
+    title: Variables win over types
+    body: |
+      When a name could be a variable or a type, Java picks the variable.
+      That's called obscuring.
+      Follow the naming conventions and it can't happen: types are capitalized, variables aren't.
+
+  - type: predict
+    prompt: What does `System.out.println(X.Y.Z)` print?
+    code: |
+      class X {
+        static class Y { static String Z = "Black"; }
+        static C Y = new C();
+      }
+      class C { String Z = "White"; }
+    language: java
+    options:
+      - text: "`White`"
+        correct: true
+      - text: "`Black`"
+        feedback: "`X.Y` could be the nested class or the field. The field wins."
+      - text: It's ambiguous and doesn't compile
+        feedback: The language has a rule for it — the variable is preferred.
+
+  - type: explanation
+    title: Don't reuse platform names
+    body: |
+      A class named `String` in your package shadows `java.lang.String`.
+      Then `main(String[] args)` takes your `String`, not the real one.
+      The JVM can't find a `main` method.
+
+  - type: choice
+    prompt: "A file declares its own `class String { ... }` and `public static void main(String[] args)`. What happens when you run it?"
+    options:
+      - text: "The JVM reports that the main method isn't found"
+        correct: true
+      - text: It runs normally
+        feedback: The parameter type is now the local `String`, so this isn't the `main(java.lang.String[])` the JVM looks for.
+    explanation: Never name your classes after ones in `java.lang`.
+
+  - type: explanation
+    title: Members shadow static imports
+    body: |
+      Inside a class, its own and inherited members come first.
+      Every class inherits `toString()` from `Object`.
+      So a statically imported `Arrays.toString` is hidden.
+
+  - type: choice
+    prompt: Why doesn't this compile?
+    code: |
+      import static java.util.Arrays.toString;
+
+      class ImportDuty {
+        static void printArgs(Object... args) {
+          System.out.println(toString(args));
+        }
+      }
+    language: java
+    options:
+      - text: The inherited `Object.toString()` shadows the import, and it takes no arguments
+        correct: true
+      - text: Static imports of overloaded methods are illegal
+        feedback: They're legal; the problem is name lookup inside the class.
+    explanation: "Write `Arrays.toString(args)` — use static imports sparingly."

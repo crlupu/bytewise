@@ -1,0 +1,69 @@
+title: The compiler's exception rules
+summary: You can't catch a checked exception the try block can't throw, and a final field can't be assigned in both try and catch.
+duration: 5
+tags: [java, puzzlers, exceptions, checked exceptions, final, definite assignment]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 37, Exceptionally Arcane" }
+  - { book: java-puzzlers, ref: "Puzzle 38, The Unwelcome Guest" }
+steps:
+  - type: explanation
+    title: Catch only what can be thrown
+    body: |
+      Catching a checked exception the `try` can't throw is a compile error.
+      `Exception` and `Throwable` are allowed anyway.
+      They also cover unchecked exceptions.
+
+  - type: choice
+    prompt: Which of these compiles?
+    code: |
+      try {
+        System.out.println("Hello world");
+      } catch (/* ??? */ e) {
+      }
+    language: java
+    options:
+      - text: "`catch (Exception e)`"
+        correct: true
+      - text: "`catch (RuntimeException e)`"
+        correct: true
+      - text: "`catch (IOException e)`"
+        feedback: "`println` doesn't throw `IOException`, so the compiler rejects the catch as unreachable."
+
+  - type: explanation
+    title: Definite assignment is conservative
+    body: |
+      A `final` field must be assigned exactly once.
+      The compiler can't tell whether `try` finished its assignment before throwing.
+      So assigning in both `try` and `catch` is rejected.
+
+  - type: predict
+    prompt: Does this compile?
+    code: |
+      private static final long USER_ID;
+      static {
+        try {
+          USER_ID = getUserIdFromEnvironment();
+        } catch (IdUnavailableException e) {
+          USER_ID = GUEST_USER_ID;
+        }
+      }
+    language: java
+    options:
+      - text: No — "variable USER_ID might already have been assigned"
+        correct: true
+      - text: "Yes"
+        feedback: The compiler doesn't reason about when an exception can be thrown, so it assumes the `try` may have assigned it.
+    explanation: Compute the value in a helper method that returns it from `try` or `catch`, and assign the field once.
+
+  - type: blank
+    prompt: Assign the final field once, from a helper.
+    template: "private static final long USER_ID = [[getUserIdOrGuest]]();"
+    code: true
+
+  - type: choice
+    prompt: Two interfaces declare `void f()`, one `throws CloneNotSupportedException` and one `throws InterruptedException`. A class implements both. What may its `f()` throw?
+    options:
+      - text: No checked exceptions — only the intersection of the two `throws` clauses
+        correct: true
+      - text: Both exceptions
+        feedback: A caller through either interface must handle everything `f` throws, so it may only throw what both declare.

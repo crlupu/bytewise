@@ -1,0 +1,69 @@
+title: Octal literals and old dates
+summary: "A leading zero makes an octal literal, and `java.util.Date` and `Calendar` count months from zero."
+duration: 5
+tags: [java, puzzlers, octal, literals, dates, calendar, java time]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 59, What's the Difference?" }
+  - { book: java-puzzlers, ref: "Puzzle 61, The Dating Game" }
+steps:
+  - type: explanation
+    title: A leading zero means octal
+    body: |
+      `012` is an octal literal.
+      Its value is 1 × 8 + 2, which is 10.
+      Never pad decimal numbers with zeros.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(012);
+    language: java
+    options:
+      - text: "10"
+        correct: true
+      - text: "12"
+        feedback: The leading zero makes it octal.
+      - text: It doesn't compile
+        feedback: It compiles. `019` wouldn't, since 9 isn't an octal digit.
+
+  - type: explanation
+    title: Calendar months start at zero
+    body: |
+      In `Calendar` and `Date`, January is month 0 and December is 11.
+      Out-of-range values roll over silently.
+      `java.time` counts months from 1 and rejects bad values.
+
+  - type: predict
+    prompt: What date does this calendar hold?
+    code: |
+      Calendar cal = Calendar.getInstance();
+      cal.set(1999, 12, 31);
+    language: java
+    options:
+      - text: January 31, 2000
+        correct: true
+      - text: December 31, 1999
+        feedback: Month 12 is the thirteenth month, which rolls over into January of the next year.
+      - text: It throws an exception
+        feedback: "`Calendar` is lenient by default and rolls over instead."
+
+  - type: choice
+    prompt: Which call gives December 31, 1999?
+    options:
+      - text: "`LocalDate.of(1999, 12, 31)`"
+        correct: true
+      - text: "`LocalDate.of(1999, 11, 31)`"
+        feedback: "`java.time` counts months from 1 — and November 31 would throw."
+    explanation: Use `java.time` for new code. `LocalDate`, `Instant` and friends are immutable and count months the way people do.
+
+  - type: match
+    prompt: Match each literal with its value.
+    pairs:
+      - left: "`010`"
+        right: "8"
+      - left: "`0x10`"
+        right: "16"
+      - left: "`0b10`"
+        right: "2"
+      - left: "`10`"
+        right: "10"

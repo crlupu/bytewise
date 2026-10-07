@@ -1,0 +1,76 @@
+title: Floating point can't count change
+summary: "`2.00 - 1.10` isn't `0.90` in binary floating point. Use `BigDecimal` or whole cents."
+duration: 5
+tags: [java, puzzlers, floating point, double, bigdecimal, money]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 2, Time for a Change" }
+steps:
+  - type: explanation
+    title: Most decimals aren't exact in binary
+    body: |
+      A `double` stores a binary fraction.
+      `1.10` has no exact binary form, just as 1/3 has no exact decimal form.
+      The nearest `double` is a little off, and the error shows up in results.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(2.00 - 1.10);
+    language: java
+    options:
+      - text: "0.8999999999999999"
+        correct: true
+      - text: "0.9"
+        feedback: "`1.10` can't be stored exactly, so the difference isn't exactly 0.9 either."
+      - text: "0.90"
+        feedback: "`println` of a `double` never adds a trailing zero — and the value isn't 0.9 anyway."
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(0.1 + 0.2);
+    language: java
+    options:
+      - text: "0.30000000000000004"
+        correct: true
+      - text: "0.3"
+        feedback: Both 0.1 and 0.2 are rounded on the way in; the errors add up.
+
+  - type: explanation
+    title: Count money exactly
+    body: |
+      Use `BigDecimal`, built from a `String`.
+      Or count whole cents in an `int` or `long`.
+      Never use `float` or `double` for money.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(new BigDecimal("2.00").subtract(new BigDecimal("1.10")));
+    language: java
+    options:
+      - text: "0.90"
+        correct: true
+      - text: "0.9"
+        feedback: "`BigDecimal` keeps the scale: two decimal places in, two out."
+      - text: "0.8999999999999999"
+        feedback: Built from strings, both values are exact.
+
+  - type: choice
+    prompt: Why is `new BigDecimal(1.10)` a trap?
+    options:
+      - text: The `double` 1.10 is already inexact, so the `BigDecimal` exactly captures the error — 1.100000000000000088817841970012523233890533447265625
+        correct: true
+      - text: The constructor rounds to two decimal places
+        feedback: It doesn't round at all; that's the problem.
+    explanation: Use `new BigDecimal("1.10")` or `BigDecimal.valueOf(1.10)`, which goes through the double's shortest string form.
+
+  - type: choice
+    prompt: A shop keeps prices in cents. Which type fits?
+    options:
+      - text: "`long` (or `int` for small amounts)"
+        correct: true
+      - text: "`double`, rounded when printed"
+        feedback: Rounding hides errors in one sum, but they can still accumulate across many.
+      - text: "`float`, to save memory"
+        feedback: "`float` has only about 7 significant digits — even worse than `double`."

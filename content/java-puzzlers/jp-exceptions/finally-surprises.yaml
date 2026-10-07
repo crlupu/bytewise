@@ -1,0 +1,86 @@
+title: What finally really does
+summary: A `return` in `finally` wins, a value already returned can't be changed, and `System.exit` skips `finally` altogether.
+duration: 5
+tags: [java, puzzlers, exceptions, finally, return, system exit]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 36, Indecision" }
+  - { book: java-puzzlers, ref: "Puzzle 39, Hello, Goodbye" }
+steps:
+  - type: explanation
+    title: finally can override the try
+    body: |
+      `finally` runs as the `try` block leaves, however it leaves.
+      If `finally` itself returns or throws, that replaces the original outcome.
+      A pending return value or exception is silently discarded.
+
+  - type: predict
+    prompt: What does `decision()` return?
+    code: |
+      static boolean decision() {
+        try {
+          return true;
+        } finally {
+          return false;
+        }
+      }
+    language: java
+    options:
+      - text: "`false`"
+        correct: true
+      - text: "`true`"
+        feedback: The `finally` block's `return` replaces the pending one.
+      - text: It doesn't compile
+        feedback: It compiles — with a warning, in most IDEs.
+    explanation: Never leave a `finally` block with `return`, `break`, `continue` or `throw`. It can also swallow an exception.
+
+  - type: predict
+    prompt: What does `f()` return?
+    code: |
+      static int f() {
+        int x = 1;
+        try {
+          return x;
+        } finally {
+          x = 2;
+        }
+      }
+    language: java
+    options:
+      - text: "`1`"
+        correct: true
+      - text: "`2`"
+        feedback: "`return x` evaluates `x` before `finally` runs. Changing the variable afterwards doesn't change the saved value."
+
+  - type: explanation
+    title: System.exit doesn't unwind
+    body: |
+      `System.exit` stops the JVM from inside the `try`.
+      Pending `finally` blocks never run.
+      Only shutdown hooks get a chance.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      try {
+        System.out.println("Hello world");
+        System.exit(0);
+      } finally {
+        System.out.println("Goodbye world");
+      }
+    language: java
+    options:
+      - text: "Only `Hello world`"
+        correct: true
+      - text: "`Hello world`, then `Goodbye world`"
+        feedback: "`System.exit` doesn't return, so the `try` block never finishes and `finally` never runs."
+    explanation: To clean up on exit, register a shutdown hook with `Runtime.getRuntime().addShutdownHook(...)`.
+
+  - type: choice
+    prompt: Which statements are safe to put in a `finally` block?
+    options:
+      - text: Closing a resource, inside its own try-catch
+        correct: true
+      - text: Releasing a lock with `lock.unlock()`
+        correct: true
+      - text: "`return result;`"
+        feedback: It would discard any exception thrown by the `try` block.

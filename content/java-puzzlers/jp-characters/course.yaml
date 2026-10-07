@@ -1,0 +1,6 @@
+title: Puzzlers with character
+summary: Chapter 3 — chars that act like numbers, string concatenation, Unicode escapes and regular expressions.
+lessons:
+  - chars-are-numbers
+  - unicode-escapes
+  - regex-replacements

@@ -46,3 +46,39 @@ learning-ddd:
   title: Learning Domain-Driven Design
   authors: Vlad Khononov
   year: 2021
+java-puzzlers:
+  title: Java Puzzlers
+  authors: Joshua Bloch & Neal Gafter
+  year: 2005
+modern-java-in-action:
+  title: Modern Java in Action
+  authors: Raoul-Gabriel Urma, Mario Fusco & Alan Mycroft
+  edition: 2nd ed.
+  year: 2018
+java-performance:
+  title: Java Performance
+  authors: Scott Oaks
+  edition: 2nd ed.
+  year: 2020
+well-grounded-java:
+  title: The Well-Grounded Java Developer
+  authors: Benjamin Evans, Jason Clark & Martijn Verburg
+  edition: 2nd ed.
+  year: 2022
+java-generics-collections:
+  title: Java Generics and Collections
+  authors: Maurice Naftalin & Philip Wadler
+  year: 2006
+troubleshooting-java:
+  title: Troubleshooting Java
+  authors: Laurențiu Spilcă
+  year: 2023
+effective-software-testing:
+  title: Effective Software Testing
+  authors: Maurício Aniche
+  year: 2022
+head-first-design-patterns:
+  title: Head First Design Patterns
+  authors: Eric Freeman & Elisabeth Robson
+  edition: 2nd ed.
+  year: 2020

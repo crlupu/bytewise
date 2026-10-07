@@ -1,0 +1,5 @@
+title: Java Puzzlers
+summary: Bloch and Gafter's short programs that don't do what they seem to — predict the output, then learn the rule behind it.
+order: 4
+courses: [jp-expressions, jp-characters, jp-loops, jp-exceptions, jp-classes, jp-library, jp-names, jp-threads-and-generics]
+glossary: [effective-java]

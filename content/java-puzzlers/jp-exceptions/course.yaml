@@ -1,0 +1,6 @@
+title: Exceptional puzzlers
+summary: Chapter 5 — finally blocks, checked-exception rules, constructors that throw and resources that leak.
+lessons:
+  - finally-surprises
+  - checked-exception-rules
+  - closing-resources

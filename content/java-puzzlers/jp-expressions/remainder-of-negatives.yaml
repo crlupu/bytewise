@@ -1,0 +1,73 @@
+title: Is it odd?
+summary: "`%` keeps the sign of the left operand, so `i % 2 == 1` misses negative odd numbers."
+duration: 4
+tags: [java, puzzlers, arithmetic, remainder, operators]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 1, Oddity" }
+steps:
+  - type: explanation
+    title: The remainder takes the left sign
+    body: |
+      Java's `%` is a remainder, not a modulus.
+      Its result has the sign of the left operand.
+      So `-3 % 2` is `-1`, not `1`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(-3 % 2);
+    language: java
+    options:
+      - text: "-1"
+        correct: true
+      - text: "1"
+        feedback: That would be a mathematical modulus. Java's `%` keeps the sign of `-3`.
+      - text: "0"
+        feedback: 3 is odd, so the remainder isn't zero.
+
+  - type: choice
+    prompt: "`isOdd(i)` returns `i % 2 == 1`. For which inputs is it wrong?"
+    options:
+      - text: Every negative odd number
+        correct: true
+      - text: Zero
+        feedback: "`0 % 2 == 1` is false, which is right: 0 is even."
+      - text: "`Integer.MAX_VALUE`"
+        feedback: It's positive and odd, so the remainder is 1 and the answer is right.
+    explanation: Negative odd numbers give `-1`, so a quarter of all `int`s are reported as even.
+
+  - type: explanation
+    title: Compare with zero instead
+    body: |
+      Test `i % 2 != 0`.
+      That's true for both `1` and `-1`.
+      Or use `(i & 1) != 0`, which reads the lowest bit.
+
+  - type: choice
+    prompt: Which tests are correct for every `int`?
+    options:
+      - text: "`i % 2 != 0`"
+        correct: true
+      - text: "`(i & 1) != 0`"
+        correct: true
+      - text: "`i % 2 == 1`"
+        feedback: It misses negative odd numbers.
+      - text: "`i % 2 > 0`"
+        feedback: Negative odd numbers give `-1`, which isn't greater than 0.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      System.out.println(Math.floorMod(-3, 2));
+    language: java
+    options:
+      - text: "1"
+        correct: true
+      - text: "-1"
+        feedback: "`floorMod` gives a result with the sign of the divisor — the mathematical modulus."
+    explanation: Since Java 8, `Math.floorMod` is the modulus you may have wanted all along, for example to wrap an index into an array.
+
+  - type: blank
+    prompt: Complete an `isOdd` that works for negative numbers.
+    template: "return i % 2 [[!=]] 0;"
+    code: true

@@ -1,0 +1,76 @@
+title: Counting that goes wrong
+summary: "`j = j++` doesn't increment, a big `float` can't count, and precedence hides inside `ms % 60*1000`."
+duration: 5
+tags: [java, puzzlers, increment, float, precedence, loops]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 25, Inclement Increment" }
+  - { book: java-puzzlers, ref: "Puzzle 34, Down for the Count" }
+  - { book: java-puzzlers, ref: "Puzzle 35, Minute by Minute" }
+steps:
+  - type: explanation
+    title: j++ returns the old value
+    body: |
+      `j++` adds one to `j` and returns the value from before.
+      `j = j++` then writes that old value back.
+      The increment is lost every time.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      int j = 0;
+      for (int i = 0; i < 100; i++) j = j++;
+      System.out.println(j);
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "100"
+        feedback: "Each `j = j++` stores the value `j` had before the increment."
+      - text: "99"
+        feedback: No increment survives the assignment.
+
+  - type: explanation
+    title: A float runs out of precision
+    body: |
+      A `float` has 24 bits of precision.
+      Near two billion, neighbouring floats are 128 apart.
+      `f++` can't change such a value, and `START + 50` rounds back to `START`.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      final float START = 2000000000;
+      int count = 0;
+      for (float f = START; f < START + 50; f++) count++;
+      System.out.println(count);
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "50"
+        feedback: "`START + 50` is rounded to the nearest float — which is `START` itself."
+      - text: It loops forever
+        feedback: It would, if the loop ever started. But `f < START + 50` is false from the beginning.
+    explanation: Never use floating-point loop counters.
+
+  - type: explanation
+    title: "% and * have equal precedence"
+    body: |
+      Equal-precedence operators run left to right.
+      `ms % 60*1000` means `(ms % 60) * 1000`.
+      Add parentheses, or name the constant.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      int minutes = 0;
+      for (int ms = 0; ms < 60*60*1000; ms++)
+        if (ms % 60*1000 == 0) minutes++;
+      System.out.println(minutes);
+    language: java
+    options:
+      - text: "60000"
+        correct: true
+      - text: "60"
+        feedback: "That needs `ms % (60*1000)`. As written, the test is true whenever `ms % 60 == 0`."
+    explanation: "Write `ms % MS_PER_MINUTE == 0` with a named constant — the bug can't hide there."

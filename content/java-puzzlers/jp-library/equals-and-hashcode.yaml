@@ -1,0 +1,64 @@
+title: equals needs hashCode, and the right signature
+summary: Override `equals` without `hashCode` and hash sets can't find your objects; overload it by mistake and nothing calls it.
+duration: 5
+tags: [java, puzzlers, equals, hashcode, hashset, overriding]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 57, What's in a Name?" }
+  - { book: java-puzzlers, ref: "Puzzle 58, Making a Hash of It" }
+  - { book: effective-java, ref: "Items 10–11" }
+steps:
+  - type: explanation
+    title: Hash collections look at hashCode first
+    body: |
+      A `HashSet` uses `hashCode` to pick a bucket.
+      It only calls `equals` on objects in that bucket.
+      Equal objects with different hash codes are never compared.
+
+  - type: predict
+    prompt: "`Name` overrides `equals` to compare first and last names, but not `hashCode`. What does this print?"
+    code: |
+      Set<Name> s = new HashSet<>();
+      s.add(new Name("Mickey", "Mouse"));
+      System.out.println(s.contains(new Name("Mickey", "Mouse")));
+    language: java
+    options:
+      - text: "`false` (almost always)"
+        correct: true
+      - text: "`true`"
+        feedback: The two objects have identity hash codes, which almost never match, so they land in different buckets.
+    explanation: Whenever you override `equals`, override `hashCode` so equal objects have equal hash codes.
+
+  - type: explanation
+    title: equals takes an Object
+    body: |
+      `equals(Name n)` doesn't override `equals(Object o)`.
+      It overloads it.
+      Collections call `equals(Object)`, which still compares identity.
+
+  - type: predict
+    prompt: "This time `Name` has a correct `hashCode`, but declares `public boolean equals(Name n)`. What does this print?"
+    code: |
+      Set<Name> s = new HashSet<>();
+      s.add(new Name("Donald", "Duck"));
+      System.out.println(s.contains(new Name("Donald", "Duck")));
+    language: java
+    options:
+      - text: "`false`"
+        correct: true
+      - text: "`true`"
+        feedback: "`HashSet` calls `equals(Object)`, which this class doesn't override."
+    explanation: Put `@Override` on every overriding method. Here it would turn the bug into a compile error.
+
+  - type: blank
+    prompt: Make the compiler check that you're overriding.
+    template: "[[@Override]] public boolean equals(Object o) { ... }"
+    code: true
+    caseSensitive: true
+
+  - type: choice
+    prompt: Since Java 16, what's the easiest way to get correct `equals` and `hashCode` for a value class like `Name`?
+    options:
+      - text: Declare it as a `record`
+        correct: true
+      - text: Extend `HashSet`
+        feedback: That would make it a set, not a name.

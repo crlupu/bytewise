@@ -1,0 +1,53 @@
+title: A raw type loses all its generics
+summary: Use a generic class raw and every generic type in its members is erased — even ones unrelated to the missing type argument.
+duration: 4
+tags: [java, puzzlers, generics, raw types, erasure]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 88, Raw Deal" }
+  - { book: effective-java, ref: "Item 26" }
+steps:
+  - type: explanation
+    title: Raw means erased
+    body: |
+      A raw type is a generic class used without type arguments, like `Pair`.
+      All of its members lose their generic types.
+      A method returning `List<String>` returns raw `List`.
+
+  - type: predict
+    prompt: Does this compile?
+    code: |
+      class Pair<V> {
+        List<String> stringList() { return List.of("a"); }
+      }
+
+      Pair p = new Pair<Object>();
+      for (String s : p.stringList()) System.out.println(s);
+    language: java
+    options:
+      - text: No — through the raw `Pair`, `stringList()` returns a raw `List` of `Object`
+        correct: true
+      - text: Yes — `stringList` doesn't use `V`
+        feedback: Erasure applies to every member of a raw type, not just those that mention `V`.
+    explanation: "Declare `Pair<Object> p` or `Pair<?> p` and it compiles."
+
+  - type: explanation
+    title: Raw types exist for old code
+    body: |
+      Raw types were kept so pre-Java-5 code still compiles.
+      They switch off type checking.
+      Use `<?>` when you don't know or care about the type.
+
+  - type: choice
+    prompt: You need a method that accepts any `Set`, whatever its element type. Which signature?
+    options:
+      - text: "`void f(Set<?> s)`"
+        correct: true
+      - text: "`void f(Set s)`"
+        feedback: That's the raw type — it compiles, but you lose type safety and can insert anything.
+      - text: "`void f(Set<Object> s)`"
+        feedback: "A `Set<String>` is not a `Set<Object>`, so callers couldn't pass one."
+
+  - type: blank
+    prompt: Accept a list of anything without using a raw type.
+    template: "static int count(List<[[?]]> items) { return items.size(); }"
+    code: true
