@@ -3413,3 +3413,35 @@ body {
 .topic-courses {
   margin-block-start: 1.5rem;
 }
+
+/* ---- Dark mode: glass cards over a faint green glow ----
+   Cards, lists, tiles and answer options are translucent with a lit top edge.
+   Sheets, popovers and the lesson footer stay opaque so text over them stays legible. */
+.dark {
+  --glass: rgba(255, 255, 255, 0.045);
+  --glass-hover: rgba(255, 255, 255, 0.07);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+}
+.dark body {
+  background:
+    radial-gradient(120% 55% at 100% 0%, rgba(126, 217, 87, 0.1), transparent 60%),
+    radial-gradient(90% 40% at 0% 100%, rgba(126, 217, 87, 0.05), transparent 60%),
+    var(--background);
+  background-attachment: fixed;
+}
+.dark :is(.card, .list, .row, .book, .hint, .option, .order-item, .match-item),
+.dark .tile:not(.tile--continue):not(.tile--streak) {
+  background: var(--glass);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 0 0 0 1px var(--glass-edge);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+@media (hover: hover) {
+  .dark :is(.row, .book):hover,
+  .dark .tile:not(.tile--continue):not(.tile--streak):hover {
+    background: var(--glass-hover);
+  }
+}
