@@ -1,0 +1,67 @@
+title: Records
+summary: A record is a transparent carrier for data — the compiler writes the constructor, accessors, equals, hashCode and toString.
+duration: 5
+tags: [java, well grounded, records, data classes, immutability]
+sources:
+  - { book: well-grounded-java, ref: "§3.3, Records" }
+steps:
+  - type: explanation
+    title: Data in one line
+    body: |
+      `record Point(int x, int y) {}` declares two private final fields.
+      You get a constructor, accessors `x()` and `y()`, and `equals`, `hashCode` and `toString`.
+      All from the component list.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      record Point(int x, int y) {}
+
+      Point p = new Point(1, 2);
+      System.out.println(p + " " + p.equals(new Point(1, 2)) + " " + p.x());
+    language: java
+    options:
+      - text: "`Point[x=1, y=2] true 1`"
+        correct: true
+      - text: "`Point@1b6d3586 false 1`"
+        feedback: Records generate `toString` and value-based `equals`.
+      - text: It doesn't compile — there's no `getX()`
+        feedback: "Record accessors are named after the components: `x()`, not `getX()`."
+
+  - type: explanation
+    title: Validate in a compact constructor
+    body: |
+      A compact constructor has no parameter list.
+      It runs before the fields are assigned.
+      Use it to check or normalize the arguments.
+
+  - type: blank
+    prompt: Reject negative coordinates.
+    template: |
+      record Point(int x, int y) {
+        [[Point]] {
+          if (x < 0 || y < 0) throw new IllegalArgumentException();
+        }
+      }
+    code: true
+    caseSensitive: true
+
+  - type: choice
+    prompt: Which are true of records?
+    options:
+      - text: Their fields are final
+        correct: true
+      - text: They can implement interfaces and have extra methods
+        correct: true
+      - text: They can extend another class
+        feedback: Records implicitly extend `java.lang.Record`, so they can't extend anything else.
+      - text: They can declare extra instance fields
+        feedback: All state must be in the component list. Static fields are allowed.
+
+  - type: choice
+    prompt: "A record has a `List<String> tags` component. Is the record deeply immutable?"
+    options:
+      - text: Not unless you copy it, for example with `tags = List.copyOf(tags);` in the compact constructor
+        correct: true
+      - text: Yes, records are always immutable
+        feedback: The reference is final, but the list it points to can still change.

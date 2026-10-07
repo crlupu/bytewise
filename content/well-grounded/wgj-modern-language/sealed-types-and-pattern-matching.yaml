@@ -1,0 +1,61 @@
+title: Sealed types and pattern matching
+summary: A sealed type lists its subtypes, so a switch over them can be checked for completeness; patterns test and bind in one step.
+duration: 6
+tags: [java, well grounded, sealed classes, pattern matching, switch, instanceof]
+sources:
+  - { book: well-grounded-java, ref: "§3.4–3.5, Sealed types and pattern matching" }
+steps:
+  - type: explanation
+    title: A closed set of subtypes
+    body: |
+      `sealed interface Shape permits Circle, Square {}` allows only those two.
+      No one else can implement `Shape`.
+      Subtypes must be `final`, `sealed` or `non-sealed`.
+
+  - type: explanation
+    title: Patterns test and bind
+    body: |
+      `if (o instanceof String s)` tests the type and declares `s` in one go.
+      No cast needed.
+      Java 21 extends this to `switch`, with `when` guards.
+
+  - type: predict
+    prompt: What does `kind(42) + ", " + kind(7) + ", " + kind("hey")` give?
+    code: |
+      static String kind(Object o) {
+        return switch (o) {
+          case Integer i when i > 10 -> "big int";
+          case Integer i -> "int";
+          case String s -> "string " + s.length();
+          default -> "other";
+        };
+      }
+    language: java
+    options:
+      - text: "`big int, int, string 3`"
+        correct: true
+      - text: "`int, int, string 3`"
+        feedback: "Cases are tried in order. 42 matches the guarded case first."
+      - text: It doesn't compile — two cases for `Integer`
+        feedback: The first is guarded by `when`, so the second still matters.
+
+  - type: explanation
+    title: Exhaustive switches
+    body: |
+      Switching over a sealed type, the compiler knows every case.
+      Cover them all and no `default` is needed.
+      Add a new subtype and every incomplete switch fails to compile.
+
+  - type: choice
+    prompt: "`Shape` is sealed with `Circle` and `Square`. A switch handles both and has no `default`. Someone adds `Triangle` to the `permits` list. What happens?"
+    options:
+      - text: The switch stops compiling until `Triangle` is handled
+        correct: true
+      - text: It compiles; triangles fall through to an exception at run time
+        feedback: Exhaustiveness is checked at compile time — that's the main benefit.
+    explanation: This is the compiler-checked alternative to the visitor pattern.
+
+  - type: blank
+    prompt: Test and bind in one step.
+    template: "if (o [[instanceof]] String s && s.length() > 2) print(s.toUpperCase());"
+    code: true

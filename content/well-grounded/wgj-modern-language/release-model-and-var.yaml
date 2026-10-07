@@ -1,0 +1,55 @@
+title: Six-monthly releases and var
+summary: Java ships a feature release every six months and an LTS every two years; `var` lets the compiler infer local variable types.
+duration: 5
+tags: [java, well grounded, release cadence, lts, var, type inference]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 1, Introducing modern Java" }
+steps:
+  - type: explanation
+    title: A train every six months
+    body: |
+      Since Java 10, a new version ships every March and September.
+      Features that aren't ready wait for the next train.
+      Long-term-support releases, like 17 and 21, get years of updates.
+
+  - type: choice
+    prompt: A bank wants as few Java upgrades as possible, but security fixes for years. Which versions should it run?
+    options:
+      - text: LTS releases, like 17 and 21
+        correct: true
+      - text: The latest feature release, always
+        feedback: That means upgrading every six months, since non-LTS releases stop getting updates.
+
+  - type: explanation
+    title: Preview features
+    body: |
+      New language features often arrive as previews first.
+      You must opt in with `--enable-preview`.
+      They can still change before they're final.
+
+  - type: explanation
+    title: var infers local types
+    body: |
+      `var list = new ArrayList<String>();` gives `list` the type `ArrayList<String>`.
+      It's still statically typed; the compiler just writes the type for you.
+      It works only for local variables with an initializer.
+
+  - type: choice
+    prompt: Which uses of `var` compile?
+    options:
+      - text: "`var names = new ArrayList<String>();`"
+        correct: true
+      - text: "`for (var entry : map.entrySet()) { ... }`"
+        correct: true
+      - text: "`var x;`"
+        feedback: There's no initializer to infer the type from.
+      - text: "`private var count = 0;` as a field"
+        feedback: "`var` is only for local variables."
+
+  - type: choice
+    prompt: When does `var` hurt readability?
+    options:
+      - text: When the initializer doesn't make the type obvious, like `var result = service.process(x);`
+        correct: true
+      - text: Always — explicit types are clearer
+        feedback: "With `var m = new HashMap<String, List<Order>>();` the type is right there; repeating it adds noise."

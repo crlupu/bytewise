@@ -1,0 +1,54 @@
+title: Testing beyond unit tests
+summary: Integration tests against real databases in Testcontainers, and tests that check properties rather than examples.
+duration: 5
+tags: [java, well grounded, testing, testcontainers, integration tests, property based testing]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 13, Testing fundamentals" }
+  - { book: well-grounded-java, ref: "Chapter 14, Testing beyond JUnit" }
+steps:
+  - type: explanation
+    title: Kinds of test
+    body: |
+      Unit tests check one class, fast, with fakes for the rest.
+      Integration tests check that real parts work together.
+      End-to-end tests drive the whole system, and are slowest.
+
+  - type: explanation
+    title: Real dependencies in containers
+    body: |
+      An in-memory database behaves differently from your production one.
+      Testcontainers starts the real database in Docker for each test run.
+      The test gets its URL and port, then it's thrown away.
+
+  - type: choice
+    prompt: Why test against PostgreSQL in Testcontainers rather than an in-memory H2?
+    options:
+      - text: H2 differs in SQL dialect, locking and features, so tests can pass against it and fail in production
+        correct: true
+      - text: Testcontainers runs faster than H2
+        feedback: It's slower to start. The point is fidelity.
+
+  - type: explanation
+    title: Properties, not examples
+    body: |
+      An example test checks one input you thought of.
+      A property test states something true for all inputs, like "reversing twice gives the original".
+      The library generates hundreds of inputs, and shrinks any failure to the smallest one.
+
+  - type: choice
+    prompt: Which is a property of a correct `sort`?
+    options:
+      - text: The output is in order and is a permutation of the input
+        correct: true
+      - text: "`sort([3, 1, 2])` returns `[1, 2, 3]`"
+        feedback: That's an example — a good test, but not a property.
+
+  - type: match
+    prompt: Match each test with what it's good at.
+    pairs:
+      - left: Unit test
+        right: Fast feedback on one class's logic
+      - left: Integration test with Testcontainers
+        right: Catching mismatches with a real database
+      - left: Property-based test
+        right: Finding inputs you didn't think of

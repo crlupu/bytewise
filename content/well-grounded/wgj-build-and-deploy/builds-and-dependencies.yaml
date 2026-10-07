@@ -1,0 +1,54 @@
+title: Builds and dependency conflicts
+summary: Maven and Gradle resolve transitive dependencies for you — and when two libraries want different versions of a third, only one wins.
+duration: 5
+tags: [java, well grounded, maven, gradle, dependencies, build]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 11, Building with Gradle and Maven" }
+steps:
+  - type: explanation
+    title: A lifecycle of phases
+    body: |
+      Maven runs phases in order: compile, test, package, install, deploy.
+      Asking for one runs all the phases before it.
+      Gradle builds a graph of tasks instead, and skips those already up to date.
+
+  - type: order
+    prompt: Put Maven's default lifecycle phases in order.
+    items:
+      - "`compile`"
+      - "`test`"
+      - "`package`"
+      - "`install`"
+      - "`deploy`"
+
+  - type: explanation
+    title: Transitive dependencies
+    body: |
+      Your dependencies have dependencies of their own.
+      The build tool pulls them all in.
+      When two paths need different versions of one library, it must pick one.
+
+  - type: match
+    prompt: Match each tool with how it picks between conflicting versions.
+    pairs:
+      - left: Maven
+        right: The nearest to your project in the dependency tree
+      - left: Gradle
+        right: The highest version requested
+
+  - type: explanation
+    title: Pin what matters
+    body: |
+      A surprise version can bring `NoSuchMethodError` at run time.
+      Inspect the tree with `mvn dependency:tree` or `gradle dependencies`.
+      Pin versions with a BOM or dependency management.
+
+  - type: choice
+    prompt: Your app throws `NoSuchMethodError` from inside a library, but everything compiled. What's the likely cause?
+    options:
+      - text: A different version of a transitive dependency was picked than the one the library was built against
+        correct: true
+      - text: A typo in your code
+        feedback: That would fail to compile.
+      - text: The JVM ran out of memory
+        feedback: That gives `OutOfMemoryError`.

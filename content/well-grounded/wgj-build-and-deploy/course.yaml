@@ -1,0 +1,6 @@
+title: Building, shipping and testing
+summary: Chapters 11–14 — build tools and dependency conflicts, running Java in containers, and testing beyond unit tests.
+lessons:
+  - builds-and-dependencies
+  - java-in-containers
+  - testing-beyond-junit

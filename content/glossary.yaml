@@ -1072,6 +1072,68 @@ java-generics-collections:
     aliases: [unmodifiable views, read-only view]
     def: A wrapper that refuses changes but is backed by the original collection, so changes made through the original still show.
 
+well-grounded-java:
+  - term: LTS
+    aliases: [long-term support, long-term-support]
+    def: A Java release, like 17 or 21, that vendors support with updates for years. The releases in between are supported only until the next one.
+  - term: Preview feature
+    aliases: [preview features, previews]
+    def: A finished but not yet final language or API feature, switched on with `--enable-preview`, so it can be tried and changed before it's permanent.
+  - term: Record
+    aliases: [records]
+    def: A class declared by its components, `record Point(int x, int y)`, that gets final fields, a constructor, accessors, `equals`, `hashCode` and `toString` automatically.
+  - term: Compact constructor
+    def: A record constructor written without a parameter list, used to validate or normalize arguments before the fields are assigned.
+  - term: Sealed type
+    aliases: [sealed class, sealed interface, sealed types, sealed classes]
+    def: A class or interface that lists its permitted subtypes with `permits`, so the compiler knows all of them.
+  - term: Pattern matching
+    aliases: [type pattern, patterns]
+    def: Testing a value's shape and pulling out parts in one step, like `o instanceof String s` or `case Circle c ->`.
+  - term: Switch expression
+    aliases: [switch expressions]
+    def: A `switch` that produces a value, with arrow cases that don't fall through and `yield` for block cases.
+  - term: Text block
+    aliases: [text blocks]
+    def: A multi-line string literal between triple quotes, with common indentation removed.
+  - term: Class loader
+    aliases: [class loaders, classloader]
+    def: The object that finds a class's bytes and turns them into a `Class`. Loaders form a hierarchy and ask their parent first.
+  - term: Bootstrap class loader
+    aliases: [bootstrap loader]
+    def: The JVM's built-in loader for core classes like `java.lang.String`. It's shown as `null` in Java code.
+  - term: Bytecode
+    def: The instruction set of the JVM, which `javac` compiles to. A stack machine — instructions push and pop values on an operand stack.
+  - term: Operand stack
+    def: The per-call stack that bytecode instructions push values onto and pop them off, like `iload` pushing a local and `iadd` adding the top two.
+  - term: Constant pool
+    def: The table in a class file of the names, strings, numbers and method references its bytecode refers to by index.
+  - term: invokedynamic
+    code: true
+    def: The bytecode instruction whose target is chosen at run time by a bootstrap method, the first time it runs. Lambdas and string concatenation use it.
+  - term: Method handle
+    aliases: [method handles, MethodHandle]
+    def: A typed, directly executable reference to a method, checked once at lookup and fast to call — the building block of `invokedynamic`.
+  - term: Bootstrap method
+    def: The method the JVM calls the first time an `invokedynamic` instruction runs, to decide what that call site will do.
+  - term: Transitive dependency
+    aliases: [transitive dependencies]
+    def: A library you depend on indirectly, because one of your dependencies needs it.
+  - term: BOM
+    aliases: [bill of materials]
+    def: A Maven "bill of materials" that fixes the versions of a family of libraries, so they're used together consistently.
+  - term: OOM-killed
+    aliases: [OOM killer]
+    def: Stopped by the operating system for using more memory than the container allows. The JVM gets no chance to print an error.
+  - term: Testcontainers
+    def: A library that starts real services — databases, message brokers — in Docker for the length of a test.
+  - term: Property-based testing
+    aliases: [property test, property tests, property-based test]
+    def: Testing a statement that should hold for all inputs, against many generated inputs, then shrinking any failure to the smallest case.
+  - term: Carrier thread
+    aliases: [carrier threads]
+    def: A platform thread that runs virtual threads. When a virtual thread blocks, it's unmounted and the carrier runs another.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

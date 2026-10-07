@@ -1,0 +1,47 @@
+title: Other languages on the JVM
+summary: Kotlin and Clojure compile to the same bytecode, call Java libraries, and make different trade-offs about types, nulls and mutability.
+duration: 5
+tags: [java, well grounded, kotlin, clojure, jvm languages]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 8, Alternative JVM languages" }
+  - { book: well-grounded-java, ref: "Chapter 9, Kotlin" }
+  - { book: well-grounded-java, ref: "Chapter 10, Clojure" }
+steps:
+  - type: explanation
+    title: One runtime, many languages
+    body: |
+      The JVM runs bytecode, not Java.
+      Any language that compiles to bytecode gets the JIT, the GC and every Java library.
+      Languages differ in typing, syntax and defaults.
+
+  - type: explanation
+    title: Kotlin
+    body: |
+      Kotlin is statically typed and tracks nullability in types.
+      `String` can't be null; `String?` can, and must be checked.
+      `data class` is like a record; coroutines make async code look sequential.
+
+  - type: choice
+    prompt: "In Kotlin, `val name: String = javaMethod()` where the Java method returns null. What happens?"
+    options:
+      - text: A `NullPointerException` at the assignment — Kotlin checks values coming from Java
+        correct: true
+      - text: "`name` holds null"
+        feedback: "A non-nullable `String` can't hold null; Kotlin inserts a check at the boundary."
+
+  - type: explanation
+    title: Clojure
+    body: |
+      Clojure is a dynamically typed Lisp.
+      Its data structures are immutable and persistent: an "update" shares most of the old structure.
+      State changes go through managed references like atoms.
+
+  - type: match
+    prompt: Match each language with a defining trait.
+    pairs:
+      - left: Java
+        right: Static types, nullable references by default
+      - left: Kotlin
+        right: Static types, nullability in the type system
+      - left: Clojure
+        right: Dynamic types, immutable data by default

@@ -1,0 +1,66 @@
+title: Switch expressions and text blocks
+summary: Arrow cases don't fall through, a switch can return a value with `yield`, and text blocks write multi-line strings as they look.
+duration: 5
+tags: [java, well grounded, switch expressions, yield, text blocks]
+sources:
+  - { book: well-grounded-java, ref: "§3.1–3.2, Text blocks and switch expressions" }
+steps:
+  - type: explanation
+    title: Arrows don't fall through
+    body: |
+      `case "SAT", "SUN" -> 0;` runs one thing and stops.
+      No `break` needed, and no accidental fall-through.
+      A case can list several labels.
+
+  - type: explanation
+    title: Switch can be an expression
+    body: |
+      A switch expression produces a value.
+      Every possible input must be covered.
+      In a block case, `yield` gives the value.
+
+  - type: predict
+    prompt: What is `n`?
+    code: |
+      String day = "SAT";
+      int n = switch (day) {
+        case "SAT", "SUN" -> 0;
+        default -> {
+          int x = 5;
+          yield x;
+        }
+      };
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "5"
+        feedback: "\"SAT\" matches the first case, and arrow cases never fall through."
+
+  - type: blank
+    prompt: Return a value from a block case.
+    template: "default -> { log(day); [[yield]] -1; }"
+    code: true
+
+  - type: explanation
+    title: Text blocks
+    body: |
+      Triple quotes start a multi-line string.
+      Indentation common to all lines is removed.
+      Quotes inside need no escaping.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      String s = """
+          Hello,
+            World""";
+      System.out.println(s);
+    language: java
+    options:
+      - text: "`Hello,` then `  World`, indented by two spaces"
+        correct: true
+      - text: Both lines indented by four spaces
+        feedback: The common indentation is stripped; only the extra two spaces on the second line stay.
+      - text: "`Hello, World` on one line"
+        feedback: The line break is part of the text block.

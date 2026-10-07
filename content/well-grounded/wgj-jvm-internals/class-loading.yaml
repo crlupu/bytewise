@@ -1,0 +1,65 @@
+title: How classes are loaded
+summary: A class is loaded, linked and initialized on first use, by a class loader that first asks its parent.
+duration: 6
+tags: [java, well grounded, jvm, class loading, classloader, initialization]
+sources:
+  - { book: well-grounded-java, ref: "§4.1–4.2, Class loading and class objects" }
+steps:
+  - type: explanation
+    title: Load, link, initialize
+    body: |
+      Loading reads the bytes of a class file and creates a `Class` object.
+      Linking verifies the bytecode and prepares static fields with default values.
+      Initialization runs the static initializers, on first active use.
+
+  - type: order
+    prompt: Put the phases in order.
+    items:
+      - Load the class file's bytes
+      - Verify the bytecode
+      - Prepare static fields with defaults
+      - Resolve symbolic references
+      - Run static initializers
+
+  - type: explanation
+    title: Loaders delegate to their parent
+    body: |
+      The bootstrap loader loads the core JDK classes.
+      The platform loader loads other JDK modules, and the application loader your classes.
+      Each first asks its parent, so `java.lang.String` always comes from the bootstrap loader.
+
+  - type: predict
+    prompt: What does `String.class.getClassLoader()` return?
+    code: |
+      System.out.println(String.class.getClassLoader());
+    language: java
+    options:
+      - text: "`null`"
+        correct: true
+      - text: The application class loader
+        feedback: Core classes are loaded by the bootstrap loader, which is represented by `null`.
+
+  - type: explanation
+    title: A class is its name plus its loader
+    body: |
+      The same class file loaded by two loaders gives two different classes.
+      Casting between them throws `ClassCastException`.
+      App servers use this to isolate applications.
+
+  - type: choice
+    prompt: "An error says `com.acme.Order cannot be cast to com.acme.Order`. What's the likely cause?"
+    options:
+      - text: Two class loaders each loaded their own `Order`, so the JVM sees two different classes
+        correct: true
+      - text: Two different versions of `Order` were compiled
+        feedback: Even byte-for-byte identical class files make different classes when loaded by different loaders.
+
+  - type: match
+    prompt: Match each error with when it happens.
+    pairs:
+      - left: "`ClassNotFoundException`"
+        right: Loading by name, like `Class.forName`, finds nothing
+      - left: "`NoClassDefFoundError`"
+        right: A class present at compile time is missing at run time
+      - left: "`ExceptionInInitializerError`"
+        right: A static initializer threw

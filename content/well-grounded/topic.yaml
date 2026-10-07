@@ -1,0 +1,5 @@
+title: The Well-Grounded Java Developer
+summary: Evans, Clark and Verburg on modern Java and the JVM underneath — records, sealed types, class loading, bytecode, invokedynamic, builds, containers and what's next.
+order: 7
+courses: [wgj-modern-language, wgj-jvm-internals, wgj-build-and-deploy, wgj-beyond-java]
+glossary: [effective-java, modern-java-in-action]

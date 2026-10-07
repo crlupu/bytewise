@@ -1,0 +1,50 @@
+title: Loom, Valhalla and Panama
+summary: Virtual threads make blocking cheap, value classes aim to flatten objects in memory, and the foreign function API replaces JNI.
+duration: 5
+tags: [java, well grounded, loom, virtual threads, valhalla, panama, future]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 18, Future Java" }
+steps:
+  - type: explanation
+    title: Loom — virtual threads
+    body: |
+      A platform thread is an OS thread: big, and limited to thousands.
+      A virtual thread is scheduled by the JVM onto a few carrier threads.
+      Blocking parks it cheaply, so a million can wait at once. Final in Java 21.
+
+  - type: choice
+    prompt: What problem do virtual threads solve?
+    options:
+      - text: Thread-per-request servers running out of threads while requests wait on I/O
+        correct: true
+      - text: Making CPU-bound code run faster
+        feedback: They don't add CPU. They make waiting cheap.
+
+  - type: blank
+    prompt: Run each task on its own virtual thread.
+    template: "try (var ex = Executors.[[newVirtualThreadPerTaskExecutor]]()) { tasks.forEach(ex::submit); }"
+    code: true
+
+  - type: explanation
+    title: Valhalla — value classes
+    body: |
+      Every Java object has a header and is reached through a pointer.
+      Value classes give up identity so the JVM can store them inline, like primitives.
+      An array of points could be one flat block of numbers.
+
+  - type: explanation
+    title: Panama — calling native code
+    body: |
+      JNI needs C glue code and is easy to get wrong.
+      The Foreign Function & Memory API calls native libraries from pure Java.
+      It also manages off-heap memory safely. Final in Java 22.
+
+  - type: match
+    prompt: Match each project with its goal.
+    pairs:
+      - left: Loom
+        right: Cheap, plentiful threads
+      - left: Valhalla
+        right: Objects without identity, laid out flat
+      - left: Panama
+        right: Calling native code and memory without JNI

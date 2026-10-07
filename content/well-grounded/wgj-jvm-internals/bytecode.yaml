@@ -1,0 +1,55 @@
+title: Class files and bytecode
+summary: javac compiles to bytecode for a stack machine; `javap -c` shows it, and the invoke instructions tell you how each call is dispatched.
+duration: 6
+tags: [java, well grounded, jvm, bytecode, javap, class files]
+sources:
+  - { book: well-grounded-java, ref: "§4.3–4.4, Examining class files and bytecode" }
+steps:
+  - type: explanation
+    title: A stack machine
+    body: |
+      Bytecode instructions push values onto an operand stack and pop them off.
+      `iload_0` pushes the first local variable; `iadd` pops two ints and pushes the sum.
+      Locals are numbered slots; in instance methods, slot 0 is `this`.
+
+  - type: order
+    prompt: "Put the bytecode for `static int add(int a, int b) { return a + b; }` in order."
+    items:
+      - "`iload_0` — push a"
+      - "`iload_1` — push b"
+      - "`iadd` — pop both, push the sum"
+      - "`ireturn` — return the top of the stack"
+
+  - type: explanation
+    title: See it with javap
+    body: |
+      `javap -c -p MyClass.class` disassembles a class.
+      The constant pool holds names, strings and method references.
+      Instructions refer to it by index, like `#7`.
+
+  - type: explanation
+    title: Five ways to call
+    body: |
+      `invokevirtual` dispatches on the object's class.
+      `invokeinterface` does the same through an interface, `invokestatic` calls static methods.
+      `invokespecial` calls constructors and private methods; `invokedynamic` links at run time.
+
+  - type: match
+    prompt: Match each call with the instruction javac emits.
+    pairs:
+      - left: "`list.size()` where `list` is a `List`"
+        right: "`invokeinterface`"
+      - left: "`Math.max(a, b)`"
+        right: "`invokestatic`"
+      - left: "`new Object()`'s constructor"
+        right: "`invokespecial`"
+      - left: "`System.out.println(s)`"
+        right: "`invokevirtual`"
+
+  - type: choice
+    prompt: What's the first instruction in `public Add() {}`, the default constructor?
+    options:
+      - text: "`aload_0`, pushing `this` to call `super()` with `invokespecial`"
+        correct: true
+      - text: "`return`"
+        feedback: Every constructor first calls its superclass constructor — here `Object.<init>`.

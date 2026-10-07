@@ -1,0 +1,54 @@
+title: Method handles and invokedynamic
+summary: "`invokedynamic` lets a bootstrap method decide at first call what a call site does — that's how lambdas and string concatenation are compiled."
+duration: 5
+tags: [java, well grounded, jvm, invokedynamic, method handles, lambdas]
+sources:
+  - { book: well-grounded-java, ref: "§17.2–17.3, invokedynamic and method handles" }
+steps:
+  - type: explanation
+    title: Method handles
+    body: |
+      A `MethodHandle` is a typed, directly executable reference to a method.
+      You look one up with `MethodHandles.lookup()`.
+      Access is checked once, at lookup, unlike reflection's per-call checks.
+
+  - type: explanation
+    title: Linking at run time
+    body: |
+      The first time an `invokedynamic` runs, the JVM calls its bootstrap method.
+      The bootstrap returns a call site with a method handle as its target.
+      Later calls go straight to that target, and the JIT can inline it.
+
+  - type: order
+    prompt: Put the life of an `invokedynamic` call site in order.
+    items:
+      - The instruction runs for the first time
+      - The JVM calls the bootstrap method
+      - The bootstrap returns a `CallSite` with a target `MethodHandle`
+      - Later calls jump straight to the target
+
+  - type: choice
+    prompt: "In Java 21, how is `() -> System.out.println(\"hi\")` compiled?"
+    options:
+      - text: The body becomes a private static method, and an `invokedynamic` asks `LambdaMetafactory` to build the `Runnable` at run time
+        correct: true
+      - text: As an anonymous inner class file, like `Outer$1.class`
+        feedback: That's how anonymous classes compile. Lambdas avoid an extra class file per lambda.
+
+  - type: choice
+    prompt: "`return s + i;` with a `String s` and `int i` — what does javac emit since Java 9?"
+    options:
+      - text: An `invokedynamic` to `makeConcatWithConstants`
+        correct: true
+      - text: A chain of `StringBuilder.append` calls
+        feedback: That was Java 8. Now the strategy is chosen at run time, so the JDK can improve it without recompiling your code.
+
+  - type: match
+    prompt: Match each mechanism with its cost profile.
+    pairs:
+      - left: Reflection (`Method.invoke`)
+        right: Access checked on every call; hard to inline
+      - left: Method handles
+        right: Checked once at lookup; can be inlined
+      - left: "`invokedynamic`"
+        right: Linked once per call site; then as fast as a direct call

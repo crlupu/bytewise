@@ -1,0 +1,6 @@
+title: The JVM underneath
+summary: Chapters 4 and 17 — class loading, class files and bytecode, and method handles and invokedynamic.
+lessons:
+  - class-loading
+  - bytecode
+  - invokedynamic

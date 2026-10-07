@@ -1,0 +1,5 @@
+title: Beyond Java
+summary: Chapters 8–10 and 18 — other JVM languages, and the projects reshaping Java itself.
+lessons:
+  - polyglot-jvm
+  - future-java

@@ -1,0 +1,54 @@
+title: Java in containers
+summary: Modern JVMs read the container's CPU and memory limits; size the heap as a percentage and leave room for everything that isn't heap.
+duration: 5
+tags: [java, well grounded, containers, docker, kubernetes, memory, jvm flags]
+sources:
+  - { book: well-grounded-java, ref: "Chapter 12, Running Java in containers" }
+steps:
+  - type: explanation
+    title: The JVM sees the container
+    body: |
+      Old JVMs read the host's memory and CPUs, not the container's.
+      They sized heaps and thread pools far too big, and got killed.
+      Since Java 10, the JVM reads container limits.
+
+  - type: explanation
+    title: Heap is only part of the memory
+    body: |
+      Beyond the heap, the JVM needs metaspace, thread stacks, code cache and native buffers.
+      Set the heap with `-XX:MaxRAMPercentage`, say 75%.
+      If the process exceeds the container limit, the kernel kills it.
+
+  - type: choice
+    prompt: A container has a 1 GB limit, and the JVM runs with `-Xmx1g`. What's the risk?
+    options:
+      - text: Heap plus non-heap memory exceeds 1 GB, and the container is OOM-killed with no Java stack trace
+        correct: true
+      - text: None; the heap fits exactly
+        feedback: The JVM uses memory outside the heap too.
+    explanation: "Something like `-XX:MaxRAMPercentage=75` leaves room for the rest."
+
+  - type: blank
+    prompt: Give the heap three quarters of the container's memory.
+    template: "java -XX:[[MaxRAMPercentage]]=75 -jar app.jar"
+    code: true
+    caseSensitive: true
+
+  - type: explanation
+    title: Small images, fast starts
+    body: |
+      Use a JRE or a `jlink` runtime with only the modules you need.
+      Build in one stage, copy the result into a slim runtime image.
+      Class data sharing speeds up startup.
+
+  - type: match
+    prompt: Match each technique with its benefit.
+    pairs:
+      - left: "`jlink`"
+        right: A runtime with only the modules you use
+      - left: Multi-stage Docker build
+        right: Build tools stay out of the final image
+      - left: Class data sharing (CDS)
+        right: Faster startup
+      - left: "`-XX:MaxRAMPercentage`"
+        right: Heap sized to the container
