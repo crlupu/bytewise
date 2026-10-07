@@ -3430,7 +3430,9 @@ body {
     var(--background);
   background-attachment: fixed;
 }
-.dark :is(.card, .list, .row, .book, .hint, .option, .order-item, .match-item),
+/* :where() keeps this at the specificity of `.dark` alone, so states like
+   .match-item.is-active and .option.is-selected still win. */
+.dark :where(.card, .list, .row, .book, .hint, .option, .order-item, .match-item),
 .dark .tile:not(.tile--continue):not(.tile--streak) {
   background: var(--glass);
   box-shadow:
