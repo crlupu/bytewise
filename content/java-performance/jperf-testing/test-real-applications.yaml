@@ -1,0 +1,53 @@
+title: Test the real application
+summary: Microbenchmarks measure tiny pieces, macrobenchmarks the whole system; only the whole system, under realistic load, tells you what users see.
+duration: 5
+tags: [java, performance, benchmarking, testing, macrobenchmark, microbenchmark]
+sources:
+  - { book: java-performance, ref: "§2.1, Test a Real Application" }
+steps:
+  - type: explanation
+    title: Three sizes of test
+    body: |
+      A microbenchmark times one small operation, like a string concatenation.
+      A mesobenchmark exercises one module or service.
+      A macrobenchmark runs the whole application under realistic load.
+
+  - type: match
+    prompt: Match each test with its size.
+    pairs:
+      - left: "Timing `HashMap.get` a million times"
+        right: Microbenchmark
+      - left: Load-testing one REST endpoint with its database
+        right: Mesobenchmark
+      - left: Replaying a day of production traffic against a staging copy
+        right: Macrobenchmark
+
+  - type: explanation
+    title: Parts interact
+    body: |
+      A faster component can make the whole slower, or no faster.
+      If the database is the bottleneck, speeding up the code that calls it changes nothing.
+      Only a whole-system test shows where time actually goes.
+
+  - type: choice
+    prompt: You make JSON parsing twice as fast, but end-to-end response time doesn't change. What's the likely reason?
+    options:
+      - text: Parsing wasn't the bottleneck — requests spend their time waiting elsewhere, like on the database
+        correct: true
+      - text: The JIT undid the optimization
+        feedback: Possible in a microbenchmark, but here the whole-system number didn't move because something else dominates.
+
+  - type: explanation
+    title: Test early, test often
+    body: |
+      Performance regressions creep in one commit at a time.
+      Automate tests and compare against a baseline on every build.
+      A small drift caught today is easier to find than ten found later.
+
+  - type: choice
+    prompt: Where do performance tests belong?
+    options:
+      - text: In the regular build pipeline, compared against a baseline
+        correct: true
+      - text: In a separate phase just before release
+        feedback: By then many changes are mixed together, and finding the culprit is slow.

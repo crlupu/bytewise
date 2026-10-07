@@ -1,0 +1,59 @@
+title: Throughput, latency and percentiles
+summary: Throughput counts work per second, latency times each request, and the average hides the slow requests users remember.
+duration: 6
+tags: [java, performance, throughput, latency, percentiles, response time]
+sources:
+  - { book: java-performance, ref: "§2.2, Understand Throughput, Batching, and Response Time" }
+  - { book: java-performance, ref: "§2.3, Understand Variability" }
+steps:
+  - type: explanation
+    title: Two measures
+    body: |
+      Throughput is how many operations complete per second.
+      Response time is how long one operation takes.
+      Pushing throughput up usually pushes response time up too, as queues form.
+
+  - type: match
+    prompt: Match each metric with its unit.
+    pairs:
+      - left: Throughput
+        right: Operations per second
+      - left: Response time
+        right: Milliseconds per operation
+      - left: Elapsed time of a batch job
+        right: Seconds for the whole job
+
+  - type: explanation
+    title: Averages hide outliers
+    body: |
+      An average of 50 ms can hide requests taking two seconds.
+      Percentiles show the distribution: p99 is the time 99% of requests beat.
+      Users notice the slow ones.
+
+  - type: choice
+    prompt: "Ten requests take 20 ms each, and one takes 1,000 ms. Which number best describes what that one user experienced?"
+    options:
+      - text: The maximum, or a high percentile like p99
+        correct: true
+      - text: "The average, about 109 ms"
+        feedback: No request took 109 ms. The average describes nobody.
+
+  - type: explanation
+    title: Variability needs statistics
+    body: |
+      Two runs of the same test give different numbers.
+      Run many times and compare distributions, not single results.
+      A 2% difference may just be noise.
+
+  - type: choice
+    prompt: A change makes the benchmark 3% faster in one run. What should you conclude?
+    options:
+      - text: Nothing yet — repeat the runs and check the difference is larger than the run-to-run variation
+        correct: true
+      - text: The change is a 3% improvement
+        feedback: Run-to-run variation can easily be 3%.
+
+  - type: blank
+    prompt: Name the latency percentile that 99 in 100 requests beat.
+    template: "Track the [[p99]] response time, not just the average."
+    caseSensitive: false

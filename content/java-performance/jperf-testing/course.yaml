@@ -1,0 +1,6 @@
+title: An approach to performance testing
+summary: Chapter 2 — kinds of performance test, what to measure, and why microbenchmarks lie unless you use JMH.
+lessons:
+  - test-real-applications
+  - throughput-latency-percentiles
+  - microbenchmark-pitfalls

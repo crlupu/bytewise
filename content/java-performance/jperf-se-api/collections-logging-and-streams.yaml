@@ -1,0 +1,50 @@
+title: Collections, logging and streams
+summary: Size collections up front, don't build log messages that won't be logged, and know that streams and lambdas cost little — but aren't free.
+duration: 5
+tags: [java, performance, collections, logging, lambdas, streams]
+sources:
+  - { book: java-performance, ref: "§12.4–12.6, Logging, Collections, Lambdas and Streams" }
+steps:
+  - type: explanation
+    title: Size collections
+    body: |
+      An `ArrayList` doubles its array as it grows, copying each time.
+      A `HashMap` rehashes every entry when it grows.
+      If you know the size, pass it to the constructor.
+
+  - type: explanation
+    title: Don't build unused log messages
+    body: |
+      `log.debug("user " + user)` builds the string even when debug is off.
+      Use parameters: `log.debug("user {}", user)`.
+      Or pass a supplier for expensive values.
+
+  - type: choice
+    prompt: Which call costs almost nothing when debug logging is off?
+    options:
+      - text: "`log.debug(\"Order {} total {}\", id, total);`"
+        correct: true
+      - text: "`log.debug(\"Order \" + id + \" total \" + computeTotal());`"
+        feedback: The string is built, and `computeTotal()` runs, before `debug` can check the level.
+
+  - type: explanation
+    title: Lambdas and streams are cheap
+    body: |
+      A non-capturing lambda is created once and reused.
+      Streams add a little overhead per pipeline, which the JIT mostly removes.
+      Choose them for clarity; measure before rewriting hot loops.
+
+  - type: choice
+    prompt: A colleague rewrites every stream into a `for` loop "for speed". What's the best response?
+    options:
+      - text: Profile first; only hot code where the stream measurably costs more is worth changing
+        correct: true
+      - text: Agree — streams are always slower
+        feedback: The difference is usually small after JIT compilation.
+      - text: Agree — loops use less memory
+        feedback: Not reliably; it depends on the pipeline.
+
+  - type: blank
+    prompt: Avoid rehashing a map that will hold 1,000 entries.
+    template: "Map<String, Order> m = HashMap.[[newHashMap]](1000);"
+    code: true

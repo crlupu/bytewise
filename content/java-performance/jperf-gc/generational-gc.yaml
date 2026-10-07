@@ -1,0 +1,56 @@
+title: Generations and pauses
+summary: Most objects die young, so the heap is split into a young generation collected often and cheaply, and an old one collected rarely.
+duration: 6
+tags: [java, performance, garbage collection, generations, young generation, pauses]
+sources:
+  - { book: java-performance, ref: "§5.1, Garbage Collection Overview" }
+steps:
+  - type: explanation
+    title: Most objects die young
+    body: |
+      Temporary objects — iterators, strings, request data — are garbage almost at once.
+      The generational hypothesis says this is typical.
+      So it pays to look for garbage among new objects first.
+
+  - type: explanation
+    title: Young and old
+    body: |
+      New objects go in eden, part of the young generation.
+      A minor GC copies the few live ones to a survivor space, and frees the rest at once.
+      Objects that survive several collections are promoted to the old generation.
+
+  - type: order
+    prompt: Put the life of a long-lived object in order.
+    items:
+      - Allocated in eden
+      - Survives a minor GC and is copied to a survivor space
+      - Survives several more minor GCs
+      - Promoted to the old generation
+      - Freed by an old-generation or full collection, once unreachable
+
+  - type: choice
+    prompt: Why is a young collection cheap when most objects are garbage?
+    options:
+      - text: Its cost depends on the live objects it copies, not the dead ones it leaves behind
+        correct: true
+      - text: The young generation is always tiny
+        feedback: Size matters less than how much survives.
+
+  - type: explanation
+    title: Stop-the-world pauses
+    body: |
+      Some GC work needs every application thread stopped.
+      During that pause, requests wait.
+      Concurrent collectors do most work while the app keeps running.
+
+  - type: match
+    prompt: Match each term with its meaning.
+    pairs:
+      - left: Minor GC
+        right: Collects the young generation
+      - left: Full GC
+        right: Collects the whole heap
+      - left: Promotion
+        right: Moving a survivor to the old generation
+      - left: Stop-the-world
+        right: Application threads paused during GC

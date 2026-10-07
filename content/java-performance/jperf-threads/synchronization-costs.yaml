@@ -1,0 +1,55 @@
+title: The cost of synchronization
+summary: An uncontended lock is cheap; contention is what's expensive. And threads writing to neighbouring fields can slow each other down without sharing anything.
+duration: 6
+tags: [java, performance, synchronization, contention, false sharing, cas]
+sources:
+  - { book: java-performance, ref: "§9.3, Thread Synchronization" }
+steps:
+  - type: explanation
+    title: Uncontended locks are cheap
+    body: |
+      Taking a lock no one else wants costs a few nanoseconds.
+      The JIT can even remove locks that can't be contended.
+      The cost comes when threads wait for each other.
+
+  - type: explanation
+    title: Contention serializes work
+    body: |
+      Under contention, threads queue for the lock and the OS may park them.
+      Work inside the lock happens one thread at a time.
+      Shorten critical sections, split locks, or use CAS-based classes.
+
+  - type: choice
+    prompt: Many threads increment one shared counter. Which scales best?
+    options:
+      - text: "`LongAdder`, which spreads increments over several cells"
+        correct: true
+      - text: "`AtomicLong`"
+        feedback: Better than a lock, but every thread still fights over one memory location.
+      - text: A `synchronized` method
+        feedback: Every increment waits for the lock.
+
+  - type: explanation
+    title: False sharing
+    body: |
+      CPUs cache memory in lines of about 64 bytes.
+      Two threads writing different fields on the same line keep stealing it from each other.
+      Separating hot fields, or `@Contended`, fixes it.
+
+  - type: choice
+    prompt: Two threads each update their own counter field in the same object, with no locks. It's surprisingly slow. Why?
+    options:
+      - text: The fields sit on one cache line, so each write invalidates the other core's copy
+        correct: true
+      - text: The JVM adds hidden locks to every field
+        feedback: There are no hidden locks; this is a hardware effect.
+
+  - type: match
+    prompt: Match each problem with a fix.
+    pairs:
+      - left: One hot lock everyone needs
+        right: Lock striping or a concurrent collection
+      - left: A shared counter updated constantly
+        right: "`LongAdder`"
+      - left: Neighbouring fields written by different threads
+        right: Padding them onto separate cache lines

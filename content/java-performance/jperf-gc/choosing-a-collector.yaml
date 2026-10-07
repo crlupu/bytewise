@@ -1,0 +1,54 @@
+title: Choosing a collector
+summary: Parallel GC maximizes throughput, G1 balances throughput with pause targets, and ZGC and Shenandoah keep pauses under a few milliseconds.
+duration: 6
+tags: [java, performance, garbage collection, g1, zgc, shenandoah, parallel gc]
+sources:
+  - { book: java-performance, ref: "§5.2, GC Algorithms" }
+  - { book: java-performance, ref: "Chapter 6, Garbage Collection Algorithms" }
+steps:
+  - type: explanation
+    title: Throughput collectors
+    body: |
+      Serial GC uses one thread; it suits small heaps and single CPUs.
+      Parallel GC uses every core, but stops the app for each collection.
+      Best total throughput, longest pauses.
+
+  - type: explanation
+    title: G1, the default
+    body: |
+      G1 splits the heap into regions and collects those with most garbage first.
+      It aims for a pause target, 200 ms by default.
+      It does part of the old-generation work concurrently.
+
+  - type: explanation
+    title: Low-pause collectors
+    body: |
+      ZGC and Shenandoah do almost everything concurrently.
+      Pauses stay around a millisecond, whatever the heap size.
+      They use some extra CPU and memory to do it.
+
+  - type: match
+    prompt: Match each workload with a sensible garbage collector.
+    pairs:
+      - left: A nightly batch job that must finish fast
+        right: Parallel GC
+      - left: A typical web service with a few GB of heap
+        right: G1
+      - left: A trading system with a 100 GB heap and strict latency goals
+        right: ZGC or Shenandoah
+      - left: A tiny command-line tool on one CPU
+        right: Serial GC
+
+  - type: blank
+    prompt: Turn on ZGC.
+    template: "java -XX:+[[UseZGC]] -jar app.jar"
+    code: true
+    caseSensitive: true
+
+  - type: choice
+    prompt: What do concurrent collectors trade for short pauses?
+    options:
+      - text: Extra CPU time and memory, since GC threads run alongside the app
+        correct: true
+      - text: Nothing — they're better in every way
+        feedback: Concurrency has costs; for batch throughput, Parallel GC can still win.

@@ -1,0 +1,48 @@
+title: OS and JDK monitoring tools
+summary: Start with CPU, disk and network from the OS; then look inside the JVM with jcmd and jstat.
+duration: 5
+tags: [java, performance, monitoring, jcmd, jstat, vmstat, cpu]
+sources:
+  - { book: java-performance, ref: "§3.1–3.2, Operating System Tools and Java Monitoring Tools" }
+steps:
+  - type: explanation
+    title: Look at the machine first
+    body: |
+      `vmstat`, `top` and `iostat` show CPU, memory, disk and network.
+      High CPU means your code (or GC) is busy.
+      Low CPU with slow responses means something is waiting.
+
+  - type: choice
+    prompt: Responses are slow, and CPU usage is 5%. Where do you look first?
+    options:
+      - text: At what the threads are waiting on — locks, the database, the network or disk
+        correct: true
+      - text: At making the code's loops faster
+        feedback: The CPU is mostly idle, so computation isn't the bottleneck.
+
+  - type: explanation
+    title: Look inside the JVM
+    body: |
+      `jcmd <pid> help` lists diagnostic commands.
+      `jcmd <pid> Thread.print` dumps threads; `GC.heap_info` summarizes the heap.
+      `jstat -gcutil <pid> 1000` prints GC statistics every second.
+
+  - type: match
+    prompt: Match each command with what it shows.
+    pairs:
+      - left: "`jcmd <pid> Thread.print`"
+        right: Every thread's stack
+      - left: "`jstat -gcutil <pid> 1000`"
+        right: GC and heap usage, every second
+      - left: "`jcmd <pid> VM.flags`"
+        right: The JVM's tuning flags in effect
+      - left: "`vmstat 1`"
+        right: The machine's CPU, memory and I/O, every second
+
+  - type: choice
+    prompt: The OS shows a Java process at 100% of one core, but its threads look idle in your code. What might be running?
+    options:
+      - text: The garbage collector or the JIT compiler
+        correct: true
+      - text: Nothing; the OS is wrong
+        feedback: JVM threads like GC and compiler threads use CPU too.

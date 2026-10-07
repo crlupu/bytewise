@@ -1,0 +1,53 @@
+title: Analysing the heap
+summary: A class histogram shows what fills the heap; a heap dump shows why it's still reachable.
+duration: 5
+tags: [java, performance, memory, heap dump, histogram, memory leak, retained size]
+sources:
+  - { book: java-performance, ref: "§7.1, Heap Analysis" }
+steps:
+  - type: explanation
+    title: Histograms count objects
+    body: |
+      `jcmd <pid> GC.class_histogram` lists classes by instance count and bytes.
+      It's quick, and shows what is taking up space.
+      Run it twice; a class that keeps growing is a suspect.
+
+  - type: explanation
+    title: Heap dumps explain why
+    body: |
+      `jcmd <pid> GC.heap_dump file.hprof` writes every object to a file.
+      A tool like Eclipse MAT shows what keeps each object alive.
+      Follow the path back to a GC root.
+
+  - type: match
+    prompt: Match each term with its meaning.
+    pairs:
+      - left: Shallow size
+        right: Memory of the object itself
+      - left: Retained size
+        right: Memory freed if this object were collected
+      - left: GC root
+        right: A starting point that's always reachable, like a static field or a thread's stack
+      - left: Dominator
+        right: An object every path to another object passes through
+
+  - type: choice
+    prompt: A heap dump shows a `HashMap` with a small shallow size but 3 GB retained. What does that tell you?
+    options:
+      - text: The map holds references to 3 GB of objects that would be freed if the map went away
+        correct: true
+      - text: The map itself is 3 GB
+        feedback: Shallow size is the map's own memory; retained size counts everything it keeps alive.
+
+  - type: explanation
+    title: Out of memory
+    body: |
+      `OutOfMemoryError: Java heap space` means live objects filled the heap.
+      `-XX:+HeapDumpOnOutOfMemoryError` saves a dump when it happens.
+      Then you can see what filled it.
+
+  - type: blank
+    prompt: Dump the heap automatically when memory runs out.
+    template: "java -XX:+[[HeapDumpOnOutOfMemoryError]] -jar app.jar"
+    code: true
+    caseSensitive: true

@@ -1,0 +1,53 @@
+title: Profilers and Flight Recorder
+summary: Sampling profilers are cheap but can be biased toward safepoints; instrumented ones are exact but distort; JFR records it all with little overhead.
+duration: 6
+tags: [java, performance, profiling, jfr, flight recorder, safepoint bias]
+sources:
+  - { book: java-performance, ref: "§3.3–3.4, Profiling Tools and Java Flight Recorder" }
+steps:
+  - type: explanation
+    title: Sampling profilers
+    body: |
+      A sampling profiler checks every thread's stack many times a second.
+      Methods that show up often are where time goes.
+      Overhead is low, but rare short methods can be missed.
+
+  - type: explanation
+    title: Safepoint bias
+    body: |
+      Many profilers can only sample threads at safepoints.
+      The JIT removes safepoints from tight loops.
+      So time spent there gets blamed on the nearest safepoint instead.
+
+  - type: choice
+    prompt: Why can two profilers disagree about the hottest method?
+    options:
+      - text: Profilers that sample only at safepoints attribute time to the wrong place; others, like async-profiler, don't wait for safepoints
+        correct: true
+      - text: One of them must be broken
+        feedback: Both can be working as designed; they sample differently.
+
+  - type: explanation
+    title: Instrumented profilers and JFR
+    body: |
+      Instrumented profilers add timing code to every method.
+      They count calls exactly, but slow small methods down and change what the JIT does.
+      Java Flight Recorder records events inside the JVM, cheaply enough for production.
+
+  - type: match
+    prompt: Match each tool with its trait.
+    pairs:
+      - left: Sampling profiler
+        right: Low overhead, statistical
+      - left: Instrumented profiler
+        right: Exact call counts, high overhead
+      - left: Java Flight Recorder
+        right: Built into the JVM, safe for production
+      - left: Thread dump
+        right: One snapshot of every stack
+
+  - type: blank
+    prompt: Start a two-minute flight recording on a running JVM.
+    template: "jcmd <pid> [[JFR.start]] duration=120s filename=app.jfr"
+    code: true
+    caseSensitive: true

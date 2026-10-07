@@ -1,0 +1,6 @@
+title: Working with the JIT compiler
+summary: Chapter 4 — interpreting and compiling, tiered compilation, inlining, escape analysis and deoptimization.
+lessons:
+  - tiered-compilation
+  - inlining-and-escape-analysis
+  - deoptimization-and-code-cache

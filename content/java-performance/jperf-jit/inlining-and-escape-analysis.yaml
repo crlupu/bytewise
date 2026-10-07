@@ -1,0 +1,57 @@
+title: Inlining and escape analysis
+summary: The JIT copies small methods into their callers and keeps objects that never escape out of the heap entirely.
+duration: 6
+tags: [java, performance, jit, inlining, escape analysis, scalar replacement]
+sources:
+  - { book: java-performance, ref: "§4.5, Advanced Compiler Flags — Inlining and Escape Analysis" }
+steps:
+  - type: explanation
+    title: Inlining removes calls
+    body: |
+      Inlining copies a method's body into its caller.
+      Getters and setters then cost nothing.
+      Inlined code also opens the way to every other optimization.
+
+  - type: choice
+    prompt: Why don't small getters slow down Java code in practice?
+    options:
+      - text: The JIT inlines them, so the call disappears
+        correct: true
+      - text: Getters are compiled to field accesses by javac
+        feedback: "javac keeps the calls; the JIT inlines them at run time."
+
+  - type: explanation
+    title: Size and frequency limits
+    body: |
+      Very small methods are always inlined.
+      Larger ones are inlined only if they're hot.
+      Huge methods aren't inlined at all, and may not be compiled.
+
+  - type: explanation
+    title: Objects that don't escape
+    body: |
+      Escape analysis checks whether an object can be seen outside the method that made it.
+      If not, the JIT can keep its fields in registers: no allocation at all.
+      It can also remove locks on such objects.
+
+  - type: choice
+    prompt: "In which case can escape analysis avoid allocating the `Point`?"
+    options:
+      - text: "`double dist(int x, int y) { Point p = new Point(x, y); return p.length(); }`"
+        correct: true
+      - text: "`Point make(int x, int y) { return new Point(x, y); }`"
+        feedback: The point is returned, so it escapes to the caller.
+      - text: "`void store(int x, int y) { cache.add(new Point(x, y)); }`"
+        feedback: The point is stored in a collection, so it escapes.
+
+  - type: match
+    prompt: Match each optimization with what it removes.
+    pairs:
+      - left: Inlining
+        right: Method-call overhead
+      - left: Scalar replacement
+        right: An object allocation
+      - left: Lock elision
+        right: Locking on an object no other thread can see
+      - left: Dead code elimination
+        right: Work whose result is never used

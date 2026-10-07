@@ -1,0 +1,5 @@
+title: Servers and databases
+summary: Chapters 10–11 — blocking versus non-blocking servers, and getting JDBC and JPA to talk to the database efficiently.
+lessons:
+  - server-io-models
+  - database-best-practices

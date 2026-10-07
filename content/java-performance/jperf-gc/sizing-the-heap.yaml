@@ -1,0 +1,54 @@
+title: Sizing the heap and reading GC logs
+summary: Too small a heap means constant collections; too big means long pauses or swapping. GC logs show which.
+duration: 5
+tags: [java, performance, garbage collection, heap size, gc logs, xmx]
+sources:
+  - { book: java-performance, ref: "§5.3, Basic GC Tuning" }
+  - { book: java-performance, ref: "§5.4, GC Tools" }
+steps:
+  - type: explanation
+    title: Two flags
+    body: |
+      `-Xms` sets the initial heap; `-Xmx` the maximum.
+      The JVM grows the heap between them as needed.
+      On servers, setting both the same avoids resizing.
+
+  - type: explanation
+    title: Not too small, not too big
+    body: |
+      Too small, and the GC runs constantly, eating CPU.
+      Too big for the machine, and the OS swaps — GC with swapping is disastrous.
+      Aim for the live data plus room to breathe.
+
+  - type: choice
+    prompt: After a full GC, about 2 GB of data is still live. Which maximum heap is a sensible start?
+    options:
+      - text: Around 6 GB, so live data fills a third to half of the heap
+        correct: true
+      - text: 2 GB, exactly the live data
+        feedback: Then every allocation would trigger a collection.
+      - text: All of the machine's memory
+        feedback: The OS, other processes and the JVM's non-heap memory need room too.
+
+  - type: explanation
+    title: Turn on GC logging
+    body: |
+      `-Xlog:gc*:file=gc.log` records every collection, its cause and its pause.
+      The overhead is tiny, so leave it on in production.
+      Tools like GCViewer chart the log.
+
+  - type: blank
+    prompt: Log GC events to a file.
+    template: "java -[[Xlog]]:gc*:file=gc.log -jar app.jar"
+    code: true
+    caseSensitive: true
+
+  - type: match
+    prompt: Match what the GC log shows with the likely fix.
+    pairs:
+      - left: Frequent full GCs, old generation always nearly full
+        right: A bigger heap, or a memory leak to find
+      - left: Long young-generation pauses
+        right: A smaller young generation, or a low-pause collector
+      - left: Allocation rate of gigabytes per second
+        right: Allocate less — reuse buffers, avoid needless objects

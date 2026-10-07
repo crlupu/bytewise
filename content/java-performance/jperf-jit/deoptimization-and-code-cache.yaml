@@ -1,0 +1,54 @@
+title: Deoptimization and the code cache
+summary: Compiled code rests on assumptions from the profile; when one breaks, the JVM throws the code away. And compiled code needs room.
+duration: 5
+tags: [java, performance, jit, deoptimization, code cache, polymorphism]
+sources:
+  - { book: java-performance, ref: "§4.4, Deoptimization" }
+  - { book: java-performance, ref: "§4.3, Tuning the Code Cache" }
+steps:
+  - type: explanation
+    title: Optimizing on assumptions
+    body: |
+      If a call site has only ever seen one class, C2 calls that class directly.
+      It may even inline it.
+      That's a bet the profile will stay true.
+
+  - type: explanation
+    title: When the bet fails
+    body: |
+      A new class shows up at that call site.
+      The compiled code is marked "not entrant" and new calls go back to the interpreter.
+      Later the method is recompiled with the new profile.
+
+  - type: choice
+    prompt: "`PrintCompilation` shows a method \"made not entrant\" after a new plugin is loaded. What happened?"
+    options:
+      - text: The plugin added a new implementation at a call site the JIT had assumed had only one, so it deoptimized
+        correct: true
+      - text: The method threw an exception
+        feedback: Deoptimization is about broken compile-time assumptions, not exceptions.
+
+  - type: match
+    prompt: Match each call site with how C2 can handle it.
+    pairs:
+      - left: Monomorphic — one class seen
+        right: Direct call, often inlined
+      - left: Bimorphic — two classes seen
+        right: A type check, then two inlined paths
+      - left: Megamorphic — many classes seen
+        right: A virtual call through the method table
+
+  - type: explanation
+    title: The code cache can fill up
+    body: |
+      Compiled code lives in the code cache, which has a fixed maximum size.
+      When it's full, the JVM stops compiling.
+      New hot code then stays interpreted, and the app slows down.
+
+  - type: choice
+    prompt: A big application slowly gets slower, and the log says "CodeCache is full. Compiler has been disabled." What do you do?
+    options:
+      - text: Raise `-XX:ReservedCodeCacheSize`
+        correct: true
+      - text: Raise `-Xmx`
+        feedback: The code cache isn't part of the heap.

@@ -1,0 +1,49 @@
+title: Interpreted, then compiled
+summary: The JVM interprets code at first, profiles it, and compiles the hot parts — quickly with C1, then aggressively with C2.
+duration: 5
+tags: [java, performance, jit, c1, c2, tiered compilation, hotspot]
+sources:
+  - { book: java-performance, ref: "§4.1–4.3, Just-in-Time Compilers and Tiered Compilation" }
+steps:
+  - type: explanation
+    title: Compile only what's hot
+    body: |
+      Most code runs rarely; compiling it would waste time.
+      The JVM interprets bytecode and counts how often each method and loop runs.
+      Methods that cross a threshold get compiled to native code.
+
+  - type: explanation
+    title: Two compilers, in tiers
+    body: |
+      C1, the client compiler, compiles quickly with simple optimizations.
+      C2, the server compiler, takes longer but uses the profile to optimize hard.
+      With tiered compilation, hot code goes interpreter, then C1, then C2.
+
+  - type: order
+    prompt: Put the usual life of a hot method in order.
+    items:
+      - Interpreted while counters collect a profile
+      - Compiled by C1, with profiling code
+      - Compiled by C2, using the profile
+      - Runs as optimized native code
+
+  - type: choice
+    prompt: Why does a Java service often run slower for its first minute?
+    options:
+      - text: Its hot code is still being interpreted and compiled — the JVM is warming up
+        correct: true
+      - text: The garbage collector runs more at start-up
+        feedback: It can, but the main cost is code not yet compiled.
+
+  - type: explanation
+    title: Long loops get compiled mid-run
+    body: |
+      A method called once can still loop for minutes.
+      On-stack replacement compiles the loop while it runs.
+      The JVM swaps in the compiled version without restarting the method.
+
+  - type: blank
+    prompt: Watch methods being compiled.
+    template: "java -XX:+[[PrintCompilation]] -jar app.jar"
+    code: true
+    caseSensitive: true

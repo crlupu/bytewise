@@ -1,0 +1,53 @@
+title: Database access that performs
+summary: Prepared statements, connection pools, batching, fetch sizes and short transactions — and in JPA, fetching only what you need.
+duration: 6
+tags: [java, performance, jdbc, jpa, connection pool, batching, prepared statement]
+sources:
+  - { book: java-performance, ref: "§11.1, JDBC" }
+  - { book: java-performance, ref: "§11.2, JPA" }
+steps:
+  - type: explanation
+    title: Reuse connections and statements
+    body: |
+      Opening a database connection takes many milliseconds.
+      A connection pool keeps them open for reuse.
+      Prepared statements let the database reuse the parsed query plan.
+
+  - type: explanation
+    title: Fewer round trips
+    body: |
+      Each call to the database waits a network round trip.
+      Batching sends many inserts in one call.
+      A larger fetch size returns more rows per trip.
+
+  - type: blank
+    prompt: Queue an insert to be sent with others.
+    template: "ps.setString(1, name); ps.[[addBatch]]();"
+    code: true
+
+  - type: choice
+    prompt: Inserting 10,000 rows one `executeUpdate` at a time takes 20 seconds. What's the biggest win?
+    options:
+      - text: Batching them, so they go in a few round trips
+        correct: true
+      - text: A faster CPU on the application server
+        feedback: The time goes to network round trips, not computation.
+
+  - type: explanation
+    title: Short transactions, lean fetches
+    body: |
+      Long transactions hold locks and block others.
+      In JPA, lazy associations accessed in a loop cause the N+1 problem.
+      Fetch what you need in one query, with a join fetch.
+
+  - type: match
+    prompt: Match each problem with its fix.
+    pairs:
+      - left: Opening a connection per request
+        right: A connection pool
+      - left: Many small inserts
+        right: Batching
+      - left: One query per child entity in a loop
+        right: A join fetch
+      - left: Re-parsing the same SQL each time
+        right: Prepared statements

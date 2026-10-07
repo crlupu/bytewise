@@ -1,0 +1,5 @@
+title: Java SE API tips
+summary: Chapter 12 — strings, buffered I/O, logging, collection sizing, lambdas and streams, and serialization.
+lessons:
+  - strings-and-io
+  - collections-logging-and-streams

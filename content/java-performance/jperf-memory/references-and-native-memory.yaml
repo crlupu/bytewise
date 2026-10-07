@@ -1,0 +1,56 @@
+title: References, pools and native memory
+summary: Soft and weak references let the GC reclaim cached objects; object pools rarely help; and the JVM uses memory well beyond the heap.
+duration: 6
+tags: [java, performance, memory, weak references, soft references, native memory, nmt]
+sources:
+  - { book: java-performance, ref: "§7.3, Object Life-Cycle Management" }
+  - { book: java-performance, ref: "Chapter 8, Native Memory Best Practices" }
+steps:
+  - type: explanation
+    title: Reference strengths
+    body: |
+      An ordinary reference keeps an object alive.
+      A soft reference lets the GC free it when memory is short.
+      A weak reference lets it go at the next collection.
+
+  - type: match
+    prompt: Match each reference type with when its object can be collected.
+    pairs:
+      - left: Strong
+        right: Never, while the reference exists
+      - left: Soft
+        right: When the JVM needs memory
+      - left: Weak
+        right: At the next GC, if nothing stronger refers to it
+      - left: Phantom
+        right: Already collectable — used only to run cleanup afterwards
+
+  - type: explanation
+    title: Pools rarely pay
+    body: |
+      Reusing objects avoids allocation, but keeps them alive in the old generation.
+      Allocating short-lived objects in the young generation is very cheap.
+      Pool only what's truly expensive to create, like connections and threads.
+
+  - type: choice
+    prompt: Which is worth pooling?
+    options:
+      - text: Database connections
+        correct: true
+      - text: Small value objects like `Point`
+        feedback: Allocating them is cheap, and pooling ages them into the old generation.
+      - text: "`StringBuilder`s in a hot loop"
+        feedback: Young-generation allocation is so cheap that this rarely helps — measure before you do it.
+
+  - type: explanation
+    title: Native memory
+    body: |
+      The process uses more than the heap: metaspace, thread stacks, code cache, direct buffers.
+      Native memory tracking breaks it down.
+      Turn it on with `-XX:NativeMemoryTracking=summary`.
+
+  - type: blank
+    prompt: Show the JVM's native memory use.
+    template: "jcmd <pid> [[VM.native_memory]] summary"
+    code: true
+    caseSensitive: true

@@ -1,0 +1,53 @@
+title: Strings and buffered I/O
+summary: Compact strings halve memory for Latin-1 text, concatenation in loops needs a StringBuilder, and unbuffered I/O makes a system call per byte.
+duration: 5
+tags: [java, performance, strings, stringbuilder, io, buffering, compact strings]
+sources:
+  - { book: java-performance, ref: "§12.1, Strings" }
+  - { book: java-performance, ref: "§12.2, Buffered I/O" }
+steps:
+  - type: explanation
+    title: Compact strings
+    body: |
+      Since Java 9, a string of Latin-1 characters stores one byte per character.
+      Other strings use two.
+      Most strings in most apps shrink by half.
+
+  - type: explanation
+    title: Concatenation in loops
+    body: |
+      `s += x` in a loop builds a new string each time.
+      That copies everything so far: quadratic time.
+      Use one `StringBuilder` and append to it.
+
+  - type: choice
+    prompt: Which is fine to write with `+`?
+    options:
+      - text: "`String msg = \"Hello, \" + name + \"!\";` — one expression"
+        correct: true
+      - text: "`for (...) result += line;` — in a loop"
+        feedback: Each iteration copies the whole result so far.
+    explanation: A single expression is compiled to one efficient concatenation; the loop is the problem.
+
+  - type: explanation
+    title: Buffer your I/O
+    body: |
+      An unbuffered stream may call the OS for every `read()` of one byte.
+      A system call costs far more than copying a byte.
+      Wrap streams in `BufferedInputStream` or read in blocks.
+
+  - type: blank
+    prompt: Buffer a file stream.
+    template: "InputStream in = new [[BufferedInputStream]](new FileInputStream(f));"
+    code: true
+    caseSensitive: true
+
+  - type: match
+    prompt: Match each habit with its cost.
+    pairs:
+      - left: "`+=` on a string in a loop"
+        right: Quadratic copying
+      - left: "`read()` on an unbuffered file stream"
+        right: A system call per byte
+      - left: "`new String(\"x\")`"
+        right: A pointless copy of a literal

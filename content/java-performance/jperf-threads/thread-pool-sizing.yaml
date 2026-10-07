@@ -1,0 +1,49 @@
+title: Sizing a thread pool
+summary: For CPU-bound work, about one thread per core; for work that waits, more — but adding threads past the real bottleneck only makes things worse.
+duration: 5
+tags: [java, performance, threads, thread pool, sizing, cpu bound]
+sources:
+  - { book: java-performance, ref: "§9.1, Threads and Hardware" }
+  - { book: java-performance, ref: "§9.2, Thread Pools and ThreadPoolExecutors" }
+steps:
+  - type: explanation
+    title: CPU-bound work
+    body: |
+      A core runs one thread at a time.
+      More busy threads than cores just adds context switches.
+      For pure computation, use about as many threads as cores.
+
+  - type: explanation
+    title: Work that waits
+    body: |
+      Threads waiting on I/O don't use the CPU.
+      So more threads than cores can keep the cores busy.
+      But only until the thing they wait on, like the database, is saturated.
+
+  - type: choice
+    prompt: Every request queries a database that can handle 20 queries at once. The service has 200 threads. What happens under heavy load?
+    options:
+      - text: 180 threads wait on the database; adding more only adds contention
+        correct: true
+      - text: Throughput is ten times higher than with 20 threads
+        feedback: The database is the bottleneck, so throughput can't exceed what it handles.
+
+  - type: explanation
+    title: Queues and limits
+    body: |
+      `ThreadPoolExecutor` has a core size, a maximum and a queue.
+      Extra threads start only when the queue is full.
+      An unbounded queue means the maximum is never reached.
+
+  - type: choice
+    prompt: "A pool has core size 4, maximum 16, and an unbounded `LinkedBlockingQueue`. How many threads does it ever run?"
+    options:
+      - text: "4"
+        correct: true
+      - text: "16"
+        feedback: Threads beyond the core size are added only when the queue is full — and an unbounded queue never is.
+
+  - type: blank
+    prompt: Get the number of cores at run time.
+    template: "int cores = Runtime.getRuntime().[[availableProcessors]]();"
+    code: true

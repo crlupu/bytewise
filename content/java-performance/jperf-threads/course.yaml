@@ -1,0 +1,5 @@
+title: Threading and synchronization performance
+summary: Chapter 9 — sizing thread pools, the real cost of synchronization, and false sharing.
+lessons:
+  - thread-pool-sizing
+  - synchronization-costs

@@ -1,0 +1,6 @@
+title: Heap and native memory
+summary: Chapters 7–8 — heap dumps and histograms, using less memory, object life-cycles and references, and native memory tracking.
+lessons:
+  - heap-analysis
+  - using-less-memory
+  - references-and-native-memory

@@ -1,0 +1,60 @@
+title: Why microbenchmarks lie
+summary: Without warm-up the JIT hasn't compiled your code, and without using the result the JIT deletes it. JMH handles both.
+duration: 6
+tags: [java, performance, microbenchmark, jmh, warm up, dead code elimination]
+sources:
+  - { book: java-performance, ref: "§2.1, Microbenchmarks" }
+steps:
+  - type: explanation
+    title: Warm up first
+    body: |
+      Java code starts interpreted and gets compiled when it's hot.
+      Early timings measure the interpreter and the compiler at work.
+      Run the code until timings settle before measuring.
+
+  - type: explanation
+    title: Use the result
+    body: |
+      If a result is never used, the JIT may skip computing it.
+      Your benchmark then times an empty loop.
+      Return or consume every result.
+
+  - type: choice
+    prompt: What does this benchmark most likely measure?
+    code: |
+      long start = System.nanoTime();
+      for (int i = 0; i < 1_000_000; i++) {
+        fib(40);
+      }
+      long elapsed = System.nanoTime() - start;
+    language: java
+    options:
+      - text: Possibly nothing — `fib(40)`'s result is unused, so the JIT may eliminate the calls
+        correct: true
+      - text: A million calls to `fib(40)`
+        feedback: Only if the JIT can't prove the result is unused and the call has no side effects.
+
+  - type: explanation
+    title: Let JMH do it
+    body: |
+      JMH, the Java Microbenchmark Harness, warms up, forks fresh JVMs and repeats runs.
+      Return values from `@Benchmark` methods, or pass them to a `Blackhole`.
+      It reports averages with error bars.
+
+  - type: blank
+    prompt: Stop the JIT from discarding a result in JMH.
+    template: "@Benchmark public void fib([[Blackhole]] bh) { bh.consume(fib(40)); }"
+    code: true
+    caseSensitive: true
+
+  - type: match
+    prompt: Match each pitfall with JMH's answer.
+    pairs:
+      - left: Timing the interpreter instead of compiled code
+        right: Warm-up iterations
+      - left: The JIT removes unused work
+        right: Return values and `Blackhole`
+      - left: Earlier benchmarks skew the JIT's choices
+        right: A fresh JVM fork per benchmark
+      - left: One noisy run
+        right: Many iterations with error bars

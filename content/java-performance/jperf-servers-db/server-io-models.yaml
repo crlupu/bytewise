@@ -1,0 +1,54 @@
+title: Blocking and non-blocking servers
+summary: A thread per connection is simple but runs out of threads; non-blocking servers serve many connections from few threads — and virtual threads bring back the simple model.
+duration: 5
+tags: [java, performance, servers, nio, non blocking, async, virtual threads]
+sources:
+  - { book: java-performance, ref: "§10.1, Java NIO Overview" }
+  - { book: java-performance, ref: "§10.2, Server Containers" }
+steps:
+  - type: explanation
+    title: Thread per connection
+    body: |
+      A blocking server gives each connection its own thread.
+      The thread sits idle while the client is slow.
+      Ten thousand idle connections need ten thousand threads.
+
+  - type: explanation
+    title: Non-blocking I/O
+    body: |
+      With NIO, a few selector threads watch many sockets.
+      Work is handed to a pool only when data is ready.
+      Fewer threads, but the code becomes callbacks or reactive chains.
+
+  - type: match
+    prompt: Match each model with its trade-off.
+    pairs:
+      - left: Blocking, thread per connection
+        right: Simple code, many threads
+      - left: Non-blocking with callbacks
+        right: Few threads, harder code
+      - left: Blocking on virtual threads
+        right: Simple code, cheap threads
+
+  - type: choice
+    prompt: Why did virtual threads change this trade-off?
+    options:
+      - text: Blocking a virtual thread is cheap, so simple thread-per-request code scales like non-blocking code
+        correct: true
+      - text: Virtual threads make each request's code run faster
+        feedback: They don't speed up computation; they make waiting cheap.
+
+  - type: explanation
+    title: Async outbound calls
+    body: |
+      A request often calls several other services.
+      Making those calls in parallel, not one after another, cuts latency.
+      `CompletableFuture` or virtual threads make this easy.
+
+  - type: choice
+    prompt: A request calls three services, each taking 100 ms, one after another. What's the best latency with parallel calls?
+    options:
+      - text: About 100 ms
+        correct: true
+      - text: About 300 ms
+        feedback: That's the sequential time. In parallel, you wait for the slowest one.

@@ -1134,6 +1134,127 @@ well-grounded-java:
     aliases: [carrier threads]
     def: A platform thread that runs virtual threads. When a virtual thread blocks, it's unmounted and the carrier runs another.
 
+java-performance:
+  - term: Microbenchmark
+    aliases: [microbenchmarks]
+    def: A test that times one small piece of code in isolation. Easy to get wrong, because the JIT optimizes it differently than in a real application.
+  - term: Macrobenchmark
+    aliases: [macrobenchmarks]
+    def: A performance test of the whole application under realistic load — the only kind that shows what users see.
+  - term: Mesobenchmark
+    def: A performance test of one module or service, bigger than a microbenchmark and smaller than the whole system.
+  - term: Percentile
+    aliases: [percentiles, p99, p95]
+    def: The value a given share of measurements fall below. A p99 latency of 200 ms means 99% of requests took less.
+  - term: Warm-up
+    aliases: [warming up, warm up]
+    def: The period after start-up while the JVM interprets, profiles and compiles hot code. Performance is lower until it's done.
+  - term: Blackhole
+    code: true
+    def: A JMH object whose `consume` method uses a value in a way the JIT can't optimize away.
+  - term: Safepoint
+    aliases: [safepoints]
+    def: A point in running code where a thread can be stopped safely for GC or deoptimization. Some profilers can only sample there.
+  - term: Safepoint bias
+    def: Profiler error caused by sampling only at safepoints, which blames time on the nearest safepoint instead of the code really running.
+  - term: Sampling profiler
+    def: A profiler that records every thread's stack many times a second; hot code shows up often. Low overhead, statistical results.
+  - term: Java Flight Recorder
+    aliases: [JFR, flight recording]
+    def: An event recorder built into the JVM — GC, locks, allocations, method samples — cheap enough to run in production.
+  - term: C1
+    def: The JVM's quick "client" JIT compiler, which compiles soon with light optimization.
+  - term: C2
+    def: The JVM's optimizing "server" JIT compiler, which uses the run-time profile for aggressive optimization.
+  - term: Tiered compilation
+    def: Running hot code first interpreted, then compiled by C1, then recompiled by C2 — fast start-up and fast peak speed.
+  - term: On-stack replacement
+    aliases: [OSR]
+    def: Compiling a long-running loop while it runs and switching to the compiled code mid-execution.
+  - term: Inlining
+    aliases: [inlined, inlines]
+    def: Copying a called method's body into its caller, removing the call and enabling further optimizations.
+  - term: Scalar replacement
+    def: When an object never escapes a method, the JIT keeps its fields in registers and never allocates the object.
+  - term: Deoptimization
+    aliases: [deoptimize, deoptimized, deoptimizes]
+    def: Throwing away compiled code whose assumptions no longer hold, falling back to the interpreter until it's recompiled.
+  - term: Megamorphic
+    aliases: [monomorphic, bimorphic]
+    def: How many classes a call site has seen — one (monomorphic), two (bimorphic) or many (megamorphic). Fewer means more optimization.
+  - term: Code cache
+    def: The memory area holding JIT-compiled code. If it fills up, compilation stops.
+  - term: Generational hypothesis
+    def: The observation that most objects die young, which makes collecting new objects separately very efficient.
+  - term: Young generation
+    aliases: [young gen]
+    def: The part of the heap where new objects are allocated — eden plus two survivor spaces — collected often and cheaply.
+  - term: Old generation
+    aliases: [old gen, tenured generation]
+    def: The part of the heap for objects that survived several young collections. Collected less often, at greater cost.
+  - term: Eden
+    def: The region of the young generation where new objects are allocated.
+  - term: Survivor space
+    aliases: [survivor spaces]
+    def: One of two young-generation regions holding objects that survived a minor GC, before they're promoted.
+  - term: Minor GC
+    aliases: [young collection, young GC]
+    def: A collection of the young generation only. Its cost depends on how many objects are still live.
+  - term: Full GC
+    def: A collection of the entire heap, usually with all application threads stopped. Often the longest pauses.
+  - term: Promotion
+    aliases: [promoted]
+    def: Moving an object that has survived enough minor GCs from the young to the old generation.
+  - term: Stop-the-world
+    def: A GC phase during which every application thread is paused.
+  - term: G1
+    aliases: [G1 GC, Garbage First]
+    def: The default collector since Java 9. It divides the heap into regions and aims for a pause-time target.
+  - term: ZGC
+    aliases: [Shenandoah]
+    def: Low-pause collectors that do almost all their work concurrently, keeping pauses around a millisecond on any heap size.
+  - term: Concurrent collector
+    aliases: [concurrent collectors, low-pause collector, low-pause collectors, throughput collector, throughput collectors]
+    def: Throughput collectors (Serial, Parallel) stop the application for all their work. Concurrent, low-pause collectors (G1 partly; ZGC and Shenandoah almost entirely) work alongside it.
+  - term: Heap dump
+    aliases: [heap dumps]
+    def: A file with every object in the heap and the references between them, for finding what fills memory.
+  - term: Retained size
+    aliases: [shallow size]
+    def: Retained size is the memory that would be freed if an object were collected — itself plus everything only it keeps alive. Shallow size is just the object.
+  - term: GC root
+    aliases: [GC roots]
+    def: A reference that's always reachable — a static field, a local variable on a thread's stack — from which the GC traces live objects.
+  - term: Compressed oops
+    def: Storing object references in 4 bytes instead of 8, which works for heaps up to about 32 GB.
+  - term: Soft reference
+    aliases: [soft references]
+    def: A reference that lets the GC free its object when memory runs short. Sometimes used for caches.
+  - term: Weak reference
+    aliases: [weak references]
+    def: A reference that doesn't keep its object alive; once nothing stronger refers to it, it's freed at the next GC.
+  - term: Native memory tracking
+    aliases: [NMT]
+    def: A JVM feature that breaks down the process's memory outside the heap — metaspace, threads, code cache and more.
+  - term: Metaspace
+    def: Native memory holding class metadata. It grows as classes are loaded.
+  - term: False sharing
+    def: Threads writing to different variables that sit on the same CPU cache line, so the cores keep invalidating each other's copies.
+  - term: Cache line
+    aliases: [cache lines]
+    def: The unit a CPU cache moves memory in — typically 64 bytes.
+  - term: LongAdder
+    code: true
+    def: A counter that spreads updates over several cells to avoid contention, and adds them up when read.
+  - term: Prepared statement
+    aliases: [prepared statements, PreparedStatement]
+    def: A precompiled SQL statement with `?` parameters. Reusing it saves parsing, and it prevents SQL injection.
+  - term: Compact strings
+    def: Since Java 9, strings that fit in Latin-1 store one byte per character instead of two.
+  - term: Non-blocking I/O
+    aliases: [NIO]
+    def: I/O where a thread asks which sockets are ready instead of waiting on one, so a few threads can serve many connections.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

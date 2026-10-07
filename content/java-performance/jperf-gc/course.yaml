@@ -1,0 +1,6 @@
+title: Garbage collection
+summary: Chapters 5–6 — generations and pauses, choosing among Serial, Parallel, G1, ZGC and Shenandoah, and sizing the heap.
+lessons:
+  - generational-gc
+  - choosing-a-collector
+  - sizing-the-heap

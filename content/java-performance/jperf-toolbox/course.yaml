@@ -1,0 +1,5 @@
+title: The performance toolbox
+summary: Chapter 3 — operating-system tools, the JDK's jcmd and jstat, profilers, and Java Flight Recorder.
+lessons:
+  - os-and-jdk-tools
+  - profilers-and-jfr

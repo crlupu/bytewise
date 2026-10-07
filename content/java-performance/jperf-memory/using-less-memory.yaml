@@ -1,0 +1,47 @@
+title: Using less memory
+summary: Smaller objects, lazy initialization, immutable sharing and canonical objects mean fewer and shorter GCs.
+duration: 5
+tags: [java, performance, memory, object size, lazy initialization, compressed oops]
+sources:
+  - { book: java-performance, ref: "§7.2, Using Less Memory" }
+steps:
+  - type: explanation
+    title: Objects cost more than their fields
+    body: |
+      Every object has a header, typically 12 bytes on a 64-bit JVM.
+      Sizes round up to a multiple of 8 bytes.
+      References take 4 bytes with compressed oops, below about 32 GB of heap.
+
+  - type: choice
+    prompt: Why can a 32 GB heap hold less than a 31 GB one?
+    options:
+      - text: Above about 32 GB, compressed oops stop working, so every reference doubles to 8 bytes
+        correct: true
+      - text: The JVM reserves the extra for itself
+        feedback: The cost is in reference size, not a reservation.
+
+  - type: explanation
+    title: Create less
+    body: |
+      Make fields `int` rather than `long` when the range allows.
+      Create rarely used objects lazily, on first use.
+      Size collections when you know how many elements they'll get.
+
+  - type: explanation
+    title: Share immutable objects
+    body: |
+      Equal immutable objects can be one shared instance.
+      `Integer.valueOf` caches small values; enums are singletons.
+      Interning or deduplicating strings shares their contents.
+
+  - type: match
+    prompt: Match each technique with its saving.
+    pairs:
+      - left: "`new ArrayList<>(expectedSize)`"
+        right: No repeated array growth
+      - left: Lazy initialization
+        right: No memory for objects never used
+      - left: "`Boolean.TRUE` instead of `new Boolean(true)`"
+        right: One shared object instead of many
+      - left: "`-XX:+UseStringDeduplication` with G1"
+        right: Equal strings share one character array
