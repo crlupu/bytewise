@@ -43,7 +43,7 @@ steps:
       And don't change those fields while the object is in a set or map.
 
   - type: choice
-    prompt: Which `hashCode` implementations are legal for that `Point`?
+    prompt: "`Point` has `int` fields `x` and `y`, and `equals` compares both. Which `hashCode` implementations are legal?"
     options:
       - text: "`return Objects.hash(x, y);`"
         correct: true

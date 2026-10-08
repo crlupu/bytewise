@@ -32,7 +32,7 @@ steps:
       Transfer time is ignored here because the objects are small; with a 100 ms RTT, that's 2.2 seconds of pure waiting.
 
   - type: predict
-    prompt: Same page, but with one **persistent** connection (HTTP/1.1's default), requests sent one at a time. About how many RTTs?
+    prompt: A page is one HTML file plus 10 small images, fetched over one **persistent** connection (HTTP/1.1's default), requests sent one at a time. About how many RTTs?
     options:
       - text: "12"
         correct: true

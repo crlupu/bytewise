@@ -20,7 +20,7 @@ steps:
   - type: widget
     widget: threads
     prompt: |
-      Same two threads, now with `synchronized`. **Try to lose an update** — then run both threads to the end.
+      Two threads each run `count++`, now inside `synchronized`. **Try to lose an update** — then run both threads to the end.
     config:
       threads: 2
       increments: 1

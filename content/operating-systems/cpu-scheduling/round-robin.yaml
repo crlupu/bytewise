@@ -42,7 +42,7 @@ steps:
   - type: widget
     widget: scheduler
     prompt: |
-      Same jobs. Try slices of 1, 2 and 5 under round robin, and finish on a slice of **5**.
+      Three jobs of 5 ticks arrive together. Try slices of 1, 2 and 5 under round robin, and finish on a slice of **5**.
     config:
       jobs:
         - { name: A, arrival: 0, burst: 5 }

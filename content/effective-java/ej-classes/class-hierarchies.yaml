@@ -59,7 +59,7 @@ steps:
       - Implement each abstract method in each subclass
 
   - type: choice
-    prompt: After the change, what happens if someone adds `Triangle` but forgets to implement `area()`?
+    prompt: A tagged `Figure` class has become an abstract `Figure` with a subclass per shape. What happens if someone adds `Triangle` but forgets to implement `area()`?
     options:
       - text: It doesn't compile — the abstract method must be implemented
         correct: true

@@ -48,7 +48,7 @@ steps:
       So `count++` on a `volatile` is still a race.
 
   - type: choice
-    prompt: The fix synchronizes the method that writes `stopRequested`, but not the one that reads it. Is that enough?
+    prompt: A background thread loops until a `boolean stopRequested` field is set. The fix synchronizes the method that writes `stopRequested`, but not the one that reads it. Is that enough?
     options:
       - text: No — synchronization has no effect unless both read and write operations are synchronized
         correct: true

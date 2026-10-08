@@ -42,6 +42,8 @@ export type StepEvents = {
   continueLabel?: string;
   /** Boss battles: no hints on offer. */
   noHints?: boolean;
+  /** Out of its lesson (review, bosses): the lesson it comes from, for context. */
+  from?: string;
 };
 
 /**
@@ -130,7 +132,7 @@ function ready(step: ExerciseStep, a: unknown): boolean {
   }
 }
 
-function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, continueLabel, noHints }: { step: ExerciseStep } & StepEvents) {
+function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, continueLabel, noHints, from }: { step: ExerciseStep } & StepEvents) {
   const [answer, setAnswer] = useState<unknown>(() => initialAnswer(step));
   const [phase, setPhase] = useState<Phase>("answering");
   const [verdict, setVerdict] = useState<(Verdict & { right?: boolean[] }) | null>(null);
@@ -298,6 +300,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
           <p className="step__kind">
             <Kind.icon aria-hidden />
             {Kind.label}
+            {from && <span className="step__from">· {from}</span>}
           </p>
           <Html className="step__prompt prose" html={step.prompt} />
           {step.terms && (

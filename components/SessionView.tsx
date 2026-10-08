@@ -80,6 +80,7 @@ export function SessionView({ steps, titles }: { steps: Record<string, ExerciseS
           <StepView
             key={step.key}
             step={step}
+            from={titles[lessonKey!]}
             onAttempt={(correct, hintsBefore, first) => {
               if (!first) return;
               const good = correct && hintsBefore === 0;
@@ -93,7 +94,6 @@ export function SessionView({ steps, titles }: { steps: Record<string, ExerciseS
             }}
             continueLabel={index === total - 1 ? "Finish review" : undefined}
           />
-          <p className="sr-only">From {titles[lessonKey!]}</p>
         </>
       )}
 

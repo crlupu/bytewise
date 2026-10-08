@@ -18,7 +18,7 @@ steps:
       That's a full table scan.
 
   - type: choice
-    prompt: "`users` has 10 million rows and no index on `email`. In the worst case, how many rows does the query above examine?"
+    prompt: "`users` has 10 million rows and no index on `email`. In the worst case, how many rows does `SELECT * FROM users WHERE email = 'ada@example.com'` examine?"
     options:
       - text: All 10 million
         correct: true

@@ -13,7 +13,7 @@ steps:
       An attacker can forge a broken or shared object.
 
   - type: choice
-    prompt: Which attacks become possible against a serializable `Period` with no `readObject`?
+    prompt: "`Period` is immutable, holds two `Date`s and checks in its constructor that start is before end. Which attacks become possible if it's serializable with no `readObject`?"
     options:
       - text: A hand-crafted byte stream produces a `Period` whose end is before its start
         correct: true

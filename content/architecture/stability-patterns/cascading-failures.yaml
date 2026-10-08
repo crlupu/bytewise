@@ -67,7 +67,7 @@ steps:
         right: A query that returns far more rows than expected and exhausts memory
 
   - type: choice
-    prompt: Which single change most directly stops the 10-second exhaustion above?
+    prompt: A pool of 200 threads is used up in 10 seconds because calls to a hanging dependency never return. Which single change most directly stops that?
     options:
       - text: A timeout on the call to the dependency
         correct: true

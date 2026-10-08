@@ -62,7 +62,7 @@ steps:
 
   - type: widget
     widget: hierarchy
-    prompt: "Same object. `i.adjust();` — whose `adjust` runs?"
+    prompt: "`Instrument i = new Brass(); i.adjust();` — whose `adjust` runs?"
     config:
       diagram:
         classes:

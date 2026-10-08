@@ -89,7 +89,7 @@ steps:
   - type: widget
     widget: tradeoff
     prompt: |
-      **Same building blocks, different product.** The checkout shows how many items are left in stock, and it
+      **A different product.** The checkout shows how many items are left in stock, and it
       must be nearly exact — staleness **1 or less**. Latency up to **4** is fine.
     config: *catalogue
     goal:

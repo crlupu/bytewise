@@ -46,7 +46,7 @@ steps:
       Classes that belong together can be static nested classes.
 
   - type: choice
-    prompt: What's the real problem?
+    prompt: "`Utensil.java` and `Dessert.java` each define both `Utensil` and `Dessert`, differently. What's the real problem?"
     options:
       - text: The program's behaviour depends on the order source files are passed to the compiler
         correct: true
@@ -55,7 +55,7 @@ steps:
         feedback: It does — that's exactly why the trap exists.
 
   - type: choice
-    prompt: What's the fix if the classes really belong together?
+    prompt: "`Utensil` and `Dessert` share one source file. What's the fix if the classes really belong together?"
     options:
       - text: Make them static member classes of one top-level class
         correct: true

@@ -91,6 +91,7 @@ export function BossView({ skillId, steps, titles }: { skillId: string; steps: R
           key={`${key}-${index}`}
           step={step}
           noHints
+          from={titles[lessonOf(key)]}
           onAttempt={(correct, _h, first) => {
             if (!first || correct) return;
             setMissed((m) => [...m, key]);

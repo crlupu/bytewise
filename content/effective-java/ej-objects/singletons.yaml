@@ -27,7 +27,7 @@ steps:
       The factory version keeps one option open: you can drop the singleton later.
 
   - type: choice
-    prompt: With approaches 1 and 2, which can still create a second instance?
+    prompt: "A singleton is a `public static final` field (approach 1) or a static factory over a private field (approach 2), each with a private constructor. Which can still create a second instance?"
     options:
       - text: Reflection calling the private constructor with `setAccessible(true)`
         correct: true

@@ -22,7 +22,7 @@ steps:
       ```
 
   - type: predict
-    prompt: "In `BoundedHashSet` with bound 2, you add \"a\", \"b\", then \"a\" again. Does the third `add` block?"
+    prompt: "`BoundedHashSet` takes a semaphore permit in `add` and gives it back if the element was already there. With bound 2, you add \"a\", \"b\", then \"a\" again. Does the third `add` block?"
     options:
       - text: No — "a" is already in the set, so `add` just returns false
         feedback: "`add` acquires a permit *before* checking the set, and both permits are already taken."

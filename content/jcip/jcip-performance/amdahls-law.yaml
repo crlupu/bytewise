@@ -41,7 +41,7 @@ steps:
       Even a small serial part halves the benefit of ten cores, and as N grows the serial part dominates; that's why reducing serialization matters more than adding processors.
 
   - type: predict
-    prompt: Same program, unlimited processors. What's the ceiling on its speed-up?
+    prompt: 10% of a program is serial. With unlimited processors, What's the ceiling on its speed-up?
     options:
       - text: "10"
         correct: true

@@ -41,7 +41,7 @@ steps:
       Intuitively, each thread uses a CPU only a tenth of the time, so you need ten threads per core to keep it busy.
 
   - type: predict
-    prompt: Same tasks, but you only want the CPUs **50%** busy, to leave headroom. How many threads?
+    prompt: An 8-core machine runs tasks that wait 90 ms on a database for every 10 ms of computing. You want the CPUs only **50%** busy, to leave headroom. How many threads?
     options:
       - text: "40"
         correct: true
@@ -60,7 +60,7 @@ steps:
       More threads than connections just means more waiting.
 
   - type: choice
-    prompt: The tasks share a JDBC connection pool of 10 connections. Does a pool of 80 threads still make sense?
+    prompt: Tasks spend most of their time waiting on a database, so the formula suggests 80 threads. They share a JDBC connection pool of 10 connections. Does a pool of 80 threads still make sense?
     options:
       - text: No — at most 10 tasks can use the database at once; other resources cap the useful pool size too
         correct: true

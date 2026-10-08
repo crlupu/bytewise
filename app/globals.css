@@ -3824,3 +3824,5 @@ pre code {
 .boss-lives { display: inline-flex; gap: 0.125rem; color: var(--danger); }
 .boss-lives svg { inline-size: 1.125rem; block-size: 1.125rem; }
 .boss-lives .is-lost { color: var(--faint); }
+.step__from { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-inline-size: 0; }
+.step__kind { max-inline-size: 100%; }
