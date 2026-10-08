@@ -1,0 +1,77 @@
+title: Arrays of objects, and garbage
+summary: An array of objects is an array of references, all null until you fill them. An object nothing refers to is garbage.
+duration: 5
+tags: [java, thinking in java, arrays, references, garbage collection]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Initialization & Cleanup — Array initialization and cleanup" }
+steps:
+  - type: explanation
+    title: An array of references
+    body: |
+      `Integer[] a = new Integer[3];` creates one array object.
+      Its three slots are references, and they all start as `null`.
+      No `Integer` objects exist yet.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Integer[] a", to: arr }
+      objects:
+        - { id: arr, type: "Integer[3]", fields: [{ name: "[0]" }, { name: "[1]" }, { name: "[2]" }] }
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Integer[] a = new Integer[3];
+      System.out.println(a[0]);
+    language: java
+    options:
+      - text: "`null`"
+        correct: true
+      - text: "`0`"
+        feedback: That's what an `int[]` would hold. An `Integer[]` holds references, which default to `null`.
+      - text: It throws `NullPointerException`
+        feedback: Printing a null reference is fine; only calling a method on it throws.
+
+  - type: explanation
+    title: Filling the slots
+    body: |
+      `a[0] = 7;` creates an `Integer` and stores a reference to it in slot 0.
+      Each slot points at its own object.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Integer[] a", to: arr }
+      objects:
+        - { id: arr, type: "Integer[3]", fields: [{ name: "[0]", to: i7 }, { name: "[1]", to: i8 }, { name: "[2]" }] }
+        - { id: i7, type: Integer, fields: [{ name: value, value: "7" }] }
+        - { id: i8, type: Integer, fields: [{ name: value, value: "8" }] }
+
+  - type: explanation
+    title: Unreachable means garbage
+    body: |
+      An object is live while a chain of references reaches it from a variable.
+      When nothing reaches it, it's garbage.
+      The garbage collector reclaims it some time later — you don't free memory yourself.
+
+  - type: choice
+    prompt: "After `a[1] = null;`, which object becomes garbage?"
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Integer[] a", to: arr }
+      objects:
+        - { id: arr, type: "Integer[3]", fields: [{ name: "[0]", to: i7 }, { name: "[1]" }, { name: "[2]" }] }
+        - { id: i7, type: Integer, fields: [{ name: value, value: "7" }] }
+        - { id: i8, type: Integer, fields: [{ name: value, value: "8" }] }
+    options:
+      - text: The `Integer` holding 8 — no reference reaches it any more
+        correct: true
+      - text: The array
+        feedback: "`a` still refers to the array."
+      - text: Nothing, until you call `System.gc()`
+        feedback: It's unreachable now. When the collector actually reclaims it is up to the JVM.
+
+  - type: blank
+    prompt: Make the array's first slot refer to a new object.
+    template: "a[0] = Integer.[[valueOf]](7);  // what a[0] = 7 does for you"
+    code: true

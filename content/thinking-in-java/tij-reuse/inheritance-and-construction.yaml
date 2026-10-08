@@ -1,0 +1,93 @@
+title: Inheritance and construction
+summary: A derived object contains a base-class part, built first. Constructors run from the root of the hierarchy down.
+duration: 6
+tags: [java, thinking in java, inheritance, constructors, super, initialization order]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 7, Reusing Classes — Inheritance syntax and initializing the base class" }
+steps:
+  - type: explanation
+    title: Is-a
+    body: |
+      `Cartoon extends Drawing`, and `Drawing extends Art`.
+      A `Cartoon` gets every member of `Drawing` and `Art`.
+      The hollow triangle in UML points to the base class.
+    diagram:
+      classes:
+        - { name: Art, methods: ["Art()"] }
+        - { name: Drawing, methods: ["Drawing()"] }
+        - { name: Cartoon, methods: ["Cartoon()"] }
+      relations:
+        - { from: Drawing, to: Art, type: extends }
+        - { from: Cartoon, to: Drawing, type: extends }
+
+  - type: explanation
+    title: The base part is built first
+    body: |
+      Every constructor first calls its base-class constructor, with `super(...)` or implicitly.
+      So construction starts at the root and works down.
+      By the time `Cartoon()` runs, the `Art` and `Drawing` parts are ready.
+
+  - type: predict
+    prompt: Each constructor prints its class name. What does `new Cartoon()` print?
+    code: |
+      class Art { Art() { System.out.print("Art "); } }
+      class Drawing extends Art { Drawing() { System.out.print("Drawing "); } }
+      class Cartoon extends Drawing { Cartoon() { System.out.print("Cartoon "); } }
+    language: java
+    options:
+      - text: "`Art Drawing Cartoon`"
+        correct: true
+      - text: "`Cartoon Drawing Art`"
+        feedback: Each constructor calls its base constructor before its own body, so the root prints first.
+      - text: "`Cartoon`"
+        feedback: The base constructors run too — implicitly, as `super()`.
+
+  - type: explanation
+    title: Members come next
+    body: |
+      After the base constructor returns, the class's own field initializers run.
+      Then its constructor body.
+      So member objects are built after the base parts, before the body.
+
+  - type: predict
+    prompt: What does `new Sandwich()` print?
+    code: |
+      class Meal { Meal() { print("Meal "); } }
+      class Lunch extends Meal { Lunch() { print("Lunch "); } }
+      class Bread { Bread() { print("Bread "); } }
+      class Cheese { Cheese() { print("Cheese "); } }
+      class Sandwich extends Lunch {
+        private Bread b = new Bread();
+        private Cheese c = new Cheese();
+        Sandwich() { print("Sandwich "); }
+      }
+    language: java
+    diagram:
+      classes:
+        - { name: Meal }
+        - { name: Lunch }
+        - { name: Sandwich }
+        - { name: Bread }
+        - { name: Cheese }
+      relations:
+        - { from: Lunch, to: Meal, type: extends }
+        - { from: Sandwich, to: Lunch, type: extends }
+        - { from: Sandwich, to: Bread, type: has }
+        - { from: Sandwich, to: Cheese, type: has }
+    options:
+      - text: "`Meal Lunch Bread Cheese Sandwich`"
+        correct: true
+      - text: "`Bread Cheese Meal Lunch Sandwich`"
+        feedback: The base constructors run first; field initializers come after `super()` returns.
+      - text: "`Meal Lunch Sandwich Bread Cheese`"
+        feedback: Field initializers run before the constructor body, not after it.
+    details: |
+      A constructor first calls its base-class constructor, so the chain `Meal`, `Lunch` runs before anything in `Sandwich`.
+      Then `Sandwich`'s field initializers run in the order they're declared, creating `Bread` and then `Cheese`.
+      Only then does the `Sandwich` constructor body run and print its own name.
+      So the order is: base classes from the root down, then this class's fields top to bottom, then this class's constructor body.
+
+  - type: blank
+    prompt: Call a base-class constructor that takes an argument.
+    template: "Chess(int moves) { [[super]](moves); }"
+    code: true

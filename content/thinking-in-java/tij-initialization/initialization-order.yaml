@@ -1,0 +1,65 @@
+title: The order of initialization
+summary: Static parts initialize once, when the class is first used; then, for each object, field initializers run before the constructor body.
+duration: 5
+tags: [java, thinking in java, initialization, static, constructors]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Initialization & Cleanup — Order of initialization" }
+steps:
+  - type: explanation
+    title: Static first, and only once
+    body: |
+      A class's static fields and static blocks run when the class is first used.
+      They run once, however many objects you create.
+      Static data belongs to the class, not to each object.
+    diagram:
+      classes:
+        - { name: Cups, fields: ["static c1: Cup", "static c2: Cup"], methods: ["Cups()"] }
+        - { name: Cup, methods: ["Cup(int marker)"] }
+      relations:
+        - { from: Cups, to: Cup, type: has, label: "2" }
+
+  - type: predict
+    prompt: "`Cups` creates `c1 = new Cup(1)` and `c2 = new Cup(2)` in a static block. What does `new Cups(); new Cups();` print?"
+    code: |
+      class Cup { Cup(int m) { System.out.print("Cup(" + m + ") "); } }
+      class Cups {
+        static Cup c1, c2;
+        static { c1 = new Cup(1); c2 = new Cup(2); }
+        Cups() { System.out.print("Cups() "); }
+      }
+    language: java
+    options:
+      - text: "`Cup(1) Cup(2) Cups() Cups()`"
+        correct: true
+      - text: "`Cup(1) Cup(2) Cups() Cup(1) Cup(2) Cups()`"
+        feedback: The static block runs once, when the class is initialized — not per object.
+      - text: "`Cups() Cups()`"
+        feedback: Creating the first `Cups` initializes the class, which runs the static block first.
+    details: |
+      A static block runs once, when the class is first loaded, which happens on the first `new Cups()`.
+      So `Cup(1) Cup(2)` is printed once, before the first constructor body, and never again.
+      Each `new Cups()` then runs its own constructor body, which prints `Cups()` twice in total.
+      Static state belongs to the class, so creating more objects never repeats static initialization.
+
+  - type: explanation
+    title: Then fields, then the constructor
+    body: |
+      For each new object, fields get their default values first: 0, false, null.
+      Then field initializers run, in the order they're written.
+      Only then does the constructor body run.
+
+  - type: order
+    prompt: Put the steps of `new Cups()`, the first time, in order.
+    items:
+      - The `Cups` class is loaded and its static block runs
+      - Memory for the object is cleared to defaults
+      - Instance field initializers run, top to bottom
+      - The constructor body runs
+
+  - type: choice
+    prompt: A field is declared after the constructor in the source. When is it initialized?
+    options:
+      - text: Before the constructor body, like every field initializer — position in the file relative to methods doesn't matter
+        correct: true
+      - text: After the constructor
+        feedback: Field initializers always run before the constructor body; only their order among themselves follows the source.

@@ -1455,6 +1455,31 @@ head-first-design-patterns:
     aliases: [anti-patterns, golden hammer]
     def: A common solution that seems reasonable but causes more problems than it solves, like the golden hammer — one tool for everything.
 
+thinking-in-java:
+  - term: Upcasting
+    aliases: [upcast, upcasts]
+    def: Treating an object as an instance of one of its supertypes — a `Circle` as a `Shape`. Always safe, and done automatically.
+  - term: Downcasting
+    aliases: [downcast, downcasts]
+    def: Casting a reference down the hierarchy, like `(Circle) shape`. Checked at run time; throws `ClassCastException` if the object isn't really that type.
+  - term: Late binding
+    aliases: [dynamic binding, run-time binding, dynamic dispatch]
+    def: Choosing which method body to run at run time, from the object's actual class, rather than at compile time from the variable's type.
+  - term: Aliasing
+    aliases: [alias, aliases]
+    def: Two or more references pointing at the same object, so a change made through one is visible through the others.
+  - term: Abstract method
+    aliases: [abstract methods]
+    def: A method declared without a body. A class containing one must be abstract, and concrete subclasses must implement it.
+  - term: Abstract class
+    aliases: [abstract classes]
+    def: A class that can't be instantiated, used as a common base. It may hold fields, constructors and implemented methods alongside abstract ones.
+  - term: Class object
+    aliases: [Class objects]
+    def: The single object of type `Class` the JVM creates for each loaded class. `getClass()` and `Circle.class` return it.
+  - term: UML
+    def: The Unified Modeling Language — the boxes-and-arrows notation for classes. A hollow triangle means inheritance, a dashed line implements, a diamond has-a.
+
 general:
   - term: JIT
     aliases: [JIT compiler, just-in-time]

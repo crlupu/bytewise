@@ -1,0 +1,109 @@
+title: Aliasing — two references, one object
+summary: Assigning one reference to another copies the reference, not the object. Both then control the same object — in assignments and in method calls.
+duration: 6
+tags: [java, thinking in java, aliasing, references, assignment, equals]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 3, Operators — Aliasing during assignment and method calls" }
+steps:
+  - type: explanation
+    title: Two tanks
+    body: |
+      `t1` and `t2` each refer to their own `Tank`.
+      Each tank has its own `level`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Tank t1", to: a }
+        - { name: "Tank t2", to: b }
+      objects:
+        - { id: a, type: Tank, fields: [{ name: level, value: "9" }] }
+        - { id: b, type: Tank, fields: [{ name: level, value: "47" }] }
+
+  - type: explanation
+    title: Assignment copies the reference
+    body: |
+      `t1 = t2;` copies the reference in `t2` into `t1`.
+      Now both point at the second tank.
+      The first tank has no references left, so the garbage collector can reclaim it.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Tank t1", to: b }
+        - { name: "Tank t2", to: b }
+      objects:
+        - { id: a, type: Tank, fields: [{ name: level, value: "9" }] }
+        - { id: b, type: Tank, fields: [{ name: level, value: "47" }] }
+      highlight: [b]
+      caption: The tank with level 9 is unreachable.
+
+  - type: predict
+    prompt: After `t1 = t2;`, what does this print?
+    code: |
+      t1.level = 27;
+      System.out.println(t1.level + " " + t2.level);
+    language: java
+    options:
+      - text: "27 27"
+        correct: true
+      - text: "27 47"
+        feedback: "`t1` and `t2` refer to the same tank now, so changing it through one shows through the other."
+      - text: "9 47"
+        feedback: The assignment `t1.level = 27` changes the shared tank.
+
+  - type: explanation
+    title: Method calls alias too
+    body: |
+      Passing an object to a method copies the reference.
+      The parameter points at the caller's object.
+      So the method can change it — but reassigning the parameter changes nothing outside.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class Letter { char c; }
+      static void f(Letter y) { y.c = 'z'; }
+
+      Letter x = new Letter();
+      x.c = 'a';
+      f(x);
+      System.out.println(x.c);
+    language: java
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Letter x", to: l }
+        - { name: "Letter y", to: l }
+      objects:
+        - { id: l, type: Letter, fields: [{ name: c, value: "'a'" }] }
+      caption: Inside f, y and x point at the same Letter.
+    options:
+      - text: "`z`"
+        correct: true
+      - text: "`a`"
+        feedback: "`y` is a copy of the reference, but it points at the same object, so `y.c = 'z'` changes `x`'s letter."
+    details: |
+      Java passes everything by value, but for objects the value is a reference.
+      `f` gets a copy of the reference in `x`, so `y` points at the same `Letter` object.
+      Changing `y.c` changes that shared object, so `x.c` is now `'z'` as well.
+      This is aliasing through a method call: the method can change the object you passed, though never your variable.
+
+  - type: choice
+    prompt: "`static void g(Letter y) { y = new Letter(); y.c = 'q'; }` — after `g(x)`, what is `x.c`, if it was `'a'`?"
+    options:
+      - text: "Still `'a'` — `y` was pointed at a new object; `x` wasn't touched"
+        correct: true
+      - text: "`'q'`"
+        feedback: Reassigning the parameter only changes the method's copy of the reference.
+    details: |
+      `y` is a copy of the reference held by `x`, so at first both point at the same object.
+      `y = new Letter()` only changes the copy, pointing it at a new object; `x` still points at the original.
+      Setting `y.c` then changes the new object, which is thrown away when `g` returns.
+      A method can change what an argument's object holds, but it can never make the caller's variable refer to something else.
+
+  - type: choice
+    prompt: "`Tank a = new Tank(); Tank b = new Tank();` both with level 5. What does `a == b` compare?"
+    options:
+      - text: Whether `a` and `b` refer to the same object — here, false
+        correct: true
+      - text: Whether the levels are equal — here, true
+        feedback: "`==` on references compares identity. Content comparison is what `equals` is for, once a class overrides it."

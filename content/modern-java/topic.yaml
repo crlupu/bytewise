@@ -1,5 +1,5 @@
 title: Modern Java in Action
 summary: Urma, Fusco and Mycroft on Java 8 and beyond — lambdas, streams, collectors, Optional, java.time, CompletableFuture and functional style.
-order: 5
+order: 6
 courses: [mja-lambdas, mja-streams, mja-collectors, mja-parallel, mja-collection-api, mja-optional, mja-date-time, mja-default-methods-and-modules, mja-async, mja-functional]
 glossary: [effective-java, jcip]

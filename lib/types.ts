@@ -14,6 +14,8 @@ type ExerciseBase = {
   key: string;
   prompt: Html;
   explanation?: Html;
+  /** A rendered class or object diagram, shown under the prompt. */
+  diagram?: Html;
   /** The deeper explanation behind "Explain in detail", shown once answered. */
   details?: Html;
   feedback?: Html;
@@ -22,7 +24,7 @@ type ExerciseBase = {
   terms?: Html[];
 };
 
-export type ExplanationStep = { type: "explanation"; id: string; key: string; title?: string; body: Html };
+export type ExplanationStep = { type: "explanation"; id: string; key: string; title?: string; body: Html; diagram?: Html };
 
 export type ChoiceStep = ExerciseBase & { type: "choice"; code?: Html; options: Option[]; multiple: boolean };
 

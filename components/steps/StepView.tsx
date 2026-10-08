@@ -55,6 +55,7 @@ export function StepView({ step, ...ev }: { step: Step } & StepEvents) {
           <div className="step-enter">
             {step.title && <h1 className="step__title">{step.title}</h1>}
             <Html className="prose slide" html={step.body} />
+            {step.diagram && <Html className="step__diagram" html={step.diagram} />}
           </div>
         </div>
         <Foot>
@@ -305,8 +306,9 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
               ))}
             </p>
           )}
+          {step.diagram && <Html className="step__diagram" html={step.diagram} />}
           {(step.type === "choice" || step.type === "predict") && step.code && <Html className="step__code" html={step.code} />}
-          {step.type === "widget" && widgetGoal !== undefined && (
+          {step.type === "widget" && widgetGoal !== undefined && step.widget !== "hierarchy" && (
             <p className="goal-line">
               <GoalIcon aria-hidden />
               <span>Reach the goal, then press Check.</span>

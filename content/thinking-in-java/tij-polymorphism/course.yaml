@@ -1,0 +1,7 @@
+title: Polymorphism
+summary: Chapter 8 — upcasting, late binding through a deep hierarchy, the things that aren't polymorphic, and constructors.
+lessons:
+  - upcasting
+  - method-lookup
+  - not-polymorphic
+  - constructors-and-polymorphism

@@ -7,6 +7,7 @@ import * as tradeoff from "@/lib/widgets/tradeoff";
 import * as scheduler from "@/lib/widgets/scheduler";
 import * as congestion from "@/lib/widgets/congestion";
 import * as locks from "@/lib/widgets/locks";
+import * as hierarchy from "@/lib/widgets/hierarchy";
 
 /**
  * Every widget a lesson can name, with the schemas its `config` and `goal`
@@ -22,4 +23,5 @@ export const WIDGET_SCHEMAS: Record<string, { config: z.ZodTypeAny; goal: z.ZodT
   scheduler: { config: scheduler.config, goal: scheduler.goal, title: "CPU scheduler" },
   congestion: { config: congestion.config, goal: congestion.goal, title: "Congestion window" },
   locks: { config: locks.config, goal: locks.goal, title: "Locks and deadlock" },
+  hierarchy: { config: hierarchy.config, goal: hierarchy.goal, title: "Class hierarchy" },
 };

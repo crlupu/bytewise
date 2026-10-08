@@ -1,0 +1,114 @@
+title: Fruit, apples and wildcards
+summary: Arrays are covariant and check at run time; generics are invariant. `? extends` lets you read, `? super` lets you write.
+duration: 7
+tags: [java, thinking in java, generics, wildcards, covariance, arrays]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Generics — Wildcards" }
+steps:
+  - type: explanation
+    title: Eckel's fruit
+    body: |
+      `Apple` and `Orange` extend `Fruit`; `Jonathan` is a kind of `Apple`.
+      Everything is an `Object`.
+      The question: what can go into a container of each?
+    diagram:
+      classes:
+        - { name: Object }
+        - { name: Fruit }
+        - { name: Apple }
+        - { name: Orange }
+        - { name: Jonathan }
+      relations:
+        - { from: Fruit, to: Object, type: extends }
+        - { from: Apple, to: Fruit, type: extends }
+        - { from: Orange, to: Fruit, type: extends }
+        - { from: Jonathan, to: Apple, type: extends }
+
+  - type: predict
+    prompt: What happens?
+    code: |
+      Fruit[] fruit = new Apple[10];
+      fruit[0] = new Apple();
+      fruit[1] = new Orange();
+    language: java
+    options:
+      - text: "It compiles, then the third line throws `ArrayStoreException`"
+        correct: true
+      - text: It doesn't compile
+        feedback: Arrays are covariant — an `Apple[]` is a `Fruit[]` — so the compiler accepts it.
+      - text: It works; the array now holds an Orange
+        feedback: The array knows it's an `Apple[]` and refuses the Orange at run time.
+    details: |
+      Arrays are covariant: an `Apple[]` is a subtype of `Fruit[]`, so the first line compiles.
+      The array object still knows at run time that it's really an `Apple[]`, and every store into it is checked.
+      Storing an `Orange` fails that check, so the JVM throws `ArrayStoreException` — an error the compiler couldn't catch.
+      Generic lists avoid this by making `List<Apple>` not a `List<Fruit>`, which moves the error to compile time.
+
+  - type: explanation
+    title: Generics catch it at compile time
+    body: |
+      `List<Fruit> flist = new ArrayList<Apple>();` doesn't compile.
+      A list of apples isn't a list of fruit — you could add an orange to it.
+      Wildcards give back the flexibility, safely.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`List<? extends Fruit> flist` might be a list of any fruit. Tap the most specific type you can safely read out of it."
+    config:
+      diagram:
+        classes:
+          - { name: Object }
+          - { name: Fruit }
+          - { name: Apple }
+          - { name: Orange }
+        relations:
+          - { from: Fruit, to: Object, type: extends }
+          - { from: Apple, to: Fruit, type: extends }
+          - { from: Orange, to: Fruit, type: extends }
+      feedback:
+        Apple: The list might hold oranges.
+        Orange: The list might hold apples.
+        Object: That's safe, but Fruit is more specific.
+    goal:
+      select: Fruit
+    explanation: Whatever the list really holds, every element is some kind of Fruit.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`List<? super Apple> alist` might be a list of Apple, Fruit or Object. Tap the most general type you can safely add to it."
+    config:
+      diagram:
+        classes:
+          - { name: Object }
+          - { name: Fruit }
+          - { name: Apple }
+          - { name: Orange }
+          - { name: Jonathan }
+        relations:
+          - { from: Fruit, to: Object, type: extends }
+          - { from: Apple, to: Fruit, type: extends }
+          - { from: Orange, to: Fruit, type: extends }
+          - { from: Jonathan, to: Apple, type: extends }
+      feedback:
+        Fruit: If it's really a List<Apple>, adding a plain Fruit — maybe an orange — would be wrong.
+        Object: The list might be a List<Apple>, which can't hold any Object.
+        Orange: An Orange isn't an Apple.
+        Jonathan: You can add a Jonathan, but Apple is more general.
+    goal:
+      select: Apple
+    explanation: Any list that holds Apples' supertypes can hold an Apple — and therefore a Jonathan too.
+    details: |
+      The variable might refer to a `List<Apple>`, a `List<Fruit>` or a `List<Object>`, and the compiler doesn't know which.
+      An `Apple` fits in all three, and so does any subclass like `Jonathan`, so adding one is always safe.
+      A `Fruit` wouldn't fit in a `List<Apple>`, so the compiler rejects it.
+      Reading is the opposite: the only thing you can be sure of is that an element is an `Object`.
+
+  - type: match
+    prompt: Match each declaration with what you may do.
+    pairs:
+      - left: "`List<? extends Fruit>`"
+        right: Read Fruit; add nothing but null
+      - left: "`List<? super Apple>`"
+        right: Add Apple or Jonathan; read only Object
+      - left: "`List<Fruit>`"
+        right: Read and add any Fruit

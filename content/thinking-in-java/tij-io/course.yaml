@@ -1,0 +1,4 @@
+title: I/O
+summary: Chapter 18 — the stream classes as a decorator hierarchy, and building a stream by wrapping one in another.
+lessons:
+  - io-decorators

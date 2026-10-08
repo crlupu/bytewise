@@ -1,0 +1,122 @@
+title: What isn't polymorphic
+summary: Private methods, fields and static methods are chosen by the declared type, at compile time — only overridable instance methods use late binding.
+duration: 6
+tags: [java, thinking in java, polymorphism, private, fields, static, hiding]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 8, Polymorphism — Pitfalls: overriding private methods, fields and static methods" }
+steps:
+  - type: explanation
+    title: Private methods can't be overridden
+    body: |
+      A private method is invisible to subclasses.
+      A subclass method with the same name is a brand-new method.
+      Calls inside the base class still reach the private one.
+    diagram:
+      classes:
+        - { name: PrivateOverride, methods: ["- f()"] }
+        - { name: Derived, methods: ["+ f()"] }
+      relations:
+        - { from: Derived, to: PrivateOverride, type: extends }
+
+  - type: predict
+    prompt: What does `main` print?
+    code: |
+      public class PrivateOverride {
+        private void f() { System.out.println("private f()"); }
+        public static void main(String[] args) {
+          PrivateOverride po = new Derived();
+          po.f();
+        }
+      }
+      class Derived extends PrivateOverride {
+        public void f() { System.out.println("public f()"); }
+      }
+    language: java
+    options:
+      - text: "`private f()`"
+        correct: true
+      - text: "`public f()`"
+        feedback: "`Derived.f` doesn't override a private method — it can't see it. The call through `PrivateOverride` binds to the private `f`."
+    explanation: Give subclass methods different names from private base methods, and use `@Override` to catch the mistake.
+    details: |
+      A `private` method is invisible outside its class, so a method with the same name in a subclass doesn't override it — it's a brand-new, unrelated method.
+      The call `po.f()` is compiled inside `PrivateOverride`, where the variable's type is `PrivateOverride`, so it binds to the private `f()` directly, with no late binding.
+      Adding `@Override` to the subclass method would make the compiler reject it, which is exactly why the annotation is worth writing.
+
+  - type: explanation
+    title: Fields are chosen by the declared type
+    body: |
+      A field in a subclass with the same name hides the base field.
+      Both exist in the object.
+      Which one you get depends on the variable's type, not the object's.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Super sup", to: o }
+      objects:
+        - { id: o, type: Sub, fields: [{ name: "Super.field", value: "0" }, { name: "Sub.field", value: "1" }] }
+      caption: A Sub object holds both fields.
+
+  - type: predict
+    prompt: "`Super` has `field = 0` and `getField()`; `Sub` has its own `field = 1` and overrides `getField()`. What does this print?"
+    code: |
+      Super sup = new Sub();
+      System.out.println(sup.field + " " + sup.getField());
+    language: java
+    options:
+      - text: "0 1"
+        correct: true
+      - text: "1 1"
+        feedback: The field access uses the declared type, `Super`; only the method call is late-bound.
+      - text: "0 0"
+        feedback: "`getField()` is overridden, so `Sub`'s version runs and returns its own field."
+    details: |
+      Fields are never polymorphic: `sup.field` is resolved at compile time from the variable's declared type, `Super`, so it reads `Super`'s field, which is 0.
+      A `Sub` object actually holds two fields named `field`, one from each class, and the subclass one only hides the other.
+      `getField()` is an instance method, so late binding picks `Sub.getField()`, which returns `Sub`'s field, 1.
+      Keep fields private and expose them through methods, and this confusion can't arise.
+
+  - type: explanation
+    title: Static methods belong to classes
+    body: |
+      Static methods aren't associated with an object, so there's nothing to dispatch on.
+      The declared type decides.
+      Call them through the class name to avoid confusion.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      class StaticSuper {
+        static String staticGet() { return "Base staticGet()"; }
+        String dynamicGet() { return "Base dynamicGet()"; }
+      }
+      class StaticSub extends StaticSuper {
+        static String staticGet() { return "Derived staticGet()"; }
+        String dynamicGet() { return "Derived dynamicGet()"; }
+      }
+      StaticSuper sup = new StaticSub();
+      System.out.println(sup.staticGet());
+      System.out.println(sup.dynamicGet());
+    language: java
+    options:
+      - text: "`Base staticGet()`, then `Derived dynamicGet()`"
+        correct: true
+      - text: "`Derived staticGet()`, then `Derived dynamicGet()`"
+        feedback: Static methods are bound to the declared type, `StaticSuper`.
+    details: |
+      Static methods belong to the class, not to an object, so a call through a variable is resolved at compile time from its declared type, `StaticSuper`.
+      The static method in the subclass hides the base one rather than overriding it, so `staticGet()` gives the base version.
+      `dynamicGet()` is an ordinary instance method, so it's late-bound to the object's real class and gives the derived version.
+      Call static methods through the class name, never through a reference, so the code says what actually happens.
+
+  - type: match
+    prompt: Match each member with how a call to it is resolved.
+    pairs:
+      - left: Public instance method
+        right: The object's class, at run time
+      - left: Private method
+        right: The class that declares it — never overridden
+      - left: Field
+        right: The variable's declared type
+      - left: Static method
+        right: The declared type, at compile time

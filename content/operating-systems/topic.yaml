@@ -1,4 +1,4 @@
 title: Operating systems
 summary: What sits between your program and the hardware.
-order: 13
+order: 14
 courses: [cpu-scheduling, virtual-memory]

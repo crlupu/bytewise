@@ -1,0 +1,5 @@
+title: Holding your objects
+summary: Chapters 11 and 17 — the Collection and Map hierarchies, and choosing an implementation by what it promises.
+lessons:
+  - collection-hierarchy
+  - maps-and-views

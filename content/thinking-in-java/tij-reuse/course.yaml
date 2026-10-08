@@ -1,0 +1,7 @@
+title: Reusing classes
+summary: Chapters 6–7 — access control, composition, inheritance, how a derived object is built, and choosing between them.
+lessons:
+  - access-control
+  - composition
+  - inheritance-and-construction
+  - composition-or-inheritance

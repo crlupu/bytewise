@@ -1,0 +1,67 @@
+title: Abstract classes and interfaces
+summary: An abstract class can't be instantiated and may leave methods for subclasses; an interface is a pure contract any class can sign.
+duration: 5
+tags: [java, thinking in java, abstract classes, interfaces, uml]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 9, Interfaces — Abstract classes and methods" }
+steps:
+  - type: explanation
+    title: Abstract — a partial class
+    body: |
+      `Instrument` has no sensible `play()` of its own, so it declares it `abstract`.
+      A class with an abstract method must itself be abstract, and can't be created with `new`.
+      Subclasses must implement every abstract method — or be abstract too.
+    diagram:
+      classes:
+        - { name: Instrument, kind: abstract, methods: ["+ play(Note) {abstract}", "+ what(): String"] }
+        - { name: Wind, methods: ["+ play(Note)"] }
+        - { name: Percussion, methods: ["+ play(Note)"] }
+      relations:
+        - { from: Wind, to: Instrument, type: extends }
+        - { from: Percussion, to: Instrument, type: extends }
+
+  - type: choice
+    prompt: "`Instrument` is abstract. Which lines compile?"
+    options:
+      - text: "`Instrument i = new Wind();`"
+        correct: true
+      - text: "`Instrument[] band = new Instrument[3];`"
+        correct: true
+        feedback: An array of references is fine — no Instrument object is created.
+      - text: "`Instrument i = new Instrument();`"
+        feedback: An abstract class can't be instantiated.
+
+  - type: explanation
+    title: Interface — only the contract
+    body: |
+      An interface says what a class can do, not how.
+      Its methods are public; its fields are constants.
+      In UML it's marked «interface», and a dashed line with a hollow triangle means "implements".
+    diagram:
+      classes:
+        - { name: Playable, kind: interface, methods: ["play(Note)"] }
+        - { name: Piano, methods: ["+ play(Note)"] }
+        - { name: MusicBox, methods: ["+ play(Note)"] }
+      relations:
+        - { from: Piano, to: Playable, type: implements }
+        - { from: MusicBox, to: Playable, type: implements }
+
+  - type: match
+    prompt: Match each feature with abstract classes or interfaces.
+    pairs:
+      - left: Can hold instance fields and constructors
+        right: Abstract classes only
+      - left: A class can have several of them as supertypes
+        right: Interfaces only
+      - left: Can declare methods without bodies
+        right: Both
+      - left: Fields are implicitly `static final`
+        right: Interfaces — they hold no per-object state
+
+  - type: choice
+    prompt: "`Piano` and `MusicBox` share nothing but the ability to play. Which supertype fits?"
+    options:
+      - text: An interface, `Playable` — unrelated classes can both implement it
+        correct: true
+      - text: An abstract class they both extend
+        feedback: Each could then extend nothing else, and they'd share an implementation they don't need.

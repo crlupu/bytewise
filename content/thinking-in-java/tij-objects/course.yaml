@@ -1,0 +1,5 @@
+title: Everything is an object
+summary: Chapters 1–3 — references and the objects they point to, primitives, and what assignment and method calls really copy.
+lessons:
+  - references-and-objects
+  - aliasing

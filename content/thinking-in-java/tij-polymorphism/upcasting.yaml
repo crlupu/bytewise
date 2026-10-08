@@ -1,0 +1,95 @@
+title: Upcasting and late binding
+summary: A Circle can be treated as a Shape, and calling draw() on it still runs Circle's version.
+duration: 5
+tags: [java, thinking in java, polymorphism, upcasting, late binding, inheritance]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 8, Polymorphism" }
+steps:
+  - type: explanation
+    title: A Circle is a Shape
+    body: |
+      `Circle`, `Square` and `Triangle` all extend `Shape`.
+      So anywhere a `Shape` is expected, any of them will do.
+      Treating a subclass as its base class is called upcasting — up the diagram.
+    diagram:
+      classes:
+        - { name: Shape, methods: ["+ draw()", "+ erase()"] }
+        - { name: Circle, methods: ["+ draw()", "+ erase()"] }
+        - { name: Square, methods: ["+ draw()", "+ erase()"] }
+        - { name: Triangle, methods: ["+ draw()", "+ erase()"] }
+      relations:
+        - { from: Circle, to: Shape, type: extends }
+        - { from: Square, to: Shape, type: extends }
+        - { from: Triangle, to: Shape, type: extends }
+
+  - type: explanation
+    title: The object decides
+    body: |
+      `Shape s = new Circle();` declares a `Shape` but creates a `Circle`.
+      Calling `s.draw()` runs `Circle.draw()`.
+      Java picks the method at run time from the object's real class — late binding.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Shape s", to: c }
+      objects:
+        - { id: c, type: Circle, fields: [{ name: radius, value: "2.0" }] }
+      caption: The variable's type is Shape; the object is a Circle.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`Shape s = new Square(); s.draw();` — tap the class whose `draw()` runs."
+    config:
+      diagram:
+        classes:
+          - { name: Shape, methods: ["+ draw()"] }
+          - { name: Circle, methods: ["+ draw()"] }
+          - { name: Square, methods: ["+ draw()"] }
+          - { name: Triangle, methods: ["+ draw()"] }
+        relations:
+          - { from: Circle, to: Shape, type: extends }
+          - { from: Square, to: Shape, type: extends }
+          - { from: Triangle, to: Shape, type: extends }
+      feedback:
+        Shape: The variable's type is Shape, but the call goes to the object's own class.
+        Circle: The object is a Square.
+        Triangle: The object is a Square.
+    goal:
+      select: Square
+    explanation: Late binding uses the object's class, `Square`, whatever type the variable has.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`Triangle` doesn't override `erase()`. `Shape s = new Triangle(); s.erase();` — whose `erase()` runs?"
+    config:
+      diagram:
+        classes:
+          - { name: Shape, methods: ["+ draw()", "+ erase()"] }
+          - { name: Circle, methods: ["+ draw()", "+ erase()"] }
+          - { name: Triangle, methods: ["+ draw()"] }
+        relations:
+          - { from: Circle, to: Shape, type: extends }
+          - { from: Triangle, to: Shape, type: extends }
+      feedback:
+        Triangle: "`Triangle` has no `erase()` of its own, so the search continues upwards."
+        Circle: Circle is a sibling, not an ancestor — it's never searched.
+    goal:
+      select: Shape
+    explanation: The JVM starts at the object's class and walks up until it finds the method — here, in `Shape`.
+
+  - type: explanation
+    title: Code that talks to the base class
+    body: |
+      Write methods against `Shape`, not each subclass.
+      Then adding a `Hexagon` needs no change to them.
+      That's the payoff: new types plug into old code.
+
+  - type: choice
+    prompt: Which method keeps working, unchanged, when you add a new `Hexagon` subclass?
+    options:
+      - text: "`void render(Shape s) { s.draw(); }`"
+        correct: true
+      - text: "`void render(Circle c) { c.draw(); }`"
+        feedback: It only accepts circles; a Hexagon can't be passed in.
+      - text: "`void render(Object o) { if (o instanceof Circle) ((Circle) o).draw(); else if (o instanceof Square) ((Square) o).draw(); }`"
+        feedback: Every new shape needs another branch — the switch polymorphism removes.

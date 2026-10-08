@@ -1,0 +1,66 @@
+title: Access control
+summary: "UML marks each member's access: + public, # protected, ~ package-private, - private. Hide everything you can."
+duration: 5
+tags: [java, thinking in java, access control, encapsulation, packages, uml]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 6, Access Control" }
+steps:
+  - type: explanation
+    title: Four levels, four symbols
+    body: |
+      `public` (+) is visible everywhere.
+      `protected` (#) is visible in the package and to subclasses anywhere.
+      No modifier (~) means package only; `private` (-) means this class only.
+    diagram:
+      classes:
+        - name: Cookie
+          fields: ["- recipe: String", "~ batch: int"]
+          methods: ["+ Cookie()", "+ eat(): void", "# bite(): void"]
+
+  - type: match
+    prompt: Match each modifier with who can use the member.
+    pairs:
+      - left: "`public`"
+        right: Any class, in any package
+      - left: "`protected`"
+        right: Same package, plus subclasses in other packages
+      - left: (none)
+        right: Classes in the same package only
+      - left: "`private`"
+        right: Only the class itself
+
+  - type: explanation
+    title: Hide the implementation
+    body: |
+      Everything a client can reach becomes a promise you must keep.
+      Keep fields private and expose behaviour through methods.
+      Then you can change the inside without breaking anyone.
+
+  - type: choice
+    prompt: "`ChocolateChip extends Cookie` and lives in another package. Which `Cookie` members can its methods use?"
+    diagram:
+      classes:
+        - name: Cookie
+          fields: ["- recipe: String", "~ batch: int"]
+          methods: ["+ eat(): void", "# bite(): void"]
+        - { name: ChocolateChip, methods: ["+ chomp(): void"] }
+      relations:
+        - { from: ChocolateChip, to: Cookie, type: extends }
+      highlight: [ChocolateChip]
+    options:
+      - text: "`eat()`"
+        correct: true
+      - text: "`bite()`"
+        correct: true
+      - text: "`batch`"
+        feedback: Package access doesn't reach other packages, even for subclasses.
+      - text: "`recipe`"
+        feedback: Private members are visible only inside `Cookie`.
+
+  - type: choice
+    prompt: A class needs a helper method that only it uses. What access should it have?
+    options:
+      - text: "`private`"
+        correct: true
+      - text: "`public`, in case others need it"
+        feedback: Every public method is a commitment. You can always widen access later; narrowing it breaks clients.

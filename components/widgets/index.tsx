@@ -18,6 +18,8 @@ import { Scheduler } from "@/components/widgets/Scheduler";
 import { Congestion } from "@/components/widgets/Congestion";
 import { Locks } from "@/components/widgets/Locks";
 import * as locks from "@/lib/widgets/locks";
+import { Hierarchy } from "@/components/widgets/Hierarchy";
+import * as hierarchy from "@/lib/widgets/hierarchy";
 
 type Check = (goal: never, state: never, config: never) => { met: boolean; why?: string };
 
@@ -38,4 +40,5 @@ export const WIDGETS: Record<
   scheduler: { Component: Scheduler as never, check: scheduler.check as Check, config: scheduler.config, goal: scheduler.goal },
   congestion: { Component: Congestion as never, check: congestion.check as Check, config: congestion.config, goal: congestion.goal },
   locks: { Component: Locks as never, check: locks.check as Check, config: locks.config, goal: locks.goal },
+  hierarchy: { Component: Hierarchy as never, check: hierarchy.check as Check, config: hierarchy.config, goal: hierarchy.goal },
 };

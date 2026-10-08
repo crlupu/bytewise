@@ -1,0 +1,66 @@
+title: Composition — has-a
+summary: Build a class from objects of other classes. A Car has an Engine, Wheels and Doors.
+duration: 5
+tags: [java, thinking in java, composition, has-a, uml]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 7, Reusing Classes — Composition syntax" }
+steps:
+  - type: explanation
+    title: A car is made of parts
+    body: |
+      Composition puts references to other objects in your fields.
+      The filled diamond in UML marks the owner.
+      Each part does its own job; the car coordinates them.
+    diagram:
+      classes:
+        - { name: Car, methods: ["+ drive()"] }
+        - { name: Engine, methods: ["+ start()"] }
+        - { name: Wheel, methods: ["+ inflate(psi)"] }
+        - { name: Door, methods: ["+ open()"] }
+        - { name: Window, methods: ["+ rollup()"] }
+      relations:
+        - { from: Car, to: Engine, type: has }
+        - { from: Car, to: Wheel, type: has, label: "4" }
+        - { from: Car, to: Door, type: has, label: "2" }
+        - { from: Door, to: Window, type: has }
+
+  - type: explanation
+    title: In memory
+    body: |
+      A `Car` object holds references to its parts.
+      The parts are separate objects on the heap.
+      `car.left.window.rollup()` follows the references.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Car car", to: c }
+      objects:
+        - { id: c, type: Car, fields: [{ name: engine, to: e }, { name: left, to: d }] }
+        - { id: e, type: Engine }
+        - { id: d, type: Door, fields: [{ name: window, to: w }] }
+        - { id: w, type: Window }
+
+  - type: choice
+    prompt: Which relationship is composition rather than inheritance?
+    options:
+      - text: A `Car` has an `Engine`
+        correct: true
+      - text: A `Car` is a `Vehicle`
+        feedback: '"Is a" is inheritance; "has a" is composition.'
+
+  - type: explanation
+    title: Lazy and late
+    body: |
+      Parts can be created where the field is declared, in the constructor, or just before first use.
+      Creating on first use — lazy initialization — saves work when a part is rarely needed.
+      Until then, the reference is `null`.
+
+  - type: match
+    prompt: Match each place a part can be created with when it happens.
+    pairs:
+      - left: "`private Engine e = new Engine();`"
+        right: Before the constructor body, for every Car
+      - left: "In the constructor: `e = new Engine();`"
+        right: During construction, after field initializers
+      - left: "In `drive()`: `if (e == null) e = new Engine();`"
+        right: On first use, if ever

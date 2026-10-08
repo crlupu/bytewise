@@ -1,5 +1,5 @@
 title: Effective Software Testing
 summary: Maurício Aniche's systematic approach — specification-based and structural testing, contracts, property-based tests, test doubles, testable design, TDD and test quality.
-order: 10
+order: 11
 courses: [est-systematic, est-coverage-and-contracts, est-properties-and-doubles, est-testable-design, est-larger-tests-and-quality]
 glossary: [effective-java, well-grounded-java]

@@ -1,0 +1,99 @@
+title: Finding the method in a deep hierarchy
+summary: The JVM starts at the object's own class and walks up until it finds a method with the right signature.
+duration: 5
+tags: [java, thinking in java, polymorphism, overriding, dynamic dispatch]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 8, Polymorphism — The twist: extensibility" }
+steps:
+  - type: explanation
+    title: The orchestra
+    body: |
+      Every instrument can `play()` a note and `adjust()` itself.
+      `Wind` overrides `play()`; `Brass` overrides only `adjust()`.
+      `Music.tune(Instrument i)` calls `i.play()` without knowing which instrument it has.
+    diagram:
+      classes:
+        - { name: Instrument, methods: ["+ play(Note)", "+ adjust()"] }
+        - { name: Wind, methods: ["+ play(Note)"] }
+        - { name: Percussion, methods: ["+ play(Note)"] }
+        - { name: Brass, methods: ["+ adjust()"] }
+        - { name: Woodwind, methods: ["+ play(Note)"] }
+      relations:
+        - { from: Wind, to: Instrument, type: extends }
+        - { from: Percussion, to: Instrument, type: extends }
+        - { from: Brass, to: Wind, type: extends }
+        - { from: Woodwind, to: Wind, type: extends }
+
+  - type: explanation
+    title: Start at the object, walk up
+    body: |
+      A call goes to the object's real class first.
+      If that class doesn't define the method, the JVM looks in its parent, and so on.
+      The first match wins.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`Instrument i = new Brass(); i.play(Note.C);` — tap the class whose `play` runs."
+    config:
+      diagram:
+        classes:
+          - { name: Instrument, methods: ["+ play(Note)", "+ adjust()"] }
+          - { name: Wind, methods: ["+ play(Note)"] }
+          - { name: Percussion, methods: ["+ play(Note)"] }
+          - { name: Brass, methods: ["+ adjust()"] }
+          - { name: Woodwind, methods: ["+ play(Note)"] }
+        relations:
+          - { from: Wind, to: Instrument, type: extends }
+          - { from: Percussion, to: Instrument, type: extends }
+          - { from: Brass, to: Wind, type: extends }
+          - { from: Woodwind, to: Wind, type: extends }
+      feedback:
+        Brass: "`Brass` doesn't define `play`, so the search moves up to its parent."
+        Instrument: The search stops at the first class that defines `play` — before reaching `Instrument`.
+        Woodwind: Woodwind is a sibling of Brass, not an ancestor.
+        Percussion: Percussion isn't on Brass's path to the root.
+    goal:
+      select: Wind
+    explanation: "`Brass` has no `play`, so the JVM moves up to `Wind`, which has one."
+    details: |
+      A call like `i.play(...)` is late-bound: at run time, the JVM looks at the object's real class, `Brass`.
+      `Brass` doesn't define `play`, so the lookup moves up to its superclass `Wind`, which does.
+      The declared type, `Instrument`, only decides whether the call compiles; it plays no part in choosing which code runs.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "Same object. `i.adjust();` — whose `adjust` runs?"
+    config:
+      diagram:
+        classes:
+          - { name: Instrument, methods: ["+ play(Note)", "+ adjust()"] }
+          - { name: Wind, methods: ["+ play(Note)"] }
+          - { name: Brass, methods: ["+ adjust()"] }
+          - { name: Woodwind, methods: ["+ play(Note)"] }
+        relations:
+          - { from: Wind, to: Instrument, type: extends }
+          - { from: Brass, to: Wind, type: extends }
+          - { from: Woodwind, to: Wind, type: extends }
+      feedback:
+        Instrument: "`Brass` overrides `adjust` itself, so the search never gets this far."
+        Wind: "`Wind` doesn't define `adjust` — and `Brass`, below it, does."
+    goal:
+      select: Brass
+    explanation: The object's own class defines `adjust`, so that one runs.
+
+  - type: explanation
+    title: Adding a class changes nothing else
+    body: |
+      Add `Stringed`, or a new `Saxophone extends Woodwind`.
+      `Music.tune` works with them unchanged.
+      That's the extensibility polymorphism buys.
+
+  - type: choice
+    prompt: You add `class Saxophone extends Woodwind` that overrides nothing. What does `tune(new Saxophone())` play?
+    options:
+      - text: "`Woodwind.play`, the nearest definition above it"
+        correct: true
+      - text: "`Instrument.play`"
+        feedback: The search stops at the first class up the chain that defines `play` — `Woodwind`.
+      - text: It doesn't compile until Saxophone overrides `play`
+        feedback: "`play` isn't abstract, so Saxophone inherits a working version."

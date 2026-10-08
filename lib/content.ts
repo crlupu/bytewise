@@ -6,6 +6,7 @@ import { createHighlighter, type Highlighter } from "shiki";
 import type { z } from "zod";
 import { BooksFile, CourseFile, GlossaryFile, LessonFile, STEP_SCHEMAS, TopicFile, type RawStep } from "@/lib/schema";
 import { makeAnnotator, type Annotator, type GlossaryEntry } from "@/lib/glossary";
+import { renderDiagram } from "@/lib/diagram";
 import type { Book, Catalog, CourseMeta, Html, Lesson, LessonMeta, Option, Step, TopicMeta } from "@/lib/types";
 
 /**
@@ -178,7 +179,8 @@ function annotateStep(step: Step, { annotate, chip }: Annotator) {
 function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): Step {
   const id = raw.id ?? `step-${index + 1}`;
   const key = `${lessonKey}/${id}`;
-  if (raw.type === "explanation") return { type: "explanation", id, key, title: raw.title, body: r.slide(raw.body) };
+  if (raw.type === "explanation")
+    return { type: "explanation", id, key, title: raw.title, body: r.slide(raw.body), diagram: raw.diagram ? renderDiagram(raw.diagram) : undefined };
 
   const base = {
     id,
@@ -186,6 +188,7 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
     prompt: r.block(raw.prompt),
     explanation: raw.explanation ? r.block(raw.explanation) : undefined,
     details: raw.details ? r.slide(raw.details) : undefined,
+    diagram: raw.diagram ? renderDiagram(raw.diagram) : undefined,
     feedback: raw.feedback ? r.block(raw.feedback) : undefined,
     hints: raw.hints.map(r.block),
   };

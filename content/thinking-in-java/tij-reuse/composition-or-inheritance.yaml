@@ -1,0 +1,60 @@
+title: Composition or inheritance?
+summary: Use inheritance when the new class is a kind of the old one and you'll upcast; use composition to reuse what a class does without being one.
+duration: 5
+tags: [java, thinking in java, composition, inheritance, delegation, design]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 7, Reusing Classes — Choosing composition vs. inheritance" }
+steps:
+  - type: explanation
+    title: Ask whether you'll upcast
+    body: |
+      Inheritance is for "is a": a `Wind` is an `Instrument`.
+      The test: will you treat the new class as the old one, through upcasting?
+      If not, composition is usually the better choice.
+    diagram:
+      classes:
+        - { name: Instrument, methods: ["+ play()"] }
+        - { name: Wind, methods: ["+ play()"] }
+        - { name: Music, methods: ["+ tune(Instrument)"] }
+      relations:
+        - { from: Wind, to: Instrument, type: extends }
+        - { from: Music, to: Instrument, type: uses }
+
+  - type: explanation
+    title: Delegation, in between
+    body: |
+      A `SpaceShip` isn't really a kind of `SpaceShipControls`.
+      Delegation holds a controls object and forwards chosen calls to it.
+      You expose only what you want, unlike inheritance which exposes everything.
+    diagram:
+      classes:
+        - { name: SpaceShipDelegation, methods: ["+ forward(int)", "+ back(int)"] }
+        - { name: SpaceShipControls, methods: ["+ forward(int)", "+ back(int)", "+ turboBoost()"] }
+      relations:
+        - { from: SpaceShipDelegation, to: SpaceShipControls, type: has, label: delegates }
+
+  - type: match
+    prompt: Inheritance, composition or delegation?
+    pairs:
+      - left: A `Stack` built on a list, exposing only push and pop
+        right: Composition or delegation
+      - left: "`Circle` passed wherever a `Shape` is expected"
+        right: Inheritance
+      - left: A `Car` with an `Engine`
+        right: Composition
+
+  - type: choice
+    prompt: A `Stack extends ArrayList` would work. Why is that a poor design?
+    options:
+      - text: Clients could call `add(0, x)` or `remove(3)` and break stack behaviour — inheritance exposes the whole list interface
+        correct: true
+      - text: It would be slower
+        feedback: Speed isn't the issue; the exposed interface is.
+
+  - type: choice
+    prompt: What's the usual default when you're unsure?
+    options:
+      - text: Composition — it's more flexible, and you can switch parts at run time
+        correct: true
+      - text: Inheritance — it saves typing
+        feedback: Inheritance ties you to the base class's interface and implementation for good.

@@ -1,0 +1,5 @@
+title: Error handling with exceptions
+summary: Chapter 12 — the Throwable hierarchy, which handler catches what, and exceptions in overridden methods.
+lessons:
+  - exception-hierarchy
+  - catching-and-overriding

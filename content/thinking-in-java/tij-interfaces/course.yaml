@@ -1,0 +1,6 @@
+title: Interfaces
+summary: Chapter 9 — abstract classes, interfaces, implementing several at once, and decoupling with strategies and adapters.
+lessons:
+  - abstract-classes
+  - multiple-interfaces
+  - strategy-and-adapter

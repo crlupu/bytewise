@@ -1,0 +1,5 @@
+title: Inner classes
+summary: Chapter 10 — the hidden link from an inner object to its outer object, nested and anonymous classes, and callbacks.
+lessons:
+  - inner-objects
+  - anonymous-classes

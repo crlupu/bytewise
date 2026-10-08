@@ -1,0 +1,81 @@
+title: Streams are decorators
+summary: Source streams read bytes from somewhere; filter streams wrap another stream and add a feature. You stack them.
+duration: 6
+tags: [java, thinking in java, io, streams, decorator pattern]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 18, I/O — Adding attributes and useful interfaces" }
+steps:
+  - type: explanation
+    title: Sources and filters
+    body: |
+      `FileInputStream` and `ByteArrayInputStream` read from a source.
+      `FilterInputStream` subclasses wrap another `InputStream` and add something.
+      Every one of them is an `InputStream`, so they plug into each other.
+    diagram:
+      classes:
+        - { name: InputStream, kind: abstract, methods: ["+ read(): int"] }
+        - { name: FileInputStream }
+        - { name: FilterInputStream }
+        - { name: BufferedInputStream }
+        - { name: DataInputStream }
+      relations:
+        - { from: FileInputStream, to: InputStream, type: extends }
+        - { from: FilterInputStream, to: InputStream, type: extends }
+        - { from: BufferedInputStream, to: FilterInputStream, type: extends }
+        - { from: DataInputStream, to: FilterInputStream, type: extends }
+        - { from: FilterInputStream, to: InputStream, type: has, label: wraps }
+
+  - type: explanation
+    title: Stacking them
+    body: |
+      `new DataInputStream(new BufferedInputStream(new FileInputStream("data.bin")))`.
+      Each wrapper holds the next and adds its feature: typed reads, then buffering.
+      A call to `readInt()` travels down the chain to the file.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "DataInputStream in", to: d }
+      objects:
+        - { id: d, type: DataInputStream, fields: [{ name: in, to: b }] }
+        - { id: b, type: BufferedInputStream, fields: [{ name: in, to: f }, { name: buf, value: "byte[8192]" }] }
+        - { id: f, type: FileInputStream, fields: [{ name: path, value: '"data.bin"' }] }
+
+  - type: widget
+    widget: hierarchy
+    prompt: Reading one byte at a time from a file is slow. Tap the class that fixes that when you wrap the file stream in it.
+    config:
+      diagram:
+        classes:
+          - { name: InputStream, kind: abstract }
+          - { name: FileInputStream }
+          - { name: FilterInputStream }
+          - { name: BufferedInputStream }
+          - { name: DataInputStream }
+        relations:
+          - { from: FileInputStream, to: InputStream, type: extends }
+          - { from: FilterInputStream, to: InputStream, type: extends }
+          - { from: BufferedInputStream, to: FilterInputStream, type: extends }
+          - { from: DataInputStream, to: FilterInputStream, type: extends }
+      feedback:
+        DataInputStream: It reads typed values like ints, but doesn't buffer.
+        FilterInputStream: It's the base for wrappers; on its own it adds nothing.
+        FileInputStream: That's the slow source itself.
+        InputStream: That's the abstract base.
+    goal:
+      select: BufferedInputStream
+    explanation: "`BufferedInputStream` reads big blocks from the file and hands out bytes from its buffer."
+
+  - type: order
+    prompt: Put the wrapping in order, from the source outwards.
+    items:
+      - "`new FileInputStream(\"data.bin\")`"
+      - "`new BufferedInputStream(...)`"
+      - "`new DataInputStream(...)`"
+
+  - type: choice
+    prompt: Why decorators, rather than one class per combination like `BufferedDataFileInputStream`?
+    options:
+      - text: Features combine freely — n wrappers instead of a class for every combination
+        correct: true
+      - text: Decorators are faster
+        feedback: The benefit is flexibility; each layer adds a small call overhead if anything.

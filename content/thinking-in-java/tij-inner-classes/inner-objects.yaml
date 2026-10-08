@@ -1,0 +1,76 @@
+title: An inner object knows its outer object
+summary: Every instance of an inner class carries a hidden reference to the outer object that created it — a static nested class doesn't.
+duration: 6
+tags: [java, thinking in java, inner classes, nested classes, outer this, memory]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 10, Inner Classes — The link to the outer class" }
+steps:
+  - type: explanation
+    title: Sequence and its Selector
+    body: |
+      `Sequence` holds an array of items.
+      Its inner class `SequenceSelector` walks through them.
+      The selector reads `items` directly, as if it were its own field.
+    diagram:
+      classes:
+        - { name: Sequence, fields: ["- items: Object[]", "- next: int"], methods: ["+ selector(): Selector"] }
+        - { name: SequenceSelector, fields: ["- i: int"], methods: ["+ current()", "+ next()"] }
+        - { name: Selector, kind: interface, methods: ["end()", "current()", "next()"] }
+      relations:
+        - { from: Sequence, to: SequenceSelector, type: inner }
+        - { from: SequenceSelector, to: Selector, type: implements }
+
+  - type: explanation
+    title: The hidden reference
+    body: |
+      Each selector stores a secret reference to the `Sequence` that made it.
+      That's how it reaches `items`.
+      In code you can name it `Sequence.this`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Sequence seq", to: s }
+        - { name: "Selector sel", to: sel }
+      objects:
+        - { id: s, type: Sequence, fields: [{ name: items, to: arr }, { name: next, value: "3" }] }
+        - { id: sel, type: SequenceSelector, fields: [{ name: i, value: "0" }, { name: Sequence.this, to: s }] }
+        - { id: arr, type: "Object[10]" }
+      highlight: [sel]
+
+  - type: choice
+    prompt: How do you create an inner-class object from outside the outer class?
+    options:
+      - text: "`Sequence.SequenceSelector sel = seq.new SequenceSelector();` — through an outer object"
+        correct: true
+      - text: "`new Sequence.SequenceSelector()`"
+        feedback: An inner object needs an outer object to link to, so there's nothing to attach it to here.
+
+  - type: explanation
+    title: Static nested classes have no link
+    body: |
+      Mark the nested class `static`, and the hidden reference disappears.
+      It can't touch the outer object's instance fields.
+      It's created on its own: `new Outer.Nested()`.
+
+  - type: match
+    prompt: Match each kind of nested class with what it can reach.
+    pairs:
+      - left: Inner class
+        right: The outer object's fields, through `Outer.this`
+      - left: Static nested class
+        right: Only static members of the outer class
+      - left: Local class in a method
+        right: Outer fields, plus effectively final locals of the method
+
+  - type: choice
+    prompt: A long-lived cache holds inner-class objects. Their outer objects are otherwise unused. What happens?
+    options:
+      - text: The outer objects can't be garbage collected — each inner object's hidden reference keeps them alive
+        correct: true
+      - text: The outer objects are collected; inner objects survive on their own
+        feedback: The hidden reference counts like any other.
+    details: |
+      Every non-static inner object holds a hidden reference to the outer object that created it.
+      While the cache keeps the inner objects reachable, that hidden reference keeps each outer object reachable too, along with everything it holds.
+      The garbage collector only frees unreachable objects, so the memory stays in use for as long as the cache does.
+      If a nested class doesn't need the outer object, make it `static`, so it carries no hidden reference.

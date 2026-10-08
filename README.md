@@ -47,7 +47,7 @@ trade-off scenarios (architecture).
 
 ## Content and the books behind it
 
-321 lessons in 92 courses. Most courses follow a standard book; each lesson names the
+346 lessons in 104 courses. Most courses follow a standard book; each lesson names the
 chapter or item it teaches in `sources`, shown on the course page, on the lesson's
 completion screen and in Search's Library. The lessons are written fresh — the books
 are where to go for the full treatment.
@@ -61,6 +61,7 @@ threads). Each lesson has a short explanation and practice exercises.
 |---|---|
 | Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |
 | Java Concurrency in Practice | *Java Concurrency in Practice* (Goetz et al.) — every chapter |
+| Thinking in Java | *Thinking in Java*, 4th ed. (Eckel) — short lessons built around class and object diagrams |
 | Java Puzzlers | *Java Puzzlers* (Bloch & Gafter) — every output checked on Java 21 |
 | Modern Java in Action | *Modern Java in Action*, 2nd ed. (Urma, Fusco & Mycroft) |
 | Java Generics and Collections | *Java Generics and Collections* (Naftalin & Wadler) |
@@ -152,6 +153,33 @@ is answered correctly — so it never gives the answer away.
 | `blank` | `template` with `[[answer]]` or `[[answer\|alternative]]`; `code: true` for monospace. |
 | `widget` | `widget`, `config`, and a `goal`, a `question` (`{ prompt, options }`), or both. |
 
+Any explanation or exercise can also take a `diagram`, drawn as an inline SVG that follows
+the theme. A class diagram is laid out automatically, subclasses and parts below their
+parents:
+
+```yaml
+diagram:
+  kind: class
+  classes:
+    - { name: Shape, kind: abstract, methods: [draw(), erase()] }
+    - { name: Circle, methods: [draw()] }
+    - { name: Square, methods: [draw()] }
+  relations:
+    - { from: Circle, to: Shape, type: extends }   # also implements, has, uses, inner
+    - { from: Square, to: Shape, type: extends }
+  highlight: [Circle]   # optional; dim: [...] and caption also exist
+```
+
+Class kinds are `class`, `abstract`, `interface`, `enum`, `record` and `final`. An object
+diagram shows variables pointing at objects, which is how aliasing and `null` are drawn:
+
+```yaml
+diagram:
+  kind: objects
+  vars: [{ name: t1, to: a }, { name: t2, to: a }]
+  objects: [{ id: a, type: Tank, fields: [{ name: level, value: "27" }] }]
+```
+
 Widget configs and goals:
 
 | Widget | `config` | `goal` |
@@ -163,6 +191,7 @@ Widget configs and goals:
 | `scheduler` | `jobs: [{ name, arrival, burst }]`, `algorithms` (FIFO, SJF, STCF, RR), `quantum`, `quantumChoices` | `algorithm`, `quantum`, `avgTurnaroundAtMost`, `avgResponseAtMost` (and played to the end) |
 | `congestion` | `variant` (reno/tahoe), `ssthresh`, `switchable`, `maxRounds` | `rounds`, `cwndAtLeast`, `events` (dupack, timeout), `variant` |
 | `locks` | `threads: [{ name, ops }]`, ops being `lock X`, `unlock X`, `trylock X` (backs off on failure) or plain steps | `deadlock: true`, `finished: true` |
+| `hierarchy` | `diagram` (a class diagram, see below), `feedback: { ClassName: text }` shown when that class is tapped | `select: ClassName` |
 | `tradeoff` | `metrics: [{ id, label, start, better }]`, `decisions: [{ id, label, options: [{ id, label, effects, consequence }] }]` | `require: [{ metric, min, max }]` |
 
 A mistake stops the build (and shows in `npm run dev`) with every problem found, each

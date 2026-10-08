@@ -1,5 +1,5 @@
 title: Head First Design Patterns
 summary: Freeman and Robson's tour of the classic patterns — Strategy, Observer, Decorator, Factory, Singleton, Command, Adapter, Facade, Template Method, Iterator, Composite, State, Proxy and MVC — and the principles behind them.
-order: 11
+order: 12
 courses: [hfdp-principles, hfdp-observer-decorator, hfdp-creational, hfdp-wrapping, hfdp-algorithms-collections, hfdp-state-proxy-mvc, hfdp-more-patterns]
 glossary: [effective-java]

@@ -1,0 +1,61 @@
+title: Anonymous classes and callbacks
+summary: An anonymous class defines and instantiates a class in one expression — handy for one-off implementations and callbacks.
+duration: 5
+tags: [java, thinking in java, anonymous classes, callbacks, closures, lambdas]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 10, Inner Classes — Anonymous inner classes and closures" }
+steps:
+  - type: explanation
+    title: A class with no name
+    body: |
+      `new Contents() { public int value() { return 11; } }` creates a class and an object at once.
+      The class implements `Contents`; javac names it something like `Parcel$1`.
+      It can be used only where it's written.
+    diagram:
+      classes:
+        - { name: Contents, kind: interface, methods: ["value(): int"] }
+        - { name: "Parcel$1", methods: ["+ value(): int"] }
+        - { name: Parcel, methods: ["+ contents(): Contents"] }
+      relations:
+        - { from: "Parcel$1", to: Contents, type: implements }
+        - { from: Parcel, to: "Parcel$1", type: inner }
+
+  - type: choice
+    prompt: "`contents()` returns `new Contents() { ... }`. What's the declared return type, and what's the object's real class?"
+    options:
+      - text: Declared `Contents`; really the anonymous class, upcast to `Contents`
+        correct: true
+      - text: Both are `Contents`
+        feedback: You can't instantiate an interface. The object belongs to the anonymous class that implements it.
+
+  - type: explanation
+    title: Capturing local variables
+    body: |
+      An anonymous class can use the method's local variables and parameters.
+      They must be effectively final — never reassigned.
+      The object keeps a copy, so it can run long after the method returns.
+
+  - type: choice
+    prompt: Why must captured locals be effectively final?
+    options:
+      - text: The object stores a copy; if the variable could change, the copy and the variable would disagree
+        correct: true
+      - text: Anonymous classes can't read variables
+        feedback: They can — as long as the variables never change.
+
+  - type: explanation
+    title: Callbacks
+    body: |
+      Pass an object that implements an interface, and the receiver can call you back.
+      Inner and anonymous classes make natural callbacks: they reach the outer object's state.
+      Since Java 8, a lambda does the same for single-method interfaces.
+
+  - type: match
+    prompt: Match each form with when it fits best.
+    pairs:
+      - left: Lambda
+        right: A single-method interface, short body
+      - left: Anonymous class
+        right: Several methods, or extending a class
+      - left: Named inner class
+        right: Reused in several places, or needs a constructor

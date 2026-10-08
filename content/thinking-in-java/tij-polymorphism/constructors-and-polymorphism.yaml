@@ -1,0 +1,81 @@
+title: Constructors and polymorphism
+summary: A polymorphic call from a base-class constructor reaches the subclass before the subclass is initialized — and downcasting is checked at run time.
+duration: 6
+tags: [java, thinking in java, polymorphism, constructors, downcasting, classcastexception]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 8, Polymorphism — Behavior of polymorphic methods inside constructors" }
+steps:
+  - type: explanation
+    title: The Glyph trap
+    body: |
+      `Glyph`'s constructor calls `draw()`.
+      `RoundGlyph` overrides `draw()` to print its `radius`.
+      The override runs during `Glyph()` — before `RoundGlyph`'s fields are initialized.
+    diagram:
+      classes:
+        - { name: Glyph, methods: ["Glyph() { draw(); }", "draw()"] }
+        - { name: RoundGlyph, fields: ["- radius: int = 1"], methods: ["RoundGlyph(int r)", "draw()"] }
+      relations:
+        - { from: RoundGlyph, to: Glyph, type: extends }
+
+  - type: predict
+    prompt: What does `new RoundGlyph(5)` print?
+    code: |
+      class Glyph {
+        void draw() { print("Glyph.draw "); }
+        Glyph() { print("before "); draw(); print("after "); }
+      }
+      class RoundGlyph extends Glyph {
+        private int radius = 1;
+        RoundGlyph(int r) { radius = r; print("RoundGlyph radius=" + radius); }
+        void draw() { print("RoundGlyph.draw radius=" + radius + " "); }
+      }
+    language: java
+    options:
+      - text: "`before RoundGlyph.draw radius=0 after RoundGlyph radius=5`"
+        correct: true
+      - text: "`before RoundGlyph.draw radius=1 after RoundGlyph radius=5`"
+        feedback: "`radius = 1` is a field initializer of `RoundGlyph`; it runs after `Glyph()` returns. During `Glyph()`, radius is still the default, 0."
+      - text: "`before Glyph.draw after RoundGlyph radius=5`"
+        feedback: "`draw()` is late-bound even inside a constructor, so `RoundGlyph.draw` runs."
+    explanation: The rule — do as little as possible in a constructor, and call only `final` or `private` methods there.
+    details: |
+      Before any constructor runs, the whole object's memory is zeroed, so `radius` already exists with the value 0.
+      `Glyph()` runs first and calls `draw()`, which is late-bound like any other call, so it reaches `RoundGlyph.draw` even though `RoundGlyph`'s part isn't initialized yet.
+      Only after `Glyph()` returns do `RoundGlyph`'s field initializers and constructor body run, setting `radius` to 5.
+      A base-class constructor that calls an overridable method lets a subclass see itself half-built — a bug the compiler won't warn you about.
+
+  - type: order
+    prompt: Put the steps of `new RoundGlyph(5)` in order.
+    items:
+      - The object's memory is zeroed — `radius` is 0
+      - "`Glyph()` runs and calls the overridden `draw()`"
+      - "`RoundGlyph`'s field initializer sets `radius = 1`"
+      - "The `RoundGlyph` constructor body sets `radius = 5`"
+
+  - type: explanation
+    title: Downcasting is checked
+    body: |
+      Upcasting is always safe; downcasting is a claim.
+      `(MoreUseful) x` only works if `x` really is a `MoreUseful`.
+      Otherwise the JVM throws `ClassCastException` at run time.
+    diagram:
+      classes:
+        - { name: Useful, methods: ["+ f()", "+ g()"] }
+        - { name: MoreUseful, methods: ["+ f()", "+ g()", "+ u()", "+ v()"] }
+      relations:
+        - { from: MoreUseful, to: Useful, type: extends }
+
+  - type: choice
+    prompt: "`Useful[] x = { new Useful(), new MoreUseful() };` Which line throws?"
+    code: |
+      ((MoreUseful) x[1]).u();  // line A
+      ((MoreUseful) x[0]).u();  // line B
+    language: java
+    options:
+      - text: Line B — `x[0]` is a plain `Useful`, so the cast fails with `ClassCastException`
+        correct: true
+      - text: Line A
+        feedback: "`x[1]` really is a `MoreUseful`, so the downcast succeeds."
+      - text: Neither — both compile, so both run
+        feedback: Compiling only proves the cast could succeed; the run-time check decides.

@@ -1,5 +1,5 @@
 title: Java Generics and Collections
 summary: Naftalin and Wadler on wildcards, bounds, erasure and reification — then every interface and implementation in the Collections Framework.
-order: 6
+order: 7
 courses: [jgc-subtyping, jgc-declarations, jgc-reification, jgc-framework, jgc-sets-queues, jgc-lists-maps, jgc-collections-class]
 glossary: [effective-java]

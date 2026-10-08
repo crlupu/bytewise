@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { WIDGET_SCHEMAS } from "@/lib/widgets/registry";
+import { Diagram } from "@/lib/diagram";
 
 /**
  * The shape of the authored content files under content/.
@@ -79,13 +80,15 @@ const exerciseBase = {
   feedback: md.optional(),
   /** Revealed one at a time on request. */
   hints: z.array(md).default([]),
+  /** A class or object diagram shown under the question. */
+  diagram: Diagram.optional(),
 };
 
 const code = z.string().min(1);
 const language = z.string().default("text");
 
 const Explanation = z
-  .object({ type: z.literal("explanation"), id: id.optional(), title: z.string().optional(), body: md })
+  .object({ type: z.literal("explanation"), id: id.optional(), title: z.string().optional(), body: md, diagram: Diagram.optional() })
   .strict();
 
 const ChoiceOption = z

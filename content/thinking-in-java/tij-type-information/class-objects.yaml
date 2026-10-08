@@ -1,0 +1,78 @@
+title: Class objects and instanceof
+summary: Every class has one Class object at run time. instanceof asks "is it this type or a subtype?" — comparing Class objects asks "exactly this type?"
+duration: 6
+tags: [java, thinking in java, rtti, class objects, instanceof, reflection]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 14, Type Information" }
+steps:
+  - type: explanation
+    title: One Class object per class
+    body: |
+      When a class is loaded, the JVM creates a `Class` object describing it.
+      Every instance points to it — that's what `getClass()` returns.
+      Two `Circle`s share one `Class<Circle>`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Circle a", to: c1 }
+        - { name: "Circle b", to: c2 }
+      objects:
+        - { id: c1, type: Circle, fields: [{ name: class, to: cls }] }
+        - { id: c2, type: Circle, fields: [{ name: class, to: cls }] }
+        - { id: cls, type: "Class<Circle>", fields: [{ name: name, value: '"Circle"' }] }
+      highlight: [cls]
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Circle a = new Circle(), b = new Circle();
+      System.out.println(a.getClass() == b.getClass());
+    language: java
+    options:
+      - text: "`true`"
+        correct: true
+      - text: "`false`"
+        feedback: There's only one Class object for Circle, so both return the same reference.
+
+  - type: explanation
+    title: Family versus exact type
+    body: |
+      `x instanceof Base` is true for a `Base` and for any subclass.
+      `x.getClass() == Base.class` is true only for exactly `Base`.
+      `equals` methods usually want the exact check.
+    diagram:
+      classes:
+        - { name: Base }
+        - { name: Derived }
+      relations:
+        - { from: Derived, to: Base, type: extends }
+
+  - type: predict
+    prompt: "`Object x = new Derived();` What does this print?"
+    code: |
+      System.out.println((x instanceof Base) + " "
+          + (x.getClass() == Base.class) + " "
+          + (x.getClass() == Derived.class));
+    language: java
+    options:
+      - text: "`true false true`"
+        correct: true
+      - text: "`true true true`"
+        feedback: "`getClass()` returns the exact class, `Derived` — not its superclass."
+      - text: "`false false true`"
+        feedback: "`instanceof` accepts subclasses, so a `Derived` is an instance of `Base`."
+    details: |
+      `instanceof` asks "is this object of this type or a subtype?", so a `Derived` is an instance of `Base`.
+      `getClass()` returns the object's exact class, and there is only one `Class` object per class, so `==` compares exact classes.
+      The object's class is `Derived`, not `Base`, so the second test is false and the third is true.
+      Use `instanceof` when you care about what an object can do, and compare `Class` objects only when you need the exact type.
+
+  - type: match
+    prompt: Match each way of getting a Class object.
+    pairs:
+      - left: "`Circle.class`"
+        right: A class literal, checked at compile time
+      - left: "`obj.getClass()`"
+        right: The exact class of an object
+      - left: "`Class.forName(\"shapes.Circle\")`"
+        right: Loads a class by name at run time

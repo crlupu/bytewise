@@ -1,0 +1,4 @@
+title: Type information
+summary: Chapter 14 — the Class object behind every type, and instanceof versus exact class comparison.
+lessons:
+  - class-objects

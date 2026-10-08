@@ -1,0 +1,107 @@
+title: The Collection hierarchy
+summary: List, Set and Queue all extend Collection; each implementation promises a different order and speed.
+duration: 6
+tags: [java, thinking in java, collections, list, set, queue, hierarchy]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 11, Holding Your Objects" }
+  - { book: thinking-in-java, ref: "Chapter 17, Containers in Depth" }
+steps:
+  - type: explanation
+    title: The interfaces
+    body: |
+      Everything you can loop over with for-each is `Iterable`.
+      `Collection` adds size, add and remove.
+      `List` keeps order, `Set` forbids duplicates, `Queue` hands elements out in turn.
+    diagram:
+      classes:
+        - { name: Iterable, kind: interface }
+        - { name: Collection, kind: interface }
+        - { name: List, kind: interface }
+        - { name: Set, kind: interface }
+        - { name: Queue, kind: interface }
+      relations:
+        - { from: Collection, to: Iterable, type: extends }
+        - { from: List, to: Collection, type: extends }
+        - { from: Set, to: Collection, type: extends }
+        - { from: Queue, to: Collection, type: extends }
+
+  - type: explanation
+    title: The implementations
+    body: |
+      Each interface has several classes behind it.
+      They differ in order and in cost.
+      Declare the interface; choose the class where you call `new`.
+    diagram:
+      classes:
+        - { name: List, kind: interface }
+        - { name: Set, kind: interface }
+        - { name: ArrayList }
+        - { name: LinkedList }
+        - { name: HashSet }
+        - { name: TreeSet }
+      relations:
+        - { from: ArrayList, to: List, type: implements }
+        - { from: LinkedList, to: List, type: implements }
+        - { from: HashSet, to: Set, type: implements }
+        - { from: TreeSet, to: Set, type: implements }
+
+  - type: widget
+    widget: hierarchy
+    prompt: You need a set that always iterates in sorted order. Tap it.
+    config:
+      diagram:
+        classes:
+          - { name: Set, kind: interface }
+          - { name: HashSet }
+          - { name: TreeSet }
+          - { name: LinkedHashSet }
+        relations:
+          - { from: HashSet, to: Set, type: implements }
+          - { from: TreeSet, to: Set, type: implements }
+          - { from: LinkedHashSet, to: HashSet, type: extends }
+      feedback:
+        HashSet: HashSet has no defined order.
+        LinkedHashSet: LinkedHashSet keeps insertion order, not sorted order.
+        Set: Set is the interface; it promises no order.
+    goal:
+      select: TreeSet
+    explanation: "`TreeSet` keeps its elements in a red-black tree, so iteration is always sorted."
+
+  - type: widget
+    widget: hierarchy
+    prompt: You need fast `get(i)` by index. Tap the best list.
+    config:
+      diagram:
+        classes:
+          - { name: List, kind: interface }
+          - { name: ArrayList }
+          - { name: LinkedList }
+        relations:
+          - { from: ArrayList, to: List, type: implements }
+          - { from: LinkedList, to: List, type: implements }
+      feedback:
+        LinkedList: A linked list must walk from one end to reach index i.
+        List: List is the interface — pick an implementation.
+    goal:
+      select: ArrayList
+    explanation: "`ArrayList` is backed by an array, so `get(i)` is a direct index."
+
+  - type: choice
+    prompt: "Which declaration does Eckel recommend?"
+    options:
+      - text: "`List<Apple> apples = new ArrayList<>();`"
+        correct: true
+      - text: "`ArrayList<Apple> apples = new ArrayList<>();`"
+        feedback: Declaring the interface lets you switch to another implementation by changing one line.
+
+  - type: match
+    prompt: Match each class with its order.
+    pairs:
+      - left: "`HashSet`"
+        right: No defined order
+      - left: "`LinkedHashSet`"
+        right: Insertion order
+      - left: "`TreeSet`"
+        right: Sorted order
+      - left: "`ArrayList`"
+        right: Index order, as you added or placed them

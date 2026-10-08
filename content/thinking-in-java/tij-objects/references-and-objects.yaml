@@ -1,0 +1,77 @@
+title: References and objects
+summary: A variable of class type holds a reference — a remote control — not the object itself. `new` makes the object.
+duration: 5
+tags: [java, thinking in java, references, objects, new, primitives]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 2, Everything Is an Object" }
+steps:
+  - type: explanation
+    title: A remote control, not a TV
+    body: |
+      `String s;` creates a reference, not a `String`.
+      Think of it as a remote control with no TV attached yet.
+      As a field, it starts out as `null`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "String s" }
+      caption: A reference with nothing to point to.
+
+  - type: explanation
+    title: new makes the object
+    body: |
+      `new String("asdf")` creates an object on the heap.
+      The assignment points `s` at it.
+      Calling `s.length()` asks the object, through the reference.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "String s", to: str }
+      objects:
+        - { id: str, type: String, fields: [{ name: value, value: '"asdf"' }] }
+
+  - type: choice
+    prompt: "A class has a field `String name;` that's never assigned. What does `name.length()` do?"
+    diagram:
+      kind: objects
+      vars:
+        - { name: "String name" }
+    options:
+      - text: Throws `NullPointerException` — the reference points at no object
+        correct: true
+      - text: Returns 0
+        feedback: There's no empty string — there's no object at all.
+      - text: Doesn't compile
+        feedback: Fields get a default value, `null`, so it compiles. (A local variable used before assignment wouldn't.)
+
+  - type: explanation
+    title: Primitives hold the value itself
+    body: |
+      `int`, `double`, `boolean` and the other primitives aren't objects.
+      The variable holds the value directly, with no reference.
+      Their wrapper classes, like `Integer`, are objects again.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "int i", value: "47" }
+        - { name: "Integer n", to: boxed }
+      objects:
+        - { id: boxed, type: Integer, fields: [{ name: value, value: "47" }] }
+      caption: The int is in the variable; the Integer is an object elsewhere.
+
+  - type: match
+    prompt: Match each declaration with what the variable holds.
+    pairs:
+      - left: "`int count = 3;`"
+        right: The value 3 itself
+      - left: "`String s = \"hi\";`"
+        right: A reference to a String object
+      - left: "`Integer n = 3;`"
+        right: A reference to an Integer object
+      - left: "`String t;` as an unassigned field"
+        right: "`null` — no object"
+
+  - type: blank
+    prompt: Create the object and point the reference at it.
+    template: "String s = [[new]] String(\"asdf\");"
+    code: true

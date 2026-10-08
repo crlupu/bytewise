@@ -1,0 +1,97 @@
+title: The exception hierarchy
+summary: Everything thrown is a Throwable. Errors are for the JVM, RuntimeExceptions are unchecked, and every other Exception is checked.
+duration: 6
+tags: [java, thinking in java, exceptions, checked, unchecked, hierarchy]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 12, Error Handling with Exceptions — Standard Java exceptions" }
+steps:
+  - type: explanation
+    title: One family tree
+    body: |
+      `Throwable` has two branches: `Error` and `Exception`.
+      `RuntimeException` and its subclasses are unchecked — the compiler doesn't make you handle them.
+      Every other `Exception` is checked: catch it or declare it.
+    diagram:
+      classes:
+        - { name: Throwable }
+        - { name: Error }
+        - { name: Exception }
+        - { name: RuntimeException }
+        - { name: IOException }
+        - { name: NullPointerException }
+        - { name: FileNotFoundException }
+      relations:
+        - { from: Error, to: Throwable, type: extends }
+        - { from: Exception, to: Throwable, type: extends }
+        - { from: RuntimeException, to: Exception, type: extends }
+        - { from: IOException, to: Exception, type: extends }
+        - { from: NullPointerException, to: RuntimeException, type: extends }
+        - { from: FileNotFoundException, to: IOException, type: extends }
+      highlight: [RuntimeException]
+
+  - type: widget
+    widget: hierarchy
+    prompt: Tap the most specific class that would catch both `NullPointerException` and `IllegalArgumentException`, but no checked exceptions.
+    config:
+      diagram:
+        classes:
+          - { name: Throwable }
+          - { name: Exception }
+          - { name: RuntimeException }
+          - { name: IOException }
+          - { name: NullPointerException }
+          - { name: IllegalArgumentException }
+        relations:
+          - { from: Exception, to: Throwable, type: extends }
+          - { from: RuntimeException, to: Exception, type: extends }
+          - { from: IOException, to: Exception, type: extends }
+          - { from: NullPointerException, to: RuntimeException, type: extends }
+          - { from: IllegalArgumentException, to: RuntimeException, type: extends }
+      feedback:
+        Exception: That also catches checked exceptions like IOException.
+        Throwable: That catches everything, errors included.
+        NullPointerException: It misses IllegalArgumentException.
+        IllegalArgumentException: It misses NullPointerException.
+        IOException: Neither exception is an IOException.
+    goal:
+      select: RuntimeException
+    explanation: "Both extend `RuntimeException`, their nearest common ancestor — and it has no checked subclasses."
+
+  - type: match
+    prompt: Checked or unchecked?
+    pairs:
+      - left: "`FileNotFoundException`"
+        right: Checked — must be caught or declared
+      - left: "`NullPointerException`"
+        right: Unchecked — a RuntimeException
+      - left: "`OutOfMemoryError`"
+        right: An Error — not meant to be caught
+
+  - type: explanation
+    title: A handler catches the whole subtree
+    body: |
+      `catch (IOException e)` catches an `IOException` and every subclass of it.
+      So the class you name in `catch` covers its branch of the tree.
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`new FileReader(\"missing.txt\")` throws `FileNotFoundException`. The handlers are `catch (IOException e)` then `catch (Exception e)`. Tap the class of the handler that runs."
+    config:
+      diagram:
+        classes:
+          - { name: Exception }
+          - { name: IOException }
+          - { name: FileNotFoundException }
+        relations:
+          - { from: IOException, to: Exception, type: extends }
+          - { from: FileNotFoundException, to: IOException, type: extends }
+      feedback:
+        Exception: The first matching handler wins, and `catch (IOException e)` comes first.
+        FileNotFoundException: There's no handler for that exact class — but a superclass handler matches.
+    goal:
+      select: IOException
+    explanation: "Handlers are tried in order; the first whose class is a supertype of the exception runs."
+    details: |
+      The JVM tries each handler from top to bottom and runs the first one whose class is the exception's class or a superclass of it.
+      `FileNotFoundException` extends `IOException`, so the first handler matches and the second never runs.
+      That's also why handlers must go from specific to general: a broad handler first would make the narrower ones below unreachable, and the compiler reports that as an error.

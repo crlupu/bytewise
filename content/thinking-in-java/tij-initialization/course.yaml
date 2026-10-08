@@ -1,0 +1,5 @@
+title: Initialization and cleanup
+summary: Chapter 5 — the order things are initialized in, arrays of objects, and how unreachable objects become garbage.
+lessons:
+  - initialization-order
+  - arrays-and-garbage

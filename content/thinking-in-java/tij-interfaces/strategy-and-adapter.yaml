@@ -1,0 +1,80 @@
+title: Strategies and adapters
+summary: Code written against an interface accepts any implementation — and an adapter lets a class you can't change join in.
+duration: 6
+tags: [java, thinking in java, interfaces, strategy, adapter, decoupling]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 9, Interfaces — Complete decoupling" }
+steps:
+  - type: explanation
+    title: One method, many strategies
+    body: |
+      `Apply.process(Processor p, Object s)` runs any processor on its input.
+      `Upcase`, `Downcase` and `Splitter` are strategies — interchangeable algorithms.
+      `Apply` depends only on the interface.
+    diagram:
+      classes:
+        - { name: Apply, methods: ["+ process(p, s)"] }
+        - { name: Processor, kind: interface, methods: ["name(): String", "process(Object)"] }
+        - { name: Upcase }
+        - { name: Downcase }
+        - { name: Splitter }
+      relations:
+        - { from: Apply, to: Processor, type: uses }
+        - { from: Upcase, to: Processor, type: implements }
+        - { from: Downcase, to: Processor, type: implements }
+        - { from: Splitter, to: Processor, type: implements }
+
+  - type: choice
+    prompt: You write a new `Reverser implements Processor`. What must change in `Apply`?
+    options:
+      - text: Nothing — it already works with any `Processor`
+        correct: true
+      - text: A new overload, `process(Reverser, Object)`
+        feedback: "`Apply` takes the interface type, so every implementation fits."
+
+  - type: explanation
+    title: Adapting a class you can't change
+    body: |
+      `Filter` comes from a library and doesn't implement `Processor`.
+      `FilterAdapter` implements `Processor` and holds a `Filter`.
+      Each call is translated to the filter — an adapter.
+    diagram:
+      classes:
+        - { name: Processor, kind: interface, methods: ["process(Object)"] }
+        - { name: FilterAdapter, methods: ["+ process(Object)"] }
+        - { name: Filter, methods: ["+ process(Waveform)"] }
+      relations:
+        - { from: FilterAdapter, to: Processor, type: implements }
+        - { from: FilterAdapter, to: Filter, type: has, label: wraps }
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`Apply.process(new FilterAdapter(new LowPass()), w)` — tap the class whose method actually transforms the waveform."
+    config:
+      diagram:
+        classes:
+          - { name: Processor, kind: interface, methods: ["process(Object)"] }
+          - { name: FilterAdapter, methods: ["+ process(Object)"] }
+          - { name: Filter, methods: ["+ process(Waveform)"] }
+          - { name: LowPass, methods: ["+ process(Waveform)"] }
+        relations:
+          - { from: FilterAdapter, to: Processor, type: implements }
+          - { from: FilterAdapter, to: Filter, type: has, label: wraps }
+          - { from: LowPass, to: Filter, type: extends }
+      feedback:
+        FilterAdapter: The adapter only forwards the call to the filter it wraps.
+        Processor: An interface has no implementation.
+        Filter: The wrapped object is a LowPass, which overrides process.
+    goal:
+      select: LowPass
+    explanation: "The adapter forwards to the wrapped filter, whose real class is `LowPass` — late binding picks its `process`."
+
+  - type: match
+    prompt: Match each role with its class.
+    pairs:
+      - left: The interface clients depend on
+        right: "`Processor`"
+      - left: The class you can't change
+        right: "`Filter`"
+      - left: Translates one interface to the other
+        right: "`FilterAdapter`"

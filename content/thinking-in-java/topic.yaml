@@ -1,0 +1,6 @@
+title: Thinking in Java
+summary: Bruce Eckel's tour of the language, told in diagrams — objects and references, class hierarchies, polymorphism, interfaces, inner classes, collections and exceptions.
+mark: TJ
+order: 2
+courses: [tij-objects, tij-initialization, tij-reuse, tij-polymorphism, tij-interfaces, tij-inner-classes, tij-collections, tij-exceptions, tij-type-information, tij-generics, tij-io, tij-enums]
+glossary: [effective-java]

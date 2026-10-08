@@ -1,0 +1,85 @@
+title: Handler order, finally, and overriding
+summary: Put specific handlers before general ones, use finally for cleanup, and never let an override throw broader checked exceptions.
+duration: 6
+tags: [java, thinking in java, exceptions, catch order, finally, overriding]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 12, Error Handling with Exceptions — Exception restrictions and matching" }
+steps:
+  - type: explanation
+    title: Specific first
+    body: |
+      Handlers are tried top to bottom.
+      A handler for a superclass placed first would catch everything below it.
+      The compiler rejects a handler that can never be reached.
+    diagram:
+      classes:
+        - { name: Annoyance, kind: class }
+        - { name: Sneeze }
+      relations:
+        - { from: Sneeze, to: Annoyance, type: extends }
+
+  - type: choice
+    prompt: Which handler order compiles?
+    options:
+      - text: "`catch (Sneeze s) { ... } catch (Annoyance a) { ... }`"
+        correct: true
+      - text: "`catch (Annoyance a) { ... } catch (Sneeze s) { ... }`"
+        feedback: "Every `Sneeze` is an `Annoyance`, so the second handler is unreachable — a compile error."
+
+  - type: explanation
+    title: finally always runs
+    body: |
+      Code in `finally` runs whether the `try` succeeds, throws, or returns.
+      Use it to release locks, close files and restore state.
+      Try-with-resources does the closing for you.
+
+  - type: explanation
+    title: Overrides can't throw more
+    body: |
+      Code calling `Inning.atBat()` handles only what `Inning` declares.
+      So an override may throw fewer checked exceptions, or subclasses of them — never new or broader ones.
+      Otherwise code written for the base class would break.
+    diagram:
+      classes:
+        - { name: Inning, methods: ["+ atBat() throws Strike, Foul"] }
+        - { name: StormyInning, methods: ["+ atBat() throws PopFoul"] }
+        - { name: Foul }
+        - { name: PopFoul }
+      relations:
+        - { from: StormyInning, to: Inning, type: extends }
+        - { from: PopFoul, to: Foul, type: extends }
+
+  - type: choice
+    prompt: "`Inning.atBat()` declares `throws Strike, Foul`. Which overrides in `StormyInning` compile?"
+    options:
+      - text: "`void atBat() throws PopFoul` — PopFoul is a Foul"
+        correct: true
+      - text: "`void atBat()` — throwing nothing is fine"
+        correct: true
+      - text: "`void atBat() throws RainedOut` — a new checked exception"
+        feedback: Callers of `Inning.atBat()` aren't prepared for RainedOut.
+    details: |
+      Code that calls `atBat()` through an `Inning` reference only knows to handle `Strike` and `Foul`.
+      An override can therefore throw those exceptions, any of their subclasses, or nothing, since none of these surprise the caller.
+      Throwing a new checked exception, or a broader one, would escape the caller's handlers, so the compiler rejects it.
+      The rule makes a subclass safe to use wherever its base class is expected.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      try {
+        System.out.print("try ");
+        throw new IllegalStateException();
+      } catch (IllegalStateException e) {
+        System.out.print("catch ");
+      } finally {
+        System.out.print("finally");
+      }
+    language: java
+    options:
+      - text: "`try catch finally`"
+        correct: true
+      - text: "`try catch`"
+        feedback: "`finally` runs after the handler, too."
+      - text: "`try finally`"
+        feedback: The handler matches, so it runs before `finally`.

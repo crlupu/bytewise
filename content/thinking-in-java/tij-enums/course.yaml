@@ -1,0 +1,4 @@
+title: Enumerated types
+summary: Chapter 19 — an enum is a class, its constants are its only instances, and constant-specific methods make each one a subclass.
+lessons:
+  - enums-are-classes

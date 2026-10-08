@@ -1,0 +1,82 @@
+title: Enums are classes
+summary: Every enum extends java.lang.Enum; its constants are public static final instances. Give a constant its own body and it becomes an anonymous subclass.
+duration: 6
+tags: [java, thinking in java, enums, classes, constant specific methods]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 19, Enumerated Types" }
+steps:
+  - type: explanation
+    title: An enum is a final class
+    body: |
+      `enum Signal { GREEN, YELLOW, RED }` compiles to a class extending `Enum<Signal>`.
+      The three constants are its only instances, created when the class loads.
+      It inherits `name()`, `ordinal()` and `compareTo()`.
+    diagram:
+      classes:
+        - { name: "Enum<E>", kind: abstract, methods: ["+ name(): String", "+ ordinal(): int"] }
+        - { name: Signal, kind: enum, fields: ["GREEN", "YELLOW", "RED"], methods: ["+ values(): Signal[]"] }
+      relations:
+        - { from: Signal, to: "Enum<E>", type: extends }
+
+  - type: choice
+    prompt: Why can't an enum extend another class?
+    options:
+      - text: It already extends `java.lang.Enum`, and Java allows only one superclass
+        correct: true
+      - text: Enums can't have methods
+        feedback: They can have fields, constructors and methods like any class.
+
+  - type: explanation
+    title: Constants with their own behaviour
+    body: |
+      A constant can have a body: `WASH { void action() { ... } }`.
+      Then it's an instance of an anonymous subclass of the enum.
+      Each constant overrides the method its own way.
+    diagram:
+      classes:
+        - { name: Cycle, kind: enum, methods: ["action() {abstract}"] }
+        - { name: "WASH { }", methods: ["action()"] }
+        - { name: "RINSE { }", methods: ["action()"] }
+        - { name: "SPIN { }", methods: ["action()"] }
+      relations:
+        - { from: "WASH { }", to: Cycle, type: extends }
+        - { from: "RINSE { }", to: Cycle, type: extends }
+        - { from: "SPIN { }", to: Cycle, type: extends }
+
+  - type: widget
+    widget: hierarchy
+    prompt: "`Cycle c = Cycle.RINSE; c.action();` — tap where the code that runs is defined."
+    config:
+      diagram:
+        classes:
+          - { name: Cycle, kind: enum, methods: ["action() {abstract}"] }
+          - { name: "WASH { }", methods: ["action()"] }
+          - { name: "RINSE { }", methods: ["action()"] }
+          - { name: "SPIN { }", methods: ["action()"] }
+        relations:
+          - { from: "WASH { }", to: Cycle, type: extends }
+          - { from: "RINSE { }", to: Cycle, type: extends }
+          - { from: "SPIN { }", to: Cycle, type: extends }
+      feedback:
+        Cycle: "`action()` is abstract in Cycle — each constant supplies its own."
+    goal:
+      select: "RINSE { }"
+    explanation: "RINSE is an instance of its own anonymous subclass, so its `action()` runs — plain polymorphism."
+    details: |
+      When an enum constant has a body, the compiler makes it an anonymous subclass of the enum, with exactly one instance.
+      `c` is declared as `Cycle`, but the object it refers to belongs to that subclass, so `action()` is late-bound to the method inside `RINSE`'s body.
+      This is the same polymorphism as with any class hierarchy, packed into a single enum declaration.
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      enum Signal { GREEN, YELLOW, RED }
+      System.out.println(Signal.RED.ordinal() + " " + Signal.valueOf("YELLOW"));
+    language: java
+    options:
+      - text: "`2 YELLOW`"
+        correct: true
+      - text: "`3 YELLOW`"
+        feedback: Ordinals start at 0, so RED, the third constant, is 2.
+      - text: "`2 1`"
+        feedback: "`valueOf` returns the constant, which prints as its name."

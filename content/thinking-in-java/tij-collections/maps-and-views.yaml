@@ -1,0 +1,69 @@
+title: Maps and their views
+summary: Map is a separate hierarchy from Collection. You loop over a map through its views — keys, values or entries.
+duration: 5
+tags: [java, thinking in java, map, hashmap, treemap, views, iterator]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 11, Holding Your Objects — Map" }
+steps:
+  - type: explanation
+    title: Map stands apart
+    body: |
+      A `Map` links keys to values; it isn't a `Collection`.
+      `HashMap` has no order, `LinkedHashMap` keeps insertion order, `TreeMap` sorts its keys.
+    diagram:
+      classes:
+        - { name: Map, kind: interface, methods: ["put(K, V)", "get(K): V"] }
+        - { name: HashMap }
+        - { name: TreeMap }
+        - { name: LinkedHashMap }
+      relations:
+        - { from: HashMap, to: Map, type: implements }
+        - { from: TreeMap, to: Map, type: implements }
+        - { from: LinkedHashMap, to: HashMap, type: extends }
+
+  - type: choice
+    prompt: "Can you write `for (String k : map)` with a `Map<String, Integer> map`?"
+    options:
+      - text: No — a `Map` isn't `Iterable`; loop over `map.keySet()` or `map.entrySet()`
+        correct: true
+      - text: Yes, it loops over the keys
+        feedback: "`Map` doesn't extend `Iterable` or `Collection`."
+
+  - type: explanation
+    title: Three views
+    body: |
+      `keySet()`, `values()` and `entrySet()` return collections backed by the map.
+      They're views, not copies.
+      Remove a key from the key set, and it's gone from the map.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "Map map", to: m }
+        - { name: "Set keys", to: ks }
+      objects:
+        - { id: m, type: HashMap, fields: [{ name: '"apple"', value: "3" }, { name: '"pear"', value: "5" }] }
+        - { id: ks, type: KeySet, fields: [{ name: backing map, to: m }] }
+
+  - type: predict
+    prompt: What does this print?
+    code: |
+      Map<String, Integer> map = new HashMap<>(Map.of("apple", 3, "pear", 5));
+      Set<String> keys = map.keySet();
+      keys.remove("apple");
+      System.out.println(map);
+    language: java
+    options:
+      - text: "`{pear=5}`"
+        correct: true
+      - text: "`{apple=3, pear=5}`"
+        feedback: The key set is a view backed by the map, so removing from it changes the map.
+    details: |
+      `keySet()` doesn't copy the keys: it returns a view backed by the map itself.
+      Removing a key from the view removes the whole entry from the map.
+      The same is true of `values()` and `entrySet()`, which is why they are cheap to create.
+      If you want an independent copy, write `new HashSet<>(map.keySet())`.
+
+  - type: blank
+    prompt: Loop over keys and values together.
+    template: "for (Map.Entry<String, Integer> e : map.[[entrySet]]()) print(e.getKey() + \"=\" + e.getValue());"
+    code: true
