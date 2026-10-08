@@ -11,6 +11,16 @@ steps:
       The model holds data and rules, and knows nothing about the screen.
       The view displays the model.
       The controller turns user input into actions on the model.
+    diagram:
+      classes:
+        - { name: View, methods: ["render()"] }
+        - { name: Controller, methods: ["onInput()"] }
+        - { name: Model, methods: ["getState()", "setState()"] }
+      relations:
+        - { from: View, to: Controller, type: has, label: delegates }
+        - { from: Controller, to: Model, type: uses, label: updates }
+        - { from: View, to: Model, type: uses, label: observes }
+      caption: The model points at nothing above it.
 
   - type: order
     prompt: Put an MVC interaction in order.

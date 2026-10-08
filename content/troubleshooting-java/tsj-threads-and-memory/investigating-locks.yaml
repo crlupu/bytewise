@@ -30,6 +30,15 @@ steps:
       A blocked thread shows the lock it wants.
       Another thread's stack shows it holds that lock.
       What is the owner doing, and why so long?
+    diagram:
+      kind: objects
+      objects:
+        - { id: w3, type: "worker-3 — BLOCKED", fields: [{ name: waiting to lock, to: m }] }
+        - { id: w5, type: "worker-5 — BLOCKED", fields: [{ name: waiting to lock, to: m }] }
+        - { id: w1, type: "worker-1 — RUNNABLE", fields: [{ name: locked, to: m }] }
+        - { id: m, type: Inventory }
+      highlight: [w1]
+      caption: The owner is the one to investigate.
 
   - type: choice
     prompt: Fifty threads are BLOCKED on the same lock. The owner is RUNNABLE inside a `synchronized` method, calling a remote service. What's the problem?

@@ -18,6 +18,14 @@ steps:
       Ad hoc: by convention only. Fragile.
       Stack: only local variables can reach it.
       `ThreadLocal`: each thread gets its own copy.
+    diagram:
+      kind: objects
+      objects:
+        - { id: t1, type: Thread A, fields: [{ name: "holder.get()", to: c1 }] }
+        - { id: t2, type: Thread B, fields: [{ name: "holder.get()", to: c2 }] }
+        - { id: c1, type: Connection }
+        - { id: c2, type: Connection }
+      caption: "One ThreadLocal, a separate value for each thread."
 
   - type: match
     prompt: Match each kind of confinement to how it works.

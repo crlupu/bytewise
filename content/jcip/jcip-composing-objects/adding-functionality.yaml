@@ -61,6 +61,14 @@ steps:
       A wrapper has its own lock and its own rules.
       It doesn't depend on how the inner list locks.
       The extra layer of locking costs very little.
+    diagram:
+      classes:
+        - { name: List<E>, kind: interface, methods: ["add(e)", "contains(o)"] }
+        - { name: ImprovedList<E>, fields: ["- list: List<E>"], methods: ["synchronized putIfAbsent(x)", "synchronized add(e)"] }
+      relations:
+        - { from: ImprovedList<E>, to: List<E>, type: implements }
+        - { from: ImprovedList<E>, to: List<E>, type: has, label: wraps }
+      caption: "The wrapper's own lock guards every call."
 
   - type: match
     prompt: Match each approach to its weakness.

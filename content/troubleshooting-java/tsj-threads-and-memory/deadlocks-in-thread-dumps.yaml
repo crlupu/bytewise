@@ -18,6 +18,14 @@ steps:
       Thread A holds lock 1 and wants lock 2.
       Thread B holds lock 2 and wants lock 1.
       Neither can move, ever.
+    diagram:
+      kind: objects
+      objects:
+        - { id: a, type: Thread A, fields: [{ name: holds, to: l1 }, { name: waits for, to: l2 }] }
+        - { id: b, type: Thread B, fields: [{ name: holds, to: l2 }, { name: waits for, to: l1 }] }
+        - { id: l1, type: Lock 1 }
+        - { id: l2, type: Lock 2 }
+      caption: Follow the arrows and you come back where you started.
 
   - type: widget
     widget: locks

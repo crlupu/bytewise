@@ -32,6 +32,17 @@ steps:
       One class now works with any dictionary.
       The dependency shows in the signature.
       Frameworks like Spring just automate this wiring.
+    diagram:
+      classes:
+        - { name: SpellChecker, fields: ["- dictionary: Lexicon"], methods: ["isValid(word)"] }
+        - { name: Lexicon, kind: interface }
+        - { name: EnglishDictionary }
+        - { name: FakeDictionary }
+      relations:
+        - { from: SpellChecker, to: Lexicon, type: has }
+        - { from: EnglishDictionary, to: Lexicon, type: implements }
+        - { from: FakeDictionary, to: Lexicon, type: implements }
+      caption: "The checker depends on Lexicon; the caller chooses which one."
 
   - type: choice
     prompt: Which are benefits of injecting the dictionary?

@@ -11,6 +11,10 @@ steps:
       A record class, like `record Point(int x, int y) {}`, declares two private final fields.
       You get a constructor, accessors `x()` and `y()`, and `equals`, `hashCode` and `toString`.
       All from the component list.
+    diagram:
+      classes:
+        - { name: Point, kind: record, fields: ["- final int x", "- final int y"], methods: ["Point(x, y)", "x()", "y()", "equals(o)", "hashCode()", "toString()"] }
+      caption: "All of this from one line, record Point(int x, int y)."
 
   - type: predict
     prompt: What does this print?

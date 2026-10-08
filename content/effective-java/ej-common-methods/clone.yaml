@@ -11,6 +11,17 @@ steps:
       `Cloneable` has no methods.
       It just changes what `Object.clone` does.
       The copy is shallow: references are shared, not copied.
+    diagram:
+      kind: objects
+      vars:
+        - { name: original, to: s1 }
+        - { name: copy, to: s2 }
+      objects:
+        - { id: s1, type: Stack, fields: [{ name: elements, to: arr }, { name: size, value: "3" }] }
+        - { id: s2, type: Stack, fields: [{ name: elements, to: arr }, { name: size, value: "3" }] }
+        - { id: arr, type: "Object[]" }
+      highlight: [arr]
+      caption: "super.clone() copies fields — both stacks share one array."
 
   - type: predict
     prompt: "A `Stack` with an `Object[] elements` field overrides `clone` as just `return (Stack) super.clone();`. What's wrong?"

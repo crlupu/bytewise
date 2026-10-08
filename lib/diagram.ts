@@ -148,15 +148,24 @@ function renderClasses(d: ClassDiagramT, opts: RenderOptions): string {
   const GAP_X = 32, GAP_Y = 60, PAD = 12;
   const inherit = d.relations.filter((r) => r.type === "extends" || r.type === "implements");
 
-  // Levels: parents above children; classes only linked by has/uses/inner sit beside their partner.
-  const level = new Map<string, number>(d.classes.map((c) => [c.name, 0]));
-  for (let pass = 0; pass < d.classes.length; pass++)
-    for (const r of inherit) level.set(r.from, Math.max(level.get(r.from)!, level.get(r.to)! + 1));
+  // Levels: parents above children, and parts (has / uses / inner targets) one row below their owner.
+  // A part that heads its own hierarchy (WeatherData has Observers) hangs below the owner too, taking
+  // its subclasses with it — unless the owner is one of those subclasses (a decorator wraps its supertype).
+  const supers = (n: string) => inherit.filter((r) => r.from === n).map((r) => r.to);
+  const isBelow = (n: string, anc: string, seen = new Set<string>()): boolean =>
+    supers(n).some((p) => p === anc || (!seen.has(p) && (seen.add(p), isBelow(p, anc, seen))));
   const inHierarchy = new Set(inherit.flatMap((r) => [r.from, r.to]));
-  // Parts (has / uses / inner targets outside the hierarchy) go one row below their owner.
-  for (let pass = 0; pass < d.classes.length; pass++)
+  const parts = d.relations.filter(
+    (r) => !inherit.includes(r) && r.to !== r.from && (!inHierarchy.has(r.to) || (!supers(r.to).length && !isBelow(r.from, r.to))),
+  );
+  const level = new Map<string, number>(d.classes.map((c) => [c.name, 0]));
+  for (let pass = 0; pass < d.classes.length; pass++) {
+    for (const r of inherit) level.set(r.from, Math.max(level.get(r.from)!, level.get(r.to)! + 1));
+    for (const r of parts) level.set(r.to, Math.max(level.get(r.to)!, level.get(r.from)! + 1));
+    // An owner outside any hierarchy, whose part sits inside one, goes on the part's row, beside it.
     for (const r of d.relations)
-      if (!inherit.includes(r) && !inHierarchy.has(r.to) && r.to !== r.from) level.set(r.to, Math.max(level.get(r.to)!, level.get(r.from)! + 1));
+      if (!inherit.includes(r) && !parts.includes(r) && !inHierarchy.has(r.from)) level.set(r.from, Math.max(level.get(r.from)!, level.get(r.to)!));
+  }
 
   // Box sizes.
   const size = new Map<string, { w: number; h: number; head: number }>();
@@ -177,7 +186,7 @@ function renderClasses(d: ClassDiagramT, opts: RenderOptions): string {
     const up =
       inherit.find((r) => r.from === c.name && r.type === "extends") ??
       inherit.find((r) => r.from === c.name) ??
-      d.relations.find((r) => !inherit.includes(r) && r.to === c.name && !inHierarchy.has(c.name) && r.from !== c.name);
+      parts.find((r) => r.to === c.name);
     if (up) primary.set(c.name, up.type === "extends" || up.type === "implements" ? up.to : up.from);
   }
   // Guard against cycles: a node whose primary chain loops back becomes a root.
@@ -277,26 +286,38 @@ function renderClasses(d: ClassDiagramT, opts: RenderOptions): string {
   }
   // has / uses / inner: straight lines between the boxes' edges.
   let arcRight = 0;
+  let labelRight = 0; // labels can stick out past the boxes
+  const LABEL = 6.6; // px per character of a 11px mono label
   for (const r of d.relations.filter((r) => !inherit.includes(r))) {
     const a = box.get(r.from)!, b = box.get(r.to)!;
-    if (inherit.some((i) => (i.from === r.from && i.to === r.to) || (i.from === r.to && i.to === r.from))) {
-      // Same pair as an inheritance line (a decorator wraps its own supertype): arc round the right side.
+    const ac = { x: a.x + a.w / 2, y: a.y + Math.min(a.h / 2, 22) }, bc = { x: b.x + b.w / 2, y: b.y + Math.min(b.h / 2, 22) };
+    const sameRow = Math.abs(a.y - b.y) < 1;
+    const s = sameRow ? { x: ac.x < bc.x ? a.x + a.w : a.x, y: ac.y } : clip(a, bc);
+    const e = sameRow ? { x: ac.x < bc.x ? b.x : b.x + b.w, y: ac.y } : clip(b, ac);
+    // Boxes a straight line would cross (View → Model past the Controller).
+    const between = [...box.entries()].filter(([n]) => n !== r.from && n !== r.to).map(([, o]) => o);
+    const crossed = between.filter((o) =>
+      Array.from({ length: 41 }, (_, i) => i / 40).some((t) => {
+        const x = s.x + (e.x - s.x) * t, y = s.y + (e.y - s.y) * t;
+        return x > o.x - 4 && x < o.x + o.w + 4 && y > o.y - 4 && y < o.y + o.h + 4;
+      }),
+    );
+    const pairedByInheritance = inherit.some((i) => (i.from === r.from && i.to === r.to) || (i.from === r.to && i.to === r.from));
+    if (pairedByInheritance || crossed.length) {
+      // Same pair as an inheritance line (a decorator wraps its own supertype), or a box in the way: arc round the right side.
       const s0 = { x: a.x + a.w, y: a.y + Math.min(a.h / 2, 22) }, e0 = { x: b.x + b.w, y: b.y + Math.min(b.h / 2, 22) };
-      const bulge = Math.max(s0.x, e0.x) + 48;
+      const bulge = Math.max(s0.x, e0.x, ...crossed.map((o) => o.x + o.w)) + 48;
       arcRight = Math.max(arcRight, bulge + 10);
-      edges += `<path class="dg-edge" d="M${s0.x} ${s0.y} C${bulge} ${s0.y} ${bulge} ${e0.y} ${e0.x} ${e0.y}"/>`;
+      edges += `<path class="dg-edge${r.type === "uses" ? " dg-edge--dashed" : ""}" d="M${s0.x} ${s0.y} C${bulge} ${s0.y} ${bulge} ${e0.y} ${e0.x} ${e0.y}"/>`;
       if (r.type === "has") edges += `<polygon class="dg-head dg-head--solid" points="${diamond(s0, { x: s0.x + 20, y: s0.y })}"/>`;
       else {
         const [tip, b1, b2] = arrowHead(e0, { x: e0.x + 20, y: e0.y }).split(" ");
         edges += `<polyline class="dg-edge" points="${b1} ${tip} ${b2}"/>`;
       }
+      if (r.label) labelRight = Math.max(labelRight, bulge - 6 + r.label.length * LABEL);
       if (r.label) edges += `<text class="dg-label" x="${bulge - 6}" y="${(s0.y + e0.y) / 2 + 4}" text-anchor="start">${esc(r.label)}</text>`;
       continue;
     }
-    const ac = { x: a.x + a.w / 2, y: a.y + Math.min(a.h / 2, 22) }, bc = { x: b.x + b.w / 2, y: b.y + Math.min(b.h / 2, 22) };
-    const sameRow = Math.abs(a.y - b.y) < 1;
-    const s = sameRow ? { x: ac.x < bc.x ? a.x + a.w : a.x, y: ac.y } : clip(a, bc);
-    const e = sameRow ? { x: ac.x < bc.x ? b.x : b.x + b.w, y: ac.y } : clip(b, ac);
     const dashed = r.type === "uses" ? " dg-edge--dashed" : "";
     edges += `<path class="dg-edge${dashed}" d="M${s.x} ${s.y} L${e.x} ${e.y}"/>`;
     if (r.type === "has") edges += `<polygon class="dg-head dg-head--solid" points="${diamond(s, e)}"/>`;
@@ -309,12 +330,16 @@ function renderClasses(d: ClassDiagramT, opts: RenderOptions): string {
       edges += `<circle class="dg-head dg-head--open" cx="${cx}" cy="${cy}" r="7"/><path class="dg-edge" d="M${cx - 4} ${cy} H${cx + 4} M${cx} ${cy - 4} V${cy + 4}"/>`;
     }
     if (r.label) {
-      // Near the far end, nudged off the line so it never sits on the diamond.
+      // Beside the line: to the right of a mostly vertical one, mid-way; above a mostly
+      // horizontal one, near the far end so it never sits on the diamond.
       const len = Math.hypot(e.x - s.x, e.y - s.y) || 1;
       const ux = (e.x - s.x) / len, uy = (e.y - s.y) / len;
-      const t = Math.min(len - 14, Math.max(len * 0.6, 26));
-      const lx = s.x + ux * t - uy * 11, ly = s.y + uy * t + ux * 11 + 4;
-      edges += `<text class="dg-label" x="${lx}" y="${ly}" text-anchor="middle">${esc(r.label)}</text>`;
+      const vertical = Math.abs(uy) > Math.abs(ux);
+      const t = vertical ? len / 2 : Math.min(len - 14, Math.max(len * 0.6, 26));
+      const lx = s.x + ux * t + (vertical ? 7 : -uy * 11), ly = s.y + uy * t + (vertical ? 4 : ux * 11 + 4);
+      const anchor = vertical ? "start" : "middle";
+      labelRight = Math.max(labelRight, lx + (vertical ? 1 : 0.5) * r.label.length * LABEL);
+      edges += `<text class="dg-label" x="${lx}" y="${ly}" text-anchor="${anchor}">${esc(r.label)}</text>`;
     }
   }
 
@@ -350,7 +375,7 @@ function renderClasses(d: ClassDiagramT, opts: RenderOptions): string {
     }
     nodes += g + "</g>";
   }
-  return wrap(Math.max(width, arcRight + 40), height, edges + nodes, d.caption, opts.label);
+  return wrap(Math.max(width, arcRight + 40, labelRight + 6), height, edges + nodes, d.caption, opts.label);
 }
 
 function renderObjects(d: ObjectDiagramT): string {

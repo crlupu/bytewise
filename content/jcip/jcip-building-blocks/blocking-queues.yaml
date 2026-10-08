@@ -15,6 +15,13 @@ steps:
       ```java
       BlockingQueue<File> queue = new LinkedBlockingQueue<>(BOUND);
       ```
+    diagram:
+      kind: objects
+      objects:
+        - { id: p, type: FileCrawler, fields: [{ name: queue, to: q }] }
+        - { id: c, type: Indexer, fields: [{ name: queue, to: q }] }
+        - { id: q, type: LinkedBlockingQueue, fields: [{ name: size, value: "3" }, { name: capacity, value: BOUND }] }
+      caption: Crawler and indexer share only the queue.
 
   - type: explanation
     title: Bounded queues push back

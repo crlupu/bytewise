@@ -11,6 +11,15 @@ steps:
       Your code expects a `Duck`, but you have a `Turkey`.
       `TurkeyAdapter implements Duck` and holds a turkey.
       `quack()` calls `gobble()`; `fly()` calls `fly()` a few times.
+    diagram:
+      classes:
+        - { name: Duck, kind: interface, methods: ["quack()", "fly()"] }
+        - { name: TurkeyAdapter, methods: ["quack()", "fly()"] }
+        - { name: Turkey, kind: interface, methods: ["gobble()", "fly()"] }
+      relations:
+        - { from: TurkeyAdapter, to: Duck, type: implements }
+        - { from: TurkeyAdapter, to: Turkey, type: has, label: turkey }
+      caption: "Duck calls go in; Turkey calls come out."
 
   - type: blank
     prompt: Adapt a turkey to the duck interface.
@@ -23,6 +32,18 @@ steps:
       Watching a movie takes the projector, amplifier, player, lights and screen.
       `HomeTheaterFacade.watchMovie()` drives them all in the right order.
       The parts stay available for anyone who needs them.
+    diagram:
+      classes:
+        - { name: HomeTheaterFacade, methods: ["watchMovie()", "endMovie()"] }
+        - { name: Amp }
+        - { name: Projector }
+        - { name: Player }
+        - { name: Lights }
+      relations:
+        - { from: HomeTheaterFacade, to: Amp, type: uses }
+        - { from: HomeTheaterFacade, to: Projector, type: uses }
+        - { from: HomeTheaterFacade, to: Player, type: uses }
+        - { from: HomeTheaterFacade, to: Lights, type: uses }
 
   - type: match
     prompt: Match each pattern with its intent.

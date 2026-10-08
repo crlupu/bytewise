@@ -37,6 +37,15 @@ steps:
       Open the dump in a tool like Eclipse MAT or VisualVM.
       Sort by retained size to see the biggest owners.
       Follow the path from a GC root to see why they're alive.
+    diagram:
+      kind: objects
+      vars:
+        - { name: static CACHE, to: m }
+      objects:
+        - { id: m, type: HashMap, fields: [{ name: "\"user-1\"", to: s1 }, { name: "\"user-2\"", to: s2 }, { name: "…", value: "200,000 more" }] }
+        - { id: s1, type: Session, fields: [{ name: data, value: "1 MB" }] }
+        - { id: s2, type: Session, fields: [{ name: data, value: "1 MB" }] }
+      caption: "The static field is a GC root: the map retains every session it holds."
 
   - type: choice
     prompt: The dump shows a static `Map` in a cache class retaining 2 GB of `Session` objects. What's the likely bug?

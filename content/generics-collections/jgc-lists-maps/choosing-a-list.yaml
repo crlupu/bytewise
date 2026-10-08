@@ -11,6 +11,14 @@ steps:
       `ArrayList` keeps elements in an array.
       `get(i)` is instant; adding at the end is usually instant too.
       Inserting at the front shifts everything along.
+    diagram:
+      kind: objects
+      vars:
+        - { name: list, to: al }
+      objects:
+        - { id: al, type: ArrayList, fields: [{ name: elementData, to: arr }, { name: size, value: "3" }] }
+        - { id: arr, type: "Object[]", fields: [{ name: "[0]", value: "\"A\"" }, { name: "[1]", value: "\"B\"" }, { name: "[2]", value: "\"C\"" }, { name: "[3]", value: "null" }] }
+      caption: "One array; spare slots wait for the next add."
 
   - type: explanation
     title: Linked
@@ -18,6 +26,16 @@ steps:
       `LinkedList` links nodes together.
       Inserting where an iterator stands is instant.
       But `get(i)` walks from an end, and each node costs extra memory.
+    diagram:
+      kind: objects
+      vars:
+        - { name: list, to: ll }
+      objects:
+        - { id: ll, type: LinkedList, fields: [{ name: first, to: n1 }, { name: size, value: "3" }] }
+        - { id: n1, type: Node, fields: [{ name: item, value: "\"A\"" }, { name: next, to: n2 }] }
+        - { id: n2, type: Node, fields: [{ name: item, value: "\"B\"" }, { name: next, to: n3 }] }
+        - { id: n3, type: Node, fields: [{ name: item, value: "\"C\"" }, { name: next }] }
+      caption: "An object per element — each with a prev link too, not drawn."
 
   - type: match
     prompt: Match each operation with the faster list.

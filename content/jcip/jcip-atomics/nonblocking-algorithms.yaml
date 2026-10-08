@@ -18,6 +18,17 @@ steps:
           newHead.next = oldHead;
       } while (!top.compareAndSet(oldHead, newHead));
       ```
+    diagram:
+      kind: objects
+      vars:
+        - { name: newHead, to: n3 }
+        - { name: top, to: ar }
+      objects:
+        - { id: n3, type: Node, fields: [{ name: item, value: "\"c\"" }, { name: next, to: n2 }] }
+        - { id: ar, type: AtomicReference, fields: [{ name: value, to: n2 }] }
+        - { id: n2, type: Node, fields: [{ name: item, value: "\"b\"" }, { name: next, to: n1 }] }
+        - { id: n1, type: Node, fields: [{ name: item, value: "\"a\"" }, { name: next }] }
+      caption: "The CAS swings top from b to c — only if top still points at b."
 
   - type: order
     prompt: Put one attempt to `pop` from a Treiber stack in order.

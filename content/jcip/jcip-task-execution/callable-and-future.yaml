@@ -11,6 +11,17 @@ steps:
       A `Callable` returns a value and can throw.
       Submitting one gives you a `Future`.
       `get()` waits for the result only when you need it.
+    diagram:
+      classes:
+        - { name: Future<V>, kind: interface, methods: ["get()", "get(timeout)", "cancel(b)"] }
+        - { name: Runnable, kind: interface, methods: ["run()"] }
+        - { name: FutureTask<V> }
+        - { name: Callable<V>, kind: interface, methods: ["call()"] }
+      relations:
+        - { from: FutureTask<V>, to: Future<V>, type: implements }
+        - { from: FutureTask<V>, to: Runnable, type: implements }
+        - { from: FutureTask<V>, to: Callable<V>, type: has, label: task }
+      caption: "A pool thread calls run(); your thread waits in get()."
 
   - type: explanation
     title: Parallelism needs balanced tasks

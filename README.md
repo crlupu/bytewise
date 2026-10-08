@@ -154,7 +154,9 @@ is answered correctly — so it never gives the answer away.
 | `widget` | `widget`, `config`, and a `goal`, a `question` (`{ prompt, options }`), or both. |
 
 Any explanation or exercise can also take a `diagram`, drawn as an inline SVG that follows
-the theme. A class diagram is laid out automatically, subclasses and parts below their
+the theme. Thinking in Java is built around them, and the other Java books, Head First
+Design Patterns, testing and architecture use them where structure is the point (about 140
+in all). A class diagram is laid out automatically, subclasses and parts below their
 parents:
 
 ```yaml

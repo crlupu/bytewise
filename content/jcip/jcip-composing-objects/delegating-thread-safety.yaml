@@ -15,6 +15,16 @@ steps:
       ```
 
       The concurrent map and immutable points carry the safety.
+    diagram:
+      kind: objects
+      vars:
+        - { name: tracker, to: t }
+      objects:
+        - { id: t, type: VehicleTracker, fields: [{ name: locations, to: m }] }
+        - { id: m, type: ConcurrentHashMap, fields: [{ name: "\"car1\"", to: p1 }, { name: "\"car2\"", to: p2 }] }
+        - { id: p1, type: Point, fields: [{ name: x, value: "3" }, { name: y, value: "4" }] }
+        - { id: p2, type: Point, fields: [{ name: x, value: "7" }, { name: y, value: "1" }] }
+      caption: "A thread-safe map of immutable points — the tracker needs no lock."
 
   - type: choice
     prompt: A class has two **independent** thread-safe state variables — keyboard listeners and mouse listeners, each a `CopyOnWriteArrayList`. Is the class thread-safe?

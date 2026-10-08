@@ -11,6 +11,13 @@ steps:
       A small private class holds the logical state.
       `writeReplace` swaps it in on serialization.
       Its `readResolve` rebuilds the real object.
+    diagram:
+      classes:
+        - { name: Period, kind: final, fields: ["- final start", "- final end"], methods: ["writeReplace()"] }
+        - { name: SerializationProxy, fields: [start, end], methods: ["readResolve()"] }
+      relations:
+        - { from: Period, to: SerializationProxy, type: inner, label: private static }
+      caption: "The proxy is written instead; readResolve calls new Period(start, end)."
 
   - type: match
     prompt: Match each method to its role.

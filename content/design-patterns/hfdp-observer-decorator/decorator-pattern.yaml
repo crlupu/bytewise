@@ -18,6 +18,20 @@ steps:
       A decorator is a `Beverage` that holds another `Beverage`.
       `Mocha.cost()` returns the wrapped drink's cost plus mocha.
       Wrap as many layers as you need.
+    diagram:
+      classes:
+        - { name: Beverage, kind: abstract, methods: ["cost()"] }
+        - { name: DarkRoast, methods: ["cost()"] }
+        - { name: CondimentDecorator, kind: abstract }
+        - { name: Mocha, methods: ["cost()"] }
+        - { name: Whip, methods: ["cost()"] }
+      relations:
+        - { from: DarkRoast, to: Beverage, type: extends }
+        - { from: CondimentDecorator, to: Beverage, type: extends }
+        - { from: CondimentDecorator, to: Beverage, type: has, label: wraps }
+        - { from: Mocha, to: CondimentDecorator, type: extends }
+        - { from: Whip, to: CondimentDecorator, type: extends }
+      caption: A decorator is a Beverage and has a Beverage.
 
   - type: predict
     prompt: "`DarkRoast` costs 0.99, `Mocha` adds 0.20, `Whip` adds 0.10. What is the cost?"
@@ -33,6 +47,14 @@ steps:
       - text: "0.99"
         feedback: Each decorator adds its own cost to the wrapped drink's.
     explanation: 0.99 + 0.20 + 0.20 + 0.10 = 1.49 — though in real money code, use `BigDecimal`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Beverage b, to: w }
+      objects:
+        - { id: w, type: Whip, fields: [{ name: beverage, to: m }] }
+        - { id: m, type: Mocha, fields: [{ name: beverage, to: d }] }
+        - { id: d, type: DarkRoast }
     details: |
       Each decorator's `cost()` returns the wrapped beverage's cost plus its own.
       The innermost `DarkRoast` costs 0.99; the first `Mocha` makes it 1.19; the second, 1.39; the `Whip`, 1.49.

@@ -17,6 +17,14 @@ steps:
       ```
 
       As long as it never escapes, the class is safe.
+    diagram:
+      kind: objects
+      vars:
+        - { name: people, to: ps }
+      objects:
+        - { id: ps, type: PersonSet, fields: [{ name: private mySet, to: hs }] }
+        - { id: hs, type: HashSet }
+      caption: "The only path to the HashSet goes through PersonSet's synchronized methods."
 
   - type: choice
     prompt: What would break `PersonSet`'s thread safety?

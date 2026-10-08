@@ -31,6 +31,15 @@ steps:
       That costs memory.
       It also keeps the outer object alive.
       If you don't need the outer instance, add `static`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: cache, to: inner }
+      objects:
+        - { id: inner, type: Outer.Inner, fields: [{ name: value, value: "1" }, { name: "this$0", to: outer }] }
+        - { id: outer, type: Outer, fields: [{ name: data, value: large array }] }
+      highlight: [outer]
+      caption: "The hidden this$0 keeps the Outer object alive."
 
   - type: choice
     prompt: "`Map` implementations keep one `Entry` object per key. Should `Entry` be static or nonstatic?"

@@ -11,6 +11,21 @@ steps:
       `HashMap` has no order.
       `LinkedHashMap` keeps insertion order.
       `TreeMap` keeps keys sorted, with navigation like `TreeSet`.
+    diagram:
+      classes:
+        - { name: "Map<K, V>", kind: interface }
+        - { name: HashMap }
+        - { name: LinkedHashMap }
+        - { name: "SortedMap<K, V>", kind: interface }
+        - { name: "NavigableMap<K, V>", kind: interface }
+        - { name: TreeMap }
+      relations:
+        - { from: HashMap, to: "Map<K, V>", type: implements }
+        - { from: LinkedHashMap, to: HashMap, type: extends }
+        - { from: "SortedMap<K, V>", to: "Map<K, V>", type: extends }
+        - { from: "NavigableMap<K, V>", to: "SortedMap<K, V>", type: extends }
+        - { from: TreeMap, to: "NavigableMap<K, V>", type: implements }
+      caption: LinkedHashMap is a HashMap that also links its entries in order.
 
   - type: predict
     prompt: What does this print?

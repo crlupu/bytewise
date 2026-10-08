@@ -11,6 +11,18 @@ steps:
       A proxy implements the same interface as the real subject.
       Clients can't tell them apart.
       The proxy controls when and how the real object is used.
+    diagram:
+      classes:
+        - { name: Gallery }
+        - { name: Image, kind: interface, methods: ["display()"] }
+        - { name: RealImage, methods: ["display()"] }
+        - { name: ImageProxy, methods: ["display()"] }
+      relations:
+        - { from: Gallery, to: Image, type: uses }
+        - { from: RealImage, to: Image, type: implements }
+        - { from: ImageProxy, to: Image, type: implements }
+        - { from: ImageProxy, to: RealImage, type: has }
+      caption: "The gallery can't tell the proxy from the real image."
 
   - type: match
     prompt: Match each kind of proxy with its job.

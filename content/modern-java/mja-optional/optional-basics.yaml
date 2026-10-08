@@ -12,6 +12,15 @@ steps:
       Any reference can be null, and the type doesn't say so.
       Forgetting a check gives a `NullPointerException` far from the cause.
       `Optional<Car>` says outright that there may be no car.
+    diagram:
+      classes:
+        - { name: Person, fields: ["car: Optional<Car>"] }
+        - { name: Car, fields: ["insurance: Optional<Insurance>"] }
+        - { name: Insurance, fields: ["name: String"] }
+      relations:
+        - { from: Person, to: Car, type: has }
+        - { from: Car, to: Insurance, type: has }
+      caption: "The types say it — a car may be missing; an insurer's name may not."
 
   - type: explanation
     title: Three ways to make one

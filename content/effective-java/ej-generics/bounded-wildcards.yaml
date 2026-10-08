@@ -15,6 +15,15 @@ steps:
       public void pushAll(Iterable<E> src)   // rejects Iterable<Integer>
       public void pushAll(Iterable<? extends E> src) // accepts it
       ```
+    diagram:
+      classes:
+        - { name: "Iterable<? extends Number>", kind: interface }
+        - { name: Iterable<Number>, kind: interface }
+        - { name: Iterable<Integer>, kind: interface }
+      relations:
+        - { from: Iterable<Number>, to: "Iterable<? extends Number>", type: extends }
+        - { from: Iterable<Integer>, to: "Iterable<? extends Number>", type: extends }
+      caption: "The two aren't related to each other, but the wildcard type covers both."
 
   - type: explanation
     title: PECS

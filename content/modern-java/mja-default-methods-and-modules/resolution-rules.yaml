@@ -54,6 +54,15 @@ steps:
     body: |
       If `A` and `B` are unrelated and both define `hello()`, the class doesn't compile.
       Override it and pick one with `A.super.hello()`.
+    diagram:
+      classes:
+        - { name: A, kind: interface, methods: ["default hello()"] }
+        - { name: B, kind: interface, methods: ["default hello()"] }
+        - { name: C, methods: ["hello() → A.super.hello()"] }
+      relations:
+        - { from: C, to: A, type: implements }
+        - { from: C, to: B, type: implements }
+      caption: "Neither default is more specific, so C must choose."
 
   - type: blank
     prompt: Choose `B`'s version explicitly.

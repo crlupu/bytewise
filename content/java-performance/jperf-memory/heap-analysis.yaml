@@ -18,6 +18,17 @@ steps:
       `jcmd <pid> GC.heap_dump file.hprof` writes every object to a file.
       A tool like Eclipse MAT shows what keeps each object alive.
       Follow the path back to a GC root.
+    diagram:
+      kind: objects
+      vars:
+        - { name: static BUS, to: bus }
+      objects:
+        - { id: bus, type: EventBus, fields: [{ name: listeners, to: list }] }
+        - { id: list, type: ArrayList, fields: [{ name: "[0]", to: l }] }
+        - { id: l, type: "OrderView$1", fields: [{ name: "this$0", to: v }] }
+        - { id: v, type: "OrderView (closed)", fields: [{ name: rows, value: "40 MB" }] }
+      highlight: [v]
+      caption: The path from a GC root shows why a closed view is still alive.
 
   - type: match
     prompt: Match each term with its meaning.

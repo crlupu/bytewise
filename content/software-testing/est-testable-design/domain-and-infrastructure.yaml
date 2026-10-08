@@ -18,6 +18,17 @@ steps:
       The domain declares the interfaces it needs, like `OrderRepository`.
       Adapters implement them with JDBC, HTTP or files.
       Tests plug in fakes or mocks.
+    diagram:
+      classes:
+        - { name: OrderService, methods: ["applyDiscount(order)"] }
+        - { name: OrderRepository, kind: interface, methods: ["find(id)", "save(order)"] }
+        - { name: JdbcOrders }
+        - { name: InMemoryOrders }
+      relations:
+        - { from: OrderService, to: OrderRepository, type: uses }
+        - { from: JdbcOrders, to: OrderRepository, type: implements }
+        - { from: InMemoryOrders, to: OrderRepository, type: implements }
+      caption: "The domain owns the port; adapters plug into it."
 
   - type: choice
     prompt: "`InvoiceGenerator` creates `new JdbcInvoiceDao()` inside its constructor. What's the testability problem?"

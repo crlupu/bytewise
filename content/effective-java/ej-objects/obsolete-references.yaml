@@ -16,6 +16,17 @@ steps:
 
       The array slot still points at the popped object.
       So the garbage collector can never free it.
+    diagram:
+      kind: objects
+      vars:
+        - { name: stack, to: st }
+      objects:
+        - { id: st, type: Stack, fields: [{ name: elements, to: arr }, { name: size, value: "1" }] }
+        - { id: arr, type: "Object[]", fields: [{ name: "[0]", to: a }, { name: "[1]", to: b }, { name: "[2]", value: "null" }] }
+        - { id: a, type: Task }
+        - { id: b, type: Task }
+      highlight: [b]
+      caption: "Popped, but slot [1] still points at it."
 
   - type: choice
     prompt: Why can't the garbage collector reclaim popped objects?

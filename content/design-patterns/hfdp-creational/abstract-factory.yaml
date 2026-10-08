@@ -18,6 +18,17 @@ steps:
       `PizzaIngredientFactory` has `createDough()`, `createSauce()`, `createCheese()`.
       `NYPizzaIngredientFactory` returns the New York versions of all of them.
       A pizza uses whichever factory it's given.
+    diagram:
+      classes:
+        - { name: CheesePizza, methods: ["prepare()"] }
+        - { name: PizzaIngredientFactory, kind: interface, methods: ["createDough()", "createSauce()", "createCheese()"] }
+        - { name: NYPizzaIngredientFactory }
+        - { name: ChicagoIngredientFactory }
+      relations:
+        - { from: CheesePizza, to: PizzaIngredientFactory, type: has, label: factory }
+        - { from: NYPizzaIngredientFactory, to: PizzaIngredientFactory, type: implements }
+        - { from: ChicagoIngredientFactory, to: PizzaIngredientFactory, type: implements }
+      caption: "Swap the factory, and every ingredient switches family together."
 
   - type: match
     prompt: Match each pattern with how it creates objects.
@@ -35,6 +46,20 @@ steps:
       High-level code shouldn't depend on low-level classes.
       Both should depend on abstractions.
       `PizzaStore` depends on `Pizza`, and so do the concrete pizzas.
+    diagram:
+      classes:
+        - { name: PizzaStore }
+        - { name: Pizza, kind: abstract }
+        - { name: CheesePizza }
+        - { name: VeggiePizza }
+        - { name: ClamPizza }
+      relations:
+        - { from: PizzaStore, to: Pizza, type: uses }
+        - { from: CheesePizza, to: Pizza, type: extends }
+        - { from: VeggiePizza, to: Pizza, type: extends }
+        - { from: ClamPizza, to: Pizza, type: extends }
+      highlight: [Pizza]
+      caption: "The high-level store and the low-level pizzas both depend on the abstraction."
 
   - type: choice
     prompt: Which follows the Dependency Inversion Principle?

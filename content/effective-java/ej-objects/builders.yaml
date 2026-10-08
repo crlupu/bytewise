@@ -31,6 +31,13 @@ steps:
 
       It reads like named arguments.
       And the finished object can still be immutable.
+    diagram:
+      classes:
+        - { name: NutritionFacts, kind: final, fields: ["- final servingSize", "- final calories"], methods: ["- NutritionFacts(b)"] }
+        - { name: Builder, fields: [servingSize, "calories = 0"], methods: ["calories(v)", "sodium(v)", "build()"] }
+      relations:
+        - { from: NutritionFacts, to: Builder, type: inner, label: static nested }
+      caption: The only way to make a NutritionFacts is through its Builder.
 
   - type: match
     prompt: Match each approach to its main weakness.

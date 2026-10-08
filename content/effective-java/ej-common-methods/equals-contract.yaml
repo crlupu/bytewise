@@ -65,6 +65,12 @@ steps:
       - text: Ignore the color in `ColorPoint.equals`
         feedback: Then two points of different colors are "equal", which isn't what you wanted.
     explanation: Give `ColorPoint` a private `Point` field and an `asPoint()` view, rather than extending `Point`.
+    diagram:
+      classes:
+        - { name: Point, fields: [x, y], methods: ["equals(o)"] }
+        - { name: ColorPoint, fields: [color], methods: ["equals(o)"] }
+      relations:
+        - { from: ColorPoint, to: Point, type: extends }
     details: |
       If `ColorPoint.equals` checks colour, then `point.equals(colorPoint)` is true but `colorPoint.equals(point)` is false — symmetry breaks.
       If it ignores colour when comparing with a plain `Point`, then red and blue points can both equal the same plain point, breaking transitivity.

@@ -11,6 +11,16 @@ steps:
       The default form writes every non-transient field.
       Fine when the fields are the logical data, like a name.
       Bad for a linked list, which writes every node and link.
+    diagram:
+      kind: objects
+      vars:
+        - { name: list, to: l }
+      objects:
+        - { id: l, type: StringList, fields: [{ name: size, value: "3" }, { name: head, to: n1 }] }
+        - { id: n1, type: Entry, fields: [{ name: data, value: "\"a\"" }, { name: next, to: n2 }] }
+        - { id: n2, type: Entry, fields: [{ name: data, value: "\"b\"" }, { name: next, to: n3 }] }
+        - { id: n3, type: Entry, fields: [{ name: data, value: "\"c\"" }, { name: next }] }
+      caption: "The default form writes every Entry and every link — the data is just \"a\", \"b\", \"c\"."
 
   - type: choice
     prompt: Which are disadvantages of using the default form for that linked list?

@@ -27,6 +27,15 @@ steps:
       The bootstrap loader loads the core JDK classes.
       The platform loader loads other JDK modules, and the application loader your classes.
       Each first asks its parent, so `java.lang.String` always comes from the bootstrap loader.
+    diagram:
+      kind: objects
+      vars:
+        - { name: loader, to: app }
+      objects:
+        - { id: app, type: AppClassLoader, fields: [{ name: parent, to: plat }, { name: loads, value: your code }] }
+        - { id: plat, type: PlatformLoader, fields: [{ name: parent, to: boot }, { name: loads, value: java.sql }] }
+        - { id: boot, type: Bootstrap, fields: [{ name: loads, value: java.base }] }
+      caption: Every request goes up the chain first.
 
   - type: predict
     prompt: What does `String.class.getClassLoader()` return?

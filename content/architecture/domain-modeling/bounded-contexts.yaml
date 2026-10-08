@@ -30,6 +30,11 @@ steps:
       A bounded context is where one meaning holds.
       Each context gets its own model.
       Ideally, one team owns each context.
+    diagram:
+      classes:
+        - { name: sales.Customer, fields: [creditLimit, discounts] }
+        - { name: support.Customer, fields: [openTickets, slaLevel] }
+      caption: "Same word, two models — each correct in its own context."
 
   - type: match
     prompt: Match each kind of subdomain to how to treat it.

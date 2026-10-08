@@ -26,6 +26,16 @@ steps:
       Suppose `Fruit` implements `Comparable<Fruit>`, and `Apple extends Fruit`.
       `Apple` is a `Comparable<Fruit>`, not a `Comparable<Apple>`.
       `Comparable<? super T>` accepts it.
+    diagram:
+      classes:
+        - { name: Comparable<Fruit>, kind: interface, methods: ["compareTo(Fruit f)"] }
+        - { name: Fruit }
+        - { name: Apple }
+      relations:
+        - { from: Fruit, to: Comparable<Fruit>, type: implements }
+        - { from: Apple, to: Fruit, type: extends }
+      highlight: [Apple]
+      caption: "Apple inherits compareTo(Fruit) — it never becomes a Comparable<Apple>."
 
   - type: choice
     prompt: "`class Fruit implements Comparable<Fruit>` and `class Apple extends Fruit`. Which signature lets you find the max of a `List<Apple>`?"

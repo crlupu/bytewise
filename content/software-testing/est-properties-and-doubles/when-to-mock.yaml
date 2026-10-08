@@ -49,6 +49,18 @@ steps:
       Mocking a third-party API encodes your guess about how it behaves.
       Wrap it in your own small interface and mock that.
       Test the wrapper against the real thing in an integration test.
+    diagram:
+      classes:
+        - { name: OrderService }
+        - { name: Payments, kind: interface, methods: ["charge(amount)"] }
+        - { name: StripePayments }
+        - { name: StripeClient, methods: ["(third-party API)"] }
+      relations:
+        - { from: OrderService, to: Payments, type: uses }
+        - { from: StripePayments, to: Payments, type: implements }
+        - { from: StripePayments, to: StripeClient, type: uses }
+      highlight: [Payments]
+      caption: "Mock Payments in unit tests; test StripePayments against the real client."
 
   - type: blank
     prompt: Make time controllable in tests.

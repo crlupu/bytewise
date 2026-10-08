@@ -11,6 +11,17 @@ steps:
       One menu keeps items in an array, another in an `ArrayList`.
       The waitress needs a different loop for each.
       An iterator hides how each menu stores its items.
+    diagram:
+      classes:
+        - { name: Waitress, methods: ["printMenu()"] }
+        - { name: Iterator, kind: interface, methods: ["hasNext()", "next()"] }
+        - { name: DinerMenuIterator, fields: ["items: MenuItem[]"] }
+        - { name: PancakeIterator, fields: ["items: ArrayList"] }
+      relations:
+        - { from: Waitress, to: Iterator, type: uses }
+        - { from: DinerMenuIterator, to: Iterator, type: implements }
+        - { from: PancakeIterator, to: Iterator, type: implements }
+      caption: "The waitress only sees Iterator — not arrays or lists."
 
   - type: blank
     prompt: Loop over any menu the same way.
@@ -32,6 +43,16 @@ steps:
       Menus can contain menu items — and other menus.
       `MenuComponent` is the common type for both.
       `print()` on a menu prints its children, recursively.
+    diagram:
+      classes:
+        - { name: MenuComponent, kind: abstract, methods: ["print()", "add(c)"] }
+        - { name: MenuItem, fields: [price], methods: ["print()"] }
+        - { name: Menu, fields: ["children: List"], methods: ["print()", "add(c)"] }
+      relations:
+        - { from: MenuItem, to: MenuComponent, type: extends }
+        - { from: Menu, to: MenuComponent, type: extends }
+        - { from: Menu, to: MenuComponent, type: has, label: children }
+      caption: A Menu is a MenuComponent that holds MenuComponents.
 
   - type: match
     prompt: Match each role in Composite.

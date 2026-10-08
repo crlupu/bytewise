@@ -11,6 +11,20 @@ steps:
       `List` keeps order and allows duplicates.
       `Set` forbids duplicates.
       `Queue` hands elements out in a processing order; `Map` links keys to values.
+    diagram:
+      classes:
+        - { name: Iterable<E>, kind: interface }
+        - { name: Collection<E>, kind: interface }
+        - { name: List<E>, kind: interface }
+        - { name: Set<E>, kind: interface }
+        - { name: Queue<E>, kind: interface }
+        - { name: "Map<K, V>", kind: interface }
+      relations:
+        - { from: Collection<E>, to: Iterable<E>, type: extends }
+        - { from: List<E>, to: Collection<E>, type: extends }
+        - { from: Set<E>, to: Collection<E>, type: extends }
+        - { from: Queue<E>, to: Collection<E>, type: extends }
+      caption: "Map stands apart — it isn't a Collection."
 
   - type: match
     prompt: Match each need with the interface.

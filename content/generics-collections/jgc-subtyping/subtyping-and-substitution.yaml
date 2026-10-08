@@ -11,6 +11,15 @@ steps:
       A value of a subtype can go wherever its supertype is expected.
       `Integer` is a subtype of `Number`, so an `Integer` can be added to a `List<Number>`.
       But that doesn't make `List<Integer>` a subtype of `List<Number>`.
+    diagram:
+      classes:
+        - { name: Number, kind: abstract }
+        - { name: Integer, kind: final }
+        - { name: List<Number>, kind: interface }
+        - { name: List<Integer>, kind: interface }
+      relations:
+        - { from: Integer, to: Number, type: extends }
+      caption: "The element types are related; the lists are not."
 
   - type: choice
     prompt: Why doesn't `List<Number> nums = ints;` compile, where `ints` is a `List<Integer>`?
@@ -31,6 +40,15 @@ steps:
       `Integer[]` is a subtype of `Number[]` and `Object[]`.
       So the bad store compiles.
       The array checks each store at run time and throws `ArrayStoreException`.
+    diagram:
+      classes:
+        - { name: "Object[]" }
+        - { name: "Number[]" }
+        - { name: "Integer[]" }
+      relations:
+        - { from: "Number[]", to: "Object[]", type: extends }
+        - { from: "Integer[]", to: "Number[]", type: extends }
+      caption: "Arrays follow their element types — and check every store at run time."
 
   - type: predict
     prompt: What happens?

@@ -12,6 +12,17 @@ steps:
       A `List<? extends Number>` could be a list of `Integer`, `Double` or any other number.
       Whatever you get from it is a `Number`.
       But you can't add to it: you don't know which kind it holds.
+    diagram:
+      classes:
+        - { name: "List<? extends Number>", kind: interface }
+        - { name: List<Number>, kind: interface }
+        - { name: List<Integer>, kind: interface }
+        - { name: List<Double>, kind: interface }
+      relations:
+        - { from: List<Number>, to: "List<? extends Number>", type: extends }
+        - { from: List<Integer>, to: "List<? extends Number>", type: extends }
+        - { from: List<Double>, to: "List<? extends Number>", type: extends }
+      caption: "Any of these could be behind the wildcard — each holds Numbers."
 
   - type: choice
     prompt: "Given `List<? extends Number> nums`, which lines compile?"
@@ -34,6 +45,17 @@ steps:
       A `List<? super Integer>` could be a list of `Integer`, `Number` or `Object`.
       Any of those can hold an `Integer`, so you can add one.
       What you get back is only known to be an `Object`.
+    diagram:
+      classes:
+        - { name: "List<? super Integer>", kind: interface }
+        - { name: List<Integer>, kind: interface }
+        - { name: List<Number>, kind: interface }
+        - { name: List<Object>, kind: interface }
+      relations:
+        - { from: List<Integer>, to: "List<? super Integer>", type: extends }
+        - { from: List<Number>, to: "List<? super Integer>", type: extends }
+        - { from: List<Object>, to: "List<? super Integer>", type: extends }
+      caption: "Any of these could be behind the wildcard — each accepts an Integer."
 
   - type: blank
     prompt: Copy from a source you read to a destination you write.

@@ -11,6 +11,17 @@ steps:
       A test must be able to set up the situation it wants.
       Dependencies passed in can be replaced.
       Hidden ones — `new`, static calls, singletons — can't.
+    diagram:
+      classes:
+        - { name: InvoiceService, fields: ["- clock: Clock"], methods: ["isOverdue(invoice)"] }
+        - { name: Clock, kind: abstract, methods: ["instant()"] }
+        - { name: SystemClock }
+        - { name: FixedClock }
+      relations:
+        - { from: InvoiceService, to: Clock, type: has }
+        - { from: SystemClock, to: Clock, type: extends }
+        - { from: FixedClock, to: Clock, type: extends }
+      caption: "Pass in Clock.fixed(…) and the test controls \"now\"."
 
   - type: match
     prompt: Easy or hard to control in a test?

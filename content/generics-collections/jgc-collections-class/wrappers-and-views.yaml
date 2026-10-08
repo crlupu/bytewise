@@ -11,6 +11,16 @@ steps:
       `Collections.unmodifiableList(list)` blocks changes through the view.
       But whoever holds the original can still change it.
       The view shows those changes.
+    diagram:
+      kind: objects
+      vars:
+        - { name: list, to: al }
+        - { name: view, to: v }
+      objects:
+        - { id: v, type: UnmodifiableList, fields: [{ name: list, to: al }] }
+        - { id: al, type: ArrayList, fields: [{ name: size, value: "2" }] }
+      highlight: [al]
+      caption: "The view has no data of its own — it reads through to the list."
 
   - type: predict
     prompt: What does this print?

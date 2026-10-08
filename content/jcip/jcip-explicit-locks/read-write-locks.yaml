@@ -15,6 +15,16 @@ steps:
       ```java
       r.lock(); try { return map.get(key); } finally { r.unlock(); }
       ```
+    diagram:
+      kind: objects
+      vars:
+        - { name: rwl, to: rw }
+      objects:
+        - { id: rw, type: ReentrantReadWriteLock, fields: [{ name: readerLock, to: rl }, { name: writerLock, to: wl }] }
+        - { id: rl, type: ReadLock, fields: [{ name: sync, to: s }] }
+        - { id: wl, type: WriteLock, fields: [{ name: sync, to: s }] }
+        - { id: s, type: Sync, fields: [{ name: readers, value: "3" }, { name: writer, value: none }] }
+      caption: Two views of one shared state.
 
   - type: match
     prompt: Who can proceed?

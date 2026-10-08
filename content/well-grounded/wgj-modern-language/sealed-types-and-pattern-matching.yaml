@@ -11,6 +11,15 @@ steps:
       `sealed interface Shape permits Circle, Square {}` allows only those two.
       No one else can implement `Shape`.
       Subtypes must be `final`, `sealed` or `non-sealed`.
+    diagram:
+      classes:
+        - { name: Shape, kind: interface }
+        - { name: Circle, kind: record, fields: [double radius] }
+        - { name: Square, kind: record, fields: [double side] }
+      relations:
+        - { from: Circle, to: Shape, type: implements }
+        - { from: Square, to: Shape, type: implements }
+      caption: "sealed … permits Circle, Square — the hierarchy is closed."
 
   - type: explanation
     title: Patterns test and bind

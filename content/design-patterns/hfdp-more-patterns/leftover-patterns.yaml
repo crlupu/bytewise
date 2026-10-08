@@ -18,6 +18,15 @@ steps:
       A request passes along a chain of handlers.
       Each handles it or passes it on.
       Servlet filters and logging handlers work this way.
+    diagram:
+      kind: objects
+      vars:
+        - { name: chain, to: a }
+      objects:
+        - { id: a, type: AuthFilter, fields: [{ name: next, to: b }] }
+        - { id: b, type: LoggingFilter, fields: [{ name: next, to: c }] }
+        - { id: c, type: Servlet }
+      caption: Each handler either answers the request or passes it to next.
 
   - type: explanation
     title: Visitor, Memento, Flyweight
@@ -25,6 +34,18 @@ steps:
       Visitor adds operations to a fixed class hierarchy without changing it.
       Memento saves and restores an object's state, for undo.
       Flyweight shares many fine-grained objects to save memory.
+    diagram:
+      classes:
+        - { name: Shape, kind: interface, methods: ["accept(Visitor v)"] }
+        - { name: Visitor, kind: interface, methods: ["visit(Circle c)", "visit(Square s)"] }
+        - { name: Circle }
+        - { name: Square }
+        - { name: AreaVisitor }
+      relations:
+        - { from: Circle, to: Shape, type: implements }
+        - { from: Square, to: Shape, type: implements }
+        - { from: AreaVisitor, to: Visitor, type: implements }
+      caption: "A new operation is a new Visitor; the shapes stay unchanged."
 
   - type: match
     prompt: Match each problem with the pattern.

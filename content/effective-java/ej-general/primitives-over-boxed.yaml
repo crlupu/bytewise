@@ -28,6 +28,16 @@ steps:
       `==` on two `Integer`s compares references, not values.
       Unboxing a `null` throws `NullPointerException`.
       Use boxed types only where you must, like in collections.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Integer a, to: x }
+        - { name: Integer b, to: y }
+        - { name: int c, value: "42" }
+      objects:
+        - { id: x, type: Integer, fields: [{ name: value, value: "42" }] }
+        - { id: y, type: Integer, fields: [{ name: value, value: "42" }] }
+      caption: "a == b compares two references, so it's false."
 
   - type: predict
     prompt: What does `naturalOrder.compare(new Integer(42), new Integer(42))` return?

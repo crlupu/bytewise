@@ -29,6 +29,19 @@ steps:
       Inheritance fixes behaviour at compile time.
       Composition lets an object get its behaviour from parts, swappable at run time.
       HAS-A can be better than IS-A.
+    diagram:
+      classes:
+        - { name: Duck, fields: [quackBehavior], methods: ["performQuack()"] }
+        - { name: QuackBehavior, kind: interface, methods: ["quack()"] }
+        - { name: Quack }
+        - { name: Squeak }
+        - { name: MuteQuack }
+      relations:
+        - { from: Duck, to: QuackBehavior, type: has }
+        - { from: Quack, to: QuackBehavior, type: implements }
+        - { from: Squeak, to: QuackBehavior, type: implements }
+        - { from: MuteQuack, to: QuackBehavior, type: implements }
+      caption: "The duck HAS-A quack behaviour, and it can be swapped."
 
   - type: choice
     prompt: Why favour composition over inheritance?

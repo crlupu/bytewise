@@ -14,6 +14,16 @@ steps:
       ```java
       public String[] getStates() { return states; } // private array escapes
       ```
+    diagram:
+      kind: objects
+      vars:
+        - { name: "String[] s", to: arr }
+        - { name: unsafe, to: us }
+      objects:
+        - { id: us, type: UnsafeStates, fields: [{ name: private states, to: arr }] }
+        - { id: arr, type: "String[]", fields: [{ name: "[0]", value: "\"AK\"" }, { name: "[1]", value: "\"AL\"" }] }
+      highlight: [arr]
+      caption: "After getStates(), any caller can write into the private array."
 
   - type: choice
     prompt: "`getStates()` returns the private array. What's the problem?"

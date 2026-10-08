@@ -11,6 +11,16 @@ steps:
       `Duck` has `fly()`, so every subclass inherits it.
       Then rubber ducks fly.
       Overriding `fly()` to do nothing in each such subclass doesn't scale.
+    diagram:
+      classes:
+        - { name: Duck, methods: ["quack()", "fly()"] }
+        - { name: MallardDuck }
+        - { name: RubberDuck }
+      relations:
+        - { from: MallardDuck, to: Duck, type: extends }
+        - { from: RubberDuck, to: Duck, type: extends }
+      highlight: [RubberDuck]
+      caption: "RubberDuck inherits fly() too."
 
   - type: explanation
     title: Encapsulate what varies
@@ -18,6 +28,19 @@ steps:
       Flying varies between ducks; being a duck doesn't.
       Move flying into a `FlyBehavior` interface with classes like `FlyWithWings` and `FlyNoWay`.
       Each duck holds a `FlyBehavior` and delegates to it.
+    diagram:
+      classes:
+        - { name: Duck, fields: [flyBehavior], methods: ["performFly()", "setFlyBehavior(f)"] }
+        - { name: FlyBehavior, kind: interface, methods: ["fly()"] }
+        - { name: FlyWithWings }
+        - { name: FlyNoWay }
+        - { name: FlyRocket }
+      relations:
+        - { from: Duck, to: FlyBehavior, type: has }
+        - { from: FlyWithWings, to: FlyBehavior, type: implements }
+        - { from: FlyNoWay, to: FlyBehavior, type: implements }
+        - { from: FlyRocket, to: FlyBehavior, type: implements }
+      caption: "performFly() delegates to whichever FlyBehavior the duck holds."
 
   - type: blank
     prompt: Delegate flying to the duck's behaviour object.

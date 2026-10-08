@@ -12,6 +12,15 @@ steps:
       Most collections count their structural changes.
       Their iterators check the count on every step.
       A change from outside the iterator throws `ConcurrentModificationException`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: list, to: al }
+        - { name: it, to: itr }
+      objects:
+        - { id: itr, type: ArrayList.Itr, fields: [{ name: cursor, value: "1" }, { name: expectedModCount, value: "3" }, { name: "this$0", to: al }] }
+        - { id: al, type: ArrayList, fields: [{ name: size, value: "3" }, { name: modCount, value: "3" }] }
+      caption: "Each next() checks that modCount still equals expectedModCount."
 
   - type: predict
     prompt: What happens?

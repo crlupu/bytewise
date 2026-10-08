@@ -10,6 +10,17 @@ steps:
     body: |
       A caller may keep a reference to a mutable object it passed in.
       Later, it can change your internal state through it.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Date start, to: d }
+        - { name: Period p, to: per }
+      objects:
+        - { id: per, type: Period, fields: [{ name: start, to: d }, { name: end, to: e }] }
+        - { id: d, type: Date, fields: [{ name: year, value: "2026" }] }
+        - { id: e, type: Date, fields: [{ name: year, value: "2027" }] }
+      highlight: [d]
+      caption: The caller and the Period share one Date.
 
   - type: predict
     prompt: "`Period` stores the two `Date`s it was given in `private final` fields and checks `start` is before `end`. What does this print?"
@@ -38,6 +49,18 @@ steps:
       Return copies from getters.
       Don't use `clone` on types that can be subclassed.
       Better still, use immutable types like `Instant`.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Date start, to: d }
+        - { name: Period p, to: per }
+      objects:
+        - { id: d, type: Date, fields: [{ name: year, value: "2026" }] }
+        - { id: per, type: Period, fields: [{ name: start, to: c1 }, { name: end, to: c2 }] }
+        - { id: c1, type: Date, fields: [{ name: year, value: "2026" }] }
+        - { id: c2, type: Date, fields: [{ name: year, value: "2027" }] }
+      highlight: [c1, c2]
+      caption: "The Period's copies can't be reached from outside."
 
   - type: order
     prompt: Put a defensive constructor's work in order.

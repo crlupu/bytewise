@@ -26,6 +26,17 @@ steps:
       Write one `filter` that takes the test as a parameter.
       The test is an object with one method, like `test(Apple a)`.
       The filtering loop stays the same; only the behaviour changes.
+    diagram:
+      classes:
+        - { name: Inventory, methods: ["filter(apples, p)"] }
+        - { name: ApplePredicate, kind: interface, methods: ["test(Apple a)"] }
+        - { name: GreenApplePredicate }
+        - { name: HeavyApplePredicate }
+      relations:
+        - { from: Inventory, to: ApplePredicate, type: uses }
+        - { from: GreenApplePredicate, to: ApplePredicate, type: implements }
+        - { from: HeavyApplePredicate, to: ApplePredicate, type: implements }
+      caption: "A new requirement is a new predicate; filter never changes."
 
   - type: choice
     prompt: Which signature parameterizes the behaviour?

@@ -46,6 +46,15 @@ steps:
       ```
 
       `volatile` makes the new holder visible at once.
+    diagram:
+      kind: objects
+      vars:
+        - { name: cache, to: c2 }
+      objects:
+        - { id: c1, type: OneValueCache, fields: [{ name: lastNumber, value: "12" }, { name: lastFactors, value: "[2, 2, 3]" }] }
+        - { id: c2, type: OneValueCache, fields: [{ name: lastNumber, value: "15" }, { name: lastFactors, value: "[3, 5]" }] }
+      highlight: [c2]
+      caption: "A reader sees the old pair or the new one — never 15 with [2, 2, 3]."
 
   - type: choice
     prompt: Why does this need no lock?

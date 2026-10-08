@@ -18,6 +18,15 @@ steps:
       `default` marks a method with an implementation in the interface.
       Implementing classes inherit it.
       They can override it like any other method.
+    diagram:
+      classes:
+        - { name: Collection<E>, kind: interface, methods: ["size()", "default stream()"] }
+        - { name: ArrayList }
+        - { name: MyOldCollection }
+      relations:
+        - { from: ArrayList, to: Collection<E>, type: implements }
+        - { from: MyOldCollection, to: Collection<E>, type: implements }
+      caption: "Classes written before Java 8 inherit stream() without a change."
 
   - type: blank
     prompt: Give `Sized` an `isEmpty` that implementations get for free.

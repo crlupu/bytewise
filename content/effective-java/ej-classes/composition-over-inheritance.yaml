@@ -63,6 +63,18 @@ steps:
       Each method forwards the call to it.
       The inner object's own calls never reach your code.
       And the wrapper works with any implementation of the interface.
+    diagram:
+      classes:
+        - { name: Set<E>, kind: interface, methods: ["add(e)", "addAll(c)"] }
+        - { name: HashSet<E> }
+        - { name: ForwardingSet<E>, fields: ["- s: Set<E>"], methods: ["add(e)", "addAll(c)"] }
+        - { name: InstrumentedSet<E>, fields: [addCount], methods: ["add(e)", "addAll(c)"] }
+      relations:
+        - { from: HashSet<E>, to: Set<E>, type: implements }
+        - { from: ForwardingSet<E>, to: Set<E>, type: implements }
+        - { from: ForwardingSet<E>, to: Set<E>, type: has, label: forwards to }
+        - { from: InstrumentedSet<E>, to: ForwardingSet<E>, type: extends }
+      caption: "The wrapped set can be a HashSet, a TreeSet — any Set."
 
   - type: match
     prompt: Match each term to its meaning.

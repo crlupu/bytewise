@@ -18,6 +18,19 @@ steps:
       Observers register with the subject.
       When the subject changes, it calls `update()` on each.
       Observers can join or leave at any time.
+    diagram:
+      classes:
+        - { name: Subject, kind: interface, methods: ["registerObserver(o)", "removeObserver(o)", "notifyObservers()"] }
+        - { name: WeatherData, methods: ["setMeasurements()"] }
+        - { name: Observer, kind: interface, methods: ["update()"] }
+        - { name: CurrentConditions }
+        - { name: StatsDisplay }
+      relations:
+        - { from: WeatherData, to: Subject, type: implements }
+        - { from: WeatherData, to: Observer, type: has, label: "observers *" }
+        - { from: CurrentConditions, to: Observer, type: implements }
+        - { from: StatsDisplay, to: Observer, type: implements }
+      caption: The subject knows only the Observer interface.
 
   - type: order
     prompt: Put the Observer flow in order.

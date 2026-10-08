@@ -12,6 +12,13 @@ steps:
       A package-private method is invisible outside its package.
       A subclass elsewhere can declare one with the same name.
       It doesn't override; it's a separate method.
+    diagram:
+      classes:
+        - { name: click.CodeTalk, methods: ["+ doIt()", "~ printMessage()"] }
+        - { name: hack.ClickIt, methods: ["~ printMessage()"] }
+      relations:
+        - { from: hack.ClickIt, to: click.CodeTalk, type: extends }
+      caption: "~ is package-private: the two printMessage() methods can't see each other."
 
   - type: predict
     prompt: What does `new TypeIt.ClickIt().doIt()` print?

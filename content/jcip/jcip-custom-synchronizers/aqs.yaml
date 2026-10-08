@@ -36,6 +36,15 @@ steps:
     body: |
       Keep the AQS subclass as a private helper.
       Expose only your own methods, like `signal` and `await`.
+    diagram:
+      classes:
+        - { name: AbstractQueuedSynchronizer, kind: abstract, fields: ["state: int"], methods: ["acquire(n)", "release(n)", "tryAcquire(n)", "tryRelease(n)"] }
+        - { name: Sync, methods: ["tryAcquire(n)", "tryRelease(n)"] }
+        - { name: ReentrantLock, methods: ["lock()", "unlock()"] }
+      relations:
+        - { from: Sync, to: AbstractQueuedSynchronizer, type: extends }
+        - { from: ReentrantLock, to: Sync, type: has, label: private }
+      caption: "Clients see lock() and unlock(); the AQS machinery stays hidden."
 
   - type: choice
     prompt: What does a negative return from `tryAcquireShared` tell AQS?

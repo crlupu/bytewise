@@ -44,6 +44,16 @@ steps:
       `type.cast(obj)` is checked at run time.
       There's no `List<String>.class`, though.
       So only reifiable types work as keys.
+    diagram:
+      kind: objects
+      vars:
+        - { name: f, to: fav }
+      objects:
+        - { id: fav, type: Favorites, fields: [{ name: favorites, to: map }] }
+        - { id: map, type: "Map<Class<?>, Object>", fields: [{ name: String.class, to: s }, { name: Integer.class, to: i }] }
+        - { id: s, type: String, fields: [{ name: value, value: "\"Java\"" }] }
+        - { id: i, type: Integer, fields: [{ name: value, value: "0xcafebabe" }] }
+      caption: "Each key is a Class object, and type.cast checks its value."
 
   - type: choice
     prompt: Why does `getFavorite` call `type.cast(...)` instead of `(T) ...`?

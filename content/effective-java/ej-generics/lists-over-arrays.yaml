@@ -11,6 +11,15 @@ steps:
       Arrays are covariant: `Long[]` is an `Object[]`.
       Store a `String` in it, and it fails at run time.
       Generics reject the same mistake at compile time.
+    diagram:
+      classes:
+        - { name: "Object[]" }
+        - { name: "Long[]" }
+        - { name: List<Object>, kind: interface }
+        - { name: List<Long>, kind: interface }
+      relations:
+        - { from: "Long[]", to: "Object[]", type: extends }
+      caption: "Long[] is an Object[]; List<Long> is no kind of List<Object>."
 
   - type: predict
     prompt: What happens?

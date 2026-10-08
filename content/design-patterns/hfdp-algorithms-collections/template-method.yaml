@@ -18,6 +18,15 @@ steps:
       Steps that must differ are abstract: `brew()`, `addCondiments()`.
       Hooks are optional steps with a default, like `customerWantsCondiments()` returning true.
       Make the template method `final` so the order can't change.
+    diagram:
+      classes:
+        - { name: CaffeineBeverage, kind: abstract, methods: ["final prepareRecipe()", "boilWater()", "abstract brew()", "abstract addCondiments()"] }
+        - { name: Coffee, methods: ["brew()", "addCondiments()"] }
+        - { name: Tea, methods: ["brew()", "addCondiments()"] }
+      relations:
+        - { from: Coffee, to: CaffeineBeverage, type: extends }
+        - { from: Tea, to: CaffeineBeverage, type: extends }
+      caption: "The base class owns the order; subclasses fill in the steps."
 
   - type: blank
     prompt: Stop subclasses from changing the algorithm's order.

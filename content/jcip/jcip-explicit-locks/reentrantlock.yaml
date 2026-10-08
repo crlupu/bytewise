@@ -38,6 +38,12 @@ steps:
       `tryLock()` gives up at once if the lock is taken.
       `tryLock(timeout)` waits up to a limit.
       `lockInterruptibly()` can be interrupted while waiting.
+    diagram:
+      classes:
+        - { name: Lock, kind: interface, methods: ["lock()", "tryLock()", "tryLock(timeout)", "lockInterruptibly()", "unlock()", "newCondition()"] }
+        - { name: ReentrantLock, methods: ["isHeldByCurrentThread()"] }
+      relations:
+        - { from: ReentrantLock, to: Lock, type: implements }
 
   - type: match
     prompt: Match each acquisition method to its behaviour.

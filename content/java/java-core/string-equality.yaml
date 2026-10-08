@@ -16,6 +16,15 @@ steps:
       ```
 
       With strings, `==` sometimes looks like it works.
+    diagram:
+      kind: objects
+      vars:
+        - { name: a, to: x }
+        - { name: b, to: y }
+      objects:
+        - { id: x, type: StringBuilder, fields: [{ name: value, value: "\"hi\"" }] }
+        - { id: y, type: StringBuilder, fields: [{ name: value, value: "\"hi\"" }] }
+      caption: "Same value, two objects — so a == b is false."
 
   - type: predict
     prompt: What does this print?
@@ -72,6 +81,16 @@ steps:
       ```
 
       `intern()` returns the shared copy.
+    diagram:
+      kind: objects
+      vars:
+        - { name: "\"hello\"", to: p }
+        - { name: s, to: p }
+        - { name: t, to: n }
+      objects:
+        - { id: p, type: "String (pooled)", fields: [{ name: value, value: "\"hello\"" }] }
+        - { id: n, type: String, fields: [{ name: value, value: "\"hello\"" }] }
+      caption: "s is the literal itself; t was built at run time."
 
   - type: predict
     prompt: What does this print?

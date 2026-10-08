@@ -11,6 +11,17 @@ steps:
       A remote control has buttons for lights, fans and stereos from different makers.
       The remote shouldn't know how each device works.
       Each button holds a command object with `execute()`.
+    diagram:
+      classes:
+        - { name: RemoteControl, methods: ["buttonPressed(slot)"] }
+        - { name: Command, kind: interface, methods: ["execute()", "undo()"] }
+        - { name: LightOnCommand, methods: ["execute()", "undo()"] }
+        - { name: Light, methods: ["on()", "off()"] }
+      relations:
+        - { from: RemoteControl, to: Command, type: has, label: "slots *" }
+        - { from: LightOnCommand, to: Command, type: implements }
+        - { from: LightOnCommand, to: Light, type: has, label: receiver }
+      caption: "The remote knows Command; only the command knows the Light."
 
   - type: match
     prompt: Match each role with the remote example.

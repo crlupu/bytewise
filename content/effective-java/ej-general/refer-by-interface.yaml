@@ -26,6 +26,18 @@ steps:
       `Set<Son> s = new LinkedHashSet<>();`
       To switch, change only the constructor.
       If you rely on special behaviour, like order, document it.
+    diagram:
+      classes:
+        - { name: Set<E>, kind: interface }
+        - { name: HashSet }
+        - { name: LinkedHashSet }
+        - { name: TreeSet }
+      relations:
+        - { from: HashSet, to: Set<E>, type: implements }
+        - { from: LinkedHashSet, to: Set<E>, type: implements }
+        - { from: TreeSet, to: Set<E>, type: implements }
+      highlight: [Set<E>]
+      caption: Code that says Set works with any of them.
 
   - type: explanation
     title: When to use a class

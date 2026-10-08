@@ -11,6 +11,13 @@ steps:
       Every object has a header, typically 12 bytes on a 64-bit JVM.
       Sizes round up to a multiple of 8 bytes.
       References take 4 bytes with compressed oops, below about 32 GB of heap.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Point p, to: pt }
+      objects:
+        - { id: pt, type: "Point — 24 bytes", fields: [{ name: header, value: "12 bytes" }, { name: int x, value: "4 bytes" }, { name: int y, value: "4 bytes" }, { name: padding, value: "4 bytes" }] }
+      caption: "Two ints of data, 24 bytes of heap."
 
   - type: choice
     prompt: Why can a 32 GB heap hold less than a 31 GB one?

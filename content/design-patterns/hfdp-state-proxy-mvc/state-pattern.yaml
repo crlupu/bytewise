@@ -18,6 +18,19 @@ steps:
       `NoCoinState`, `HasCoinState` and the others implement a `State` interface.
       The machine holds its current state and delegates each action to it.
       States switch the machine to the next state.
+    diagram:
+      classes:
+        - { name: GumballMachine, methods: ["insertCoin()", "turnCrank()"] }
+        - { name: State, kind: interface, methods: ["insertCoin()", "ejectCoin()", "turnCrank()"] }
+        - { name: NoCoinState }
+        - { name: HasCoinState }
+        - { name: SoldState }
+      relations:
+        - { from: GumballMachine, to: State, type: has, label: current }
+        - { from: NoCoinState, to: State, type: implements }
+        - { from: HasCoinState, to: State, type: implements }
+        - { from: SoldState, to: State, type: implements }
+      caption: SoldOutState and any new state plug in the same way.
 
   - type: predict
     prompt: The machine is in `NoCoinState`. What happens on `turnCrank()`?

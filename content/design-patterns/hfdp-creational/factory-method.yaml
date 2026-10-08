@@ -18,6 +18,18 @@ steps:
       Put the `if` chain in one `SimplePizzaFactory.createPizza(type)`.
       Clients ask the factory and get a `Pizza`.
       Not a formal pattern, but a useful idiom.
+    diagram:
+      classes:
+        - { name: PizzaStore, methods: ["orderPizza(type)"] }
+        - { name: SimplePizzaFactory, methods: ["createPizza(type)"] }
+        - { name: Pizza, kind: abstract }
+        - { name: CheesePizza }
+        - { name: VeggiePizza }
+      relations:
+        - { from: PizzaStore, to: SimplePizzaFactory, type: has, label: factory }
+        - { from: SimplePizzaFactory, to: Pizza, type: uses, label: creates }
+        - { from: CheesePizza, to: Pizza, type: extends }
+        - { from: VeggiePizza, to: Pizza, type: extends }
 
   - type: explanation
     title: Factory Method
@@ -25,6 +37,15 @@ steps:
       `PizzaStore` declares an abstract `createPizza(type)`.
       `NYPizzaStore` and `ChicagoPizzaStore` override it to make their own styles.
       `orderPizza()` stays the same and calls the factory method.
+    diagram:
+      classes:
+        - { name: PizzaStore, kind: abstract, methods: ["orderPizza(type)", "abstract createPizza(type)"] }
+        - { name: NYPizzaStore, methods: ["createPizza(type)"] }
+        - { name: ChicagoPizzaStore, methods: ["createPizza(type)"] }
+      relations:
+        - { from: NYPizzaStore, to: PizzaStore, type: extends }
+        - { from: ChicagoPizzaStore, to: PizzaStore, type: extends }
+      caption: "orderPizza() calls createPizza(); each subclass decides what it returns."
 
   - type: blank
     prompt: Let subclasses decide which pizza to create.

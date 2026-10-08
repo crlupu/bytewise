@@ -11,6 +11,17 @@ steps:
       A real database or payment service makes tests slow and flaky.
       A double replaces it with something you control.
       You decide what it returns and can check how it was used.
+    diagram:
+      classes:
+        - { name: OrderService, methods: ["checkout(order)"] }
+        - { name: PaymentGateway, kind: interface, methods: ["charge(amount)"] }
+        - { name: StripeGateway }
+        - { name: FakeGateway }
+      relations:
+        - { from: OrderService, to: PaymentGateway, type: has }
+        - { from: StripeGateway, to: PaymentGateway, type: implements }
+        - { from: FakeGateway, to: PaymentGateway, type: implements }
+      caption: "Production wires in Stripe; the test wires in a double."
 
   - type: match
     prompt: Match each kind of double with what it does.

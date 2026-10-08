@@ -22,6 +22,18 @@ steps:
       ```
 
       Code written for `Operation` accepts all of them.
+    diagram:
+      classes:
+        - { name: java.lang.Enum, kind: abstract }
+        - { name: Operation, kind: interface, methods: ["apply(x, y)"] }
+        - { name: BasicOperation, kind: enum, fields: ["PLUS, MINUS"] }
+        - { name: ExtendedOperation, kind: enum, fields: [EXP] }
+      relations:
+        - { from: BasicOperation, to: java.lang.Enum, type: extends }
+        - { from: ExtendedOperation, to: java.lang.Enum, type: extends }
+        - { from: BasicOperation, to: Operation, type: implements }
+        - { from: ExtendedOperation, to: Operation, type: implements }
+      caption: "The superclass slot is taken by Enum; the interface is shared."
 
   - type: choice
     prompt: Why can't `ExtendedOperation extends BasicOperation`?

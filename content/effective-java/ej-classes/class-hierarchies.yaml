@@ -38,6 +38,17 @@ steps:
       Give each kind its own subclass, with only its own fields.
       Forget to implement a method, and it won't compile.
       `sealed` lets you list the allowed subclasses.
+    diagram:
+      classes:
+        - { name: Figure, kind: abstract, methods: ["abstract area()"] }
+        - { name: Rectangle, fields: [length, width], methods: ["area()"] }
+        - { name: Circle, fields: [radius], methods: ["area()"] }
+        - { name: Square }
+      relations:
+        - { from: Rectangle, to: Figure, type: extends }
+        - { from: Circle, to: Figure, type: extends }
+        - { from: Square, to: Rectangle, type: extends }
+      caption: Each class carries only the fields it needs.
 
   - type: order
     prompt: Put the steps of converting a tagged class into a hierarchy in order.

@@ -55,6 +55,18 @@ steps:
       `Deque` adds and removes at both ends.
       `ArrayDeque` is faster than `Stack` and `LinkedList`.
       `push` and `pop` work at the front.
+    diagram:
+      classes:
+        - { name: Queue<E>, kind: interface, methods: ["offer(e)", "poll()", "peek()"] }
+        - { name: PriorityQueue }
+        - { name: Deque<E>, kind: interface, methods: ["push(e)", "pop()", "offerLast(e)"] }
+        - { name: ArrayDeque }
+        - { name: LinkedList }
+      relations:
+        - { from: PriorityQueue, to: Queue<E>, type: implements }
+        - { from: Deque<E>, to: Queue<E>, type: extends }
+        - { from: ArrayDeque, to: Deque<E>, type: implements }
+        - { from: LinkedList, to: Deque<E>, type: implements }
 
   - type: predict
     prompt: What does this print?

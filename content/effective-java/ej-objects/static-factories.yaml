@@ -23,6 +23,15 @@ steps:
       ```
 
       It can have a clear name, reuse objects, and return a subtype.
+    diagram:
+      classes:
+        - { name: EnumSet<E>, kind: abstract, methods: ["static noneOf(type)", "static of(e1, e2)"] }
+        - { name: RegularEnumSet, fields: [long bits] }
+        - { name: JumboEnumSet, fields: ["long[] bits"] }
+      relations:
+        - { from: RegularEnumSet, to: EnumSet<E>, type: extends }
+        - { from: JumboEnumSet, to: EnumSet<E>, type: extends }
+      caption: "EnumSet's factories pick a hidden subclass by the enum's size."
 
   - type: choice
     prompt: Which of these can a static factory method do that a constructor can't?

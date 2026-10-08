@@ -12,6 +12,18 @@ steps:
       An ordinary reference keeps an object alive.
       A soft reference lets the GC free it when memory is short.
       A weak reference lets it go at the next collection.
+    diagram:
+      kind: objects
+      vars:
+        - { name: strong, to: a }
+        - { name: soft, to: sr }
+        - { name: weak, to: wr }
+      objects:
+        - { id: a, type: Image, fields: [{ name: freed, value: never }] }
+        - { id: sr, type: SoftReference, fields: [{ name: referent, to: b }] }
+        - { id: b, type: Image, fields: [{ name: freed, value: if memory is short }] }
+        - { id: wr, type: WeakReference, fields: [{ name: referent, to: c }] }
+        - { id: c, type: Image, fields: [{ name: freed, value: at next GC }] }
 
   - type: match
     prompt: Match each reference type with when its object can be collected.

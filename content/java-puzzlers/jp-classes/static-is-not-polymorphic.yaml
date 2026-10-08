@@ -12,6 +12,13 @@ steps:
       A subclass's static method with the same signature hides the parent's.
       Calls are resolved from the declared type, at compile time.
       The object itself is ignored.
+    diagram:
+      classes:
+        - { name: Dog, methods: ["static bark()"] }
+        - { name: Basenji, methods: ["static bark()"] }
+      relations:
+        - { from: Basenji, to: Dog, type: extends }
+      caption: "Two separate static methods — the declared type picks one."
 
   - type: predict
     prompt: What does this print?

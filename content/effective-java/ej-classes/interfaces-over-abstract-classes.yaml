@@ -12,6 +12,17 @@ steps:
       It can implement any number of interfaces.
       So existing classes are easy to retrofit with an interface.
       Interfaces are ideal for mixins like `Comparable`.
+    diagram:
+      classes:
+        - { name: Recording }
+        - { name: Comparable<Song>, kind: interface }
+        - { name: Serializable, kind: interface }
+        - { name: Song }
+      relations:
+        - { from: Song, to: Recording, type: extends }
+        - { from: Song, to: Comparable<Song>, type: implements }
+        - { from: Song, to: Serializable, type: implements }
+      caption: "One superclass, as many interfaces as you like."
 
   - type: choice
     prompt: Which are advantages of interfaces over abstract classes?
@@ -38,6 +49,16 @@ steps:
           public int size() { return a.length; }
       };
       ```
+    diagram:
+      classes:
+        - { name: List<E>, kind: interface, methods: ["get(i)", "size()", "iterator()", "indexOf(o)"] }
+        - { name: AbstractList<E>, kind: abstract, methods: ["abstract get(i)", "abstract size()", "iterator()", "indexOf(o)"] }
+        - { name: anonymous subclass, methods: ["get(i)", "size()"] }
+      relations:
+        - { from: AbstractList<E>, to: List<E>, type: implements }
+        - { from: anonymous subclass, to: AbstractList<E>, type: extends }
+      highlight: [anonymous subclass]
+      caption: "Write two methods; the skeleton supplies the rest of List."
 
   - type: match
     prompt: Match each interface to its skeletal implementation.

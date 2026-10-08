@@ -17,6 +17,17 @@ steps:
       ```
 
       Change the policy in one place.
+    diagram:
+      classes:
+        - { name: Executor, kind: interface, methods: ["execute(r)"] }
+        - { name: ExecutorService, kind: interface, methods: ["submit(task)", "shutdown()"] }
+        - { name: ThreadPoolExecutor }
+        - { name: ScheduledExecutorService, kind: interface, methods: ["schedule(task, delay)"] }
+      relations:
+        - { from: ExecutorService, to: Executor, type: extends }
+        - { from: ThreadPoolExecutor, to: ExecutorService, type: implements }
+        - { from: ScheduledExecutorService, to: ExecutorService, type: extends }
+      caption: Code written against Executor never names the pool behind it.
 
   - type: match
     prompt: Match each factory to the pool it builds.

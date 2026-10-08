@@ -12,6 +12,10 @@ steps:
       Some objects must be unique: a registry, a hardware driver, a configuration.
       A private constructor stops others from calling `new`.
       A static method returns the single instance.
+    diagram:
+      classes:
+        - { name: Singleton, kind: final, fields: ["- static instance: Singleton"], methods: ["- Singleton()", "+ static getInstance()"] }
+      caption: "The constructor is private; getInstance() is the only way in."
 
   - type: explanation
     title: Lazy creation can race
@@ -19,6 +23,16 @@ steps:
       `if (instance == null) instance = new Singleton();` isn't thread-safe.
       Two threads can both see null and both create one.
       The fix: eager creation, a holder class, or an enum.
+    diagram:
+      kind: objects
+      vars:
+        - { name: Thread A got, to: s1 }
+        - { name: Thread B got, to: s2 }
+      objects:
+        - { id: s1, type: Singleton }
+        - { id: s2, type: Singleton }
+      highlight: [s1, s2]
+      caption: "Both threads saw null — now there are two \"singletons\"."
 
   - type: choice
     prompt: Two threads call this at the same time on first use. What can happen?
