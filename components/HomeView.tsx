@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronIcon, PlayIcon } from "@/components/icons";
+import { ChevronIcon, PlayIcon, SearchIcon } from "@/components/icons";
 import { booksOf } from "@/components/Books";
 import { Meter, PageHead, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
@@ -46,7 +46,11 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
 
   return (
     <>
-      <PageHead title="Learn" subtitle={hydrated ? longDate() : " "} />
+      <PageHead title="Learn" subtitle={hydrated ? longDate() : " "}>
+        <Link href="/search/" className="icon-btn icon-btn--tinted" aria-label="Search lessons">
+          <SearchIcon aria-hidden />
+        </Link>
+      </PageHead>
 
       <div className="bento">
         {target && course && steps && (

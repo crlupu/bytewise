@@ -47,6 +47,14 @@ const Day = z.object({
   exercises: z.number().int().min(0).default(0),
 });
 
+const BossRecord = z.object({
+  attempts: z.number().int().min(0),
+  /** Date key of the first win. */
+  defeated: z.string().optional(),
+  /** Most lives left at the end of a win. */
+  best: z.number().int().min(0).default(0),
+});
+
 export const ProgressSchema = z.object({
   version: z.literal(1),
   steps: z.record(StepRecord).default({}),
@@ -55,14 +63,17 @@ export const ProgressSchema = z.object({
   last: z.string().nullable().default(null),
   review: z.record(ReviewItem).default({}),
   activity: z.record(Day).default({}),
+  /** Boss battles on the Skills tab, by skill id. */
+  bosses: z.record(BossRecord).default({}),
 });
 
 export type StepRec = z.infer<typeof StepRecord>;
 export type LessonRec = z.infer<typeof LessonRecord>;
 export type ReviewRec = z.infer<typeof ReviewItem>;
+export type BossRec = z.infer<typeof BossRecord>;
 export type Progress = z.infer<typeof ProgressSchema>;
 
-const EMPTY: Progress = { version: 1, steps: {}, lessons: {}, last: null, review: {}, activity: {} };
+const EMPTY: Progress = { version: 1, steps: {}, lessons: {}, last: null, review: {}, activity: {}, bosses: {} };
 
 /** Days until an item comes up again, by rung. A miss drops it to rung 0. */
 export const INTERVALS = [1, 3, 7, 14, 30, 60, 120];
@@ -237,6 +248,19 @@ export const progress = {
   /** The first answer to an item in a review session moves it on the ladder. */
   reviewed(stepKey: string, good: boolean) {
     commit((p) => ({ ...p, review: { ...p.review, [stepKey]: scheduled(p.review[stepKey], good) } }));
+  },
+
+  /** A boss battle ended: won with `lives` left, or lost. */
+  bossResult(skillId: string, won: boolean, lives: number) {
+    commit((p) => {
+      const prev = p.bosses[skillId] ?? { attempts: 0, best: 0 };
+      const rec: BossRec = {
+        attempts: prev.attempts + 1,
+        defeated: prev.defeated ?? (won ? today() : undefined),
+        best: won ? Math.max(prev.best, lives) : prev.best,
+      };
+      return { ...p, bosses: { ...p.bosses, [skillId]: rec } };
+    });
   },
 
   completeReviewSession() {

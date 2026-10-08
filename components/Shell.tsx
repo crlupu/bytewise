@@ -3,21 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useMemo } from "react";
-import { LearnIcon, ProgressIcon, ReviewIcon, SearchIcon, SettingsIcon } from "@/components/icons";
+import { LearnIcon, ProgressIcon, ReviewIcon, SettingsIcon, SkillsIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { dueItems, useProgress } from "@/lib/progress";
 
 const TABS = [
   { href: "/", label: "Learn", icon: LearnIcon },
   { href: "/review/", label: "Review", icon: ReviewIcon },
-  { href: "/search/", label: "Search", icon: SearchIcon },
+  { href: "/skills/", label: "Skills", icon: SkillsIcon },
   { href: "/progress/", label: "Progress", icon: ProgressIcon },
   { href: "/settings/", label: "Settings", icon: SettingsIcon },
 ];
 
 function isActive(path: string, href: string) {
   const p = path.endsWith("/") ? path : `${path}/`;
-  if (href === "/") return p === "/" || p.startsWith("/course/");
+  if (href === "/") return p === "/" || p.startsWith("/course/") || p.startsWith("/topic/") || p.startsWith("/search/");
   return p.startsWith(href);
 }
 

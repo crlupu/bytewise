@@ -63,7 +63,7 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
 
   return (
     <>
-      <PageHead title="Search" />
+      <PageHead title="Search" back={{ href: "/", label: "Learn" }} />
       <label className="search">
         <SearchIcon aria-hidden />
         <span className="sr-only">Search lessons</span>

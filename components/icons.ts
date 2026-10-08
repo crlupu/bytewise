@@ -37,4 +37,9 @@ export {
   IoPlay as PlayIcon,
   IoArrowForward as ForwardIcon,
   IoHandRight as InteractIcon,
+  IoGitNetwork as SkillsIcon,
+  IoHeart as HeartIcon,
+  IoHeartOutline as HeartEmptyIcon,
+  IoFlash as BossIcon,
+  IoEllipseOutline as TodoIcon,
 } from "react-icons/io5";

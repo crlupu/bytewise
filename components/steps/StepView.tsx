@@ -40,6 +40,8 @@ export type StepEvents = {
   /** The step was finished before, so the learner may move on without answering. */
   alreadyDone?: boolean;
   continueLabel?: string;
+  /** Boss battles: no hints on offer. */
+  noHints?: boolean;
 };
 
 /**
@@ -128,7 +130,7 @@ function ready(step: ExerciseStep, a: unknown): boolean {
   }
 }
 
-function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, continueLabel }: { step: ExerciseStep } & StepEvents) {
+function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, continueLabel, noHints }: { step: ExerciseStep } & StepEvents) {
   const [answer, setAnswer] = useState<unknown>(() => initialAnswer(step));
   const [phase, setPhase] = useState<Phase>("answering");
   const [verdict, setVerdict] = useState<(Verdict & { right?: boolean[] }) | null>(null);
@@ -324,7 +326,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
               <Html className="prose" html={step.details} />
             </section>
           )}
-          {step.hints.length > 0 && (
+          {!noHints && step.hints.length > 0 && (
             <div className="step__hint-row">
               {hints < step.hints.length && phase !== "correct" && (
                 <button

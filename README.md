@@ -37,7 +37,8 @@ The site is at https://crlupu.github.io/bytewise/.
 | Per-step and per-lesson records, reset, export/import (FR-29–33) | `lib/progress.ts`, `components/SettingsView.tsx` |
 | Spaced repetition and mixed review sessions (FR-34–37) | `lib/progress.ts`, `ReviewView.tsx`, `SessionView.tsx` |
 | Streak and activity history (FR-38–39) | `ProgressView.tsx` |
-| Search by title, summary and tags (FR-40) | `SearchView.tsx` |
+| Search by title, summary and tags (FR-40), from the button on Learn | `SearchView.tsx` |
+| Skills: rank, level and XP, skill tree with mastery, engineering judgment, daily quests, boss battles | `lib/skills.ts`, `SkillsView.tsx`, `BossView.tsx` |
 | Light/dark/system theme, reduced motion (FR-41–42) | `lib/settings.ts`, `SettingsView.tsx` |
 
 Widgets, one or more per topic: thread interleaving (Java), B-tree insert and search
@@ -222,10 +223,33 @@ code and labels, self-hosted from `app/fonts` through `next/font/local`. A float
 phones, a sidebar from 1056px, 44px touch targets, hover styles only behind
 `(hover: hover)`. Design explorations are in `design/`. All tokens are in `app/globals.css`.
 
+## Skills
+
+The Skills tab turns progress into an engineering skill tree. Everything on it is derived
+from progress except boss results, so it can't drift from what was actually learned.
+
+- **Skills.** Ten skills in three branches (Code, Systems, Design), each fed by whole topics
+  or single courses (`SKILLS` in `lib/skills.ts`).
+- **Mastery** is memory, not completion. An answered exercise counts 0.25; it climbs to 1 as
+  it survives reviews further apart (rung by rung on the review ladder). A skill's mastery is
+  the mean over all its exercises, and its level (0–10, Unfamiliar to Mastery) is mastery / 10.
+- **Engineering judgment** is five facets (trade-offs, debugging, performance, design, failure
+  and risk). Each is the mastery of the exercises that call on it, chosen by widget type,
+  course and tags at build time.
+- **XP** is paid once per thing: 10 for an exercise right first time (6 otherwise), 4 per
+  review rung, 20 per lesson, 150 per boss. Level L starts at 50·L·(L−1) XP.
+- **Rank** (Junior Engineer to Software Architect) needs mastery across skills, bosses
+  defeated and judgment, never XP, so it can't be grinded.
+- **Bosses**, one per skill, open once 40% of the skill (between 6 and 40 exercises) has been
+  learned. A battle is 10 questions mixed from across the skill, with no hints and three
+  lives. Battles don't touch the review ladder.
+- **Daily quests**: clear reviews, finish a lesson in a skill (rotating daily through those
+  under way), and fight a waiting boss.
+
 ## Progress data
 
 One JSON document in localStorage (`bytewise:v1`), changed only through the actions in
 `lib/progress.ts`. Review intervals are 1, 3, 7, 14, 30, 60 and 120 days: an exercise
 right first time without a hint starts on 3 days and climbs; a miss or a hint sends it
 back to 1 day. Settings live separately (`bytewise:settings`) so the theme can be applied
-before first paint.
+before first paint. Boss results are kept under `bosses`; older exports without it still import.
