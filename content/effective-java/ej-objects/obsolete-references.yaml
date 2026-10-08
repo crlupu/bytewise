@@ -29,7 +29,14 @@ steps:
       caption: "Popped, but slot [1] still points at it."
 
   - type: choice
-    prompt: Why can't the garbage collector reclaim popped objects?
+    prompt: |
+      A stack keeps its elements in an array and pops like this. Why can't the garbage collector reclaim popped objects?
+    code: |
+      private Object[] elements;
+      private int size;
+
+      public Object pop() { return elements[--size]; }
+    language: java
     options:
       - text: The array still holds references to them, so they are reachable
         correct: true
@@ -52,7 +59,8 @@ steps:
       Ordinary local variables just go out of scope.
 
   - type: blank
-    prompt: Fix `pop`.
+    prompt: |
+      `pop()` was `return elements[--size];`, which leaves the popped object in the array. Fix it.
     template: |
       Object result = elements[--size];
       elements[size] = [[null]];

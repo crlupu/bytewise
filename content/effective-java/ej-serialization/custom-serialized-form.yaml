@@ -54,7 +54,8 @@ steps:
     explanation: Mark every field transient unless its value is part of the object's logical state.
 
   - type: choice
-    prompt: All fields are transient. Why still call `defaultWriteObject` and `defaultReadObject`?
+    prompt: |
+      A class with a custom serialized form marks all its fields `transient` and writes its data in `writeObject`. Why still call `defaultWriteObject` and `defaultReadObject`?
     options:
       - text: It lets later versions add non-transient fields while staying compatible in both directions
         correct: true

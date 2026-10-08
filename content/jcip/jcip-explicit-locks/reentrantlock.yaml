@@ -19,7 +19,13 @@ steps:
       Always unlock in `finally`.
 
   - type: choice
-    prompt: What happens if you forget the `finally` and the code between `lock()` and `unlock()` throws?
+    prompt: |
+      The `finally` was forgotten. What happens if `updateState()` throws?
+    code: |
+      lock.lock();
+      updateState();
+      lock.unlock();
+    language: java
     options:
       - text: The lock is never released — every later thread that needs it blocks forever
         correct: true

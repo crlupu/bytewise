@@ -43,7 +43,8 @@ steps:
       Locking your helper instead protects nothing.
 
   - type: blank
-    prompt: Fix it by locking the lock the list actually uses.
+    prompt: |
+      `ListHelper.putIfAbsent` is `synchronized`, so it locks the helper — but `list` is a `Collections.synchronizedList`, which locks on itself. Fix it by locking the lock the list actually uses.
     template: |
       public boolean putIfAbsent(E x) {
           synchronized ([[list]]) {

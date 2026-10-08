@@ -37,7 +37,8 @@ steps:
       It doesn't suit classes that clients extend.
 
   - type: choice
-    prompt: Why is this safer than a defensive `readObject`?
+    prompt: |
+      In the serialization proxy pattern, `writeReplace` writes a small proxy holding the logical state, and the proxy's `readResolve` rebuilds the object. Why is this safer than a defensive `readObject`?
     options:
       - text: Instances are always created through the ordinary constructor or factory, so invariants are checked by the code that already checks them
         correct: true

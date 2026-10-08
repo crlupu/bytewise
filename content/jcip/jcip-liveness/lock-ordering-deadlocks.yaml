@@ -24,7 +24,7 @@ steps:
   - type: widget
     widget: locks
     prompt: |
-      Thread 1 runs `leftRight`; thread 2 runs `rightLeft`. Locks **L** and **R** stand for `left` and `right`.
+      `leftRight` locks `left`, then `right`; `rightLeft` locks `right`, then `left`. Thread 1 runs `leftRight`; thread 2 runs `rightLeft`. Locks **L** and **R** stand for `left` and `right`.
       **Make them deadlock.**
     config:
       threads:
@@ -63,7 +63,18 @@ steps:
       Fix it by ordering locks by a unique key, like the account number.
 
   - type: choice
-    prompt: How can `transferMoney` impose a consistent order?
+    prompt: |
+      `transferMoney(a, b, 10)` and `transferMoney(b, a, 20)` can deadlock. How can `transferMoney` impose a consistent order?
+    code: |
+      public void transferMoney(Account from, Account to, int amount) {
+          synchronized (from) {
+              synchronized (to) {
+                  from.debit(amount);
+                  to.credit(amount);
+              }
+          }
+      }
+    language: java
     options:
       - text: Order the two locks by some unique key — such as account number, or `System.identityHashCode` with a tie-breaking lock
         correct: true

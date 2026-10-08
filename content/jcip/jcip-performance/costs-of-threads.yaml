@@ -35,7 +35,17 @@ steps:
       ```
 
   - type: choice
-    prompt: How many of the `Vector`'s lock acquisitions in `getStoogeNames` might a modern JIT perform?
+    prompt: |
+      `Vector` synchronizes every method. How many of its lock acquisitions in `getStoogeNames` might a modern JIT perform?
+    code: |
+      public String getStoogeNames() {
+          List<String> stooges = new Vector<>();
+          stooges.add("Moe");
+          stooges.add("Larry");
+          stooges.add("Curly");
+          return stooges.toString();
+      }
+    language: java
     options:
       - text: Possibly none — the `Vector` never escapes the method, so its locks can be elided
         correct: true

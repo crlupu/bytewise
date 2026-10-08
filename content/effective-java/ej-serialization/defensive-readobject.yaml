@@ -49,7 +49,8 @@ steps:
     code: true
 
   - type: choice
-    prompt: To make the defensive copies, `start` and `end` can no longer be `final`. Why?
+    prompt: |
+      `Period` holds two `Date` fields, `start` and `end`. A defensive `readObject` calls `defaultReadObject()`, then copies both dates. Why can `start` and `end` no longer be `final`?
     options:
       - text: "`readObject` must assign the copies to the fields after `defaultReadObject` has already set them"
         correct: true

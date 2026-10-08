@@ -56,7 +56,15 @@ steps:
       caption: "Each key is a Class object, and type.cast checks its value."
 
   - type: choice
-    prompt: Why does `getFavorite` call `type.cast(...)` instead of `(T) ...`?
+    prompt: |
+      Why does `getFavorite` call `type.cast(...)` instead of an unchecked `(T)` cast?
+    code: |
+      private final Map<Class<?>, Object> favorites = new HashMap<>();
+
+      public <T> T getFavorite(Class<T> type) {
+          return type.cast(favorites.get(type));
+      }
+    language: java
     options:
       - text: "`Class.cast` is checked at run time, so it's type-safe — an unchecked `(T)` cast would only produce a warning"
         correct: true

@@ -25,7 +25,8 @@ steps:
         - { from: Splitter, to: Processor, type: implements }
 
   - type: choice
-    prompt: You write a new `Reverser implements Processor`. What must change in `Apply`?
+    prompt: |
+      `Apply.process(Processor p, Object s)` runs any `Processor` on its input. You write a new `Reverser implements Processor`. What must change in `Apply`?
     options:
       - text: Nothing — it already works with any `Processor`
         correct: true

@@ -20,7 +20,15 @@ steps:
       It might modify your data, or wait for another thread.
 
   - type: choice
-    prompt: An observer unsubscribes itself from inside `added`. What happens?
+    prompt: |
+      An observer's `added` method calls `set.removeObserver(this)`, which also locks `observers`. What happens?
+    code: |
+      // ObservableSet notifies its observers while holding the lock
+      synchronized (observers) {
+          for (SetObserver<E> o : observers)
+              o.added(this, element);
+      }
+    language: java
     options:
       - text: "`ConcurrentModificationException` — the list is modified while the loop iterates over it"
         correct: true
@@ -30,7 +38,15 @@ steps:
     explanation: Java's locks are reentrant, so the same thread is allowed back in — and breaks the iteration.
 
   - type: choice
-    prompt: Now the observer unsubscribes using a *different* thread, through an executor, and waits for it. What happens?
+    prompt: |
+      This time the observer's `added` hands `removeObserver(this)` to a background thread through an executor, and waits for it to finish. What happens?
+    code: |
+      // ObservableSet notifies its observers while holding the lock
+      synchronized (observers) {
+          for (SetObserver<E> o : observers)
+              o.added(this, element);   // submits removeObserver(this) and waits
+      }
+    language: java
     options:
       - text: Deadlock — the background thread waits for the lock the main thread holds, and the main thread waits for the background thread
         correct: true

@@ -13,7 +13,8 @@ steps:
       They return a `boolean`.
 
   - type: choice
-    prompt: Which call checks that no dish has more than 1,000 calories?
+    prompt: |
+      `menu` is a `List<Dish>`, and `Dish` has a `calories()` accessor. Which call checks that no dish has more than 1,000 calories?
     options:
       - text: "`menu.stream().noneMatch(d -> d.calories() > 1000)`"
         correct: true

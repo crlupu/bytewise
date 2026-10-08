@@ -37,7 +37,17 @@ steps:
       If `CURRENT_YEAR` were a compile-time constant like `2026`, it would be inlined and the bug wouldn't appear — which makes it even more surprising when it does.
 
   - type: choice
-    prompt: Why isn't `CURRENT_YEAR` a compile-time constant here, set before anything runs?
+    prompt: |
+      Why isn't `CURRENT_YEAR` a compile-time constant here, set before anything runs?
+    code: |
+      class Elvis {
+        public static final Elvis INSTANCE = new Elvis();
+        private static final int CURRENT_YEAR =
+            Calendar.getInstance().get(Calendar.YEAR);
+        private final int beltSize;
+        private Elvis() { beltSize = CURRENT_YEAR - 1930; }
+      }
+    language: java
     options:
       - text: Its value comes from a method call, so it's computed when the class initializes
         correct: true
@@ -79,7 +89,21 @@ steps:
       The name "[1]:null" is stored in a final field and never recomputed. That's why constructors must not call overridable methods.
 
   - type: order
-    prompt: Put the steps of `new ColorPoint("red")` in order.
+    prompt: |
+      Put the steps of `new ColorPoint("red")` in order.
+
+      ```java
+      class Point {
+        final int x; final String name;
+        Point() { x = 1; name = makeName(); }
+        String makeName() { return "[" + x + "]"; }
+      }
+      class ColorPoint extends Point {
+        final String color;
+        ColorPoint(String color) { super(); this.color = color; }
+        @Override String makeName() { return super.makeName() + ":" + color; }
+      }
+      ```
     items:
       - Fields hold their defaults (`color` is null)
       - "`Point()` runs and calls `makeName()`"

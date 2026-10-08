@@ -32,7 +32,8 @@ steps:
     code: true
 
   - type: blank
-    prompt: The same idea for arrays — a shared zero-length constant.
+    prompt: |
+      Return an empty array without allocating a new one each time — use a shared zero-length constant.
     template: |
       private static final Cheese[] EMPTY_CHEESE_ARRAY = new Cheese[0];
       return cheesesInStock.[[toArray]](EMPTY_CHEESE_ARRAY);

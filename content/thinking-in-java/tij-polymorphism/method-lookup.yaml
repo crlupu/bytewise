@@ -97,3 +97,16 @@ steps:
         feedback: The search stops at the first class up the chain that defines `play` — `Woodwind`.
       - text: It doesn't compile until Saxophone overrides `play`
         feedback: "`play` isn't abstract, so Saxophone inherits a working version."
+    diagram:
+      classes:
+        - { name: Instrument, methods: ["play(Note)", "adjust()"] }
+        - { name: Wind, methods: ["play(Note)"] }
+        - { name: Brass, methods: ["adjust()"] }
+        - { name: Woodwind, methods: ["play(Note)"] }
+        - { name: Saxophone }
+      relations:
+        - { from: Wind, to: Instrument, type: extends }
+        - { from: Brass, to: Wind, type: extends }
+        - { from: Woodwind, to: Wind, type: extends }
+        - { from: Saxophone, to: Woodwind, type: extends }
+      highlight: [Saxophone]

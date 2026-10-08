@@ -64,7 +64,8 @@ steps:
       `compose` follows mathematical notation, f(g(x)), while `andThen` reads left to right like a pipeline.
 
   - type: choice
-    prompt: Which predicate matches apples that are red but not heavy?
+    prompt: |
+      `redApple` and `heavyApple` are both `Predicate<Apple>`. Which predicate matches apples that are red but not heavy?
     options:
       - text: "`redApple.and(heavyApple.negate())`"
         correct: true

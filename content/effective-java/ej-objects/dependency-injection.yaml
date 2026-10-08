@@ -57,7 +57,8 @@ steps:
         feedback: The dictionary is still needed — it's just supplied from outside.
 
   - type: choice
-    prompt: The resource must be created fresh each time it's needed. What can you inject instead?
+    prompt: |
+      `SpellChecker` takes its `Lexicon` in its constructor. Now it must create a fresh `Lexicon` each time it needs one. What can you inject instead?
     options:
       - text: A factory, such as a `Supplier<? extends Lexicon>`
         correct: true

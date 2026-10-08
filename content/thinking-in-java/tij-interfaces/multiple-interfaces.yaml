@@ -55,6 +55,16 @@ steps:
         correct: true
       - text: "`CanFly f = h; f.swim();`"
         feedback: Through a `CanFly` reference, only `fly()` is visible.
+    diagram:
+      classes:
+        - { name: ActionCharacter, methods: ["fight()"] }
+        - { name: CanSwim, kind: interface, methods: ["swim()"] }
+        - { name: CanFly, kind: interface, methods: ["fly()"] }
+        - { name: Hero }
+      relations:
+        - { from: Hero, to: ActionCharacter, type: extends }
+        - { from: Hero, to: CanSwim, type: implements }
+        - { from: Hero, to: CanFly, type: implements }
 
   - type: explanation
     title: Interfaces can extend interfaces
@@ -80,3 +90,13 @@ steps:
         correct: true
       - text: Only `drinkBlood()`
         feedback: "`Vampire` inherits the abstract methods of every interface it extends."
+    diagram:
+      classes:
+        - { name: Monster, kind: interface, methods: ["menace()"] }
+        - { name: Lethal, kind: interface, methods: ["kill()"] }
+        - { name: DangerousMonster, kind: interface, methods: ["destroy()"] }
+        - { name: Vampire, kind: interface, methods: ["drinkBlood()"] }
+      relations:
+        - { from: DangerousMonster, to: Monster, type: extends }
+        - { from: Vampire, to: DangerousMonster, type: extends }
+        - { from: Vampire, to: Lethal, type: extends }

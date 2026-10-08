@@ -32,7 +32,20 @@ steps:
       Swap it with `compareAndSet` on an `AtomicReference`.
 
   - type: choice
-    prompt: Why does the CAS-on-immutable-holder approach preserve the invariant?
+    prompt: |
+      `NumberRange` must keep `lower <= upper`. Why does this approach preserve the invariant?
+    code: |
+      private record IntPair(int lower, int upper) {}
+      private final AtomicReference<IntPair> values = new AtomicReference<>(new IntPair(0, 0));
+
+      public void setLower(int i) {
+          while (true) {
+              IntPair old = values.get();
+              if (i > old.upper()) throw new IllegalArgumentException();
+              if (values.compareAndSet(old, new IntPair(i, old.upper()))) return;
+          }
+      }
+    language: java
     options:
       - text: Both bounds change together by swapping one reference, and the swap only succeeds if nobody changed the pair since it was read
         correct: true

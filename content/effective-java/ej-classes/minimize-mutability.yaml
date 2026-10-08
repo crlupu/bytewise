@@ -71,7 +71,8 @@ steps:
       For long builds, use a mutable companion like `StringBuilder`.
 
   - type: blank
-    prompt: Fix the constructor with a defensive copy.
+    prompt: |
+      `Period`'s constructor stores `this.end = end;`, so a caller can still change the `Date` it passed in. Fix it with a defensive copy.
     template: "this.end = new [[Date]](end.getTime());"
     code: true
     hints:

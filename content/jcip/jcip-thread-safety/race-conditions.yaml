@@ -29,7 +29,14 @@ steps:
     explanation: Read, modify, write. Each step is atomic on its own; the sequence as a whole is not.
 
   - type: choice
-    prompt: Two threads each call `increment()` once on a shared counter that starts at 0. Which final values of `count` are possible?
+    prompt: |
+      Two threads each call `increment()` once on a shared counter that starts at 0. Which final values of `count` are possible?
+    code: |
+      class Counter {
+          int count = 0;
+          void increment() { count++; }
+      }
+    language: java
     options:
       - text: "0"
         feedback: Each thread writes at least once, and every write stores a value of 1 or more.
@@ -92,7 +99,14 @@ steps:
       So design them out instead.
 
   - type: choice
-    prompt: Which of these make `increment()` safe for many threads?
+    prompt: |
+      Which of these make `increment()` safe for many threads?
+    code: |
+      class Counter {
+          int count = 0;
+          void increment() { count++; }
+      }
+    language: java
     options:
       - text: Declare the method `synchronized`
         correct: true

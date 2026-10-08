@@ -38,7 +38,15 @@ steps:
     explanation: Zero — the loop silently does nothing. No error, no warning; the bug can go unnoticed for a long time.
 
   - type: choice
-    prompt: How would `for` loops have prevented that bug?
+    prompt: |
+      How would `for` loops have prevented the bug in this code?
+    code: |
+      Iterator<Element> i = c.iterator();
+      while (i.hasNext()) doSomething(i.next());
+
+      Iterator<Element> i2 = c2.iterator();
+      while (i.hasNext()) doSomethingElse(i2.next());   // copy-paste bug
+    language: java
     options:
       - text: Each loop's iterator would be scoped to its own loop, so using `i` in the second loop wouldn't compile
         correct: true

@@ -37,8 +37,12 @@ steps:
       caption: The tank with level 9 is unreachable.
 
   - type: predict
-    prompt: After `t1 = t2;`, what does this print?
+    prompt: |
+      What does this print?
     code: |
+      Tank t1 = new Tank(); t1.level = 9;
+      Tank t2 = new Tank(); t2.level = 47;
+      t1 = t2;
       t1.level = 27;
       System.out.println(t1.level + " " + t2.level);
     language: java

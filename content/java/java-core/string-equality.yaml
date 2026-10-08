@@ -117,7 +117,7 @@ steps:
       Use `equals` for content; reserve `==` for checking whether two references are literally the same object.
 
   - type: predict
-    prompt: Autoboxing has the same trap. What does this print?
+    prompt: What does this print?
     code: |
       Integer x = 127, y = 127;
       Integer p = 128, q = 128;

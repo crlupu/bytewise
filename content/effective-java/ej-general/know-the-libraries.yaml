@@ -19,7 +19,14 @@ steps:
       It is biased, repeats quickly, and can return negatives.
 
   - type: choice
-    prompt: Which of these are real flaws of that method?
+    prompt: |
+      Which of these are real flaws of this method, meant to return a random number from 0 to n − 1?
+    code: |
+      static Random rnd = new Random();
+      static int random(int n) {
+          return Math.abs(rnd.nextInt()) % n;
+      }
+    language: java
     options:
       - text: If n is a small power of two, the sequence repeats after a short period
         correct: true

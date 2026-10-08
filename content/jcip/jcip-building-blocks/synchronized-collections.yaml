@@ -23,7 +23,18 @@ steps:
       ```
 
   - type: predict
-    prompt: A Vector has 10 elements. Thread A calls `getLast`, thread B `deleteLast`, interleaved badly. What can A get?
+    prompt: |
+      A `Vector` has 10 elements. Thread A calls `getLast`, thread B `deleteLast`, interleaved badly. What can A get?
+    code: |
+      static Object getLast(Vector list) {
+          int lastIndex = list.size() - 1;
+          return list.get(lastIndex);
+      }
+      static void deleteLast(Vector list) {
+          int lastIndex = list.size() - 1;
+          list.remove(lastIndex);
+      }
+    language: java
     options:
       - text: "`ArrayIndexOutOfBoundsException` — A computed index 9, then B removed element 9 before A's `get`"
         correct: true
@@ -39,7 +50,8 @@ steps:
       That's the lock the collection's own methods use.
 
   - type: blank
-    prompt: Make `getLast` atomic with client-side locking.
+    prompt: |
+      `getLast(Vector list)` reads `list.size()`, then calls `list.get(lastIndex)` — two calls that can be split by another thread. Make it atomic with client-side locking.
     template: |
       synchronized ([[list]]) {
           int lastIndex = list.size() - 1;

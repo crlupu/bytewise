@@ -41,7 +41,7 @@ steps:
   - type: widget
     widget: congestion
     prompt: |
-      Now switch to **Tahoe** — Reno's predecessor — and do the same: grow to 12, then 3 duplicate ACKs.
+      Switch to **Tahoe** — Reno's predecessor. Grow the window to 12, then send 3 duplicate ACKs.
     config:
       variant: reno
       ssthresh: 8

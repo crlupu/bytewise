@@ -19,12 +19,21 @@ steps:
         - { from: Sneeze, to: Annoyance, type: extends }
 
   - type: choice
-    prompt: Which handler order compiles?
+    prompt: |
+      `Sneeze` extends `Annoyance`, which extends `Exception`. Which handler order compiles?
     options:
       - text: "`catch (Sneeze s) { ... } catch (Annoyance a) { ... }`"
         correct: true
       - text: "`catch (Annoyance a) { ... } catch (Sneeze s) { ... }`"
         feedback: "Every `Sneeze` is an `Annoyance`, so the second handler is unreachable — a compile error."
+    diagram:
+      classes:
+        - { name: Exception }
+        - { name: Annoyance }
+        - { name: Sneeze }
+      relations:
+        - { from: Annoyance, to: Exception, type: extends }
+        - { from: Sneeze, to: Annoyance, type: extends }
 
   - type: explanation
     title: finally always runs
@@ -50,7 +59,8 @@ steps:
         - { from: PopFoul, to: Foul, type: extends }
 
   - type: choice
-    prompt: "`Inning.atBat()` declares `throws Strike, Foul`. Which overrides in `StormyInning` compile?"
+    prompt: |
+      `Inning.atBat()` declares `throws Strike, Foul`, and `PopFoul` extends `Foul`. Which overrides of `atBat()` in `StormyInning` compile?
     options:
       - text: "`void atBat() throws PopFoul` — PopFoul is a Foul"
         correct: true
@@ -58,6 +68,21 @@ steps:
         correct: true
       - text: "`void atBat() throws RainedOut` — a new checked exception"
         feedback: Callers of `Inning.atBat()` aren't prepared for RainedOut.
+    diagram:
+      classes:
+        - { name: Inning, methods: ["atBat() throws Strike, Foul"] }
+        - { name: StormyInning }
+        - { name: Exception }
+        - { name: Strike }
+        - { name: Foul }
+        - { name: RainedOut }
+        - { name: PopFoul }
+      relations:
+        - { from: StormyInning, to: Inning, type: extends }
+        - { from: Strike, to: Exception, type: extends }
+        - { from: Foul, to: Exception, type: extends }
+        - { from: RainedOut, to: Exception, type: extends }
+        - { from: PopFoul, to: Foul, type: extends }
     details: |
       Code that calls `atBat()` through an `Inning` reference only knows to handle `Strike` and `Foul`.
       An override can therefore throw those exceptions, any of their subclasses, or nothing, since none of these surprise the caller.

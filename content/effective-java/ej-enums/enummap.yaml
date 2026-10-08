@@ -42,7 +42,8 @@ steps:
       It also prints readably and works with the `Map` API. You get the speed of the array without its fragility.
 
   - type: choice
-    prompt: "Grouping with streams: `Collectors.groupingBy(p -> p.lifeCycle)` returns a HashMap. How do you get an EnumMap?"
+    prompt: |
+      Each `Plant` has a `lifeCycle` field of the enum `LifeCycle`. Grouping with streams, `Collectors.groupingBy(p -> p.lifeCycle)` returns a `HashMap`. How do you get an `EnumMap`?
     options:
       - text: Use the three-argument `groupingBy`, passing `() -> new EnumMap<>(LifeCycle.class)` as the map factory
         correct: true

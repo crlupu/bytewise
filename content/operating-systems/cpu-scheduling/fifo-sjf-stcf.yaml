@@ -46,7 +46,7 @@ steps:
   - type: widget
     widget: scheduler
     prompt: |
-      Now job A is long — 30 ticks — and B and C need only 5 each. All arrive at time 0, A first.
+      Job A is long — 30 ticks — and B and C need only 5 each. All arrive at time 0, A first.
       Compare **FIFO** with **SJF** (shortest job first), and get the average turnaround to **20 or less**.
     config:
       jobs:
@@ -70,7 +70,7 @@ steps:
       the till behind someone with a full trolley.
 
   - type: choice
-    prompt: SJF minimises average turnaround when all jobs arrive together. What happens if A arrives at 0 and the short jobs arrive at 4?
+    prompt: SJF minimises average turnaround when all jobs arrive together. Job A needs 30 ticks and arrives at 0; jobs B and C need 5 each and arrive at 4. What happens under SJF?
     options:
       - text: SJF has already started A and, being non-preemptive, must finish it — the convoy returns
         correct: true

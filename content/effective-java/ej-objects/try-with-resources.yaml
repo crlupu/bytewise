@@ -13,7 +13,16 @@ steps:
       The real cause of the failure is lost.
 
   - type: choice
-    prompt: The disk fails. `read` throws, and then `close` in the `finally` throws too. Which exception does the caller see?
+    prompt: |
+      The disk fails. `read` throws, and then `close` in the `finally` throws too. Which exception does the caller see?
+    code: |
+      BufferedReader br = new BufferedReader(new FileReader(path));
+      try {
+          return br.readLine();
+      } finally {
+          br.close();
+      }
+    language: java
     options:
       - text: The one from `close` — it replaces the original, which is lost
         correct: true

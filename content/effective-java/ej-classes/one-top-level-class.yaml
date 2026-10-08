@@ -20,7 +20,20 @@ steps:
       `Dessert.java` defines both again, as "pot" and "pie".
 
   - type: predict
-    prompt: You compile with `javac Main.java Utensil.java`. What does `Main` print?
+    prompt: |
+      Two source files both define `Utensil` and `Dessert`. You compile with `javac Main.java Utensil.java`. What does `Main` print?
+    code: |
+      // Main.java
+      System.out.println(Utensil.NAME + Dessert.NAME);
+
+      // Utensil.java
+      class Utensil { static final String NAME = "pan"; }
+      class Dessert { static final String NAME = "cake"; }
+
+      // Dessert.java
+      class Utensil { static final String NAME = "pot"; }
+      class Dessert { static final String NAME = "pie"; }
+    language: java
     options:
       - text: "pancake"
         correct: true

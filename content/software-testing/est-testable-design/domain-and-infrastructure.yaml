@@ -39,7 +39,8 @@ steps:
         feedback: They can — but then you're testing against a database.
 
   - type: blank
-    prompt: Take the dependency from outside instead.
+    prompt: |
+      `InvoiceGenerator` creates `new JdbcInvoiceDao()` in its constructor. Take the dependency from outside instead.
     template: "public InvoiceGenerator([[InvoiceDao]] dao) { this.dao = dao; }"
     code: true
     caseSensitive: true

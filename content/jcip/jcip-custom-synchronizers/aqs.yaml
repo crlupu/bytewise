@@ -56,7 +56,8 @@ steps:
     explanation: AQS takes care of queueing, blocking, waking and interruption; the subclass only defines the state rules.
 
   - type: choice
-    prompt: Why does `OneShotLatch` hold a private `Sync` instead of extending AQS itself?
+    prompt: |
+      `OneShotLatch` is a latch built on `AbstractQueuedSynchronizer`, offering just `signal()` and `await()`. Why does it hold a private `Sync extends AbstractQueuedSynchronizer` instead of extending AQS itself?
     options:
       - text: AQS's public methods would leak into the latch's API — composition keeps the interface to `signal` and `await`
         correct: true

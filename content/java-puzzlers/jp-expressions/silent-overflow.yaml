@@ -34,7 +34,8 @@ steps:
       Dividing that by 86,400,000 gives 5. Widening happens only at the assignment, after the damage is done.
 
   - type: choice
-    prompt: Which fix makes `MICROS_PER_DAY` correct?
+    prompt: |
+      `final long MICROS_PER_DAY = 24 * 60 * 60 * 1000 * 1000;` overflows. Which fix makes it correct?
     options:
       - text: "`24L * 60 * 60 * 1000 * 1000`"
         correct: true

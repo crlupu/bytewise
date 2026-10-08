@@ -24,7 +24,15 @@ steps:
       Use `await` and `signal`, never `wait` and `notify`, on a `Condition`.
 
   - type: choice
-    prompt: Why is `signal` safe here, when `notify` wasn't with intrinsic condition queues?
+    prompt: |
+      A bounded buffer uses one `Lock` with two conditions. Why is `signal` safe here, when `notify` wasn't with an intrinsic condition queue?
+    code: |
+      private final Condition notFull  = lock.newCondition();
+      private final Condition notEmpty = lock.newCondition();
+
+      // put: while (full)  notFull.await();  ...  notEmpty.signal();
+      // take: while (empty) notEmpty.await(); ...  notFull.signal();
+    language: java
     options:
       - text: Each condition has only one kind of waiter — consumers wait on `notEmpty`, producers on `notFull`
         correct: true

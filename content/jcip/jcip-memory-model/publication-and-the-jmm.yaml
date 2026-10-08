@@ -37,7 +37,20 @@ steps:
       It's broken unless the field is `volatile`.
 
   - type: choice
-    prompt: How do you fix double-checked locking under the Java 5 memory model?
+    prompt: |
+      How do you fix this double-checked locking under the Java 5 memory model?
+    code: |
+      private static Resource resource;
+
+      public static Resource getInstance() {
+          if (resource == null) {
+              synchronized (DoubleCheckedLocking.class) {
+                  if (resource == null) resource = new Resource();
+              }
+          }
+          return resource;
+      }
+    language: java
     options:
       - text: Declare `resource` as `volatile`
         correct: true

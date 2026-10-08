@@ -75,7 +75,8 @@ steps:
       Your copies then hold values that never passed validation. Copying first and validating the copies leaves no such window, because only your code can reach the copies.
 
   - type: choice
-    prompt: Why not make the copy with `start.clone()`?
+    prompt: |
+      `Period`'s constructor takes two `java.util.Date`s and stores copies of them. Why not make the copy with `start.clone()`?
     options:
       - text: "`Date` isn't final, so the argument could be a malicious subclass whose `clone` returns an instance it still controls"
         correct: true

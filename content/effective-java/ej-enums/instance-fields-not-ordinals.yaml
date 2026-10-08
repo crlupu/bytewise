@@ -13,7 +13,14 @@ steps:
       Reorder the constants, and the meaning changes.
 
   - type: choice
-    prompt: What's wrong with deriving the number of musicians from the ordinal?
+    prompt: |
+      What's wrong with deriving the number of musicians from the ordinal, like this?
+    code: |
+      public enum Ensemble {
+          SOLO, DUET, TRIO, QUARTET, QUINTET, SEXTET, SEPTET, OCTET, NONET, DECTET;
+          public int numberOfMusicians() { return ordinal() + 1; }
+      }
+    language: java
     options:
       - text: Reordering the constants breaks it
         correct: true
@@ -40,7 +47,8 @@ steps:
       Leave `ordinal()` to `EnumSet` and `EnumMap`.
 
   - type: blank
-    prompt: Store the value in a field instead.
+    prompt: |
+      Give the `Ensemble` enum a musician count stored in a field, instead of deriving it from `ordinal()`.
     template: |
       SOLO(1), DUET(2), TRIO(3), QUARTET(4), QUINTET(5), OCTET(8), DOUBLE_QUARTET(8);
       private final int [[numberOfMusicians]];
@@ -57,7 +65,15 @@ steps:
     explanation: Most programmers will never need to call it.
 
   - type: predict
-    prompt: What does `Ensemble.TRIO.ordinal()` return?
+    prompt: |
+      What does `Ensemble.TRIO.ordinal()` return?
+    code: |
+      enum Ensemble {
+          SOLO(1), DUET(2), TRIO(3), QUARTET(4), OCTET(8);
+          private final int numberOfMusicians;
+          Ensemble(int size) { this.numberOfMusicians = size; }
+      }
+    language: java
     options:
       - text: "2"
         correct: true

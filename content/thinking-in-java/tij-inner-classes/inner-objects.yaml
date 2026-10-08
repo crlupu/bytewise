@@ -38,7 +38,8 @@ steps:
       highlight: [sel]
 
   - type: choice
-    prompt: How do you create an inner-class object from outside the outer class?
+    prompt: |
+      `SequenceSelector` is an inner (non-static) class of `Sequence`, and `seq` is a `Sequence`. How do you create a `SequenceSelector` from outside `Sequence`?
     options:
       - text: "`Sequence.SequenceSelector sel = seq.new SequenceSelector();` — through an outer object"
         correct: true

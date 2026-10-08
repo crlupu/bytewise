@@ -68,7 +68,13 @@ steps:
       Then the range reads only one subsidiary's rows.
 
   - type: choice
-    prompt: Which index serves that query best?
+    prompt: |
+      Which index serves this query best?
+    code: |
+      SELECT * FROM employees
+       WHERE date_of_birth BETWEEN '1971-01-01' AND '1971-01-09'
+         AND subsidiary_id = 27;
+    language: sql
     options:
       - text: "`(subsidiary_id, date_of_birth)`"
         correct: true

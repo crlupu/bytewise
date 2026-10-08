@@ -18,7 +18,14 @@ steps:
       It's slower, harder to read, and can hide real bugs.
 
   - type: choice
-    prompt: What's wrong with that reasoning?
+    prompt: |
+      The author of this loop reasoned that skipping the bounds check in a normal `for` loop makes it faster. What's wrong with that reasoning?
+    code: |
+      try {
+          int i = 0;
+          while (true) range[i++].climb();
+      } catch (ArrayIndexOutOfBoundsException e) { }
+    language: java
     options:
       - text: Exception handling is slow and blocks JVM optimizations — and the code is obscure
         correct: true

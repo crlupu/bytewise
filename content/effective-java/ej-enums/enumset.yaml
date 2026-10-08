@@ -20,7 +20,13 @@ steps:
       But the result prints as a mystery number.
 
   - type: predict
-    prompt: What does `STYLE_BOLD | STYLE_UNDERLINE` evaluate to?
+    prompt: |
+      What does `STYLE_BOLD | STYLE_UNDERLINE` evaluate to?
+    code: |
+      static final int STYLE_BOLD      = 1 << 0;
+      static final int STYLE_ITALIC    = 1 << 1;
+      static final int STYLE_UNDERLINE = 1 << 2;
+    language: java
     options:
       - text: "5"
         correct: true
@@ -53,7 +59,8 @@ steps:
     explanation: Internally, an EnumSet of up to 64 constants is a single `long` bit vector — as fast as the hand-written version.
 
   - type: choice
-    prompt: What should the `applyStyles` parameter type be?
+    prompt: |
+      `Text.applyStyles` takes the set of styles to apply, where `Style` is an enum (`BOLD`, `ITALIC`, …). What should its parameter type be?
     options:
       - text: "`Set<Style>` — clients usually pass an EnumSet, but other sets work too"
         correct: true

@@ -46,7 +46,17 @@ steps:
       The bug comes from depending on the superclass's self-use, which can change in any release; a wrapper class that forwards to a private `Set` never sees these internal calls and counts exactly once.
 
   - type: choice
-    prompt: How should the subclass be fixed?
+    prompt: |
+      `addAll` counts 3 elements, then `HashSet.addAll` calls the overridden `add` for each, counting them again. How should the subclass be fixed?
+    code: |
+      class InstrumentedHashSet<E> extends HashSet<E> {
+          int addCount = 0;
+          public boolean add(E e) { addCount++; return super.add(e); }
+          public boolean addAll(Collection<? extends E> c) {
+              addCount += c.size(); return super.addAll(c);
+          }
+      }
+    language: java
     options:
       - text: Don't extend `HashSet`; wrap a `Set` and forward calls to it
         correct: true

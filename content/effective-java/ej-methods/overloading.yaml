@@ -22,7 +22,18 @@ steps:
       ```
 
   - type: predict
-    prompt: What does it print?
+    prompt: |
+      What does it print?
+    code: |
+      static String classify(Set<?> s)        { return "Set"; }
+      static String classify(List<?> lst)     { return "List"; }
+      static String classify(Collection<?> c) { return "Unknown Collection"; }
+
+      Collection<?>[] collections = { new HashSet<String>(),
+          new ArrayList<BigInteger>(), new HashMap<String, String>().values() };
+      for (Collection<?> c : collections)
+          System.out.println(classify(c));
+    language: java
     options:
       - text: "`Unknown Collection`, three times"
         correct: true

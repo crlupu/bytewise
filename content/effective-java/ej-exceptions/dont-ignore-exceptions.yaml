@@ -33,7 +33,8 @@ steps:
         feedback: Unlikely exceptions are exactly the ones that are hard to diagnose when they do happen.
 
   - type: blank
-    prompt: The conventional way to show it's deliberate.
+    prompt: |
+      You're ignoring a `TimeoutException` on purpose. Show it's deliberate, the conventional way.
     template: |
       } catch (TimeoutException [[ignored]]) {
           // Use default: minimal coloring is desirable, not required

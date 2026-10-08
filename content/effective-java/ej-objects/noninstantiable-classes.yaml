@@ -49,7 +49,14 @@ steps:
     explanation: That invisible constructor is exactly what the private one suppresses.
 
   - type: choice
-    prompt: Why does the private constructor throw `AssertionError`?
+    prompt: |
+      Why does a utility class's private constructor throw `AssertionError`?
+    code: |
+      public class UtilityClass {
+          private UtilityClass() { throw new AssertionError(); }
+          // static methods only
+      }
+    language: java
     options:
       - text: To catch accidental calls from inside the class itself
         correct: true

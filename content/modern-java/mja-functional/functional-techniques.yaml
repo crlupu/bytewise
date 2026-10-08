@@ -68,6 +68,8 @@ steps:
       A stream reduction or loop uses constant stack space.
 
   - type: blank
-    prompt: Fix the first argument of a curried function.
-    template: "Function<Double, Double> celsiusToF = curriedConverter.[[apply]](9.0 / 5);"
+    prompt: |
+      `convert` is curried: `Function<Double, Function<Double, Double>> convert = factor -> x -> x * factor;`
+      Fix its first argument to get a kilometres-to-miles converter.
+    template: "Function<Double, Double> kmToMiles = convert.[[apply]](0.621371);"
     code: true

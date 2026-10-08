@@ -27,7 +27,15 @@ steps:
       caption: "The only path to the HashSet goes through PersonSet's synchronized methods."
 
   - type: choice
-    prompt: What would break `PersonSet`'s thread safety?
+    prompt: |
+      What would break `PersonSet`'s thread safety?
+    code: |
+      public class PersonSet {
+          private final Set<Person> mySet = new HashSet<>();
+          public synchronized void addPerson(Person p) { mySet.add(p); }
+          public synchronized boolean containsPerson(Person p) { return mySet.contains(p); }
+      }
+    language: java
     options:
       - text: A method that returns `mySet`, letting callers use it without the lock
         correct: true

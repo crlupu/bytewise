@@ -40,7 +40,7 @@ steps:
   - type: widget
     widget: paging
     prompt: |
-      Now switch to **LRU**, same string, and step through it.
+      Switch to **LRU** and step through the reference string.
     config:
       reference: [7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2]
       frames: 3

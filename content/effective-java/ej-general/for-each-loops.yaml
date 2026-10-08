@@ -38,7 +38,14 @@ steps:
       It's just as fast as an indexed loop.
 
   - type: blank
-    prompt: The for-each version, which can't make that mistake.
+    prompt: |
+      This nested loop calls `i.next()` in the inner loop by mistake. Write the for-each version, which can't make that mistake.
+
+      ```java
+      for (Iterator<Face> i = faces.iterator(); i.hasNext(); )
+          for (Iterator<Face> j = faces.iterator(); j.hasNext(); )
+              System.out.println(i.next() + " " + j.next());
+      ```
     template: |
       for ([[Face]] f1 : faces)
           for (Face f2 : faces)
