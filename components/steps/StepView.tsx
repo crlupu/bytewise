@@ -139,7 +139,8 @@ function ready(step: ExerciseStep, a: unknown): boolean {
     case "blank":
       return (a as string[]).every((v) => v.trim());
     case "widget":
-      return (a as WidgetAnswer).state !== null && (!step.question || (a as WidgetAnswer).picked.length > 0);
+      // With a question, only the answer counts; the simulation is there to work it out.
+      return step.question ? (a as WidgetAnswer).picked.length > 0 : (a as WidgetAnswer).state !== null;
   }
 }
 
@@ -180,11 +181,11 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
         return gradeBlank(step, answer as string[]);
       case "widget": {
         const a = answer as WidgetAnswer;
+        if (step.question) return gradeOptions(step.question.options, a.picked);
         if (widgetGoal && widget) {
           const r = widget.check(widgetGoal as never, a.state as never, widgetConfig as never);
           if (!r.met) return { correct: false, text: r.why };
         }
-        if (step.question) return gradeOptions(step.question.options, a.picked);
         return { correct: true };
       }
     }
@@ -327,7 +328,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
           {step.type === "widget" && widgetGoal !== undefined && step.widget !== "hierarchy" && (
             <p className="goal-line">
               <GoalIcon aria-hidden />
-              <span>Reach the goal, then press Check.</span>
+              <span>{step.question ? "Run the simulation to work out the answer below." : "Reach the goal, then press Check."}</span>
             </p>
           )}
           {input}
