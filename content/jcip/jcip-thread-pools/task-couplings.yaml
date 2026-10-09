@@ -37,6 +37,15 @@ steps:
     explanation: |
       A holds the only thread and waits for B; B waits for a thread. That's **thread starvation deadlock** — no locks
       in your code, yet nothing can ever move again.
+    question:
+      prompt: "How could this deadlock be avoided?"
+      options:
+        - text: "Give the pool enough threads for both tasks, or don't make a task wait on another task in the same pool"
+          correct: true
+        - text: "Give task B a higher priority"
+          feedback: "B can't run at any priority — there's no free thread."
+        - text: "Use a bounded queue"
+          feedback: "B is already queued; a bounded queue doesn't give it a thread."
 
   - type: choice
     prompt: How do you avoid thread starvation deadlock with dependent tasks?

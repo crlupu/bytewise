@@ -39,6 +39,15 @@ steps:
       - The server can only answer a SYN it has received.
     explanation: |
       Look at the numbers on each arrow: SYN seq=1000; SYN-ACK seq=5000 ack=1001; ACK seq=1001 ack=5001.
+    question:
+      prompt: "What acknowledgment number did the client's final ACK carry?"
+      options:
+        - text: "5001"
+          correct: true
+        - text: "5000"
+          feedback: "The server's ISN is 5000; the ACK names the next byte expected, one more."
+        - text: "1001"
+          feedback: "1001 is what the server acknowledges — the client's ISN plus one."
 
   - type: explanation
     title: Acknowledge the next byte

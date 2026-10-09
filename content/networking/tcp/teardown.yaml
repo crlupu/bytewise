@@ -29,6 +29,15 @@ steps:
       - After the server's own FIN is acknowledged, the client still has to wait.
     explanation: |
       FIN → ACK → FIN → ACK, then the client waited out TIME_WAIT. The server closed as soon as its FIN was acknowledged.
+    question:
+      prompt: "Which state did the client pass through just before CLOSED?"
+      options:
+        - text: "TIME_WAIT"
+          correct: true
+        - text: "CLOSE_WAIT"
+          feedback: "CLOSE_WAIT is the server's state after receiving the client's FIN."
+        - text: "LAST_ACK"
+          feedback: "LAST_ACK is the server waiting for the ACK of its own FIN."
 
   - type: order
     prompt: Put a client-initiated close in order.

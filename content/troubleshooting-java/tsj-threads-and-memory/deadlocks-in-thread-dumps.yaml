@@ -41,6 +41,15 @@ steps:
     hints:
       - Let each thread take its first lock before either takes its second.
     explanation: "This is what the thread dump would show: T1 holds A and waits for B, T2 holds B and waits for A."
+    question:
+      prompt: "What would a thread dump report now?"
+      options:
+        - text: "A Java-level deadlock — T1 waiting for B held by T2, and T2 waiting for A held by T1"
+          correct: true
+        - text: "Both threads RUNNABLE"
+          feedback: "Deadlocked threads are BLOCKED, waiting for a monitor."
+        - text: "An OutOfMemoryError"
+          feedback: "Nothing is allocating — the threads are simply stuck."
 
   - type: choice
     prompt: In a thread dump, how do you find a deadlock?
@@ -69,3 +78,12 @@ steps:
     goal:
       finished: true
     explanation: Whoever gets A first also gets B; the other waits for A while holding nothing.
+    question:
+      prompt: "While T1 holds A, what can T2 be holding?"
+      options:
+        - text: "Nothing — it's waiting for A, the first lock both take"
+          correct: true
+        - text: "B"
+          feedback: "T2 can only take B after A, and A is held by T1."
+        - text: "Both A and B"
+          feedback: "A is held by T1."

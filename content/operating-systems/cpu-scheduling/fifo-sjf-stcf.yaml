@@ -107,6 +107,15 @@ steps:
     explanation: |
       SJF averages 21.3; STCF, 13.3. At time 4 STCF sees A needs 16 more and B needs 4, so it preempts A.
       STCF is also called *preemptive SJF* or *shortest remaining time first*.
+    question:
+      prompt: "STCF brought the average down. What did it cost job A?"
+      options:
+        - text: "Its turnaround grew from 20 to 28 ticks"
+          correct: true
+        - text: "Nothing — A finishes at 20 either way"
+          feedback: "Under STCF, B and C preempt A at tick 4, so A finishes at 28."
+        - text: "A never finishes"
+          feedback: "A finishes last, at 28 — it isn't starved here."
 
   - type: match
     prompt: Match each policy to how it chooses.

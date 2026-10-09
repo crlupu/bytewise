@@ -80,6 +80,15 @@ steps:
     explanation: |
       A **modular monolith**: one deployable for simplicity and cost, domain modules for clean boundaries. If the
       product succeeds, the modules are natural seams to split along later.
+    question:
+      prompt: "Which choice raised deployability to 5 without costing any simplicity?"
+      options:
+        - text: "Domain modules"
+          correct: true
+        - text: "Separate services"
+          feedback: "Services raise deployability a lot, but cost 4 points of simplicity — too much for four developers."
+        - text: "Asynchronous events"
+          feedback: "Events add a point of deployability, but cost simplicity too."
 
   - type: widget
     widget: tradeoff
@@ -96,6 +105,15 @@ steps:
     explanation: |
       Domain-partitioned services with asynchronous events. Services split by *technical* layer would still need every
       feature to change several services in lockstep — a distributed monolith.
+    question:
+      prompt: "What did reaching these targets cost?"
+      options:
+        - text: "Simplicity and cost both got much worse"
+          correct: true
+        - text: "Nothing — the new choices only added benefits"
+          feedback: "Look at simplicity and cost: services and events each make them worse."
+        - text: "Scalability"
+          feedback: "Scalability went up — that was one of the targets."
 
   - type: explanation
     title: The architecture quantum

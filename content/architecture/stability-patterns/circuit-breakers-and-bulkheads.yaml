@@ -113,6 +113,15 @@ steps:
     explanation: |
       Short timeout + breaker + bulkhead, with no retries or careful ones. Each pattern covers a gap the others
       leave — which is why Nygard presents them together.
+    question:
+      prompt: "Why are 3 immediate retries a bad idea here?"
+      options:
+        - text: "Every failing call becomes four, hammering a service that's already struggling"
+          correct: true
+        - text: "They make each timeout longer"
+          feedback: "The timeout doesn't change; the number of calls does."
+        - text: "They're harder to write than retries with backoff"
+          feedback: "Both cost about the same to write. The difference is the load they create."
 
   - type: match
     prompt: Match each pattern to the failure it contains.

@@ -32,6 +32,15 @@ steps:
     hints:
       - If both try at once, both back off. Then let one thread get ahead before the other starts again.
     explanation: Back-off turns a permanent deadlock into a temporary delay — at the risk of livelock if both keep retrying in step.
+    question:
+      prompt: "When a thread's `trylock` fails, what happens?"
+      options:
+        - text: "It releases the lock it holds and starts over, so the other thread can finish"
+          correct: true
+        - text: "It waits for the lock forever"
+          feedback: "That's what plain `lock` does — and why it can deadlock."
+        - text: "It throws an exception and stops"
+          feedback: "It backs off and retries; both threads still finish."
 
   - type: explanation
     title: Diagnose with thread dumps

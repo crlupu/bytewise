@@ -113,3 +113,12 @@ steps:
     hints:
       - Mix All ACKed with 3 duplicate ACKs a few times, then press Timeout.
     explanation: The teeth are AIMD; the cliff at the timeout is the sender starting over from one segment.
+    question:
+      prompt: "What did the timeout do that the duplicate-ACK losses didn't?"
+      options:
+        - text: "Dropped the window to 1 and went back to slow start"
+          correct: true
+        - text: "Halved the window, like a duplicate-ACK loss"
+          feedback: "Reno halves on duplicate ACKs; a timeout is treated as more serious."
+        - text: "Nothing different"
+          feedback: "Look at the window after the timeout — it falls much further."

@@ -35,6 +35,15 @@ steps:
     hints:
       - Let each thread take its first lock before either takes its second.
     explanation: T1 holds L and wants R; T2 holds R and wants L. Neither can ever proceed.
+    question:
+      prompt: "In the deadlock, what does each thread hold, and wait for?"
+      options:
+        - text: "T1 holds L and waits for R; T2 holds R and waits for L"
+          correct: true
+        - text: "Both hold nothing and wait for L"
+          feedback: "Nobody waiting while holding nothing can't deadlock — someone would get L."
+        - text: "T1 holds both locks; T2 waits"
+          feedback: "Then T1 would just finish and release them."
 
   - type: explanation
     title: One global order
@@ -54,6 +63,15 @@ steps:
     goal:
       finished: true
     explanation: With a global lock order, whoever gets L first also gets R; the other waits for L without holding anything.
+    question:
+      prompt: "Why can't they deadlock any more?"
+      options:
+        - text: "Whoever gets L also gets R; the other waits for L while holding nothing"
+          correct: true
+        - text: "The locks are released sooner"
+          feedback: "The release order didn't change — the order of taking them did."
+        - text: "Only one thread can run at a time now"
+          feedback: "Both threads still run; they just can't form a cycle."
 
   - type: explanation
     title: Order can hide in arguments

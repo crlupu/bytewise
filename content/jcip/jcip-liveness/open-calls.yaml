@@ -36,6 +36,15 @@ steps:
     goal:
       deadlock: true
     explanation: The same lock-ordering deadlock — but spread across two classes, so neither class's author could see it.
+    question:
+      prompt: "Which waits form the deadlock?"
+      options:
+        - text: "GPS holds T and wants D; UI holds D and wants T"
+          correct: true
+        - text: "Both threads want T while holding nothing"
+          feedback: "Then one would get T and carry on."
+        - text: "GPS holds both locks and UI waits"
+          feedback: "Then GPS would finish and release them."
 
   - type: explanation
     title: Call out without locks
@@ -54,6 +63,15 @@ steps:
     goal:
       finished: true
     explanation: No thread ever holds two locks at once, so no cycle of waiting can form.
+    question:
+      prompt: "What removed the deadlock?"
+      options:
+        - text: "Neither thread holds its own lock while it asks for the other one"
+          correct: true
+        - text: "The locks are now taken in alphabetical order"
+          feedback: "GPS still takes T first and UI takes D first — they just release before taking the next."
+        - text: "There's only one lock now"
+          feedback: "Both locks are still there."
 
   - type: explanation
     title: Resources deadlock too

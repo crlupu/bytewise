@@ -36,6 +36,15 @@ steps:
     explanation: |
       The losing thread wasn't blocked — it was told it lost, re-read and retried. No update was lost: the count is 2,
       whatever the interleaving.
+    question:
+      prompt: "What did the thread whose CAS failed do next?"
+      options:
+        - text: "Read `count` again and retried, so no update was lost"
+          correct: true
+        - text: "Gave up, so `count` ended at 1"
+          feedback: "The count still ends at 2 — a failed CAS just means try again."
+        - text: "Blocked until the other thread released a lock"
+          feedback: "CAS takes no lock; nothing blocks."
 
   - type: blank
     prompt: Complete a CAS-based increment — retry until the swap succeeds.

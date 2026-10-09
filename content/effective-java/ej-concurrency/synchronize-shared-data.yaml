@@ -75,6 +75,15 @@ steps:
       `volatile` makes every thread see the latest value, but `nextSerialNumber++` is still three steps: read the value, add one, write it back.
       Two threads can both read 5, both compute 6 and both write 6, so two callers get the same serial number and one increment is lost.
       Visibility doesn't make a compound operation atomic. `AtomicLong.getAndIncrement()` performs the read-add-write as one indivisible step using compare-and-swap.
+    question:
+      prompt: "What makes handing out serial numbers safe?"
+      options:
+        - text: "An `AtomicInteger` and `getAndIncrement()`, or a `synchronized` method"
+          correct: true
+        - text: "Making the field `final` as well"
+          feedback: "A `final` field can't be incremented at all."
+        - text: "Reading the field twice before incrementing"
+          feedback: "More reads don't stop another thread slipping in between read and write."
 
   - type: match
     prompt: Match each tool to what it guarantees.

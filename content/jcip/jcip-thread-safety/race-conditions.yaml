@@ -73,6 +73,15 @@ steps:
     explanation: |
       Both threads read 0, both computed 1, both wrote 1. The second write overwrote the first:
       a **lost update**.
+    question:
+      prompt: "What had to happen for the update to be lost?"
+      options:
+        - text: "Both threads read `count` before either wrote it back"
+          correct: true
+        - text: "One thread ran completely before the other started"
+          feedback: "Then the second thread reads 1 and writes 2 — nothing is lost."
+        - text: "Both threads wrote at exactly the same instant"
+          feedback: "Writes take turns; the problem is that both wrote a value based on the same old read."
 
   - type: widget
     widget: threads
@@ -89,6 +98,15 @@ steps:
     explanation: |
       With *n* threads you can lose up to *n − 1* updates. Real programs increment millions of times,
       so the final count can be far off — and different on every run.
+    question:
+      prompt: "For `count` to end at 1, what must be true of the last thread to write?"
+      options:
+        - text: "It read `count` as 0"
+          correct: true
+        - text: "It ran after the other two had finished"
+          feedback: "Then it would read 2 and write 3."
+        - text: "It was the first thread to start"
+          feedback: "Start order doesn't matter — what matters is the value it read."
 
   - type: explanation
     title: Race conditions

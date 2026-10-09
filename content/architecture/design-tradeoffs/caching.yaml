@@ -67,6 +67,15 @@ steps:
     explanation: |
       A cache alone gets you there. Adding replicas or a CDN on top would buy a little more speed at the price of
       staleness you'd then have to manage. More than one design passes — that's normal.
+    question:
+      prompt: "Which single choice did the most to cut latency?"
+      options:
+        - text: "The application cache"
+          correct: true
+        - text: "Read replicas"
+          feedback: "Replicas take only 1 off latency — the database is still on every request's path."
+        - text: "The CDN"
+          feedback: "The CDN takes 2 off; the application cache takes 5."
 
   - type: explanation
     title: Cache-aside
@@ -102,6 +111,15 @@ steps:
     explanation: |
       Only write-through on a single primary, with no CDN, passes. The levers that were fine for product pages
       are wrong here — the requirements, not the technology, decide.
+    question:
+      prompt: "Why doesn't cache-aside with a 60-second TTL work for the stock count?"
+      options:
+        - text: "A count can be up to a minute old, so staleness is far above 1"
+          correct: true
+        - text: "It doesn't reduce latency"
+          feedback: "It cuts latency just as much as write-through; the problem is how stale the count can get."
+        - text: "It's too complex"
+          feedback: "Cache-aside is the simpler option. Staleness is what rules it out."
 
   - type: match
     prompt: Match each choice to the trade-off it makes.

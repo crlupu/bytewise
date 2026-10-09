@@ -53,6 +53,15 @@ steps:
     hints:
       - Visibility doesn't help if both threads read before either writes.
     explanation: Visibility guarantees each read is fresh *when it happens* — but the gap between read and write is still there.
+    question:
+      prompt: "Why didn't `volatile` stop the lost update?"
+      options:
+        - text: "Every read is fresh, but read, add and write are still three steps another thread can slip between"
+          correct: true
+        - text: "`volatile` only works for `boolean` fields"
+          feedback: "It works for any field. It gives visibility, not atomicity."
+        - text: "The writes weren't visible to the other thread"
+          feedback: "They were visible — the other thread had just read too early."
 
   - type: blank
     prompt: Complete the rules for when volatile is enough.
