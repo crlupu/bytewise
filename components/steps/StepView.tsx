@@ -75,11 +75,22 @@ export function StepView({ step, ...ev }: { step: Step } & StepEvents) {
   return <Exercise step={step} {...ev} />;
 }
 
-function Foot({ children }: { children: ReactNode }) {
+/**
+ * The bottom of a step: the action bar, and above it — as a card of its own,
+ * floating over the content — the feedback after a Check.
+ */
+function Foot({ children, above }: { children: ReactNode; above?: ReactNode }) {
   return (
-    <footer className="player__foot bar-material">
-      <div className="player__foot-inner">{children}</div>
-    </footer>
+    <div className="player__dock">
+      {above && (
+        <div className="feedback-dock">
+          <div className="feedback-dock__inner">{above}</div>
+        </div>
+      )}
+      <footer className="player__foot bar-material">
+        <div className="player__foot-inner">{children}</div>
+      </footer>
+    </div>
   );
 }
 
@@ -358,8 +369,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
           )}
         </div>
       </div>
-      <Foot>
-        {feedback}
+      <Foot above={feedback}>
         <Actions onBack={onBack}>
           {phase === "correct" ? (
             <button type="button" className="btn btn--primary" onClick={onContinue} autoFocus>

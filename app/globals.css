@@ -3841,3 +3841,52 @@ pre code {
   font-weight: 700;
 }
 .row__count--done svg { inline-size: 1rem; block-size: 1rem; }
+
+/* The step's bottom: a feedback card floating above the action bar,
+   both pinned to the bottom of the screen. */
+.player__dock {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 20;
+}
+.player__dock .player__foot {
+  position: relative;
+}
+.feedback-dock {
+  pointer-events: none;
+}
+.feedback-dock__inner {
+  max-inline-size: 46rem;
+  margin-inline: auto;
+  padding: 0 1rem 0.625rem;
+}
+.feedback-dock .feedback {
+  pointer-events: auto;
+  margin: 0;
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1px var(--separator),
+    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+}
+.dark .feedback-dock .feedback {
+  box-shadow:
+    inset 0 0 0 1px var(--separator),
+    0 12px 32px -12px rgba(0, 0, 0, 0.8);
+}
+.feedback-dock .feedback--correct {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+}
+.dark .feedback-dock .feedback--correct {
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 12px 32px -12px rgba(0, 0, 0, 0.8);
+}
+.feedback-dock .feedback--wrong {
+  box-shadow:
+    inset 0 0 0 1.5px var(--warning-mark),
+    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+}
