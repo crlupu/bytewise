@@ -3826,3 +3826,18 @@ pre code {
 .boss-lives .is-lost { color: var(--faint); }
 .step__from { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-inline-size: 0; }
 .step__kind { max-inline-size: 100%; }
+
+/* Finished courses and books: tinted, outlined in the accent, marked Done. */
+.row.is-done,
+.book.is-done {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.row__count--done {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+.row__count--done svg { inline-size: 1rem; block-size: 1rem; }

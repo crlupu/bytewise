@@ -132,7 +132,7 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
                 : t.summary;
             return (
               <li key={t.id}>
-                <Link href={`/topic/${t.id}/`} className="book">
+                <Link href={`/topic/${t.id}/`} className={`book${lessons.length && done === lessons.length ? " is-done" : ""}`}>
                   <span className="book__mark" aria-hidden>
                     {t.mark ?? monogram(t.title)}
                   </span>

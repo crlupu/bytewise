@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ReadIcon } from "@/components/icons";
+import { CheckIcon, ReadIcon } from "@/components/icons";
 import { booksOf } from "@/components/Books";
 import { Meter, PageHead, plural } from "@/components/ui";
 import { useProgress } from "@/lib/progress";
@@ -31,14 +31,22 @@ export function TopicView({ topic, books }: { topic: TopicMeta; books: Record<st
         <ul className="rows">
           {topic.courses.map((c) => {
             const cp = courseProgress(c, p);
+            const done = cp.total > 0 && cp.done === cp.total;
             return (
               <li key={c.id}>
-                <Link href={`/course/${c.id}/`} className="row">
+                <Link href={`/course/${c.id}/`} className={`row${done ? " is-done" : ""}`}>
                   <span className="row__head">
                     <span className="row__title">{c.title}</span>
-                    <span className="row__count figure">
-                      {cp.done} of {plural(cp.total, "lesson")}
-                    </span>
+                    {done ? (
+                      <span className="row__count row__count--done">
+                        <CheckIcon aria-hidden />
+                        Done
+                      </span>
+                    ) : (
+                      <span className="row__count figure">
+                        {cp.done} of {plural(cp.total, "lesson")}
+                      </span>
+                    )}
                   </span>
                   <span className="row__sub">{c.summary}</span>
                   <Meter value={cp.pct} label={`${c.title} progress`} />
