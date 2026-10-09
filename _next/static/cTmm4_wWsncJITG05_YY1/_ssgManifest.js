@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002Fboss\u002F[skill]","\u002Fcourse\u002F[courseId]","\u002Flesson\u002F[courseId]\u002F[lessonId]","\u002Ftopic\u002F[topicId]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
