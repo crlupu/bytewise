@@ -55,7 +55,8 @@ steps:
       The object only becomes consistent when the constructor returns. A factory method that constructs first, then registers, avoids the escape.
 
   - type: order
-    prompt: Put the safe alternative — a private constructor and a factory method — in order.
+    prompt: |
+      A constructor that registers a listener with an event source lets `this` escape before the object is built. Put the safe alternative — a private constructor and a factory method — in order.
     items:
       - The factory calls the private constructor, which only initialises fields
       - The constructor returns a fully built object

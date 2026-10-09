@@ -52,12 +52,20 @@ steps:
       A failing `close` is kept as a suppressed exception, not lost.
 
   - type: order
-    prompt: The body throws. Put what happens in order.
+    prompt: |
+      This try-with-resources opens two streams. While copying, `transferTo` throws an exception — call it **A**. Closing a stream can throw too — call that **B**. Put what happens next in order.
+
+      ```java
+      try (var in = new FileInputStream(src);
+           var out = new FileOutputStream(dst)) {
+          in.transferTo(out);   // throws A
+      }
+      ```
     items:
-      - The body throws exception A
-      - "`out` is closed"
-      - "`in` is closed; if it throws B, B is added to A as suppressed"
-      - A propagates to the caller, carrying B
+      - "`transferTo` throws exception A"
+      - "`out` is closed first — the last resource opened"
+      - "`in` is closed; if its `close()` throws B, B is attached to A as a suppressed exception"
+      - "A reaches the caller, with B available from `A.getSuppressed()`"
     explanation: Reverse order of declaration, and the original exception wins.
 
   - type: blank

@@ -47,7 +47,8 @@ steps:
         feedback: Only `HasCoinState.turnCrank()` moves towards dispensing.
 
   - type: order
-    prompt: Put a successful purchase's state changes in order.
+    prompt: |
+      A gumball machine has a state object for each situation — no coin, has coin, sold. Put a successful purchase's state changes in order.
     items:
       - "`NoCoinState`"
       - "`HasCoinState`, after inserting a coin"

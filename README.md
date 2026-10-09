@@ -38,7 +38,7 @@ The site is at https://crlupu.github.io/bytewise/.
 | Spaced repetition and mixed review sessions (FR-34–37) | `lib/progress.ts`, `ReviewView.tsx`, `SessionView.tsx` |
 | Streak and activity history (FR-38–39) | `ProgressView.tsx` |
 | Search by title, summary and tags (FR-40), from the button on Learn | `SearchView.tsx` |
-| Skills: rank, level and XP, skill tree with mastery, engineering judgment, daily quests, boss battles | `lib/skills.ts`, `SkillsView.tsx`, `BossView.tsx` |
+| Skills, the start page: rank, level and XP, skill tree with mastery, engineering judgment, daily quests, boss battles | `lib/skills.ts`, `SkillsView.tsx`, `BossView.tsx` |
 | Light/dark/system theme, reduced motion (FR-41–42) | `lib/settings.ts`, `SettingsView.tsx` |
 
 Widgets, one or more per topic: thread interleaving (Java), B-tree insert and search
@@ -225,7 +225,7 @@ phones, a sidebar from 1056px, 44px touch targets, hover styles only behind
 
 ## Skills
 
-The Skills tab turns progress into an engineering skill tree. Everything on it is derived
+The Skills tab, the page the app opens on, turns progress into an engineering skill tree. Lessons and the library are under Learn (`/learn/`). Everything on it is derived
 from progress except boss results, so it can't drift from what was actually learned.
 
 - **Skills.** Ten skills in three branches (Code, Systems, Design), each fed by whole topics

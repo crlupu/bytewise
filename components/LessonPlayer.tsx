@@ -159,7 +159,7 @@ function Complete({ lesson, next, minutes, books }: { lesson: Lesson; next: Less
                 Next lesson
               </Link>
             ) : (
-              <Link href="/" className="btn btn--primary">
+              <Link href="/learn/" className="btn btn--primary">
                 Done
               </Link>
             )}

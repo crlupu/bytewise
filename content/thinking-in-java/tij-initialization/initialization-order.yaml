@@ -49,7 +49,17 @@ steps:
       Only then does the constructor body run.
 
   - type: order
-    prompt: Put the steps of `new Cups()`, the first time, in order.
+    prompt: |
+      Put the steps of `new Cups()`, the first time, in order.
+
+      ```java
+      class Cups {
+          static Cup c1, c2;
+          static { c1 = new Cup(1); c2 = new Cup(2); }
+          Cup c3 = new Cup(3);
+          Cups() { System.out.print("Cups() "); }
+      }
+      ```
     items:
       - The `Cups` class is loaded and its static block runs
       - Memory for the object is cleared to defaults

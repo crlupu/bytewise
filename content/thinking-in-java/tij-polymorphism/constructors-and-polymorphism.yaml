@@ -46,7 +46,20 @@ steps:
       A base-class constructor that calls an overridable method lets a subclass see itself half-built — a bug the compiler won't warn you about.
 
   - type: order
-    prompt: Put the steps of `new RoundGlyph(5)` in order.
+    prompt: |
+      Put the steps of `new RoundGlyph(5)` in order.
+
+      ```java
+      class Glyph {
+          void draw() { print("Glyph.draw "); }
+          Glyph() { draw(); }
+      }
+      class RoundGlyph extends Glyph {
+          private int radius = 1;
+          RoundGlyph(int r) { radius = r; }
+          void draw() { print("radius=" + radius); }
+      }
+      ```
     items:
       - The object's memory is zeroed — `radius` is 0
       - "`Glyph()` runs and calls the overridden `draw()`"

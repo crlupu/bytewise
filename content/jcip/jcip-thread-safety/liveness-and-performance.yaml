@@ -20,7 +20,8 @@ steps:
       But don't split locks so finely that overhead dominates.
 
   - type: order
-    prompt: Put the narrow-locking version of the factorizer in order.
+    prompt: |
+      A servlet factors numbers and caches the last number and its factors. Locking the whole method makes requests queue up behind each other. Put the narrow-locking version in order.
     items:
       - Read the request's number (no lock needed — a local variable)
       - In a short synchronized block, check the cache and copy the cached factors if they match

@@ -8,16 +8,17 @@ import { Logo } from "@/components/Logo";
 import { dueItems, useProgress } from "@/lib/progress";
 
 const TABS = [
-  { href: "/", label: "Learn", icon: LearnIcon },
+  { href: "/", label: "Skills", icon: SkillsIcon },
+  { href: "/learn/", label: "Learn", icon: LearnIcon },
   { href: "/review/", label: "Review", icon: ReviewIcon },
-  { href: "/skills/", label: "Skills", icon: SkillsIcon },
   { href: "/progress/", label: "Progress", icon: ProgressIcon },
   { href: "/settings/", label: "Settings", icon: SettingsIcon },
 ];
 
 function isActive(path: string, href: string) {
   const p = path.endsWith("/") ? path : `${path}/`;
-  if (href === "/") return p === "/" || p.startsWith("/course/") || p.startsWith("/topic/") || p.startsWith("/search/");
+  if (href === "/") return p === "/";
+  if (href === "/learn/") return ["/learn/", "/course/", "/topic/", "/search/"].some((x) => p.startsWith(x));
   return p.startsWith(href);
 }
 

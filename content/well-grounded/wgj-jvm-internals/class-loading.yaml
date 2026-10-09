@@ -13,7 +13,8 @@ steps:
       Initialization runs the static initializers, on first active use.
 
   - type: order
-    prompt: Put the phases in order.
+    prompt: |
+      Put the phases of loading a class into the JVM in order.
     items:
       - Load the class file's bytes
       - Verify the bytecode

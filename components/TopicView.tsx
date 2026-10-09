@@ -15,7 +15,7 @@ export function TopicView({ topic, books }: { topic: TopicMeta; books: Record<st
   const lessons = topic.courses.reduce((n, c) => n + c.lessons.length, 0);
   return (
     <>
-      <PageHead title={topic.title} subtitle={`${plural(topic.courses.length, "course")}, ${plural(lessons, "lesson")}`} back={{ href: "/", label: "Learn" }} lede={topic.summary} />
+      <PageHead title={topic.title} subtitle={`${plural(topic.courses.length, "course")}, ${plural(lessons, "lesson")}`} back={{ href: "/learn/", label: "Learn" }} lede={topic.summary} />
       {used.length > 0 && (
         <div className="course-books" aria-label="Drawn from">
           {used.map((b) => (

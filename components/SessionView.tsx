@@ -67,7 +67,7 @@ export function SessionView({ steps, titles }: { steps: Record<string, ExerciseS
             <ReviewIcon className="empty__icon" aria-hidden />
             <p className="empty__title">Nothing to review</p>
             <p>
-              <Link href="/" className="btn btn--primary" style={{ marginTop: 16 }}>
+              <Link href="/learn/" className="btn btn--primary" style={{ marginTop: 16 }}>
                 Back to lessons
               </Link>
             </p>

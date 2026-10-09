@@ -20,7 +20,7 @@ export function PageHead({
   children?: ReactNode;
 }) {
   useEffect(() => {
-    document.title = title === "Learn" ? "Bytewise" : `${title} · Bytewise`;
+    document.title = title === "Skills" ? "Bytewise" : `${title} · Bytewise`;
   }, [title]);
   return (
     <header>

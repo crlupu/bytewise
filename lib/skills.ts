@@ -334,7 +334,7 @@ export function dailyQuests(p: Progress, index: SkillIndex, due: number, mast: R
   if (due > 0 || act.reviews > 0) {
     quests.push({ id: "review", title: "Clear your reviews", detail: act.reviews > 0 ? "Review session done" : `${due} due`, done: act.reviews > 0, href: "/review/" });
   } else {
-    quests.push({ id: "answer", title: "Answer 5 new exercises", detail: `${Math.min(act.exercises, 5)} of 5`, done: act.exercises >= 5, href: "/" });
+    quests.push({ id: "answer", title: "Answer 5 new exercises", detail: `${Math.min(act.exercises, 5)} of 5`, done: act.exercises >= 5, href: "/learn/" });
   }
 
   const started = SKILLS.filter((s) => learned(index.exercises[s.id], p) > 0 && mast[s.id] < 100);
@@ -344,13 +344,13 @@ export function dailyQuests(p: Progress, index: SkillIndex, due: number, mast: R
     const c = p.lessons[k]?.completed;
     return !!c && dayOf(c) === t;
   });
-  quests.push({ id: "focus", title: `Finish a lesson in ${focus.title}`, detail: doneToday ? "Done" : `${focus.title} is at ${mast[focus.id]}%`, done: doneToday, href: `/skills/#${focus.id}` });
+  quests.push({ id: "focus", title: `Finish a lesson in ${focus.title}`, detail: doneToday ? "Done" : `${focus.title} is at ${mast[focus.id]}%`, done: doneToday, href: `/#${focus.id}` });
 
   const ready = SKILLS.find((s) => !p.bosses[s.id]?.defeated && learned(index.exercises[s.id], p) >= bossNeeds(index.exercises[s.id].length));
   const beatenToday = SKILLS.find((s) => p.bosses[s.id]?.defeated === t);
   if (beatenToday) quests.push({ id: "boss", title: `Defeat ${beatenToday.boss.name}`, detail: "Defeated", done: true, href: `/boss/${beatenToday.id}/` });
   else if (ready) quests.push({ id: "boss", title: `Defeat ${ready.boss.name}`, detail: `${ready.title} boss`, done: false, href: `/boss/${ready.id}/` });
-  else quests.push({ id: "ten", title: "Answer 10 exercises", detail: `${Math.min(act.exercises, 10)} of 10`, done: act.exercises >= 10, href: "/" });
+  else quests.push({ id: "ten", title: "Answer 10 exercises", detail: `${Math.min(act.exercises, 10)} of 10`, done: act.exercises >= 10, href: "/learn/" });
 
   return quests;
 }

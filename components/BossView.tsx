@@ -62,7 +62,7 @@ export function BossView({ skillId, steps, titles }: { skillId: string; steps: R
   };
 
   const close = (
-    <Link href={`/skills/#${skillId}`} className="icon-btn" aria-label="Leave">
+    <Link href={`/#${skillId}`} className="icon-btn" aria-label="Leave">
       <CloseIcon aria-hidden />
     </Link>
   );
@@ -182,7 +182,7 @@ export function BossView({ skillId, steps, titles }: { skillId: string; steps: R
                 <LockIcon aria-hidden /> Learn {plural(need - known.length, "more exercise")} in {skill.title} to unlock this boss.
               </p>
             ) : phase === "won" ? (
-              <Link href={`/skills/#${skillId}`} className="btn btn--primary">
+              <Link href={`/#${skillId}`} className="btn btn--primary">
                 Back to skills
               </Link>
             ) : (
