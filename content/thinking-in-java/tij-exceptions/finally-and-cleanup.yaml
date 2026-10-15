@@ -1,0 +1,489 @@
+title: "finally and cleanup"
+summary: "finally always runs — after returns, across nested trys — and how to clean up safely, including when constructors can fail."
+duration: 8
+tags: [java, exceptions, finally, cleanup, lost exception]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 12, Performing cleanup with finally; Constructors" }
+steps:
+  - type: explanation
+    title: "finally always runs"
+    body: |
+      The `finally` block runs whether the `try` ends normally, by `return`, `break`, or an exception.
+      Use it for cleanup that must happen, like turning a switch off.
+      But a `return` in `finally`, or a new exception thrown there, silently replaces the original exception.
+
+  - type: explanation
+    title: "Cleanup with fallible constructors"
+    body: |
+      If a constructor can throw, there's nothing to clean up when it does.
+      So guard each creation with its own `try`, and dispose in `finally` only after construction succeeded.
+      Dispose in the reverse order of creation.
+
+  - type: predict
+    id: tij-exceptions-finallyworks
+    prompt: |
+      What does this print?
+    code: |
+      //: exceptions/FinallyWorks.java
+      // The finally clause is always executed.
+
+      class ThreeException extends Exception {}
+
+      public class FinallyWorks {
+        static int count = 0;
+        public static void main(String[] args) {
+          while(true) {
+            try {
+              // Post-increment is zero first time:
+              if(count++ == 0)
+                throw new ThreeException();
+              System.out.println("No exception");
+            } catch(ThreeException e) {
+              System.out.println("ThreeException");
+            } finally {
+              System.out.println("In finally clause");
+              if(count == 2) break; // out of "while"
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "ThreeException\nIn finally clause\nNo exception\nIn finally clause"
+        correct: true
+      - text: "ThreeException\nNo exception\nIn finally clause"
+        feedback: "`finally` runs on every pass, including the one that threw."
+      - text: "ThreeException\nIn finally clause"
+        feedback: "The loop breaks only when `count` is 2, after the second pass."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-alwaysfinally
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: exceptions/AlwaysFinally.java
+      // Finally is always executed.
+      import static net.mindview.util.Print.*;
+
+      class FourException extends Exception {}
+
+      public class AlwaysFinally {
+        public static void main(String[] args) {
+          print("Entering first try block");
+          try {
+            print("Entering second try block");
+            try {
+              throw new FourException();
+            } finally {
+              print("finally in 2nd try block");
+            }
+          } catch(FourException e) {
+            System.out.println(
+              "Caught FourException in 1st try block");
+          } finally {
+            System.out.println("finally in 1st try block");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Entering first try block\nEntering second try block\nfinally in 2nd try block\nCaught FourException in 1st try block\nfinally in 1st try block"
+        correct: true
+      - text: "Entering first try block\nEntering second try block\nCaught FourException in 1st try block\nfinally in 2nd try block\nfinally in 1st try block"
+        feedback: "The inner `finally` runs as the exception leaves the inner `try`, before the outer `catch`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-multiplereturns
+    prompt: |
+      What does `f(2)` print? (`print` is `println`.)
+    code: |
+      //: exceptions/MultipleReturns.java
+      import static net.mindview.util.Print.*;
+
+      public class MultipleReturns {
+        public static void f(int i) {
+          print("Initialization that requires cleanup");
+          try {
+            print("Point 1");
+            if(i == 1) return;
+            print("Point 2");
+            if(i == 2) return;
+            print("Point 3");
+            if(i == 3) return;
+            print("End");
+            return;
+          } finally {
+            print("Performing cleanup");
+          }
+        }
+        public static void main(String[] args) {
+          for(int i = 1; i <= 4; i++)
+            f(i);
+        }
+      }
+    language: java
+    options:
+      - text: "Initialization that requires cleanup\nPoint 1\nPoint 2\nPerforming cleanup"
+        correct: true
+      - text: "Initialization that requires cleanup\nPoint 1\nPoint 2"
+        feedback: "`return` inside `try` still runs `finally`."
+      - text: "Initialization that requires cleanup\nPoint 1\nPerforming cleanup"
+        feedback: "`i == 1` is false, so it reaches Point 2."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-onoffswitch
+    prompt: |
+      `sw.on()` and `sw.off()` print `on`/`off`. What's the weakness of this code?
+    code: |
+      //: exceptions/OnOffSwitch.java
+      // Why use finally?
+
+      public class OnOffSwitch {
+        private static Switch sw = new Switch();
+        public static void f()
+        throws OnOffException1,OnOffException2 {}
+        public static void main(String[] args) {
+          try {
+            sw.on();
+            // Code that can throw exceptions...
+            f();
+            sw.off();
+          } catch(OnOffException1 e) {
+            System.out.println("OnOffException1");
+            sw.off();
+          } catch(OnOffException2 e) {
+            System.out.println("OnOffException2");
+            sw.off();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`off()` is repeated in every path — and an uncaught exception (like a `RuntimeException`) would leave the switch on"
+        correct: true
+      - text: "The switch is turned off twice"
+        feedback: "Each path calls `off()` once; here it prints `on` then `off`."
+      - text: "It doesn't compile"
+        feedback: "`f()` declares both exceptions, and both are caught."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-withfinally
+    prompt: |
+      `sw.on()` prints `on`, `sw.off()` prints `off`, and `OnOffSwitch.f()` throws nothing. What does this print?
+    code: |
+      //: exceptions/WithFinally.java
+      // Finally Guarantees cleanup.
+
+      public class WithFinally {
+        static Switch sw = new Switch();
+        public static void main(String[] args) {
+          try {
+            sw.on();
+            // Code that can throw exceptions...
+            OnOffSwitch.f();
+          } catch(OnOffException1 e) {
+            System.out.println("OnOffException1");
+          } catch(OnOffException2 e) {
+            System.out.println("OnOffException2");
+          } finally {
+            sw.off();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "on\noff"
+        correct: true
+      - text: "on"
+        feedback: "`finally` turns the switch off on every path."
+      - text: "on\noff\noff"
+        feedback: "No exception is thrown, so no `catch` runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-switch
+    prompt: |
+      What does `print(this)` print in `on()`? (`print` is `println`.)
+    code: |
+      //: exceptions/Switch.java
+      import static net.mindview.util.Print.*;
+
+      public class Switch {
+        private boolean state = false;
+        public boolean read() { return state; }
+        public void on() { state = true; print(this); }
+        public void off() { state = false; print(this); }
+        public String toString() { return state ? "on" : "off"; }
+      }
+    language: java
+    options:
+      - text: "`on` — `toString()` reports the state, which was just set to true"
+        correct: true
+      - text: "`Switch@1b6d3586`"
+        feedback: "`toString` is overridden."
+      - text: "`off`"
+        feedback: "`state = true` runs before `print(this)`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-lostmessage
+    prompt: |
+      What does this print?
+    code: |
+      //: exceptions/LostMessage.java
+      // How an exception can be lost.
+
+      class VeryImportantException extends Exception {
+        public String toString() {
+          return "A very important exception!";
+        }
+      }
+
+      class HoHumException extends Exception {
+        public String toString() {
+          return "A trivial exception";
+        }
+      }
+
+      public class LostMessage {
+        void f() throws VeryImportantException {
+          throw new VeryImportantException();
+        }
+        void dispose() throws HoHumException {
+          throw new HoHumException();
+        }
+        public static void main(String[] args) {
+          try {
+            LostMessage lm = new LostMessage();
+            try {
+              lm.f();
+            } finally {
+              lm.dispose();
+            }
+          } catch(Exception e) {
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "A trivial exception"
+        correct: true
+      - text: "A very important exception!"
+        feedback: "`dispose()` throws in `finally`, replacing the exception from `f()`."
+      - text: "A very important exception!\nA trivial exception"
+        feedback: "Only one exception escapes; the first is lost."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-exceptionsilencer
+    prompt: |
+      What happens when this runs?
+    code: |
+      //: exceptions/ExceptionSilencer.java
+
+      public class ExceptionSilencer {
+        public static void main(String[] args) {
+          try {
+            throw new RuntimeException();
+          } finally {
+            // Using 'return' inside the finally block
+            // will silence any thrown exception.
+            return;
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Nothing — the `return` in `finally` discards the `RuntimeException`"
+        correct: true
+      - text: "It prints a `RuntimeException` stack trace"
+        feedback: "Returning from `finally` throws the exception away."
+      - text: "Compile error: unreachable code"
+        feedback: "It compiles (with a warning)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-inputfile
+    prompt: |
+      Why doesn't the constructor close the file in a `finally` block?
+    code: |
+      //: exceptions/InputFile.java
+      // Paying attention to exceptions in constructors.
+      import java.io.*;
+
+      public class InputFile {
+        private BufferedReader in;
+        public InputFile(String fname) throws Exception {
+          try {
+            in = new BufferedReader(new FileReader(fname));
+            // Other code that might throw exceptions
+          } catch(FileNotFoundException e) {
+            System.out.println("Could not open " + fname);
+            // Wasn't open, so don't close it
+            throw e;
+          } catch(Exception e) {
+            // All other exceptions must close it
+            try {
+              in.close();
+            } catch(IOException e2) {
+              System.out.println("in.close() unsuccessful");
+            }
+            throw e; // Rethrow
+          } finally {
+            // Don't close it here!!!
+          }
+        }
+        public String getLine() {
+          String s;
+          try {
+            s = in.readLine();
+          } catch(IOException e) {
+            throw new RuntimeException("readLine() failed");
+          }
+          return s;
+        }
+        public void dispose() {
+          try {
+            in.close();
+            System.out.println("dispose() successful");
+          } catch(IOException e2) {
+            throw new RuntimeException("in.close() failed");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "On success the file must stay open for `getLine()`; closing is the caller's job via `dispose()`"
+        correct: true
+      - text: "Because `finally` can't call `close()`"
+        feedback: "It could; it would just close the file too early."
+      - text: "Because the file is never opened"
+        feedback: "It's opened when construction succeeds."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-cleanup
+    prompt: |
+      `InputFile` opens a file in its constructor (throwing if it can't), reads lines with `getLine()`, and `dispose()` closes it, printing `dispose() successful`. The file exists. What does this print?
+    code: |
+      //: exceptions/Cleanup.java
+      // Guaranteeing proper cleanup of a resource.
+
+      public class Cleanup {
+        public static void main(String[] args) {
+          try {
+            InputFile in = new InputFile("Cleanup.java");
+            try {
+              String s;
+              int i = 1;
+              while((s = in.getLine()) != null)
+                ; // Perform line-by-line processing here...
+            } catch(Exception e) {
+              System.out.println("Caught Exception in main");
+              e.printStackTrace(System.out);
+            } finally {
+              in.dispose();
+            }
+          } catch(Exception e) {
+            System.out.println("InputFile construction failed");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "dispose() successful"
+        correct: true
+      - text: "InputFile construction failed"
+        feedback: "The file exists, so construction succeeds."
+      - text: "Nothing"
+        feedback: "The inner `finally` always calls `dispose()`, which prints."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-cleanupidiom
+    prompt: |
+      Each `NeedsCleanup` gets an id 1, 2, 3 … and `dispose()` prints `NeedsCleanup <id> disposed`. No constructor actually throws. What does this print?
+    code: |
+      //: exceptions/CleanupIdiom.java
+      // Each disposable object must be followed by a try-finally
+
+      class NeedsCleanup { // Construction can't fail
+        private static long counter = 1;
+        private final long id = counter++;
+        public void dispose() {
+          System.out.println("NeedsCleanup " + id + " disposed");
+        }
+      }
+
+      class ConstructionException extends Exception {}
+
+      class NeedsCleanup2 extends NeedsCleanup {
+        // Construction can fail:
+        public NeedsCleanup2() throws ConstructionException {}
+      }
+
+      public class CleanupIdiom {
+        public static void main(String[] args) {
+          // Section 1:
+          NeedsCleanup nc1 = new NeedsCleanup();
+          try {
+            // ...
+          } finally {
+            nc1.dispose();
+          }
+
+          // Section 2:
+          // If construction cannot fail you can group objects:
+          NeedsCleanup nc2 = new NeedsCleanup();
+          NeedsCleanup nc3 = new NeedsCleanup();
+          try {
+            // ...
+          } finally {
+            nc3.dispose(); // Reverse order of construction
+            nc2.dispose();
+          }
+
+          // Section 3:
+          // If construction can fail you must guard each one:
+          try {
+            NeedsCleanup2 nc4 = new NeedsCleanup2();
+            try {
+              NeedsCleanup2 nc5 = new NeedsCleanup2();
+              try {
+                // ...
+              } finally {
+                nc5.dispose();
+              }
+            } catch(ConstructionException e) { // nc5 constructor
+              System.out.println(e);
+            } finally {
+              nc4.dispose();
+            }
+          } catch(ConstructionException e) { // nc4 constructor
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "NeedsCleanup 1 disposed\nNeedsCleanup 3 disposed\nNeedsCleanup 2 disposed\nNeedsCleanup 5 disposed\nNeedsCleanup 4 disposed"
+        correct: true
+      - text: "NeedsCleanup 1 disposed\nNeedsCleanup 2 disposed\nNeedsCleanup 3 disposed\nNeedsCleanup 4 disposed\nNeedsCleanup 5 disposed"
+        feedback: "Sections 2 and 3 dispose in the reverse order of creation."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

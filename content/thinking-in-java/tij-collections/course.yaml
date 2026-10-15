@@ -3,3 +3,6 @@ summary: Chapters 11 and 17 — the Collection and Map hierarchies, and choosing
 lessons:
   - collection-hierarchy
   - maps-and-views
+  - lists-and-iterators
+  - sets-queues-stacks
+  - iterable-and-foreach

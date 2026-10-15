@@ -1,0 +1,326 @@
+title: "Sets, queues and stacks"
+summary: "Sets drop duplicates, TreeSet sorts, queues hand out elements first-in-first-out, priority queues smallest-first, and stacks last-in-first-out."
+duration: 8
+tags: [java, collections, Set, TreeSet, Queue, PriorityQueue, Stack]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 11, Stack; Set; Queue; PriorityQueue" }
+steps:
+  - type: explanation
+    title: "Sets"
+    body: |
+      A `Set` holds each value at most once.
+      `HashSet` has no defined order; `TreeSet` keeps elements sorted, by natural order or a `Comparator`.
+      `containsAll`, `removeAll` and `addAll` give subset, difference and union.
+
+  - type: explanation
+    title: "Queues and stacks"
+    body: |
+      A `Queue` gives elements back in insertion order: `offer` to add, `peek` to look, `poll`/`remove` to take.
+      A `PriorityQueue` always gives the smallest (or, with a reverse comparator, the largest) next.
+      A stack gives back the most recent element first.
+
+  - type: predict
+    id: tij-holding-stacktest
+    prompt: |
+      `net.mindview.util.Stack` is a simple LIFO stack built on `LinkedList`. What does this print?
+    code: |
+      //: holding/StackTest.java
+      import net.mindview.util.*;
+
+      public class StackTest {
+        public static void main(String[] args) {
+          Stack<String> stack = new Stack<String>();
+          for(String s : "My dog has fleas".split(" "))
+            stack.push(s);
+          while(!stack.empty())
+            System.out.print(stack.pop() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "fleas has dog My "
+        correct: true
+      - text: "My dog has fleas "
+        feedback: "A stack pops the last pushed element first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-stackcollision
+    prompt: |
+      Why are both stacks written with full package names?
+    code: |
+      //: holding/StackCollision.java
+      import net.mindview.util.*;
+
+      public class StackCollision {
+        public static void main(String[] args) {
+          net.mindview.util.Stack<String> stack =
+            new net.mindview.util.Stack<String>();
+          for(String s : "My dog has fleas".split(" "))
+            stack.push(s);
+          while(!stack.empty())
+            System.out.print(stack.pop() + " ");
+          System.out.println();
+          java.util.Stack<String> stack2 =
+            new java.util.Stack<String>();
+          for(String s : "My dog has fleas".split(" "))
+            stack2.push(s);
+          while(!stack2.empty())
+            System.out.print(stack2.pop() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "`import net.mindview.util.*` brings in a `Stack`, and `java.util` has one too; full names make it unambiguous"
+        correct: true
+      - text: "Generic classes always need full names"
+        feedback: "Normally the short name is fine."
+      - text: "They behave differently"
+        feedback: "Both print `fleas has dog My `."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-setofinteger
+    prompt: |
+      10,000 random numbers from 0 to 29 go into the `HashSet`. How many elements does it end up with?
+    code: |
+      //: holding/SetOfInteger.java
+      import java.util.*;
+
+      public class SetOfInteger {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          Set<Integer> intset = new HashSet<Integer>();
+          for(int i = 0; i < 10000; i++)
+            intset.add(rand.nextInt(30));
+          System.out.println(intset);
+        }
+      }
+    language: java
+    options:
+      - text: "30 — duplicates are dropped"
+        correct: true
+      - text: "10,000"
+        feedback: "A set keeps each value once."
+      - text: "Fewer than 30, unpredictably"
+        feedback: "With 10,000 draws, every value from 0 to 29 appears."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-sortedsetofinteger
+    prompt: |
+      10,000 random numbers from 0 to 29 go into a `TreeSet`. What does it print?
+    code: |
+      //: holding/SortedSetOfInteger.java
+      import java.util.*;
+
+      public class SortedSetOfInteger {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          SortedSet<Integer> intset = new TreeSet<Integer>();
+          for(int i = 0; i < 10000; i++)
+            intset.add(rand.nextInt(30));
+          System.out.println(intset);
+        }
+      }
+    language: java
+    options:
+      - text: "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]"
+        correct: true
+      - text: "The numbers in the order they were first drawn"
+        feedback: "A `TreeSet` keeps its elements sorted."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-setoperations
+    prompt: |
+      Lines 3 and 5 both print `set2 in set1: …`. What are they? (`print` is `println`.)
+    code: |
+      //: holding/SetOperations.java
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class SetOperations {
+        public static void main(String[] args) {
+          Set<String> set1 = new HashSet<String>();
+          Collections.addAll(set1,
+            "A B C D E F G H I J K L".split(" "));
+          set1.add("M");
+          print("H: " + set1.contains("H"));
+          print("N: " + set1.contains("N"));
+          Set<String> set2 = new HashSet<String>();
+          Collections.addAll(set2, "H I J K L".split(" "));
+          print("set2 in set1: " + set1.containsAll(set2));
+          set1.remove("H");
+          print("set1: " + set1);
+          print("set2 in set1: " + set1.containsAll(set2));
+          set1.removeAll(set2);
+          print("set2 removed from set1: " + set1);
+          Collections.addAll(set1, "X Y Z".split(" "));
+          print("'X Y Z' added to set1: " + set1);
+        }
+      }
+    language: java
+    options:
+      - text: "`set2 in set1: true`, then `set2 in set1: false`"
+        correct: true
+      - text: "`true` both times"
+        feedback: "After `H` is removed from `set1`, `set2` (which has `H`) isn't contained."
+      - text: "`false` both times"
+        feedback: "Initially `set1` has A through M, which includes H–L."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-uniquewords
+    prompt: |
+      `TextFile(name, "\\W+")` reads a file and splits it into words. How are the words printed?
+    code: |
+      //: holding/UniqueWords.java
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class UniqueWords {
+        public static void main(String[] args) {
+          Set<String> words = new TreeSet<String>(
+            new TextFile("SetOperations.java", "\\W+"));
+          System.out.println(words);
+        }
+      }
+    language: java
+    options:
+      - text: "Each distinct word once, sorted with capitals first (`A, B, …, Z, add, …`)"
+        correct: true
+      - text: "Sorted alphabetically ignoring case"
+        feedback: "`String`'s natural order compares character codes, so uppercase sorts before lowercase."
+      - text: "In the order they appear in the file"
+        feedback: "A `TreeSet` sorts them."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-uniquewordsalphabetic
+    prompt: |
+      What changes with `String.CASE_INSENSITIVE_ORDER`?
+    code: |
+      //: holding/UniqueWordsAlphabetic.java
+      // Producing an alphabetic listing.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class UniqueWordsAlphabetic {
+        public static void main(String[] args) {
+          Set<String> words =
+            new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+          words.addAll(
+            new TextFile("SetOperations.java", "\\W+"));
+          System.out.println(words);
+        }
+      }
+    language: java
+    options:
+      - text: "Words sort alphabetically ignoring case: `A, add, addAll, added, args, B, …`"
+        correct: true
+      - text: "All words are lowercased"
+        feedback: "Only the comparison ignores case; the words keep their spelling."
+      - text: "Nothing"
+        feedback: "The comparator decides the `TreeSet`'s order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-queuedemo
+    prompt: |
+      What is the second line printed?
+    code: |
+      //: holding/QueueDemo.java
+      // Upcasting to a Queue from a LinkedList.
+      import java.util.*;
+
+      public class QueueDemo {
+        public static void printQ(Queue queue) {
+          while(queue.peek() != null)
+            System.out.print(queue.remove() + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          Queue<Integer> queue = new LinkedList<Integer>();
+          Random rand = new Random(47);
+          for(int i = 0; i < 10; i++)
+            queue.offer(rand.nextInt(i + 10));
+          printQ(queue);
+          Queue<Character> qc = new LinkedList<Character>();
+          for(char c : "Brontosaurus".toCharArray())
+            qc.offer(c);
+          printQ(qc);
+        }
+      }
+    language: java
+    options:
+      - text: "B r o n t o s a u r u s "
+        correct: true
+      - text: "s u r u a s o t n o r B "
+        feedback: "A queue is first-in, first-out."
+      - text: "B a n o o r r s s t u u "
+        feedback: "A `LinkedList` queue doesn't sort."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-priorityqueuedemo
+    prompt: |
+      `ints` is `[25, 22, 20, 18, 14, 9, 3, 1, 1, 2, 3, 9, 14, 18, 21, 23, 25]`. What does the line for the `Collections.reverseOrder()` queue print?
+    code: |
+      //: holding/PriorityQueueDemo.java
+      import java.util.*;
+
+      public class PriorityQueueDemo {
+        public static void main(String[] args) {
+          PriorityQueue<Integer> priorityQueue =
+            new PriorityQueue<Integer>();
+          Random rand = new Random(47);
+          for(int i = 0; i < 10; i++)
+            priorityQueue.offer(rand.nextInt(i + 10));
+          QueueDemo.printQ(priorityQueue);
+
+          List<Integer> ints = Arrays.asList(25, 22, 20,
+            18, 14, 9, 3, 1, 1, 2, 3, 9, 14, 18, 21, 23, 25);
+          priorityQueue = new PriorityQueue<Integer>(ints);
+          QueueDemo.printQ(priorityQueue);
+          priorityQueue = new PriorityQueue<Integer>(
+              ints.size(), Collections.reverseOrder());
+          priorityQueue.addAll(ints);
+          QueueDemo.printQ(priorityQueue);
+
+          String fact = "EDUCATION SHOULD ESCHEW OBFUSCATION";
+          List<String> strings = Arrays.asList(fact.split(""));
+          PriorityQueue<String> stringPQ =
+            new PriorityQueue<String>(strings);
+          QueueDemo.printQ(stringPQ);
+          stringPQ = new PriorityQueue<String>(
+            strings.size(), Collections.reverseOrder());
+          stringPQ.addAll(strings);
+          QueueDemo.printQ(stringPQ);
+
+          Set<Character> charSet = new HashSet<Character>();
+          for(char c : fact.toCharArray())
+            charSet.add(c); // Autoboxing
+          PriorityQueue<Character> characterPQ =
+            new PriorityQueue<Character>(charSet);
+          QueueDemo.printQ(characterPQ);
+        }
+      }
+    language: java
+    options:
+      - text: "25 25 23 22 21 20 18 18 14 14 9 9 3 3 2 1 1 "
+        correct: true
+      - text: "1 1 2 3 3 9 9 14 14 18 18 20 21 22 23 25 25 "
+        feedback: "That's the natural-order queue; this one uses a reverse comparator."
+      - text: "25 22 20 18 14 9 3 1 1 2 3 9 14 18 21 23 25 "
+        feedback: "A priority queue hands out elements by priority, not insertion order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

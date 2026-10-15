@@ -1,0 +1,206 @@
+title: "Scanning input"
+summary: "Reading lines and numbers with BufferedReader and Scanner, custom delimiters, and scanning with a regex."
+duration: 8
+tags: [java, Scanner, BufferedReader, StringTokenizer, input]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 13, Scanning input; StringTokenizer" }
+steps:
+  - type: explanation
+    title: "Scanner"
+    body: |
+      `Scanner` reads from a `String`, file or any `Readable`, splitting on whitespace.
+      `nextLine()`, `nextInt()` and `nextDouble()` parse as they read; `hasNextInt()` checks first.
+      `useDelimiter(regex)` changes what separates tokens.
+
+  - type: explanation
+    title: "Before Scanner"
+    body: |
+      With a `BufferedReader` you read whole lines, then split and parse them yourself.
+      `StringTokenizer` is an older way of splitting; `split` and `Scanner` replace it.
+      `scanner.next(pattern)` with `scanner.match()` reads structured data with regex groups.
+
+  - type: predict
+    id: tij-strings-simpleread
+    prompt: |
+      `input` holds `"Sir Robin of Camelot\n22 1.61803"`. What are the last two lines printed?
+    code: |
+      //: strings/SimpleRead.java
+      import java.io.*;
+
+      public class SimpleRead {
+        public static BufferedReader input = new BufferedReader(
+          new StringReader("Sir Robin of Camelot\n22 1.61803"));
+        public static void main(String[] args) {
+          try {
+            System.out.println("What is your name?");
+            String name = input.readLine();
+            System.out.println(name);
+            System.out.println(
+              "How old are you? What is your favorite double?");
+            System.out.println("(input: <age> <double>)");
+            String numbers = input.readLine();
+            System.out.println(numbers);
+            String[] numArray = numbers.split(" ");
+            int age = Integer.parseInt(numArray[0]);
+            double favorite = Double.parseDouble(numArray[1]);
+            System.out.format("Hi %s.\n", name);
+            System.out.format("In 5 years you will be %d.\n",
+              age + 5);
+            System.out.format("My favorite double is %f.",
+              favorite / 2);
+          } catch(IOException e) {
+            System.err.println("I/O exception");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "In 5 years you will be 27.\nMy favorite double is 0.809015."
+        correct: true
+      - text: "In 5 years you will be 225.\nMy favorite double is 0.809015."
+        feedback: "`age` is parsed to an `int` first, so `age + 5` is 27."
+      - text: "In 5 years you will be 27.\nMy favorite double is 0.81."
+        feedback: "`%f` prints six decimal places."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-betterread
+    prompt: |
+      How does `Scanner` simplify reading `22 1.61803`?
+    code: |
+      //: strings/BetterRead.java
+      import java.util.*;
+
+      public class BetterRead {
+        public static void main(String[] args) {
+          Scanner stdin = new Scanner(SimpleRead.input);
+          System.out.println("What is your name?");
+          String name = stdin.nextLine();
+          System.out.println(name);
+          System.out.println(
+            "How old are you? What is your favorite double?");
+          System.out.println("(input: <age> <double>)");
+          int age = stdin.nextInt();
+          double favorite = stdin.nextDouble();
+          System.out.println(age);
+          System.out.println(favorite);
+          System.out.format("Hi %s.\n", name);
+          System.out.format("In 5 years you will be %d.\n",
+            age + 5);
+          System.out.format("My favorite double is %f.",
+            favorite / 2);
+        }
+      }
+    language: java
+    options:
+      - text: "`nextInt()` and `nextDouble()` split and parse the tokens directly"
+        correct: true
+      - text: "It reads the whole input at once"
+        feedback: "It reads token by token."
+      - text: "It doesn't — you still split and parse by hand"
+        feedback: "That's the `BufferedReader` version."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-scannerdelimiter
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/ScannerDelimiter.java
+      import java.util.*;
+
+      public class ScannerDelimiter {
+        public static void main(String[] args) {
+          Scanner scanner = new Scanner("12, 42, 78, 99, 42");
+          scanner.useDelimiter("\\s*,\\s*");
+          while(scanner.hasNextInt())
+            System.out.println(scanner.nextInt());
+        }
+      }
+    language: java
+    options:
+      - text: "12\n42\n78\n99\n42"
+        correct: true
+      - text: "12,\n42,\n78,\n99,\n42"
+        feedback: "The delimiter regex consumes the commas and spaces."
+      - text: "Nothing — `hasNextInt()` fails on `12,`"
+        feedback: "With `\\\\s*,\\\\s*` as the delimiter, the tokens are just the numbers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-threatanalyzer
+    prompt: |
+      Why does the loop stop after five lines?
+    code: |
+      //: strings/ThreatAnalyzer.java
+      import java.util.regex.*;
+      import java.util.*;
+
+      public class ThreatAnalyzer {
+        static String threatData =
+          "58.27.82.161@02/10/2005\n" +
+          "204.45.234.40@02/11/2005\n" +
+          "58.27.82.161@02/11/2005\n" +
+          "58.27.82.161@02/12/2005\n" +
+          "58.27.82.161@02/12/2005\n" +
+          "[Next log section with different data format]";
+        public static void main(String[] args) {
+          Scanner scanner = new Scanner(threatData);
+          String pattern = "(\\d+[.]\\d+[.]\\d+[.]\\d+)@" +
+            "(\\d{2}/\\d{2}/\\d{4})";
+          while(scanner.hasNext(pattern)) {
+            scanner.next(pattern);
+            MatchResult match = scanner.match();
+            String ip = match.group(1);
+            String date = match.group(2);
+            System.out.format("Threat on %s from %s\n", date,ip);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "The next token, `[Next`, doesn't match the IP@date pattern, so `hasNext(pattern)` is false"
+        correct: true
+      - text: "It's hard-coded to five"
+        feedback: "It loops while the next token matches."
+      - text: "`Scanner` throws at the bracket"
+        feedback: "`hasNext(pattern)` just returns false."
+    explanation: |
+      Each line prints like `Threat on 02/10/2005 from 58.27.82.161`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-replacingstringtokenizer
+    prompt: |
+      What is the second line printed?
+    code: |
+      //: strings/ReplacingStringTokenizer.java
+      import java.util.*;
+
+      public class ReplacingStringTokenizer {
+        public static void main(String[] args) {
+          String input = "But I'm not dead yet! I feel happy!";
+          StringTokenizer stoke = new StringTokenizer(input);
+          while(stoke.hasMoreElements())
+            System.out.print(stoke.nextToken() + " ");
+          System.out.println();
+          System.out.println(Arrays.toString(input.split(" ")));
+          Scanner scanner = new Scanner(input);
+          while(scanner.hasNext())
+            System.out.print(scanner.next() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "[But, I'm, not, dead, yet!, I, feel, happy!]"
+        correct: true
+      - text: "But I'm not dead yet! I feel happy! "
+        feedback: "The second line prints the array from `split`."
+      - text: "[But, Im, not, dead, yet, I, feel, happy]"
+        feedback: "`split(\" \")` splits on spaces only; punctuation stays."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

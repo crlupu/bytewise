@@ -67,3 +67,122 @@ steps:
     prompt: Loop over keys and values together.
     template: "for (Map.Entry<String, Integer> e : map.[[entrySet]]()) print(e.getKey() + \"=\" + e.getValue());"
     code: true
+
+  - type: predict
+    id: tij-holding-petmap
+    prompt: |
+      What are the last three lines printed? (`print` is `println`.)
+    code: |
+      //: holding/PetMap.java
+      import typeinfo.pets.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class PetMap {
+        public static void main(String[] args) {
+          Map<String,Pet> petMap = new HashMap<String,Pet>();
+          petMap.put("My Cat", new Cat("Molly"));
+          petMap.put("My Dog", new Dog("Ginger"));
+          petMap.put("My Hamster", new Hamster("Bosco"));
+          print(petMap);
+          Pet dog = petMap.get("My Dog");
+          print(dog);
+          print(petMap.containsKey("My Dog"));
+          print(petMap.containsValue(dog));
+        }
+      }
+    language: java
+    options:
+      - text: "Dog Ginger\ntrue\ntrue"
+        correct: true
+      - text: "My Dog\ntrue\ntrue"
+        feedback: "`get` returns the value, not the key."
+      - text: "Dog Ginger\ntrue\nfalse"
+        feedback: "`dog` is the very object stored, so `containsValue` finds it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-statistics
+    prompt: |
+      What does the map hold at the end?
+    code: |
+      //: holding/Statistics.java
+      // Simple demonstration of HashMap.
+      import java.util.*;
+
+      public class Statistics {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          Map<Integer,Integer> m =
+            new HashMap<Integer,Integer>();
+          for(int i = 0; i < 10000; i++) {
+            // Produce a number between 0 and 20:
+            int r = rand.nextInt(20);
+            Integer freq = m.get(r);
+            m.put(r, freq == null ? 1 : freq + 1);
+          }
+          System.out.println(m);
+        }
+      }
+    language: java
+    options:
+      - text: "Each number 0–19 mapped to how often it came up — about 500 each"
+        correct: true
+      - text: "Ten thousand entries"
+        feedback: "Keys repeat; each `put` updates the count for that key."
+      - text: "It throws `NullPointerException` the first time a number appears"
+        feedback: "The `freq == null ? 1` check handles a missing key."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-mapoflist
+    prompt: |
+      In what order are the people printed? (`print` is `println`.)
+    code: |
+      //: holding/MapOfList.java
+      package holding;
+      import typeinfo.pets.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class MapOfList {
+        public static Map<Person, List<? extends Pet>>
+          petPeople = new HashMap<Person, List<? extends Pet>>();
+        static {
+          petPeople.put(new Person("Dawn"),
+            Arrays.asList(new Cymric("Molly"),new Mutt("Spot")));
+          petPeople.put(new Person("Kate"),
+            Arrays.asList(new Cat("Shackleton"),
+              new Cat("Elsie May"), new Dog("Margrett")));
+          petPeople.put(new Person("Marilyn"),
+            Arrays.asList(
+             new Pug("Louie aka Louis Snorkelstein Dupree"),
+             new Cat("Stanford aka Stinky el Negro"),
+             new Cat("Pinkola")));
+          petPeople.put(new Person("Luke"),
+            Arrays.asList(new Rat("Fuzzy"), new Rat("Fizzy")));
+          petPeople.put(new Person("Isaac"),
+            Arrays.asList(new Rat("Freckly")));
+        }
+        public static void main(String[] args) {
+          print("People: " + petPeople.keySet());
+          print("Pets: " + petPeople.values());
+          for(Person person : petPeople.keySet()) {
+            print(person + " has:");
+            for(Pet pet : petPeople.get(person))
+              print("    " + pet);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`HashMap` order — determined by hashing, not by insertion (here Marilyn, Dawn, Luke, Isaac, Kate)"
+        correct: true
+      - text: "Insertion order: Dawn, Kate, Marilyn, Luke, Isaac"
+        feedback: "That would need a `LinkedHashMap`."
+      - text: "Alphabetical"
+        feedback: "That would need a `TreeMap`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

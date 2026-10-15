@@ -1,0 +1,494 @@
+title: "Regular expressions"
+summary: "matches, split and replace, Pattern and Matcher, find and groups, flags, and appendReplacement."
+duration: 8
+tags: [java, regex, Pattern, Matcher, groups, split, replaceAll]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 13, Regular expressions" }
+steps:
+  - type: explanation
+    title: "Patterns"
+    body: |
+      `\\d` is a digit, `\\w` a word character, `\\W` a non-word one, `\\s` whitespace; `+` means one or more, `*` zero or more, `?` optional.
+      In Java source, each backslash is doubled: `"\\d+"`.
+      `String.matches`, `split`, `replaceFirst` and `replaceAll` take a regex.
+
+  - type: explanation
+    title: "Pattern and Matcher"
+    body: |
+      `Pattern.compile(regex).matcher(input)` gives a `Matcher`.
+      `find()` finds the next match; `group()` is the match, `group(n)` the nth parenthesized group, and `start()`/`end()` its position.
+      `matches()` must match the whole input; `lookingAt()` only the beginning.
+
+  - type: predict
+    id: tij-strings-integermatch
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/IntegerMatch.java
+
+      public class IntegerMatch {
+        public static void main(String[] args) {
+          System.out.println("-1234".matches("-?\\d+"));
+          System.out.println("5678".matches("-?\\d+"));
+          System.out.println("+911".matches("-?\\d+"));
+          System.out.println("+911".matches("(-|\\+)?\\d+"));
+        }
+      }
+    language: java
+    options:
+      - text: "true\ntrue\nfalse\ntrue"
+        correct: true
+      - text: "true\ntrue\ntrue\ntrue"
+        feedback: "`-?\\\\d+` allows only an optional minus sign; `+911` doesn't match."
+      - text: "true\nfalse\nfalse\ntrue"
+        feedback: "`-?` makes the minus optional, so `5678` matches."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-splitting
+    prompt: |
+      `knights` is `"Then, when you have found the shrubbery, you must cut down the mightiest tree in the forest... with... a herring!"`. What does `split("n\\W+")` print?
+    code: |
+      //: strings/Splitting.java
+      import java.util.*;
+
+      public class Splitting {
+        public static String knights =
+          "Then, when you have found the shrubbery, you must " +
+          "cut down the mightiest tree in the forest... " +
+          "with... a herring!";
+        public static void split(String regex) {
+          System.out.println(
+            Arrays.toString(knights.split(regex)));
+        }
+        public static void main(String[] args) {
+          split(" "); // Doesn't have to contain regex chars
+          split("\\W+"); // Non-word characters
+          split("n\\W+"); // 'n' followed by non-word characters
+        }
+      }
+    language: java
+    options:
+      - text: "[The, whe, you have found the shrubbery, you must cut dow, the mightiest tree i, the forest... with... a herring!]"
+        correct: true
+      - text: "[Then, when, you, have, found, the, shrubbery, you, must, cut, down, the, mightiest, tree, in, the, forest, with, a, herring]"
+        feedback: "That's `\\\\W+`. Here the delimiter is an `n` followed by non-word characters."
+      - text: "[The, whe, you have fou, d the shrubbery, you must cut dow, the mightiest tree i, the forest... with... a herri, g!]"
+        feedback: "`found` and `herring` have an `n` followed by a letter, which isn't `\\\\W`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-replacing
+    prompt: |
+      `s` is `"Then, when you have found the shrubbery, you must cut down the mightiest tree in the forest... with... a herring!"`. What does `s.replaceFirst("f\\w+", "located")` give? (`print` is `println`.)
+    code: |
+      //: strings/Replacing.java
+      import static net.mindview.util.Print.*;
+
+      public class Replacing {
+        static String s = Splitting.knights;
+        public static void main(String[] args) {
+          print(s.replaceFirst("f\\w+", "located"));
+          print(s.replaceAll("shrubbery|tree|herring","banana"));
+        }
+      }
+    language: java
+    options:
+      - text: "Then, when you have located the shrubbery, you must cut down the mightiest tree in the forest... with... a herring!"
+        correct: true
+      - text: "Then, when you have located the shrubbery, you must cut down the mightiest tree in the located... with... a herring!"
+        feedback: "`replaceFirst` only replaces the first match."
+      - text: "Then, when you have locatedound the shrubbery, you must cut down the mightiest tree in the forest... with... a herring!"
+        feedback: "`\\\\w+` extends the match over the whole word."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-rudolph
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/Rudolph.java
+
+      public class Rudolph {
+        public static void main(String[] args) {
+          for(String pattern : new String[]{ "Rudolph",
+            "[rR]udolph", "[rR][aeiou][a-z]ol.*", "R.*" })
+            System.out.println("Rudolph".matches(pattern));
+        }
+      }
+    language: java
+    options:
+      - text: "true\ntrue\ntrue\ntrue"
+        correct: true
+      - text: "true\ntrue\nfalse\ntrue"
+        feedback: "`[rR][aeiou][a-z]ol.*`: R, u, d, ol, ph — it matches."
+      - text: "true\nfalse\nfalse\nfalse"
+        feedback: "Each pattern matches the whole word \"Rudolph\"."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-testregularexpression
+    prompt: |
+      Run with `abcabcabcdefabc "abc+" "(abc)+" "(abc){2,}"`. What are the matches for `(abc)+`? (`print` is `println`.)
+    code: |
+      //: strings/TestRegularExpression.java
+      // Allows you to easily try out regular expressions.
+      import java.util.regex.*;
+      import static net.mindview.util.Print.*;
+
+      public class TestRegularExpression {
+        public static void main(String[] args) {
+          if(args.length < 2) {
+            print("Usage:\njava TestRegularExpression " +
+              "characterSequence regularExpression+");
+            System.exit(0);
+          }
+          print("Input: \"" + args[0] + "\"");
+          for(String arg : args) {
+            print("Regular expression: \"" + arg + "\"");
+            Pattern p = Pattern.compile(arg);
+            Matcher m = p.matcher(args[0]);
+            while(m.find()) {
+              print("Match \"" + m.group() + "\" at positions " +
+                m.start() + "-" + (m.end() - 1));
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Match \"abcabcabc\" at positions 0-8\nMatch \"abc\" at positions 12-14"
+        correct: true
+      - text: "Match \"abc\" at positions 0-2\nMatch \"abc\" at positions 3-5\nMatch \"abc\" at positions 6-8\nMatch \"abc\" at positions 12-14"
+        feedback: "That's `abc+` — the `+` there only repeats the `c`. `(abc)+` repeats the whole group, greedily."
+      - text: "Match \"abcabcabc\" at positions 0-8"
+        feedback: "The final `abc` after `def` is a separate match."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-finding
+    prompt: |
+      What is the first line printed? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: strings/Finding.java
+      import java.util.regex.*;
+      import static net.mindview.util.Print.*;
+
+      public class Finding {
+        public static void main(String[] args) {
+          Matcher m = Pattern.compile("\\w+")
+            .matcher("Evening is full of the linnet's wings");
+          while(m.find())
+            printnb(m.group() + " ");
+          print();
+          int i = 0;
+          while(m.find(i)) {
+            printnb(m.group() + " ");
+            i++;
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Evening is full of the linnet s wings "
+        correct: true
+      - text: "Evening is full of the linnet's wings "
+        feedback: "`\\\\w+` doesn't include the apostrophe, so `linnet's` is two matches."
+    explanation: |
+      The second loop calls `find(i)`, restarting the search at each position — so it prints `vening`, `ening` and so on.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-groups
+    prompt: |
+      For the line `Twas brillig, and the slithy toves`, the pattern `(?m)(\\S+)\\s+((\\S+)\\s+(\\S+))$` matches the last three words. What does the loop print for it (groups 0 to 4)? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: strings/Groups.java
+      import java.util.regex.*;
+      import static net.mindview.util.Print.*;
+
+      public class Groups {
+        static public final String POEM =
+          "Twas brillig, and the slithy toves\n" +
+          "Did gyre and gimble in the wabe.\n" +
+          "All mimsy were the borogoves,\n" +
+          "And the mome raths outgrabe.\n\n" +
+          "Beware the Jabberwock, my son,\n" +
+          "The jaws that bite, the claws that catch.\n" +
+          "Beware the Jubjub bird, and shun\n" +
+          "The frumious Bandersnatch.";
+        public static void main(String[] args) {
+          Matcher m =
+            Pattern.compile("(?m)(\\S+)\\s+((\\S+)\\s+(\\S+))$")
+              .matcher(POEM);
+          while(m.find()) {
+            for(int j = 0; j <= m.groupCount(); j++)
+              printnb("[" + m.group(j) + "]");
+            print();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "[the slithy toves][the][slithy toves][slithy][toves]"
+        correct: true
+      - text: "[the slithy toves][the][slithy][toves]"
+        feedback: "Group 2 wraps groups 3 and 4: `slithy toves`."
+      - text: "[Twas brillig, and the slithy toves][Twas][brillig,][and][the]"
+        feedback: "`$` anchors the match to the end of the line."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-startend
+    prompt: |
+      For the input `Targathian baby cries out, wherever a distress` and regex `T\\w+`, why is a `lookingAt()` line printed but no `matches()` line? (`print` is `println`.)
+    code: |
+      //: strings/StartEnd.java
+      import java.util.regex.*;
+      import static net.mindview.util.Print.*;
+
+      public class StartEnd {
+        public static String input =
+          "As long as there is injustice, whenever a\n" +
+          "Targathian baby cries out, wherever a distress\n" +
+          "signal sounds among the stars ... We'll be there.\n" +
+          "This fine ship, and this fine crew ...\n" +
+          "Never give up! Never surrender!";
+        private static class Display {
+          private boolean regexPrinted = false;
+          private String regex;
+          Display(String regex) { this.regex = regex; }
+          void display(String message) {
+            if(!regexPrinted) {
+              print(regex);
+              regexPrinted = true;
+            }
+            print(message);
+          }
+        }
+        static void examine(String s, String regex) {
+          Display d = new Display(regex);
+          Pattern p = Pattern.compile(regex);
+          Matcher m = p.matcher(s);
+          while(m.find())
+            d.display("find() '" + m.group() +
+              "' start = "+ m.start() + " end = " + m.end());
+          if(m.lookingAt()) // No reset() necessary
+            d.display("lookingAt() start = "
+              + m.start() + " end = " + m.end());
+          if(m.matches()) // No reset() necessary
+            d.display("matches() start = "
+              + m.start() + " end = " + m.end());
+        }
+        public static void main(String[] args) {
+          for(String in : input.split("\n")) {
+            print("input : " + in);
+            for(String regex : new String[]{"\\w*ere\\w*",
+              "\\w*ever", "T\\w+", "Never.*?!"})
+              examine(in, regex);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`lookingAt` only needs a match at the start (`Targathian`); `matches` needs the whole line to match"
+        correct: true
+      - text: "`matches` was never called"
+        feedback: "It's called; it returns false."
+      - text: "Because `find()` already consumed the match"
+        feedback: "`lookingAt` and `matches` start from the beginning regardless."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-reflags
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/ReFlags.java
+      import java.util.regex.*;
+
+      public class ReFlags {
+        public static void main(String[] args) {
+          Pattern p =  Pattern.compile("^java",
+            Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+          Matcher m = p.matcher(
+            "java has regex\nJava has regex\n" +
+            "JAVA has pretty good regular expressions\n" +
+            "Regular expressions are in Java");
+          while(m.find())
+            System.out.println(m.group());
+        }
+      }
+    language: java
+    options:
+      - text: "java\nJava\nJAVA"
+        correct: true
+      - text: "java"
+        feedback: "With `MULTILINE`, `^` matches at the start of every line."
+      - text: "java\nJava\nJAVA\nJava"
+        feedback: "The last `Java` isn't at the start of its line."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-splitdemo
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: strings/SplitDemo.java
+      import java.util.regex.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class SplitDemo {
+        public static void main(String[] args) {
+          String input =
+            "This!!unusual use!!of exclamation!!points";
+          print(Arrays.toString(
+            Pattern.compile("!!").split(input)));
+          // Only do the first three:
+          print(Arrays.toString(
+            Pattern.compile("!!").split(input, 3)));
+        }
+      }
+    language: java
+    options:
+      - text: "[This, unusual use, of exclamation, points]\n[This, unusual use, of exclamation!!points]"
+        correct: true
+      - text: "[This, unusual use, of exclamation, points]\n[This, unusual use, of exclamation]"
+        feedback: "The limit 3 means at most three pieces; the rest stays in the last one."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-thereplacements
+    prompt: |
+      After `replaceFirst("[aeiou]", "(VOWEL1)")`, the loop uses `appendReplacement` with `m.group().toUpperCase()`. What does the second printed block start with? (`print` is `println`.)
+    code: |
+      //: strings/TheReplacements.java
+      import java.util.regex.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      /*! Here's a block of text to use as input to
+          the regular expression matcher. Note that we'll
+          first extract the block of text by looking for
+          the special delimiters, then process the
+          extracted block. !*/
+
+      public class TheReplacements {
+        public static void main(String[] args) throws Exception {
+          String s = TextFile.read("TheReplacements.java");
+          // Match the specially commented block of text above:
+          Matcher mInput =
+            Pattern.compile("/\\*!(.*)!\\*/", Pattern.DOTALL)
+              .matcher(s);
+          if(mInput.find())
+            s = mInput.group(1); // Captured by parentheses
+          // Replace two or more spaces with a single space:
+          s = s.replaceAll(" {2,}", " ");
+          // Replace one or more spaces at the beginning of each
+          // line with no spaces. Must enable MULTILINE mode:
+          s = s.replaceAll("(?m)^ +", "");
+          print(s);
+          s = s.replaceFirst("[aeiou]", "(VOWEL1)");
+          StringBuffer sbuf = new StringBuffer();
+          Pattern p = Pattern.compile("[aeiou]");
+          Matcher m = p.matcher(s);
+          // Process the find information as you
+          // perform the replacements:
+          while(m.find())
+            m.appendReplacement(sbuf, m.group().toUpperCase());
+          // Put in the remainder of the text:
+          m.appendTail(sbuf);
+          print(sbuf);
+        }
+      }
+    language: java
+    options:
+      - text: "`H(VOWEL1)rE's A blOck Of tExt…` — the first vowel was replaced, every remaining vowel uppercased"
+        correct: true
+      - text: "`HErE's A blOck…`"
+        feedback: "`replaceFirst` already turned the first `e` into `(VOWEL1)`."
+      - text: "`H(VOWEL1)r(VOWEL1)'s (VOWEL1) bl(VOWEL1)ck…`"
+        feedback: "Only the first vowel gets `(VOWEL1)`; the loop uppercases the rest."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-resetting
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/Resetting.java
+      import java.util.regex.*;
+
+      public class Resetting {
+        public static void main(String[] args) throws Exception {
+          Matcher m = Pattern.compile("[frb][aiu][gx]")
+            .matcher("fix the rug with bags");
+          while(m.find())
+            System.out.print(m.group() + " ");
+          System.out.println();
+          m.reset("fix the rig with rags");
+          while(m.find())
+            System.out.print(m.group() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "fix rug bag \nfix rig rag "
+        correct: true
+      - text: "fix rug bag \n"
+        feedback: "`reset(input)` points the matcher at new input and starts again."
+      - text: "fix rug bag \nfix rug bag "
+        feedback: "The second search runs on `fix the rig with rags`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-jgrep
+    prompt: |
+      Run as `java JGrep JGrep.java "\\b[Ssct]\\w+"`. What does each output line show?
+    code: |
+      //: strings/JGrep.java
+      // A very simple version of the "grep" program.
+      import java.util.regex.*;
+      import net.mindview.util.*;
+
+      public class JGrep {
+        public static void main(String[] args) throws Exception {
+          if(args.length < 2) {
+            System.out.println("Usage: java JGrep file regex");
+            System.exit(0);
+          }
+          Pattern p = Pattern.compile(args[1]);
+          // Iterate through the lines of the input file:
+          int index = 0;
+          Matcher m = p.matcher("");
+          for(String line : new TextFile(args[0])) {
+            m.reset(line);
+            while(m.find())
+              System.out.println(index++ + ": " +
+                m.group() + ": " + m.start());
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "A running count, a word starting with S, s, c or t, and its column in its line — like `0: strings: 4`"
+        correct: true
+      - text: "Each line of the file that contains a match"
+        feedback: "It prints each match, not each line."
+      - text: "Only the first match per line"
+        feedback: "`while(m.find())` reports every match."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

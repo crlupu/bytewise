@@ -1,0 +1,265 @@
+title: "Formatted output"
+summary: "format and printf, Formatter, width and precision, conversion characters, and String.format."
+duration: 8
+tags: [java, String.format, printf, Formatter, format specifiers]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 13, Formatting output" }
+steps:
+  - type: explanation
+    title: "Format strings"
+    body: |
+      `System.out.format` (or `printf`) takes a format string with `%d`, `%f`, `%s` … and the values to fill in.
+      A `Formatter` sends formatted text to any destination, such as a `PrintStream`.
+      `String.format` returns the text instead.
+
+  - type: explanation
+    title: "Width, precision and conversions"
+    body: |
+      `%-15.15s` means left-justify (`-`) in at least 15 columns, and truncate to 15 characters.
+      `%10.2f` is 10 wide with 2 decimals.
+      `%c` is a character, `%x` hex, `%h` the hash code in hex, and `%b` is `true` for anything non-null that isn't `false`.
+
+  - type: predict
+    id: tij-strings-simpleformat
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/SimpleFormat.java
+
+      public class SimpleFormat {
+        public static void main(String[] args) {
+          int x = 5;
+          double y = 5.332542;
+          // The old way:
+          System.out.println("Row 1: [" + x + " " + y + "]");
+          // The new way:
+          System.out.format("Row 1: [%d %f]\n", x, y);
+          // or
+          System.out.printf("Row 1: [%d %f]\n", x, y);
+        }
+      }
+    language: java
+    options:
+      - text: "Row 1: [5 5.332542]\nRow 1: [5 5.332542]\nRow 1: [5 5.332542]"
+        correct: true
+      - text: "Row 1: [5 5.332542]\nRow 1: [5 5.33]\nRow 1: [5 5.33]"
+        feedback: "`%f` shows six decimal places by default."
+      - text: "Row 1: [5 5.332542]\nRow 1: [%d %f]\nRow 1: [%d %f]"
+        feedback: "`format` and `printf` fill in the specifiers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-turtle
+    prompt: |
+      What are the first two lines printed?
+    code: |
+      //: strings/Turtle.java
+      import java.io.*;
+      import java.util.*;
+
+      public class Turtle {
+        private String name;
+        private Formatter f;
+        public Turtle(String name, Formatter f) {
+          this.name = name;
+          this.f = f;
+        }
+        public void move(int x, int y) {
+          f.format("%s The Turtle is at (%d,%d)\n", name, x, y);
+        }
+        public static void main(String[] args) {
+          PrintStream outAlias = System.out;
+          Turtle tommy = new Turtle("Tommy",
+            new Formatter(System.out));
+          Turtle terry = new Turtle("Terry",
+            new Formatter(outAlias));
+          tommy.move(0,0);
+          terry.move(4,8);
+          tommy.move(3,4);
+          terry.move(2,5);
+          tommy.move(3,3);
+          terry.move(3,3);
+        }
+      }
+    language: java
+    options:
+      - text: "Tommy The Turtle is at (0,0)\nTerry The Turtle is at (4,8)"
+        correct: true
+      - text: "Tommy The Turtle is at (0,0)\nTommy The Turtle is at (3,4)"
+        feedback: "Calls alternate between `tommy` and `terry`."
+      - text: "Only Tommy's lines — Terry's formatter writes to an alias that's never printed"
+        feedback: "`outAlias` is the same `System.out`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-receipt
+    prompt: |
+      What is the line for `"Jack's Magic Beans", 4, 4.25`, printed with `"%-15.15s %5d %10.2f"`?
+    code: |
+      //: strings/Receipt.java
+      import java.util.*;
+
+      public class Receipt {
+        private double total = 0;
+        private Formatter f = new Formatter(System.out);
+        public void printTitle() {
+          f.format("%-15s %5s %10s\n", "Item", "Qty", "Price");
+          f.format("%-15s %5s %10s\n", "----", "---", "-----");
+        }
+        public void print(String name, int qty, double price) {
+          f.format("%-15.15s %5d %10.2f\n", name, qty, price);
+          total += price;
+        }
+        public void printTotal() {
+          f.format("%-15s %5s %10.2f\n", "Tax", "", total*0.06);
+          f.format("%-15s %5s %10s\n", "", "", "-----");
+          f.format("%-15s %5s %10.2f\n", "Total", "",
+            total * 1.06);
+        }
+        public static void main(String[] args) {
+          Receipt receipt = new Receipt();
+          receipt.printTitle();
+          receipt.print("Jack's Magic Beans", 4, 4.25);
+          receipt.print("Princess Peas", 3, 5.1);
+          receipt.print("Three Bears Porridge", 1, 14.29);
+          receipt.printTotal();
+        }
+      }
+    language: java
+    options:
+      - text: "Jack's Magic Be     4       4.25"
+        correct: true
+      - text: "Jack's Magic Beans     4       4.25"
+        feedback: "`.15` truncates the string to 15 characters."
+      - text: "Jack's Magic Be         4.25     4"
+        feedback: "The quantity comes before the price."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-conversion
+    prompt: |
+      For `int v = 121`, what do `%c` and `%x` give?
+    code: |
+      //: strings/Conversion.java
+      import java.math.*;
+      import java.util.*;
+
+      public class Conversion {
+        public static void main(String[] args) {
+          Formatter f = new Formatter(System.out);
+
+          char u = 'a';
+          System.out.println("u = 'a'");
+          f.format("s: %s\n", u);
+          // f.format("d: %d\n", u);
+          f.format("c: %c\n", u);
+          f.format("b: %b\n", u);
+          // f.format("f: %f\n", u);
+          // f.format("e: %e\n", u);
+          // f.format("x: %x\n", u);
+          f.format("h: %h\n", u);
+
+          int v = 121;
+          System.out.println("v = 121");
+          f.format("d: %d\n", v);
+          f.format("c: %c\n", v);
+          f.format("b: %b\n", v);
+          f.format("s: %s\n", v);
+          // f.format("f: %f\n", v);
+          // f.format("e: %e\n", v);
+          f.format("x: %x\n", v);
+          f.format("h: %h\n", v);
+
+          BigInteger w = new BigInteger("50000000000000");
+          System.out.println(
+            "w = new BigInteger(\"50000000000000\")");
+          f.format("d: %d\n", w);
+          // f.format("c: %c\n", w);
+          f.format("b: %b\n", w);
+          f.format("s: %s\n", w);
+          // f.format("f: %f\n", w);
+          // f.format("e: %e\n", w);
+          f.format("x: %x\n", w);
+          f.format("h: %h\n", w);
+
+          double x = 179.543;
+          System.out.println("x = 179.543");
+          // f.format("d: %d\n", x);
+          // f.format("c: %c\n", x);
+          f.format("b: %b\n", x);
+          f.format("s: %s\n", x);
+          f.format("f: %f\n", x);
+          f.format("e: %e\n", x);
+          // f.format("x: %x\n", x);
+          f.format("h: %h\n", x);
+
+          Conversion y = new Conversion();
+          System.out.println("y = new Conversion()");
+          // f.format("d: %d\n", y);
+          // f.format("c: %c\n", y);
+          f.format("b: %b\n", y);
+          f.format("s: %s\n", y);
+          // f.format("f: %f\n", y);
+          // f.format("e: %e\n", y);
+          // f.format("x: %x\n", y);
+          f.format("h: %h\n", y);
+
+          boolean z = false;
+          System.out.println("z = false");
+          // f.format("d: %d\n", z);
+          // f.format("c: %c\n", z);
+          f.format("b: %b\n", z);
+          f.format("s: %s\n", z);
+          // f.format("f: %f\n", z);
+          // f.format("e: %e\n", z);
+          // f.format("x: %x\n", z);
+          f.format("h: %h\n", z);
+        }
+      }
+    language: java
+    options:
+      - text: "`c: y` and `x: 79`"
+        correct: true
+      - text: "`c: 121` and `x: 121`"
+        feedback: "`%c` turns 121 into the character 'y'; `%x` prints hexadecimal, 0x79."
+      - text: "`c: y` and `x: 0x79`"
+        feedback: "`%x` doesn't add a `0x` prefix (that needs `%#x`)."
+    explanation: |
+      The commented-out lines are conversions that throw `IllegalFormatConversionException` for that type — like `%d` for a `char`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-databaseexception
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/DatabaseException.java
+
+      public class DatabaseException extends Exception {
+        public DatabaseException(int transactionID, int queryID,
+          String message) {
+          super(String.format("(t%d, q%d) %s", transactionID,
+              queryID, message));
+        }
+        public static void main(String[] args) {
+          try {
+            throw new DatabaseException(3, 7, "Write failed");
+          } catch(Exception e) {
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "DatabaseException: (t3, q7) Write failed"
+        correct: true
+      - text: "(t3, q7) Write failed"
+        feedback: "An exception's `toString` puts the class name first."
+      - text: "DatabaseException: (t%d, q%d) %s"
+        feedback: "`String.format` fills in the values before they reach `super`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

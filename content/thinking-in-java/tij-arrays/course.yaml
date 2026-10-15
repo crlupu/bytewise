@@ -1,0 +1,6 @@
+title: "Arrays"
+summary: "Chapter 16 — arrays as first-class objects, multidimensional and ragged arrays, arrays and generics, and the Arrays utilities, through the book's examples."
+lessons:
+  - arrays-and-multidimensional
+  - arrays-and-generics
+  - arrays-utilities

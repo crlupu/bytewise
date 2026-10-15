@@ -1,0 +1,207 @@
+title: "Immutable strings and StringBuilder"
+summary: "String methods return new strings, + builds new ones, and StringBuilder avoids the copies in a loop."
+duration: 8
+tags: [java, String, immutable, StringBuilder, toString]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 13, Immutable Strings; Overloading '+' vs. StringBuilder; Unintended recursion" }
+steps:
+  - type: explanation
+    title: "Strings never change"
+    body: |
+      A `String` is immutable: `toUpperCase()` and friends return a new string and leave the original alone.
+      Passing a string to a method can't change the caller's string.
+
+  - type: explanation
+    title: "StringBuilder"
+    body: |
+      The compiler turns `a + b + c` into one `StringBuilder` — but `+=` in a loop creates a new builder each pass.
+      In a loop, append to one `StringBuilder` yourself.
+      Inside `toString()`, `"…" + this` calls `toString()` again: infinite recursion.
+
+  - type: choice
+    id: tij-strings-immutable
+    prompt: |
+      Why does the last `print(q)` still print `howdy`, after `upcase(q)`? (`print` is `println`.)
+    code: |
+      //: strings/Immutable.java
+      import static net.mindview.util.Print.*;
+
+      public class Immutable {
+        public static String upcase(String s) {
+          return s.toUpperCase();
+        }
+        public static void main(String[] args) {
+          String q = "howdy";
+          print(q); // howdy
+          String qq = upcase(q);
+          print(qq); // HOWDY
+          print(q); // howdy
+        }
+      }
+    language: java
+    options:
+      - text: "`toUpperCase` returns a new string; a `String` object can never change, so `q` is untouched"
+        correct: true
+      - text: "Because `upcase` received a copy of the string"
+        feedback: "It received a copy of the reference, to the same object; it's immutability that protects it."
+      - text: "It doesn't — it prints `HOWDY`"
+        feedback: "Strings are immutable, so `q` is still \"howdy\"."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-strings-concatenation
+    prompt: |
+      What does this print?
+    code: |
+      //: strings/Concatenation.java
+
+      public class Concatenation {
+        public static void main(String[] args) {
+          String mango = "mango";
+          String s = "abc" + mango + "def" + 47;
+          System.out.println(s);
+        }
+      }
+    language: java
+    options:
+      - text: "abcmangodef47"
+        correct: true
+      - text: "abcmangodef 47"
+        feedback: "No space is added."
+      - text: "abc + mango + def + 47"
+        feedback: "`+` concatenates the values."
+    explanation: |
+      The compiler builds this with a single `StringBuilder` (or, since Java 9, `invokedynamic` string concatenation).
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-whitherstringbuilder
+    prompt: |
+      Both methods join the fields. Why is `explicit` better for many fields?
+    code: |
+      //: strings/WhitherStringBuilder.java
+
+      public class WhitherStringBuilder {
+        public String implicit(String[] fields) {
+          String result = "";
+          for(int i = 0; i < fields.length; i++)
+            result += fields[i];
+          return result;
+        }
+        public String explicit(String[] fields) {
+          StringBuilder result = new StringBuilder();
+          for(int i = 0; i < fields.length; i++)
+            result.append(fields[i]);
+          return result.toString();
+        }
+      }
+    language: java
+    options:
+      - text: "`implicit`'s `+=` makes a new builder and string each pass; `explicit` appends to one builder"
+        correct: true
+      - text: "They compile to the same code"
+        feedback: "Inside a loop, `+=` can't be merged into one builder."
+      - text: "`implicit` gives a different result"
+        feedback: "The results are equal; only the cost differs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-usingstringbuilder
+    prompt: |
+      What does `result.delete(result.length()-2, result.length())` do?
+    code: |
+      //: strings/UsingStringBuilder.java
+      import java.util.*;
+
+      public class UsingStringBuilder {
+        public static Random rand = new Random(47);
+        public String toString() {
+          StringBuilder result = new StringBuilder("[");
+          for(int i = 0; i < 25; i++) {
+            result.append(rand.nextInt(100));
+            result.append(", ");
+          }
+          result.delete(result.length()-2, result.length());
+          result.append("]");
+          return result.toString();
+        }
+        public static void main(String[] args) {
+          UsingStringBuilder usb = new UsingStringBuilder();
+          System.out.println(usb);
+        }
+      }
+    language: java
+    options:
+      - text: "Removes the trailing `\", \"` after the last number"
+        correct: true
+      - text: "Removes the last two numbers"
+        feedback: "It removes the last two characters."
+      - text: "Nothing — `StringBuilder` is immutable"
+        feedback: "A `StringBuilder` is mutable; that's its purpose."
+    explanation: |
+      It prints 25 random numbers in brackets, like `[58, 55, 93, …, 4]`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-infiniterecursion
+    prompt: |
+      What happens when this runs?
+    code: |
+      //: strings/InfiniteRecursion.java
+      // Accidental recursion.
+      import java.util.*;
+
+      public class InfiniteRecursion {
+        public String toString() {
+          return " InfiniteRecursion address: " + this + "\n";
+        }
+        public static void main(String[] args) {
+          List<InfiniteRecursion> v =
+            new ArrayList<InfiniteRecursion>();
+          for(int i = 0; i < 10; i++)
+            v.add(new InfiniteRecursion());
+          System.out.println(v);
+        }
+      }
+    language: java
+    options:
+      - text: "`StackOverflowError` — `\" … \" + this` calls `toString()` again, endlessly"
+        correct: true
+      - text: "It prints ten addresses"
+        feedback: "To print the address, call `super.toString()` instead of using `this`."
+      - text: "Compile error"
+        feedback: "It compiles; the recursion happens at run time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-strings-arraylistdisplay
+    prompt: |
+      Each `Coffee` prints as its class name and an id, like `Latte 1`. What does `println(coffees)` print?
+    code: |
+      //: strings/ArrayListDisplay.java
+      import generics.coffee.*;
+      import java.util.*;
+
+      public class ArrayListDisplay {
+        public static void main(String[] args) {
+          ArrayList<Coffee> coffees = new ArrayList<Coffee>();
+          for(Coffee c : new CoffeeGenerator(10))
+            coffees.add(c);
+          System.out.println(coffees);
+        }
+      }
+    language: java
+    options:
+      - text: "Something like `[Americano 0, Latte 1, Americano 2, …]` — `ArrayList.toString` calls each element's `toString`"
+        correct: true
+      - text: "`java.util.ArrayList@1b6d3586`"
+        feedback: "Collections override `toString`."
+      - text: "Only the ids"
+        feedback: "Each element's own `toString` is used."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

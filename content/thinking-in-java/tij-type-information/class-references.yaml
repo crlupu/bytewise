@@ -1,0 +1,558 @@
+title: "Class references, counting and factories"
+summary: "Generic Class references, newInstance, counting types with instanceof and isInstance, and registered factories."
+duration: 8
+tags: [java, Class, generics, instanceof, isInstance, factory]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 14, Generic class references; Checking before a cast; Registered factories" }
+steps:
+  - type: explanation
+    title: "Class references"
+    body: |
+      `Class<Integer>` can only hold `Integer.class` (or `int.class`, which is the same type parameter); `Class<?>` holds any class; `Class<? extends Number>` any Number type.
+      `type.newInstance()` creates an object with the no-arg constructor (deprecated since Java 9 in favor of `getDeclaredConstructor().newInstance()`).
+
+  - type: explanation
+    title: "Asking an object its type"
+    body: |
+      `x instanceof Dog` is true for a `Dog` or any subclass.
+      `Dog.class.isInstance(x)` does the same with a `Class` object, so you can loop over a list of types instead of writing a chain of `instanceof`s.
+      A registered factory list lets the base class create random subclass objects without naming them in code.
+
+  - type: choice
+    id: tij-typeinfo-genericclassreferences
+    prompt: |
+      Why would `genericIntClass = double.class` be illegal?
+    code: |
+      //: typeinfo/GenericClassReferences.java
+
+      public class GenericClassReferences {
+        public static void main(String[] args) {
+          Class intClass = int.class;
+          Class<Integer> genericIntClass = int.class;
+          genericIntClass = Integer.class; // Same thing
+          intClass = double.class;
+          // genericIntClass = double.class; // Illegal
+        }
+      }
+    language: java
+    options:
+      - text: "`genericIntClass` is a `Class<Integer>`, and `double.class` is a `Class<Double>`"
+        correct: true
+      - text: "Primitive class literals can't be assigned"
+        feedback: "`int.class` is assigned on the line above."
+      - text: "It's legal"
+        feedback: "That's why the line is commented out."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-wildcardclassreferences
+    prompt: |
+      Is `Class<?>` different from a raw `Class`?
+    code: |
+      //: typeinfo/WildcardClassReferences.java
+
+      public class WildcardClassReferences {
+        public static void main(String[] args) {
+          Class<?> intClass = int.class;
+          intClass = double.class;
+        }
+      }
+    language: java
+    options:
+      - text: "It holds the same things, but says on purpose: any class is fine here — and avoids raw-type warnings"
+        correct: true
+      - text: "`Class<?>` can only hold one specific class"
+        feedback: "`?` means any class; it's reassigned to `double.class`."
+      - text: "`Class<?>` can't hold primitive classes"
+        feedback: "It holds `int.class`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-boundedclassreferences
+    prompt: |
+      Which of these can be assigned to `Class<? extends Number> bounded`?
+    code: |
+      //: typeinfo/BoundedClassReferences.java
+
+      public class BoundedClassReferences {
+        public static void main(String[] args) {
+          Class<? extends Number> bounded = int.class;
+          bounded = double.class;
+          bounded = Number.class;
+          // Or anything else derived from Number.
+        }
+      }
+    language: java
+    options:
+      - text: "`int.class`, `double.class` and `Number.class`"
+        correct: true
+      - text: "Only `Number.class`"
+        feedback: "`? extends Number` allows `Number` and its subclasses — `int.class` is typed `Class<Integer>`."
+      - text: "`String.class` too"
+        feedback: "`String` isn't a `Number`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-filledlist
+    prompt: |
+      `CountedInteger` objects get ids 0, 1, 2 … and print as their id. What does this print?
+    code: |
+      //: typeinfo/FilledList.java
+      import java.util.*;
+
+      class CountedInteger {
+        private static long counter;
+        private final long id = counter++;
+        public String toString() { return Long.toString(id); }
+      }
+
+      public class FilledList<T> {
+        private Class<T> type;
+        public FilledList(Class<T> type) { this.type = type; }
+        public List<T> create(int nElements) {
+          List<T> result = new ArrayList<T>();
+          try {
+            for(int i = 0; i < nElements; i++)
+              result.add(type.newInstance());
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+          return result;
+        }
+        public static void main(String[] args) {
+          FilledList<CountedInteger> fl =
+            new FilledList<CountedInteger>(CountedInteger.class);
+          System.out.println(fl.create(15));
+        }
+      }
+    language: java
+    options:
+      - text: "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]"
+        correct: true
+      - text: "[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]"
+        feedback: "`newInstance()` creates a new object each time, and each gets the next id."
+      - text: "It throws — `CountedInteger` has no constructor"
+        feedback: "It has the default no-arg constructor that `newInstance` needs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-petcount
+    prompt: |
+      The pet hierarchy is `Pet` → `Dog` (`Mutt`, `Pug`), `Cat` (`EgyptianMau`, `Manx` → `Cymric`), `Rodent` (`Rat`, `Mouse`, `Hamster`). What's wrong with the counts this code produces? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: typeinfo/PetCount.java
+      // Using instanceof.
+      import typeinfo.pets.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class PetCount {
+        static class PetCounter extends HashMap<String,Integer> {
+          public void count(String type) {
+            Integer quantity = get(type);
+            if(quantity == null)
+              put(type, 1);
+            else
+              put(type, quantity + 1);
+          }
+        }
+        public static void
+        countPets(PetCreator creator) {
+          PetCounter counter= new PetCounter();
+          for(Pet pet : creator.createArray(20)) {
+            // List each individual pet:
+            printnb(pet.getClass().getSimpleName() + " ");
+            if(pet instanceof Pet)
+              counter.count("Pet");
+            if(pet instanceof Dog)
+              counter.count("Dog");
+            if(pet instanceof Mutt)
+              counter.count("Mutt");
+            if(pet instanceof Pug)
+              counter.count("Pug");
+            if(pet instanceof Cat)
+              counter.count("Cat");
+            if(pet instanceof Manx)
+              counter.count("EgyptianMau");
+            if(pet instanceof Manx)
+              counter.count("Manx");
+            if(pet instanceof Manx)
+              counter.count("Cymric");
+            if(pet instanceof Rodent)
+              counter.count("Rodent");
+            if(pet instanceof Rat)
+              counter.count("Rat");
+            if(pet instanceof Mouse)
+              counter.count("Mouse");
+            if(pet instanceof Hamster)
+              counter.count("Hamster");
+          }
+          // Show the counts:
+          print();
+          print(counter);
+        }
+        public static void main(String[] args) {
+          countPets(new ForNameCreator());
+        }
+      }
+    language: java
+    options:
+      - text: "`EgyptianMau` and `Cymric` are counted with `instanceof Manx`, so both counts equal the Manx count"
+        correct: true
+      - text: "`Pet` is counted for every pet"
+        feedback: "That's correct: every pet is a `Pet`."
+      - text: "A `Cymric` is also counted as a `Cat`"
+        feedback: "That's correct: a Cymric is a Manx, which is a Cat."
+    explanation: |
+      A copy-and-paste slip in the book. With 20 random pets, it reports `EgyptianMau=7, Manx=7, Cymric=7` — exactly the kind of bug a loop over `Class` objects avoids.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-petcount2
+    prompt: |
+      `Pets.creator` is a `LiteralPetCreator`, which uses class literals like `Mutt.class` instead of `Class.forName("…")`. What's the advantage?
+    code: |
+      //: typeinfo/PetCount2.java
+      import typeinfo.pets.*;
+
+      public class PetCount2 {
+        public static void main(String[] args) {
+          PetCount.countPets(Pets.creator);
+        }
+      }
+    language: java
+    options:
+      - text: "The compiler checks the class names — no `ClassNotFoundException` and no try block"
+        correct: true
+      - text: "It creates different pets"
+        feedback: "Same types; only how they're listed differs."
+      - text: "It's the only way to call `newInstance`"
+        feedback: "`forName` also returns a `Class` you can instantiate."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-petcount3
+    prompt: |
+      How does `count(Pet)` decide which counters to increment? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: typeinfo/PetCount3.java
+      // Using isInstance()
+      import typeinfo.pets.*;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class PetCount3 {
+        static class PetCounter
+        extends LinkedHashMap<Class<? extends Pet>,Integer> {
+          public PetCounter() {
+            super(MapData.map(LiteralPetCreator.allTypes, 0));
+          }
+          public void count(Pet pet) {
+            // Class.isInstance() eliminates instanceofs:
+            for(Map.Entry<Class<? extends Pet>,Integer> pair
+                : entrySet())
+              if(pair.getKey().isInstance(pet))
+                put(pair.getKey(), pair.getValue() + 1);
+          }
+          public String toString() {
+            StringBuilder result = new StringBuilder("{");
+            for(Map.Entry<Class<? extends Pet>,Integer> pair
+                : entrySet()) {
+              result.append(pair.getKey().getSimpleName());
+              result.append("=");
+              result.append(pair.getValue());
+              result.append(", ");
+            }
+            result.delete(result.length()-2, result.length());
+            result.append("}");
+            return result.toString();
+          }
+        }
+        public static void main(String[] args) {
+          PetCounter petCount = new PetCounter();
+          for(Pet pet : Pets.createArray(20)) {
+            printnb(pet.getClass().getSimpleName() + " ");
+            petCount.count(pet);
+          }
+          print();
+          print(petCount);
+        }
+      }
+    language: java
+    options:
+      - text: "It loops over every `Class` key and increments those where `isInstance(pet)` is true"
+        correct: true
+      - text: "A chain of `instanceof` tests"
+        feedback: "`isInstance` replaces them."
+      - text: "Only the pet's exact class"
+        feedback: "A `Cymric` also counts as `Manx`, `Cat` and `Pet`."
+    explanation: |
+      So the counts are right this time: `Cat=9`, `Manx=7`, `Cymric=5`, `EgyptianMau=2`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-petcount4
+    prompt: |
+      `TypeCounter(Pet.class)` counts each object's class and all its superclasses up to `Pet`. How do the counts compare with the `isInstance` version? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: typeinfo/PetCount4.java
+      import typeinfo.pets.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class PetCount4 {
+        public static void main(String[] args) {
+          TypeCounter counter = new TypeCounter(Pet.class);
+          for(Pet pet : Pets.createArray(20)) {
+            printnb(pet.getClass().getSimpleName() + " ");
+            counter.count(pet);
+          }
+          print();
+          print(counter);
+        }
+      }
+    language: java
+    options:
+      - text: "The same numbers, in a different (hash-map) order"
+        correct: true
+      - text: "Only the exact classes are counted"
+        feedback: "It walks up the superclass chain recursively."
+      - text: "`Pet` is never counted"
+        feedback: "It stops at the base type after counting it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-pets-literalpetcreator
+    prompt: |
+      `allTypes` lists `Pet, Dog, Cat, Rodent, Mutt, Pug, EgyptianMau, Manx, Cymric, Rat, Mouse, Hamster`. What is `types`?
+    code: |
+      //: typeinfo/pets/LiteralPetCreator.java
+      // Using class literals.
+      package typeinfo.pets;
+      import java.util.*;
+
+      public class LiteralPetCreator extends PetCreator {
+        // No try block needed.
+        @SuppressWarnings("unchecked")
+        public static final List<Class<? extends Pet>> allTypes =
+          Collections.unmodifiableList(Arrays.asList(
+            Pet.class, Dog.class, Cat.class,  Rodent.class,
+            Mutt.class, Pug.class, EgyptianMau.class, Manx.class,
+            Cymric.class, Rat.class, Mouse.class,Hamster.class));
+        // Types for random creation:
+        private static final List<Class<? extends Pet>> types =
+          allTypes.subList(allTypes.indexOf(Mutt.class),
+            allTypes.size());
+        public List<Class<? extends Pet>> types() {
+          return types;
+        }
+        public static void main(String[] args) {
+          System.out.println(types);
+        }
+      }
+    language: java
+    options:
+      - text: "[class typeinfo.pets.Mutt, class typeinfo.pets.Pug, class typeinfo.pets.EgyptianMau, class typeinfo.pets.Manx, class typeinfo.pets.Cymric, class typeinfo.pets.Rat, class typeinfo.pets.Mouse, class typeinfo.pets.Hamster]"
+        correct: true
+      - text: "[class typeinfo.pets.Pet, class typeinfo.pets.Dog, class typeinfo.pets.Cat, class typeinfo.pets.Rodent]"
+        feedback: "`subList` starts at `Mutt` and runs to the end."
+    explanation: |
+      Only concrete leaf types are created at random; the base classes are only for counting.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-pets-petcreator
+    prompt: |
+      What must a subclass of `PetCreator` provide?
+    code: |
+      //: typeinfo/pets/PetCreator.java
+      // Creates random sequences of Pets.
+      package typeinfo.pets;
+      import java.util.*;
+
+      public abstract class PetCreator {
+        private Random rand = new Random(47);
+        // The List of the different types of Pet to create:
+        public abstract List<Class<? extends Pet>> types();
+        public Pet randomPet() { // Create one random Pet
+          int n = rand.nextInt(types().size());
+          try {
+            return types().get(n).newInstance();
+          } catch(InstantiationException e) {
+            throw new RuntimeException(e);
+          } catch(IllegalAccessException e) {
+            throw new RuntimeException(e);
+          }
+        }
+        public Pet[] createArray(int size) {
+          Pet[] result = new Pet[size];
+          for(int i = 0; i < size; i++)
+            result[i] = randomPet();
+          return result;
+        }
+        public ArrayList<Pet> arrayList(int size) {
+          ArrayList<Pet> result = new ArrayList<Pet>();
+          Collections.addAll(result, createArray(size));
+          return result;
+        }
+      }
+    language: java
+    options:
+      - text: "`types()` — the list of `Class` objects to create pets from"
+        correct: true
+      - text: "`randomPet()`"
+        feedback: "That's implemented here, using `types()`."
+      - text: "A constructor for each pet type"
+        feedback: "Pets are created with `newInstance()` on the `Class` objects."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-pets-fornamecreator
+    prompt: |
+      When are the classes in `typeNames` loaded?
+    code: |
+      //: typeinfo/pets/ForNameCreator.java
+      package typeinfo.pets;
+      import java.util.*;
+
+      public class ForNameCreator extends PetCreator {
+        private static List<Class<? extends Pet>> types =
+          new ArrayList<Class<? extends Pet>>();
+        // Types that you want to be randomly created:
+        private static String[] typeNames = {
+          "typeinfo.pets.Mutt",
+          "typeinfo.pets.Pug",
+          "typeinfo.pets.EgyptianMau",
+          "typeinfo.pets.Manx",
+          "typeinfo.pets.Cymric",
+          "typeinfo.pets.Rat",
+          "typeinfo.pets.Mouse",
+          "typeinfo.pets.Hamster"
+        };
+        @SuppressWarnings("unchecked")
+        private static void loader() {
+          try {
+            for(String name : typeNames)
+              types.add(
+                (Class<? extends Pet>)Class.forName(name));
+          } catch(ClassNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+        }
+        static { loader(); }
+        public List<Class<? extends Pet>> types() {return types;}
+      }
+    language: java
+    options:
+      - text: "Once, in the static initializer, when `ForNameCreator` is first used"
+        correct: true
+      - text: "Each time `randomPet()` is called"
+        feedback: "`loader()` runs in a `static` block."
+      - text: "At compile time"
+        feedback: "`Class.forName` works at run time — a misspelled name only fails then."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-pets-individual
+    prompt: |
+      How does `compareTo` order individuals?
+    code: |
+      //: typeinfo/pets/Individual.java
+      package typeinfo.pets;
+
+      public class Individual implements Comparable<Individual> {
+        private static long counter = 0;
+        private final long id = counter++;
+        private String name;
+        public Individual(String name) { this.name = name; }
+        // 'name' is optional:
+        public Individual() {}
+        public String toString() {
+          return getClass().getSimpleName() +
+            (name == null ? "" : " " + name);
+        }
+        public long id() { return id; }
+        public boolean equals(Object o) {
+          return o instanceof Individual &&
+            id == ((Individual)o).id;
+        }
+        public int hashCode() {
+          int result = 17;
+          if(name != null)
+            result = 37 * result + name.hashCode();
+          result = 37 * result + (int)id;
+          return result;
+        }
+        public int compareTo(Individual arg) {
+          // Compare by class name first:
+          String first = getClass().getSimpleName();
+          String argFirst = arg.getClass().getSimpleName();
+          int firstCompare = first.compareTo(argFirst);
+          if(firstCompare != 0)
+          return firstCompare;
+          if(name != null && arg.name != null) {
+            int secondCompare = name.compareTo(arg.name);
+            if(secondCompare != 0)
+              return secondCompare;
+          }
+          return (arg.id < id ? -1 : (arg.id == id ? 0 : 1));
+        }
+      }
+    language: java
+    options:
+      - text: "By class name first, then by name if both have one, then by id"
+        correct: true
+      - text: "By id only"
+        feedback: "Id is the last tie-breaker."
+      - text: "By name only"
+        feedback: "Class name comes first."
+    explanation: |
+      That's why a `TreeSet` of pets groups them by type: `Cymric, Cymric, Manx, …`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-pets-pets
+    prompt: |
+      What is `Pets`?
+    code: |
+      //: typeinfo/pets/Pets.java
+      // Facade to produce a default PetCreator.
+      package typeinfo.pets;
+      import java.util.*;
+
+      public class Pets {
+        public static final PetCreator creator =
+          new LiteralPetCreator();
+        public static Pet randomPet() {
+          return creator.randomPet();
+        }
+        public static Pet[] createArray(int size) {
+          return creator.createArray(size);
+        }
+        public static ArrayList<Pet> arrayList(int size) {
+          return creator.arrayList(size);
+        }
+      }
+    language: java
+    options:
+      - text: "A facade: static methods that delegate to one default `LiteralPetCreator`"
+        correct: true
+      - text: "A subclass of `PetCreator`"
+        feedback: "It holds one; it doesn't extend it."
+      - text: "A collection of pets"
+        feedback: "It creates pets; it doesn't store them."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

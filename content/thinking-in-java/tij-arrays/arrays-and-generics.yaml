@@ -1,0 +1,304 @@
+title: "Arrays, generics and generators"
+summary: "Why you can't create a generic array, how to work around it, and filling arrays with generators."
+duration: 8
+tags: [java, arrays, generics, erasure, generators]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 16, Arrays and generics; Creating test data" }
+steps:
+  - type: explanation
+    title: "Generic arrays"
+    body: |
+      You can't write `new T[size]` or `new List<String>[10]`: arrays need their element type at run time, and generics erase it.
+      You can declare `T[]` and cast an `Object[]` (with an unchecked warning), or cast a raw `List[]`.
+      Arrays are covariant, so a `List<String>[]` assigned to `Object[]` accepts any object.
+
+  - type: explanation
+    title: "Generators"
+    body: |
+      A `Generator<T>` has one method, `next()`.
+      `Generated.array(array, gen)` fills an array from one; `ConvertTo.primitive` turns `Integer[]` into `int[]`.
+      Counting generators give 0, 1, 2 …; random ones use a seeded `Random`.
+
+  - type: choice
+    id: tij-arrays-parameterizedarraytype
+    prompt: |
+      `ClassParameter<T>` and the generic method `MethodParameter.f` both take and return `T[]`. Which is more convenient?
+    code: |
+      //: arrays/ParameterizedArrayType.java
+
+      class ClassParameter<T> {
+        public T[] f(T[] arg) { return arg; }
+      }
+
+      class MethodParameter {
+        public static <T> T[] f(T[] arg) { return arg; }
+      }
+
+      public class ParameterizedArrayType {
+        public static void main(String[] args) {
+          Integer[] ints = { 1, 2, 3, 4, 5 };
+          Double[] doubles = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+          Integer[] ints2 =
+            new ClassParameter<Integer>().f(ints);
+          Double[] doubles2 =
+            new ClassParameter<Double>().f(doubles);
+          ints2 = MethodParameter.f(ints);
+          doubles2 = MethodParameter.f(doubles);
+        }
+      }
+    language: java
+    options:
+      - text: "The generic method — `T` is inferred for each call, with no object to create"
+        correct: true
+      - text: "The class — methods can't take generic arrays"
+        feedback: "A generic method can take and return `T[]`."
+      - text: "Neither compiles"
+        feedback: "Passing and returning generic arrays is fine; it's creating them that's illegal."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-arrayofgenerics
+    prompt: |
+      Why does `objects[1] = new ArrayList<Integer>()` compile and run without error?
+    code: |
+      //: arrays/ArrayOfGenerics.java
+      // It is possible to create arrays of generics.
+      import java.util.*;
+
+      public class ArrayOfGenerics {
+        @SuppressWarnings("unchecked")
+        public static void main(String[] args) {
+          List<String>[] ls;
+          List[] la = new List[10];
+          ls = (List<String>[])la; // "Unchecked" warning
+          ls[0] = new ArrayList<String>();
+          // Compile-time checking produces an error:
+          //! ls[1] = new ArrayList<Integer>();
+
+          // The problem: List<String> is a subtype of Object
+          Object[] objects = ls; // So assignment is OK
+          // Compiles and runs without complaint:
+          objects[1] = new ArrayList<Integer>();
+
+          // However, if your needs are straightforward it is
+          // possible to create an array of generics, albeit
+          // with an "unchecked" warning:
+          List<BerylliumSphere>[] spheres =
+            (List<BerylliumSphere>[])new List[10];
+          for(int i = 0; i < spheres.length; i++)
+            spheres[i] = new ArrayList<BerylliumSphere>();
+        }
+      }
+    language: java
+    options:
+      - text: "Arrays are covariant: `ls` can be viewed as `Object[]`, and at run time the array only checks for `List`"
+        correct: true
+      - text: "Because generics are checked at run time"
+        feedback: "Generics are erased; the array only knows it holds `List`s."
+      - text: "It throws `ArrayStoreException`"
+        feedback: "The element is a `List`, which the array accepts."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-arrayofgenerictype
+    prompt: |
+      Why is `array = new T[size]` illegal?
+    code: |
+      //: arrays/ArrayOfGenericType.java
+      // Arrays of generic types won't compile.
+
+      public class ArrayOfGenericType<T> {
+        T[] array; // OK
+        @SuppressWarnings("unchecked")
+        public ArrayOfGenericType(int size) {
+          //! array = new T[size]; // Illegal
+          array = (T[])new Object[size]; // "unchecked" Warning
+        }
+        // Illegal:
+        //! public <U> U[] makeArray() { return new U[10]; }
+      }
+    language: java
+    options:
+      - text: "`T` is erased, so the JVM wouldn't know what type of array to create"
+        correct: true
+      - text: "Generic classes can't have array fields"
+        feedback: "`T[] array;` is fine."
+      - text: "It's legal since Java 7"
+        feedback: "It's still illegal; the workaround is `(T[])new Object[size]`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-generatorstest
+    prompt: |
+      `CountingGenerator` has nested generators for each type that count up from the start. What's the `Boolean` line?
+    code: |
+      //: arrays/GeneratorsTest.java
+      import net.mindview.util.*;
+
+      public class GeneratorsTest {
+        public static int size = 10;
+        public static void test(Class<?> surroundingClass) {
+          for(Class<?> type : surroundingClass.getClasses()) {
+            System.out.print(type.getSimpleName() + ": ");
+            try {
+              Generator<?> g = (Generator<?>)type.newInstance();
+              for(int i = 0; i < size; i++)
+                System.out.printf(g.next() + " ");
+              System.out.println();
+            } catch(Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        public static void main(String[] args) {
+          test(CountingGenerator.class);
+        }
+      }
+    language: java
+    options:
+      - text: "Boolean: true false true false true false true false true false "
+        correct: true
+      - text: "Boolean: false true false true false true false true false true "
+        feedback: "The boolean generator starts at `true`."
+      - text: "Boolean: 0 1 2 3 4 5 6 7 8 9 "
+        feedback: "Each nested class produces its own type."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-randomgeneratorstest
+    prompt: |
+      Running this twice — are the random values the same?
+    code: |
+      //: arrays/RandomGeneratorsTest.java
+      import net.mindview.util.*;
+
+      public class RandomGeneratorsTest {
+        public static void main(String[] args) {
+          GeneratorsTest.test(RandomGenerator.class);
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — the generators share a `Random(47)`"
+        correct: true
+      - text: "No — they're random"
+        feedback: "A fixed seed gives a fixed sequence."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-testgenerated
+    prompt: |
+      `Generated.array(a, gen)` fills an existing array; `Generated.array(Integer.class, gen, 15)` creates one of size 15. A new counting generator starts at 0. What does this print?
+    code: |
+      //: arrays/TestGenerated.java
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class TestGenerated {
+        public static void main(String[] args) {
+          Integer[] a = { 9, 8, 7, 6 };
+          System.out.println(Arrays.toString(a));
+          a = Generated.array(a,new CountingGenerator.Integer());
+          System.out.println(Arrays.toString(a));
+          Integer[] b = Generated.array(Integer.class,
+              new CountingGenerator.Integer(), 15);
+          System.out.println(Arrays.toString(b));
+        }
+      }
+    language: java
+    options:
+      - text: "[9, 8, 7, 6]\n[0, 1, 2, 3]\n[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]"
+        correct: true
+      - text: "[9, 8, 7, 6]\n[9, 8, 7, 6]\n[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]"
+        feedback: "The first call overwrites `a`'s elements."
+      - text: "[9, 8, 7, 6]\n[0, 1, 2, 3]\n[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]"
+        feedback: "Each call uses a new `CountingGenerator`, starting at 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-primitiveconversiondemonstration
+    prompt: |
+      A counting `Integer` generator yields 0, 1, 2 …; a counting `Boolean` one alternates starting with `true`. What does this print?
+    code: |
+      //: arrays/PrimitiveConversionDemonstration.java
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class PrimitiveConversionDemonstration {
+        public static void main(String[] args) {
+          Integer[] a = Generated.array(Integer.class,
+              new CountingGenerator.Integer(), 15);
+          int[] b = ConvertTo.primitive(a);
+          System.out.println(Arrays.toString(b));
+          boolean[] c = ConvertTo.primitive(
+            Generated.array(Boolean.class,
+              new CountingGenerator.Boolean(), 7));
+          System.out.println(Arrays.toString(c));
+        }
+      }
+    language: java
+    options:
+      - text: "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]\n[true, false, true, false, true, false, true]"
+        correct: true
+      - text: "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]\n[true, false, true, false, true, false, true]"
+        feedback: "Counting starts at 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-testarraygeneration
+    prompt: |
+      Why does it need `ConvertTo.primitive`? (`print` is `println`.)
+    code: |
+      //: arrays/TestArrayGeneration.java
+      // Test the tools that use generators to fill arrays.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class TestArrayGeneration {
+        public static void main(String[] args) {
+          int size = 6;
+          boolean[] a1 = ConvertTo.primitive(Generated.array(
+            Boolean.class, new RandomGenerator.Boolean(), size));
+          print("a1 = " + Arrays.toString(a1));
+          byte[] a2 = ConvertTo.primitive(Generated.array(
+            Byte.class, new RandomGenerator.Byte(), size));
+          print("a2 = " + Arrays.toString(a2));
+          char[] a3 = ConvertTo.primitive(Generated.array(
+            Character.class,
+            new RandomGenerator.Character(), size));
+          print("a3 = " + Arrays.toString(a3));
+          short[] a4 = ConvertTo.primitive(Generated.array(
+            Short.class, new RandomGenerator.Short(), size));
+          print("a4 = " + Arrays.toString(a4));
+          int[] a5 = ConvertTo.primitive(Generated.array(
+            Integer.class, new RandomGenerator.Integer(), size));
+          print("a5 = " + Arrays.toString(a5));
+          long[] a6 = ConvertTo.primitive(Generated.array(
+            Long.class, new RandomGenerator.Long(), size));
+          print("a6 = " + Arrays.toString(a6));
+          float[] a7 = ConvertTo.primitive(Generated.array(
+            Float.class, new RandomGenerator.Float(), size));
+          print("a7 = " + Arrays.toString(a7));
+          double[] a8 = ConvertTo.primitive(Generated.array(
+            Double.class, new RandomGenerator.Double(), size));
+          print("a8 = " + Arrays.toString(a8));
+        }
+      }
+    language: java
+    options:
+      - text: "Generators produce wrapper objects like `Integer`, but the targets are primitive arrays like `int[]`"
+        correct: true
+      - text: "To sort the values"
+        feedback: "It only converts."
+      - text: "Autoboxing converts whole arrays"
+        feedback: "Autoboxing works per value, not for an `Integer[]` to `int[]`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

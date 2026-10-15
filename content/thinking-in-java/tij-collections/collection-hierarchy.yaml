@@ -105,3 +105,76 @@ steps:
         right: Sorted order
       - left: "`ArrayList`"
         right: Index order, as you added or placed them
+
+  - type: predict
+    id: tij-holding-printingcontainers
+    prompt: |
+      What are the `HashSet`, `TreeSet` and `LinkedHashSet` lines (lines 3–5)? (`print` is `println`.)
+    code: |
+      //: holding/PrintingContainers.java
+      // Containers print themselves automatically.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class PrintingContainers {
+        static Collection fill(Collection<String> collection) {
+          collection.add("rat");
+          collection.add("cat");
+          collection.add("dog");
+          collection.add("dog");
+          return collection;
+        }
+        static Map fill(Map<String,String> map) {
+          map.put("rat", "Fuzzy");
+          map.put("cat", "Rags");
+          map.put("dog", "Bosco");
+          map.put("dog", "Spot");
+          return map;
+        }
+        public static void main(String[] args) {
+          print(fill(new ArrayList<String>()));
+          print(fill(new LinkedList<String>()));
+          print(fill(new HashSet<String>()));
+          print(fill(new TreeSet<String>()));
+          print(fill(new LinkedHashSet<String>()));
+          print(fill(new HashMap<String,String>()));
+          print(fill(new TreeMap<String,String>()));
+          print(fill(new LinkedHashMap<String,String>()));
+        }
+      }
+    language: java
+    options:
+      - text: "[rat, cat, dog]\n[cat, dog, rat]\n[rat, cat, dog]"
+        correct: true
+      - text: "[rat, cat, dog, dog]\n[cat, dog, dog, rat]\n[rat, cat, dog, dog]"
+        feedback: "Sets keep one `dog`."
+      - text: "[cat, dog, rat]\n[cat, dog, rat]\n[cat, dog, rat]"
+        feedback: "Only `TreeSet` sorts; `LinkedHashSet` keeps insertion order."
+    explanation: |
+      `HashSet` order isn't guaranteed — here it happens to match insertion order.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-containermethods
+    prompt: |
+      This lists the methods each container interface and class adds. On Java 21, what does it report that `List` extends?
+    code: |
+      //: holding/ContainerMethods.java
+      import net.mindview.util.*;
+
+      public class ContainerMethods {
+        public static void main(String[] args) {
+          ContainerMethodDifferences.main(args);
+        }
+      }
+    language: java
+    options:
+      - text: "`SequencedCollection` — added in Java 21, with `getFirst`, `addLast`, `reversed` and friends"
+        correct: true
+      - text: "`Collection` only, as in Java 6"
+        feedback: "Java 21's sequenced collections slot in between."
+      - text: "`Iterable` directly"
+        feedback: "`List` extends a `Collection` subtype."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

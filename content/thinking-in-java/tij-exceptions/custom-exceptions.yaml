@@ -1,0 +1,320 @@
+title: "Your own exceptions"
+summary: "Defining exception classes, the information an exception carries, and logging exceptions."
+duration: 8
+tags: [java, exceptions, custom exceptions, stack trace, logging]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 12, Creating your own exceptions; The exception specification; Catching any exception" }
+steps:
+  - type: explanation
+    title: "Defining exceptions"
+    body: |
+      Extend `Exception` (checked) or `RuntimeException` (unchecked); often the name is all you need.
+      A constructor taking a `String` passes the message to `super`.
+      You can add fields and override `getMessage()`.
+
+  - type: explanation
+    title: "What an exception carries"
+    body: |
+      `getMessage()` returns the detail message; `toString()` is the class name plus `: ` and the message (or just the name if the message is null).
+      `printStackTrace()` shows `toString()` and then the call stack where the exception was created.
+      `getStackTrace()` gives the frames, most recent first.
+
+  - type: predict
+    id: tij-exceptions-inheritingexceptions
+    prompt: |
+      What does this print?
+    code: |
+      //: exceptions/InheritingExceptions.java
+      // Creating your own exceptions.
+
+      class SimpleException extends Exception {}
+
+      public class InheritingExceptions {
+        public void f() throws SimpleException {
+          System.out.println("Throw SimpleException from f()");
+          throw new SimpleException();
+        }
+        public static void main(String[] args) {
+          InheritingExceptions sed = new InheritingExceptions();
+          try {
+            sed.f();
+          } catch(SimpleException e) {
+            System.out.println("Caught it!");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Throw SimpleException from f()\nCaught it!"
+        correct: true
+      - text: "Caught it!"
+        feedback: "`f` prints before throwing."
+      - text: "It doesn't compile — `SimpleException` has no constructor"
+        feedback: "It gets the default constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-fullconstructors
+    prompt: |
+      What is the first line of each stack trace?
+    code: |
+      //: exceptions/FullConstructors.java
+
+      class MyException extends Exception {
+        public MyException() {}
+        public MyException(String msg) { super(msg); }
+      }
+
+      public class FullConstructors {
+        public static void f() throws MyException {
+          System.out.println("Throwing MyException from f()");
+          throw new MyException();
+        }
+        public static void g() throws MyException {
+          System.out.println("Throwing MyException from g()");
+          throw new MyException("Originated in g()");
+        }
+        public static void main(String[] args) {
+          try {
+            f();
+          } catch(MyException e) {
+            e.printStackTrace(System.out);
+          }
+          try {
+            g();
+          } catch(MyException e) {
+            e.printStackTrace(System.out);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`MyException` for `f()`, and `MyException: Originated in g()` for `g()`"
+        correct: true
+      - text: "`MyException: null` for both"
+        feedback: "With no message, `toString()` is just the class name."
+      - text: "`MyException` for both"
+        feedback: "`g()` passes a message, which `toString()` appends."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-extrafeatures
+    prompt: |
+      `MyException2` overrides `getMessage()` to return `"Detail Message: " + x + " " + super.getMessage()`. What is the first line of the trace for `f()`, which throws `new MyException2()`? (`print` is `println`.)
+    code: |
+      //: exceptions/ExtraFeatures.java
+      // Further embellishment of exception classes.
+      import static net.mindview.util.Print.*;
+
+      class MyException2 extends Exception {
+        private int x;
+        public MyException2() {}
+        public MyException2(String msg) { super(msg); }
+        public MyException2(String msg, int x) {
+          super(msg);
+          this.x = x;
+        }
+        public int val() { return x; }
+        public String getMessage() {
+          return "Detail Message: "+ x + " "+ super.getMessage();
+        }
+      }
+
+      public class ExtraFeatures {
+        public static void f() throws MyException2 {
+          print("Throwing MyException2 from f()");
+          throw new MyException2();
+        }
+        public static void g() throws MyException2 {
+          print("Throwing MyException2 from g()");
+          throw new MyException2("Originated in g()");
+        }
+        public static void h() throws MyException2 {
+          print("Throwing MyException2 from h()");
+          throw new MyException2("Originated in h()", 47);
+        }
+        public static void main(String[] args) {
+          try {
+            f();
+          } catch(MyException2 e) {
+            e.printStackTrace(System.out);
+          }
+          try {
+            g();
+          } catch(MyException2 e) {
+            e.printStackTrace(System.out);
+          }
+          try {
+            h();
+          } catch(MyException2 e) {
+            e.printStackTrace(System.out);
+            System.out.println("e.val() = " + e.val());
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "MyException2: Detail Message: 0 null"
+        correct: true
+      - text: "MyException2"
+        feedback: "`toString()` uses `getMessage()`, which is overridden and never null."
+      - text: "MyException2: Detail Message: 0 "
+        feedback: "`super.getMessage()` is null, and concatenation prints `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-exceptionmethods
+    prompt: |
+      What do the `getMessage()` and `toString()` lines print? (`print` is `println`.)
+    code: |
+      //: exceptions/ExceptionMethods.java
+      // Demonstrating the Exception Methods.
+      import static net.mindview.util.Print.*;
+
+      public class ExceptionMethods {
+        public static void main(String[] args) {
+          try {
+            throw new Exception("My Exception");
+          } catch(Exception e) {
+            print("Caught Exception");
+            print("getMessage():" + e.getMessage());
+            print("getLocalizedMessage():" +
+              e.getLocalizedMessage());
+            print("toString():" + e);
+            print("printStackTrace():");
+            e.printStackTrace(System.out);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "getMessage():My Exception\ngetLocalizedMessage():My Exception\ntoString():java.lang.Exception: My Exception"
+        correct: true
+      - text: "getMessage():java.lang.Exception: My Exception\ngetLocalizedMessage():My Exception\ntoString():My Exception"
+        feedback: "`getMessage` is just the message; `toString` adds the class name."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-loggingexceptions
+    prompt: |
+      Where does the stack trace go?
+    code: |
+      //: exceptions/LoggingExceptions.java
+      // An exception that reports through a Logger.
+      import java.util.logging.*;
+      import java.io.*;
+
+      class LoggingException extends Exception {
+        private static Logger logger =
+          Logger.getLogger("LoggingException");
+        public LoggingException() {
+          StringWriter trace = new StringWriter();
+          printStackTrace(new PrintWriter(trace));
+          logger.severe(trace.toString());
+        }
+      }
+
+      public class LoggingExceptions {
+        public static void main(String[] args) {
+          try {
+            throw new LoggingException();
+          } catch(LoggingException e) {
+            System.err.println("Caught " + e);
+          }
+          try {
+            throw new LoggingException();
+          } catch(LoggingException e) {
+            System.err.println("Caught " + e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "To the logger (by default, standard error) as a SEVERE message, logged when each exception is constructed"
+        correct: true
+      - text: "To standard out when it's caught"
+        feedback: "The constructor logs it; the catch prints only `Caught LoggingException`."
+      - text: "Nowhere — it's written to a `StringWriter` and discarded"
+        feedback: "The `StringWriter`'s text is passed to `logger.severe`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-loggingexceptions2
+    prompt: |
+      How does this differ from logging inside the exception's constructor?
+    code: |
+      //: exceptions/LoggingExceptions2.java
+      // Logging caught exceptions.
+      import java.util.logging.*;
+      import java.io.*;
+
+      public class LoggingExceptions2 {
+        private static Logger logger =
+          Logger.getLogger("LoggingExceptions2");
+        static void logException(Exception e) {
+          StringWriter trace = new StringWriter();
+          e.printStackTrace(new PrintWriter(trace));
+          logger.severe(trace.toString());
+        }
+        public static void main(String[] args) {
+          try {
+            throw new NullPointerException();
+          } catch(NullPointerException e) {
+            logException(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It logs exceptions you didn't write — like `NullPointerException` — at the point they're caught"
+        correct: true
+      - text: "It doesn't log anything"
+        feedback: "`logException` sends the trace to `logger.severe`."
+      - text: "It logs only the message"
+        feedback: "It logs the full stack trace text."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-whocalled
+    prompt: |
+      What does the last group print (after the second dashed line)?
+    code: |
+      //: exceptions/WhoCalled.java
+      // Programmatic access to stack trace information.
+
+      public class WhoCalled {
+        static void f() {
+          // Generate an exception to fill in the stack trace
+          try {
+            throw new Exception();
+          } catch (Exception e) {
+            for(StackTraceElement ste : e.getStackTrace())
+              System.out.println(ste.getMethodName());
+          }
+        }
+        static void g() { f(); }
+        static void h() { g(); }
+        public static void main(String[] args) {
+          f();
+          System.out.println("--------------------------------");
+          g();
+          System.out.println("--------------------------------");
+          h();
+        }
+      }
+    language: java
+    options:
+      - text: "f\ng\nh\nmain"
+        correct: true
+      - text: "main\nh\ng\nf"
+        feedback: "The stack trace starts with the most recent call."
+      - text: "f"
+        feedback: "It lists every frame up to `main`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

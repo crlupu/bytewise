@@ -1,0 +1,339 @@
+title: "Rethrowing and chaining"
+summary: "Rethrowing keeps the original stack trace, fillInStackTrace resets it, and chaining wraps one exception in another."
+duration: 8
+tags: [java, exceptions, rethrow, fillInStackTrace, cause, chaining]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 12, Rethrowing an exception; Exception chaining; Alternative approaches" }
+steps:
+  - type: explanation
+    title: "Rethrowing"
+    body: |
+      `throw e` in a `catch` rethrows the same object, with its original stack trace.
+      `e.fillInStackTrace()` resets the trace to the current point.
+      Throwing a new exception starts a fresh trace — the old one is lost unless you chain it.
+
+  - type: explanation
+    title: "Chaining"
+    body: |
+      `new RuntimeException(cause)` wraps a checked exception in an unchecked one, keeping it as the cause.
+      `getCause()` gets it back; `initCause()` sets it for exceptions without a cause constructor.
+      An uncaught exception from `main` prints its stack trace and ends the program.
+
+  - type: choice
+    id: tij-exceptions-rethrowing
+    prompt: |
+      In `main`, how do the two stack traces differ?
+    code: |
+      //: exceptions/Rethrowing.java
+      // Demonstrating fillInStackTrace()
+
+      public class Rethrowing {
+        public static void f() throws Exception {
+          System.out.println("originating the exception in f()");
+          throw new Exception("thrown from f()");
+        }
+        public static void g() throws Exception {
+          try {
+            f();
+          } catch(Exception e) {
+            System.out.println("Inside g(),e.printStackTrace()");
+            e.printStackTrace(System.out);
+            throw e;
+          }
+        }
+        public static void h() throws Exception {
+          try {
+            f();
+          } catch(Exception e) {
+            System.out.println("Inside h(),e.printStackTrace()");
+            e.printStackTrace(System.out);
+            throw (Exception)e.fillInStackTrace();
+          }
+        }
+        public static void main(String[] args) {
+          try {
+            g();
+          } catch(Exception e) {
+            System.out.println("main: printStackTrace()");
+            e.printStackTrace(System.out);
+          }
+          try {
+            h();
+          } catch(Exception e) {
+            System.out.println("main: printStackTrace()");
+            e.printStackTrace(System.out);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "After `g()` the trace still starts at `f`; after `h()` it starts at `h`, because `fillInStackTrace()` reset it"
+        correct: true
+      - text: "They're identical"
+        feedback: "`fillInStackTrace` replaces the recorded frames with the current ones."
+      - text: "The trace after `g()` starts at `g`"
+        feedback: "`throw e` rethrows the same object with its original trace."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-rethrownew
+    prompt: |
+      What does the outer catch's `printStackTrace` show?
+    code: |
+      //: exceptions/RethrowNew.java
+      // Rethrow a different object from the one that was caught.
+
+      class OneException extends Exception {
+        public OneException(String s) { super(s); }
+      }
+
+      class TwoException extends Exception {
+        public TwoException(String s) { super(s); }
+      }
+
+      public class RethrowNew {
+        public static void f() throws OneException {
+          System.out.println("originating the exception in f()");
+          throw new OneException("thrown from f()");
+        }
+        public static void main(String[] args) {
+          try {
+            try {
+              f();
+            } catch(OneException e) {
+              System.out.println(
+                "Caught in inner try, e.printStackTrace()");
+              e.printStackTrace(System.out);
+              throw new TwoException("from inner try");
+            }
+          } catch(TwoException e) {
+            System.out.println(
+              "Caught in outer try, e.printStackTrace()");
+            e.printStackTrace(System.out);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`TwoException: from inner try` at `main` only — nothing about `f()`"
+        correct: true
+      - text: "`OneException` with its trace from `f()`"
+        feedback: "A new `TwoException` was thrown; `OneException` isn't attached as its cause."
+      - text: "Both exceptions, chained"
+        feedback: "No cause was passed, so the link is lost."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-dynamicfields
+    prompt: |
+      What happens at `df.setField("d", null)`? (`print` is `println`.)
+    code: |
+      //: exceptions/DynamicFields.java
+      // A Class that dynamically adds fields to itself.
+      // Demonstrates exception chaining.
+      import static net.mindview.util.Print.*;
+
+      class DynamicFieldsException extends Exception {}
+
+      public class DynamicFields {
+        private Object[][] fields;
+        public DynamicFields(int initialSize) {
+          fields = new Object[initialSize][2];
+          for(int i = 0; i < initialSize; i++)
+            fields[i] = new Object[] { null, null };
+        }
+        public String toString() {
+          StringBuilder result = new StringBuilder();
+          for(Object[] obj : fields) {
+            result.append(obj[0]);
+            result.append(": ");
+            result.append(obj[1]);
+            result.append("\n");
+          }
+          return result.toString();
+        }
+        private int hasField(String id) {
+          for(int i = 0; i < fields.length; i++)
+            if(id.equals(fields[i][0]))
+              return i;
+          return -1;
+        }
+        private int
+        getFieldNumber(String id) throws NoSuchFieldException {
+          int fieldNum = hasField(id);
+          if(fieldNum == -1)
+            throw new NoSuchFieldException();
+          return fieldNum;
+        }
+        private int makeField(String id) {
+          for(int i = 0; i < fields.length; i++)
+            if(fields[i][0] == null) {
+              fields[i][0] = id;
+              return i;
+            }
+          // No empty fields. Add one:
+          Object[][] tmp = new Object[fields.length + 1][2];
+          for(int i = 0; i < fields.length; i++)
+            tmp[i] = fields[i];
+          for(int i = fields.length; i < tmp.length; i++)
+            tmp[i] = new Object[] { null, null };
+          fields = tmp;
+          // Recursive call with expanded fields:
+          return makeField(id);
+        }
+        public Object
+        getField(String id) throws NoSuchFieldException {
+          return fields[getFieldNumber(id)][1];
+        }
+        public Object setField(String id, Object value)
+        throws DynamicFieldsException {
+          if(value == null) {
+            // Most exceptions don't have a "cause" constructor.
+            // In these cases you must use initCause(),
+            // available in all Throwable subclasses.
+            DynamicFieldsException dfe =
+              new DynamicFieldsException();
+            dfe.initCause(new NullPointerException());
+            throw dfe;
+          }
+          int fieldNumber = hasField(id);
+          if(fieldNumber == -1)
+            fieldNumber = makeField(id);
+          Object result = null;
+          try {
+            result = getField(id); // Get old value
+          } catch(NoSuchFieldException e) {
+            // Use constructor that takes "cause":
+            throw new RuntimeException(e);
+          }
+          fields[fieldNumber][1] = value;
+          return result;
+        }
+        public static void main(String[] args) {
+          DynamicFields df = new DynamicFields(3);
+          print(df);
+          try {
+            df.setField("d", "A value for d");
+            df.setField("number", 47);
+            df.setField("number2", 48);
+            print(df);
+            df.setField("d", "A new value for d");
+            df.setField("number3", 11);
+            print("df: " + df);
+            print("df.getField(\"d\") : " + df.getField("d"));
+            Object field = df.setField("d", null); // Exception
+          } catch(NoSuchFieldException e) {
+            e.printStackTrace(System.out);
+          } catch(DynamicFieldsException e) {
+            e.printStackTrace(System.out);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It throws a `DynamicFieldsException` whose cause is a `NullPointerException`, set with `initCause()`"
+        correct: true
+      - text: "It stores `null` in `d`"
+        feedback: "`setField` rejects null values."
+      - text: "It throws `NoSuchFieldException`"
+        feedback: "`d` exists; the null value is the problem."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-exceptions-turnoffchecking
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: exceptions/TurnOffChecking.java
+      // "Turning off" Checked exceptions.
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      class WrapCheckedException {
+        void throwRuntimeException(int type) {
+          try {
+            switch(type) {
+              case 0: throw new FileNotFoundException();
+              case 1: throw new IOException();
+              case 2: throw new RuntimeException("Where am I?");
+              default: return;
+            }
+          } catch(Exception e) { // Adapt to unchecked:
+            throw new RuntimeException(e);
+          }
+        }
+      }
+
+      class SomeOtherException extends Exception {}
+
+      public class TurnOffChecking {
+        public static void main(String[] args) {
+          WrapCheckedException wce = new WrapCheckedException();
+          // You can call throwRuntimeException() without a try
+          // block, and let RuntimeExceptions leave the method:
+          wce.throwRuntimeException(3);
+          // Or you can choose to catch exceptions:
+          for(int i = 0; i < 4; i++)
+            try {
+              if(i < 3)
+                wce.throwRuntimeException(i);
+              else
+                throw new SomeOtherException();
+            } catch(SomeOtherException e) {
+                print("SomeOtherException: " + e);
+            } catch(RuntimeException re) {
+              try {
+                throw re.getCause();
+              } catch(FileNotFoundException e) {
+                print("FileNotFoundException: " + e);
+              } catch(IOException e) {
+                print("IOException: " + e);
+              } catch(Throwable e) {
+                print("Throwable: " + e);
+              }
+            }
+        }
+      }
+    language: java
+    options:
+      - text: "FileNotFoundException: java.io.FileNotFoundException\nIOException: java.io.IOException\nThrowable: java.lang.RuntimeException: Where am I?\nSomeOtherException: SomeOtherException"
+        correct: true
+      - text: "Throwable: java.lang.RuntimeException: java.io.FileNotFoundException\nThrowable: java.lang.RuntimeException: java.io.IOException\nThrowable: java.lang.RuntimeException: Where am I?\nSomeOtherException: SomeOtherException"
+        feedback: "`throw re.getCause()` rethrows the wrapped exception, so the specific catches match."
+      - text: "FileNotFoundException: java.io.FileNotFoundException\nIOException: java.io.IOException\nIOException: java.io.IOException\nSomeOtherException: SomeOtherException"
+        feedback: "The `FileNotFoundException` catch comes first and matches; then the third cause is a `RuntimeException`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-mainexception
+    prompt: |
+      What happens if `MainException.java` doesn't exist in the working directory?
+    code: |
+      //: exceptions/MainException.java
+      import java.io.*;
+
+      public class MainException {
+        // Pass all exceptions to the console:
+        public static void main(String[] args) throws Exception {
+          // Open the file:
+          FileInputStream file =
+            new FileInputStream("MainException.java");
+          // Use the file ...
+          // Close the file:
+          file.close();
+        }
+      }
+    language: java
+    options:
+      - text: "`main` throws `FileNotFoundException`, and the JVM prints its stack trace"
+        correct: true
+      - text: "Compile error: unhandled `FileNotFoundException`"
+        feedback: "`main` declares `throws Exception`."
+      - text: "Nothing"
+        feedback: "The exception leaves `main` and is reported."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

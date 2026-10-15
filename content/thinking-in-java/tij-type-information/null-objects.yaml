@@ -1,0 +1,339 @@
+title: "Null Objects"
+summary: "Instead of null, a stand-in object that does nothing — written by hand or made with a dynamic proxy."
+duration: 8
+tags: [java, null object, Null interface, dynamic proxy]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 14, Null Objects" }
+steps:
+  - type: explanation
+    title: "Null Objects"
+    body: |
+      A Null Object stands in for "nothing" and answers every call safely, so callers don't need `null` checks.
+      A marker interface `Null` lets you still detect one with `instanceof Null`.
+
+  - type: explanation
+    title: "Making them"
+    body: |
+      A class can provide its own singleton, such as `Person.NULL`.
+      For an interface, a dynamic proxy can produce a Null Object for any implementing type.
+
+  - type: choice
+    id: tij-typeinfo-person
+    prompt: |
+      Why is `NullPerson`'s constructor private?
+    code: |
+      //: typeinfo/Person.java
+      // A class with a Null Object.
+      import net.mindview.util.*;
+
+      class Person {
+        public final String first;
+        public final String last;
+        public final String address;
+        // etc.
+        public Person(String first, String last, String address){
+          this.first = first;
+          this.last = last;
+          this.address = address;
+        }
+        public String toString() {
+          return "Person: " + first + " " + last + " " + address;
+        }
+        public static class NullPerson
+        extends Person implements Null {
+          private NullPerson() { super("None", "None", "None"); }
+          public String toString() { return "NullPerson"; }
+        }
+        public static final Person NULL = new NullPerson();
+      }
+    language: java
+    options:
+      - text: "So the single instance `Person.NULL` is the only one — callers can compare with `==`"
+        correct: true
+      - text: "So it can't be subclassed"
+        feedback: "It's about creating instances."
+      - text: "Null Objects must have private constructors"
+        feedback: "It's what makes it a singleton."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-position
+    prompt: |
+      What does `setPerson(null)` store?
+    code: |
+      //: typeinfo/Position.java
+
+      class Position {
+        private String title;
+        private Person person;
+        public Position(String jobTitle, Person employee) {
+          title = jobTitle;
+          person = employee;
+          if(person == null)
+            person = Person.NULL;
+        }
+        public Position(String jobTitle) {
+          title = jobTitle;
+          person = Person.NULL;
+        }
+        public String getTitle() { return title; }
+        public void setTitle(String newTitle) {
+          title = newTitle;
+        }
+        public Person getPerson() { return person; }
+        public void setPerson(Person newPerson) {
+          person = newPerson;
+          if(person == null)
+            person = Person.NULL;
+        }
+        public String toString() {
+          return "Position: " + title + " " + person;
+        }
+      }
+    language: java
+    options:
+      - text: "`Person.NULL`"
+        correct: true
+      - text: "`null`"
+        feedback: "Null is replaced with the Null Object."
+      - text: "It throws"
+        feedback: "It substitutes `Person.NULL`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-staff
+    prompt: |
+      How does `positionAvailable` tell that a position is empty?
+    code: |
+      //: typeinfo/Staff.java
+      import java.util.*;
+
+      public class Staff extends ArrayList<Position> {
+        public void add(String title, Person person) {
+          add(new Position(title, person));
+        }
+        public void add(String... titles) {
+          for(String title : titles)
+            add(new Position(title));
+        }
+        public Staff(String... titles) { add(titles); }
+        public boolean positionAvailable(String title) {
+          for(Position position : this)
+            if(position.getTitle().equals(title) &&
+               position.getPerson() == Person.NULL)
+              return true;
+          return false;
+        }
+        public void fillPosition(String title, Person hire) {
+          for(Position position : this)
+            if(position.getTitle().equals(title) &&
+               position.getPerson() == Person.NULL) {
+              position.setPerson(hire);
+              return;
+            }
+          throw new RuntimeException(
+            "Position " + title + " not available");
+        }
+        public static void main(String[] args) {
+          Staff staff = new Staff("President", "CTO",
+            "Marketing Manager", "Product Manager",
+            "Project Lead", "Software Engineer",
+            "Software Engineer", "Software Engineer",
+            "Software Engineer", "Test Engineer",
+            "Technical Writer");
+          staff.fillPosition("President",
+            new Person("Me", "Last", "The Top, Lonely At"));
+          staff.fillPosition("Project Lead",
+            new Person("Janet", "Planner", "The Burbs"));
+          if(staff.positionAvailable("Software Engineer"))
+            staff.fillPosition("Software Engineer",
+              new Person("Bob", "Coder", "Bright Light City"));
+          System.out.println(staff);
+        }
+      }
+    language: java
+    options:
+      - text: "`position.getPerson() == Person.NULL`"
+        correct: true
+      - text: "`getPerson() == null`"
+        feedback: "Positions never hold `null`; they hold the Null Object."
+      - text: "By catching a `NullPointerException`"
+        feedback: "Null Objects avoid that."
+    explanation: |
+      Printing the staff shows `NullPerson` for every unfilled position.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-operation
+    prompt: |
+      What is an `Operation`?
+    code: |
+      //: typeinfo/Operation.java
+
+      public interface Operation {
+        String description();
+        void command();
+      }
+    language: java
+    options:
+      - text: "A command: a description plus an action to run"
+        correct: true
+      - text: "A robot"
+        feedback: "A robot has a list of operations."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-robot
+    prompt: |
+      How does `Robot.Test.test` treat a Null robot?
+    code: |
+      //: typeinfo/Robot.java
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public interface Robot {
+        String name();
+        String model();
+        List<Operation> operations();
+        class Test {
+          public static void test(Robot r) {
+            if(r instanceof Null)
+              System.out.println("[Null Robot]");
+            System.out.println("Robot name: " + r.name());
+            System.out.println("Robot model: " + r.model());
+            for(Operation operation : r.operations()) {
+              System.out.println(operation.description());
+              operation.command();
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It prints `[Null Robot]` first, then tests it like any other robot"
+        correct: true
+      - text: "It skips it"
+        feedback: "It runs the same calls; a Null robot answers safely."
+      - text: "It throws"
+        feedback: "Null robots implement every method."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-snowremovalrobot
+    prompt: |
+      `Robot.Test.test` prints the name and model, then each operation's description followed by running it. What are the first four lines?
+    code: |
+      //: typeinfo/SnowRemovalRobot.java
+      import java.util.*;
+
+      public class SnowRemovalRobot implements Robot {
+        private String name;
+        public SnowRemovalRobot(String name) {this.name = name;}
+        public String name() { return name; }
+        public String model() { return "SnowBot Series 11"; }
+        public List<Operation> operations() {
+          return Arrays.asList(
+            new Operation() {
+              public String description() {
+                return name + " can shovel snow";
+              }
+              public void command() {
+                System.out.println(name + " shoveling snow");
+              }
+            },
+            new Operation() {
+              public String description() {
+                return name + " can chip ice";
+              }
+              public void command() {
+                System.out.println(name + " chipping ice");
+              }
+            },
+            new Operation() {
+              public String description() {
+                return name + " can clear the roof";
+              }
+              public void command() {
+                System.out.println(name + " clearing roof");
+              }
+            }
+          );
+        }
+        public static void main(String[] args) {
+          Robot.Test.test(new SnowRemovalRobot("Slusher"));
+        }
+      }
+    language: java
+    options:
+      - text: "Robot name: Slusher\nRobot model: SnowBot Series 11\nSlusher can shovel snow\nSlusher shoveling snow"
+        correct: true
+      - text: "Robot name: Slusher\nRobot model: SnowBot Series 11\nSlusher can shovel snow\nSlusher can chip ice"
+        feedback: "Each description is followed by running that operation."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-nullrobot
+    prompt: |
+      What are the last three lines printed (for the null robot)?
+    code: |
+      //: typeinfo/NullRobot.java
+      // Using a dynamic proxy to create a Null Object.
+      import java.lang.reflect.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      class NullRobotProxyHandler implements InvocationHandler {
+        private String nullName;
+        private Robot proxied = new NRobot();
+        NullRobotProxyHandler(Class<? extends Robot> type) {
+          nullName = type.getSimpleName() + " NullRobot";
+        }
+        private class NRobot implements Null, Robot {
+          public String name() { return nullName; }
+          public String model() { return nullName; }
+          public List<Operation> operations() {
+            return Collections.emptyList();
+          }
+        }
+        public Object
+        invoke(Object proxy, Method method, Object[] args)
+        throws Throwable {
+          return method.invoke(proxied, args);
+        }
+      }
+
+      public class NullRobot {
+        public static Robot
+        newNullRobot(Class<? extends Robot> type) {
+          return (Robot)Proxy.newProxyInstance(
+            NullRobot.class.getClassLoader(),
+            new Class[]{ Null.class, Robot.class },
+            new NullRobotProxyHandler(type));
+        }
+        public static void main(String[] args) {
+          Robot[] bots = {
+            new SnowRemovalRobot("SnowBee"),
+            newNullRobot(SnowRemovalRobot.class)
+          };
+          for(Robot bot : bots)
+            Robot.Test.test(bot);
+        }
+      }
+    language: java
+    options:
+      - text: "[Null Robot]\nRobot name: SnowRemovalRobot NullRobot\nRobot model: SnowRemovalRobot NullRobot"
+        correct: true
+      - text: "[Null Robot]\nRobot name: null\nRobot model: null"
+        feedback: "The proxied `NRobot` returns the null name for both."
+      - text: "Robot name: SnowRemovalRobot NullRobot\nRobot model: SnowRemovalRobot NullRobot"
+        feedback: "The proxy implements `Null`, so the test prints `[Null Robot]` first."
+    explanation: |
+      Its `operations()` list is empty, so nothing follows.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

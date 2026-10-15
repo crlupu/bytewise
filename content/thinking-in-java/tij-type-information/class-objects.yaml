@@ -76,3 +76,330 @@ steps:
         right: The exact class of an object
       - left: "`Class.forName(\"shapes.Circle\")`"
         right: Loads a class by name at run time
+
+  - type: predict
+    id: tij-typeinfo-sweetshop
+    prompt: |
+      Each candy class prints `Loading …` in a static block. What does this print? (`print` is `println`.)
+    code: |
+      //: typeinfo/SweetShop.java
+      // Examination of the way the class loader works.
+      import static net.mindview.util.Print.*;
+
+      class Candy {
+        static { print("Loading Candy"); }
+      }
+
+      class Gum {
+        static { print("Loading Gum"); }
+      }
+
+      class Cookie {
+        static { print("Loading Cookie"); }
+      }
+
+      public class SweetShop {
+        public static void main(String[] args) {
+          print("inside main");
+          new Candy();
+          print("After creating Candy");
+          try {
+            Class.forName("Gum");
+          } catch(ClassNotFoundException e) {
+            print("Couldn't find Gum");
+          }
+          print("After Class.forName(\"Gum\")");
+          new Cookie();
+          print("After creating Cookie");
+        }
+      }
+    language: java
+    options:
+      - text: "inside main\nLoading Candy\nAfter creating Candy\nLoading Gum\nAfter Class.forName(\"Gum\")\nLoading Cookie\nAfter creating Cookie"
+        correct: true
+      - text: "Loading Candy\nLoading Gum\nLoading Cookie\ninside main\nAfter creating Candy\nAfter Class.forName(\"Gum\")\nAfter creating Cookie"
+        feedback: "Classes are loaded lazily, the first time they're used."
+      - text: "inside main\nLoading Candy\nAfter creating Candy\nAfter Class.forName(\"Gum\")\nLoading Cookie\nAfter creating Cookie"
+        feedback: "`Class.forName` loads and initializes the class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-classinitialization
+    prompt: |
+      `rand.nextInt(1000)` returns 258. What are the first four lines printed?
+    code: |
+      //: typeinfo/ClassInitialization.java
+      import java.util.*;
+
+      class Initable {
+        static final int staticFinal = 47;
+        static final int staticFinal2 =
+          ClassInitialization.rand.nextInt(1000);
+        static {
+          System.out.println("Initializing Initable");
+        }
+      }
+
+      class Initable2 {
+        static int staticNonFinal = 147;
+        static {
+          System.out.println("Initializing Initable2");
+        }
+      }
+
+      class Initable3 {
+        static int staticNonFinal = 74;
+        static {
+          System.out.println("Initializing Initable3");
+        }
+      }
+
+      public class ClassInitialization {
+        public static Random rand = new Random(47);
+        public static void main(String[] args) throws Exception {
+          Class initable = Initable.class;
+          System.out.println("After creating Initable ref");
+          // Does not trigger initialization:
+          System.out.println(Initable.staticFinal);
+          // Does trigger initialization:
+          System.out.println(Initable.staticFinal2);
+          // Does trigger initialization:
+          System.out.println(Initable2.staticNonFinal);
+          Class initable3 = Class.forName("Initable3");
+          System.out.println("After creating Initable3 ref");
+          System.out.println(Initable3.staticNonFinal);
+        }
+      }
+    language: java
+    options:
+      - text: "After creating Initable ref\n47\nInitializing Initable\n258"
+        correct: true
+      - text: "Initializing Initable\nAfter creating Initable ref\n47\n258"
+        feedback: "`Initable.class` gets the Class object without initializing the class."
+      - text: "After creating Initable ref\nInitializing Initable\n47\n258"
+        feedback: "`staticFinal` is a compile-time constant, inlined — reading it doesn't initialize the class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-toys-toytest
+    prompt: |
+      What are the first three lines printed? (`print` is `println`.)
+    code: |
+      //: typeinfo/toys/ToyTest.java
+      // Testing class Class.
+      package typeinfo.toys;
+      import static net.mindview.util.Print.*;
+
+      interface HasBatteries {}
+      interface Waterproof {}
+      interface Shoots {}
+
+      class Toy {
+        // Comment out the following default constructor
+        // to see NoSuchMethodError from (*1*)
+        Toy() {}
+        Toy(int i) {}
+      }
+
+      class FancyToy extends Toy
+      implements HasBatteries, Waterproof, Shoots {
+        FancyToy() { super(1); }
+      }
+
+      public class ToyTest {
+        static void printInfo(Class cc) {
+          print("Class name: " + cc.getName() +
+            " is interface? [" + cc.isInterface() + "]");
+          print("Simple name: " + cc.getSimpleName());
+          print("Canonical name : " + cc.getCanonicalName());
+        }
+        public static void main(String[] args) {
+          Class c = null;
+          try {
+            c = Class.forName("typeinfo.toys.FancyToy");
+          } catch(ClassNotFoundException e) {
+            print("Can't find FancyToy");
+            System.exit(1);
+          }
+          printInfo(c);
+          for(Class face : c.getInterfaces())
+            printInfo(face);
+          Class up = c.getSuperclass();
+          Object obj = null;
+          try {
+            // Requires default constructor:
+            obj = up.newInstance();
+          } catch(InstantiationException e) {
+            print("Cannot instantiate");
+            System.exit(1);
+          } catch(IllegalAccessException e) {
+            print("Cannot access");
+            System.exit(1);
+          }
+          printInfo(obj.getClass());
+        }
+      }
+    language: java
+    options:
+      - text: "Class name: typeinfo.toys.FancyToy is interface? [false]\nSimple name: FancyToy\nCanonical name : typeinfo.toys.FancyToy"
+        correct: true
+      - text: "Class name: FancyToy is interface? [false]\nSimple name: FancyToy\nCanonical name : FancyToy"
+        feedback: "`getName()` and `getCanonicalName()` include the package."
+      - text: "Class name: typeinfo.toys.FancyToy is interface? [true]\nSimple name: FancyToy\nCanonical name : typeinfo.toys.FancyToy"
+        feedback: "`FancyToy` is a class; its interfaces are printed after."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-toys-generictoytest
+    prompt: |
+      `FancyToy extends Toy`. Why is `up` declared `Class<? super FancyToy>` and not `Class<Toy>`?
+    code: |
+      //: typeinfo/toys/GenericToyTest.java
+      // Testing class Class.
+      package typeinfo.toys;
+
+      public class GenericToyTest {
+        public static void main(String[] args) throws Exception {
+          Class<FancyToy> ftClass = FancyToy.class;
+          // Produces exact type:
+          FancyToy fancyToy = ftClass.newInstance();
+          Class<? super FancyToy> up = ftClass.getSuperclass();
+          // This won't compile:
+          // Class<Toy> up2 = ftClass.getSuperclass();
+          // Only produces Object:
+          Object obj = up.newInstance();
+        }
+      }
+    language: java
+    options:
+      - text: "`getSuperclass()` is declared to return `Class<? super T>` — the compiler only knows it's some superclass"
+        correct: true
+      - text: "Because `Toy` is abstract"
+        feedback: "It isn't; the issue is the declared return type."
+      - text: "`Class<Toy>` would work too"
+        feedback: "That's the line marked \"This won't compile\"."
+    explanation: |
+      So `up.newInstance()` only gives an `Object`, while `ftClass.newInstance()` gives an exact `FancyToy`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-shapes
+    prompt: |
+      What does this print?
+    code: |
+      //: typeinfo/Shapes.java
+      import java.util.*;
+
+      abstract class Shape {
+        void draw() { System.out.println(this + ".draw()"); }
+        abstract public String toString();
+      }
+
+      class Circle extends Shape {
+        public String toString() { return "Circle"; }
+      }
+
+      class Square extends Shape {
+        public String toString() { return "Square"; }
+      }
+
+      class Triangle extends Shape {
+        public String toString() { return "Triangle"; }
+      }
+
+      public class Shapes {
+        public static void main(String[] args) {
+          List<Shape> shapeList = Arrays.asList(
+            new Circle(), new Square(), new Triangle()
+          );
+          for(Shape shape : shapeList)
+            shape.draw();
+        }
+      }
+    language: java
+    options:
+      - text: "Circle.draw()\nSquare.draw()\nTriangle.draw()"
+        correct: true
+      - text: "Shape.draw()\nShape.draw()\nShape.draw()"
+        feedback: "`draw()` prints `this`, which calls each subclass's `toString()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-familyvsexacttype
+    prompt: |
+      For `x = new Derived()`, which checks are true? (`print` is `println`.)
+    code: |
+      //: typeinfo/FamilyVsExactType.java
+      // The difference between instanceof and class
+      package typeinfo;
+      import static net.mindview.util.Print.*;
+
+      class Base {}
+      class Derived extends Base {}
+
+      public class FamilyVsExactType {
+        static void test(Object x) {
+          print("Testing x of type " + x.getClass());
+          print("x instanceof Base " + (x instanceof Base));
+          print("x instanceof Derived "+ (x instanceof Derived));
+          print("Base.isInstance(x) "+ Base.class.isInstance(x));
+          print("Derived.isInstance(x) " +
+            Derived.class.isInstance(x));
+          print("x.getClass() == Base.class " +
+            (x.getClass() == Base.class));
+          print("x.getClass() == Derived.class " +
+            (x.getClass() == Derived.class));
+          print("x.getClass().equals(Base.class)) "+
+            (x.getClass().equals(Base.class)));
+          print("x.getClass().equals(Derived.class)) " +
+            (x.getClass().equals(Derived.class)));
+        }
+        public static void main(String[] args) {
+          test(new Base());
+          test(new Derived());
+        }
+      }
+    language: java
+    options:
+      - text: "`instanceof Base`, `instanceof Derived`, both `isInstance`s, and `getClass() == Derived.class` — but not `getClass() == Base.class`"
+        correct: true
+      - text: "All of them"
+        feedback: "`getClass()` gives the exact class, so it doesn't equal `Base.class`."
+      - text: "Only the `Derived` ones"
+        feedback: "`instanceof` and `isInstance` accept subclasses."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-classcasts
+    prompt: |
+      What does `houseType.cast(b)` do?
+    code: |
+      //: typeinfo/ClassCasts.java
+
+      class Building {}
+      class House extends Building {}
+
+      public class ClassCasts {
+        public static void main(String[] args) {
+          Building b = new House();
+          Class<House> houseType = House.class;
+          House h = houseType.cast(b);
+          h = (House)b; // ... or just do this.
+        }
+      }
+    language: java
+    options:
+      - text: "The same as `(House)b`: returns `b` as a `House`, throwing `ClassCastException` if it isn't one"
+        correct: true
+      - text: "Creates a new `House` from `b`"
+        feedback: "It returns the same object, typed differently."
+      - text: "Returns `null` if `b` isn't a `House`"
+        feedback: "It throws, like a normal cast."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

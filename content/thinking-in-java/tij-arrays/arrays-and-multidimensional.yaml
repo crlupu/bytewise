@@ -1,0 +1,410 @@
+title: "Arrays and multidimensional arrays"
+summary: "What an array is, how it's initialized, returning arrays, and arrays of arrays — rectangular or ragged."
+duration: 8
+tags: [java, arrays, initialization, multidimensional, deepToString]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 16, Why arrays are special; Arrays are first-class objects; Multidimensional arrays" }
+steps:
+  - type: explanation
+    title: "Arrays"
+    body: |
+      An array has a fixed length, checked bounds, and knows its element type.
+      New object arrays hold `null`s; new primitive arrays hold zeros.
+      `{ … }` initializes at the declaration; `new T[]{ … }` anywhere.
+
+  - type: explanation
+    title: "Arrays of arrays"
+    body: |
+      A 2-D array is an array of row arrays, and rows can have different lengths (ragged).
+      `new int[2][2][4]` creates every level; `new int[3][]` leaves the rows null to fill later.
+      `Arrays.deepToString` prints nested arrays.
+
+  - type: predict
+    id: tij-arrays-containercomparison
+    prompt: |
+      Each `BerylliumSphere` prints as `Sphere <n>`, numbered from 0 in creation order. What are the first two lines printed? (`print` is `println`.)
+    code: |
+      //: arrays/ContainerComparison.java
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class BerylliumSphere {
+        private static long counter;
+        private final long id = counter++;
+        public String toString() { return "Sphere " + id; }
+      }
+
+      public class ContainerComparison {
+        public static void main(String[] args) {
+          BerylliumSphere[] spheres = new BerylliumSphere[10];
+          for(int i = 0; i < 5; i++)
+            spheres[i] = new BerylliumSphere();
+          print(Arrays.toString(spheres));
+          print(spheres[4]);
+
+          List<BerylliumSphere> sphereList =
+            new ArrayList<BerylliumSphere>();
+          for(int i = 0; i < 5; i++)
+            sphereList.add(new BerylliumSphere());
+          print(sphereList);
+          print(sphereList.get(4));
+
+          int[] integers = { 0, 1, 2, 3, 4, 5 };
+          print(Arrays.toString(integers));
+          print(integers[4]);
+
+          List<Integer> intList = new ArrayList<Integer>(
+            Arrays.asList(0, 1, 2, 3, 4, 5));
+          intList.add(97);
+          print(intList);
+          print(intList.get(4));
+        }
+      }
+    language: java
+    options:
+      - text: "[Sphere 0, Sphere 1, Sphere 2, Sphere 3, Sphere 4, null, null, null, null, null]\nSphere 4"
+        correct: true
+      - text: "[Sphere 0, Sphere 1, Sphere 2, Sphere 3, Sphere 4]\nSphere 4"
+        feedback: "The array has 10 slots; the unfilled ones are `null`."
+      - text: "[Sphere 0, Sphere 1, Sphere 2, Sphere 3, Sphere 4, null, null, null, null, null]\nSphere 5"
+        feedback: "Index 4 is the fifth sphere, `Sphere 4`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-arrayoptions
+    prompt: |
+      What do the first two lines print? (`print` is `println`.)
+    code: |
+      //: arrays/ArrayOptions.java
+      // Initialization & re-assignment of arrays.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ArrayOptions {
+        public static void main(String[] args) {
+          // Arrays of objects:
+          BerylliumSphere[] a; // Local uninitialized variable
+          BerylliumSphere[] b = new BerylliumSphere[5];
+          // The references inside the array are
+          // automatically initialized to null:
+          print("b: " + Arrays.toString(b));
+          BerylliumSphere[] c = new BerylliumSphere[4];
+          for(int i = 0; i < c.length; i++)
+            if(c[i] == null) // Can test for null reference
+              c[i] = new BerylliumSphere();
+          // Aggregate initialization:
+          BerylliumSphere[] d = { new BerylliumSphere(),
+            new BerylliumSphere(), new BerylliumSphere()
+          };
+          // Dynamic aggregate initialization:
+          a = new BerylliumSphere[]{
+            new BerylliumSphere(), new BerylliumSphere(),
+          };
+          // (Trailing comma is optional in both cases)
+          print("a.length = " + a.length);
+          print("b.length = " + b.length);
+          print("c.length = " + c.length);
+          print("d.length = " + d.length);
+          a = d;
+          print("a.length = " + a.length);
+
+          // Arrays of primitives:
+          int[] e; // Null reference
+          int[] f = new int[5];
+          // The primitives inside the array are
+          // automatically initialized to zero:
+          print("f: " + Arrays.toString(f));
+          int[] g = new int[4];
+          for(int i = 0; i < g.length; i++)
+            g[i] = i*i;
+          int[] h = { 11, 47, 93 };
+          // Compile error: variable e not initialized:
+          //!print("e.length = " + e.length);
+          print("f.length = " + f.length);
+          print("g.length = " + g.length);
+          print("h.length = " + h.length);
+          e = h;
+          print("e.length = " + e.length);
+          e = new int[]{ 1, 2 };
+          print("e.length = " + e.length);
+        }
+      }
+    language: java
+    options:
+      - text: "b: [null, null, null, null, null]\na.length = 2"
+        correct: true
+      - text: "b: []\na.length = 2"
+        feedback: "`new BerylliumSphere[5]` has five null references."
+      - text: "b: [null, null, null, null, null]\na.length = 3"
+        feedback: "`a` was given two spheres; the trailing comma doesn't add one."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-icecream
+    prompt: |
+      What does `flavorSet(3)` guarantee?
+    code: |
+      //: arrays/IceCream.java
+      // Returning arrays from methods.
+      import java.util.*;
+
+      public class IceCream {
+        private static Random rand = new Random(47);
+        static final String[] FLAVORS = {
+          "Chocolate", "Strawberry", "Vanilla Fudge Swirl",
+          "Mint Chip", "Mocha Almond Fudge", "Rum Raisin",
+          "Praline Cream", "Mud Pie"
+        };
+        public static String[] flavorSet(int n) {
+          if(n > FLAVORS.length)
+            throw new IllegalArgumentException("Set too big");
+          String[] results = new String[n];
+          boolean[] picked = new boolean[FLAVORS.length];
+          for(int i = 0; i < n; i++) {
+            int t;
+            do
+              t = rand.nextInt(FLAVORS.length);
+            while(picked[t]);
+            results[i] = FLAVORS[t];
+            picked[t] = true;
+          }
+          return results;
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < 7; i++)
+            System.out.println(Arrays.toString(flavorSet(3)));
+        }
+      }
+    language: java
+    options:
+      - text: "Three different flavors — `picked` prevents repeats"
+        correct: true
+      - text: "The first three flavors"
+        feedback: "Flavors are chosen at random."
+      - text: "Possibly the same flavor twice"
+        feedback: "The `do-while` retries until it finds an unpicked flavor."
+    explanation: |
+      Returning an array from a method is just returning a reference; the garbage collector cleans up later.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-multidimensionalprimitivearray
+    prompt: |
+      What does this print?
+    code: |
+      //: arrays/MultidimensionalPrimitiveArray.java
+      // Creating multidimensional arrays.
+      import java.util.*;
+
+      public class MultidimensionalPrimitiveArray {
+        public static void main(String[] args) {
+          int[][] a = {
+            { 1, 2, 3, },
+            { 4, 5, 6, },
+          };
+          System.out.println(Arrays.deepToString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "[[1, 2, 3], [4, 5, 6]]"
+        correct: true
+      - text: "[[I@1b6d3586, [I@4554617c]"
+        feedback: "`deepToString` prints nested arrays' contents; `toString` would print this."
+      - text: "[1, 2, 3, 4, 5, 6]"
+        feedback: "It keeps the nesting."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-threedwithnew
+    prompt: |
+      What does this print?
+    code: |
+      //: arrays/ThreeDWithNew.java
+      import java.util.*;
+
+      public class ThreeDWithNew {
+        public static void main(String[] args) {
+          // 3-D array with fixed length:
+          int[][][] a = new int[2][2][4];
+          System.out.println(Arrays.deepToString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "[[[0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0]]]"
+        correct: true
+      - text: "[[[null, null, null, null], [null, null, null, null]], [[null, null, null, null], [null, null, null, null]]]"
+        feedback: "Primitive elements start at 0."
+      - text: "[[[0, 0], [0, 0], [0, 0], [0, 0]], [[0, 0], [0, 0], [0, 0], [0, 0]]]"
+        feedback: "The last dimension, 4, is the innermost."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-raggedarray
+    prompt: |
+      What can `Arrays.deepToString(a)` show for one of the inner arrays?
+    code: |
+      //: arrays/RaggedArray.java
+      import java.util.*;
+
+      public class RaggedArray {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          // 3-D array with varied-length vectors:
+          int[][][] a = new int[rand.nextInt(7)][][];
+          for(int i = 0; i < a.length; i++) {
+            a[i] = new int[rand.nextInt(5)][];
+            for(int j = 0; j < a[i].length; j++)
+              a[i][j] = new int[rand.nextInt(5)];
+          }
+          System.out.println(Arrays.deepToString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "`[]` — a level can have length 0, and each sub-array has its own random length"
+        correct: true
+      - text: "`null` — the inner arrays aren't created"
+        feedback: "Each level is created with `new`."
+      - text: "Always the same length at each level"
+        feedback: "That's what \"ragged\" means: lengths vary."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-multidimensionalobjectarrays
+    prompt: |
+      Spheres print as `Sphere <n>`, numbered in creation order from 0. What does this print?
+    code: |
+      //: arrays/MultidimensionalObjectArrays.java
+      import java.util.*;
+
+      public class MultidimensionalObjectArrays {
+        public static void main(String[] args) {
+          BerylliumSphere[][] spheres = {
+            { new BerylliumSphere(), new BerylliumSphere() },
+            { new BerylliumSphere(), new BerylliumSphere(),
+              new BerylliumSphere(), new BerylliumSphere() },
+            { new BerylliumSphere(), new BerylliumSphere(),
+              new BerylliumSphere(), new BerylliumSphere(),
+              new BerylliumSphere(), new BerylliumSphere(),
+              new BerylliumSphere(), new BerylliumSphere() },
+          };
+          System.out.println(Arrays.deepToString(spheres));
+        }
+      }
+    language: java
+    options:
+      - text: "[[Sphere 0, Sphere 1], [Sphere 2, Sphere 3, Sphere 4, Sphere 5], [Sphere 6, Sphere 7, Sphere 8, Sphere 9, Sphere 10, Sphere 11, Sphere 12, Sphere 13]]"
+        correct: true
+      - text: "[[Sphere 0, Sphere 1], [Sphere 0, Sphere 1, Sphere 2, Sphere 3], [Sphere 0, Sphere 1, Sphere 2, Sphere 3, Sphere 4, Sphere 5, Sphere 6, Sphere 7]]"
+        feedback: "The counter is static, shared by all spheres."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-autoboxingarrays
+    prompt: |
+      Why can the initializer list plain `int`s for an `Integer[][]`?
+    code: |
+      //: arrays/AutoboxingArrays.java
+      import java.util.*;
+
+      public class AutoboxingArrays {
+        public static void main(String[] args) {
+          Integer[][] a = { // Autoboxing:
+            { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 },
+            { 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 },
+            { 51, 52, 53, 54, 55, 56, 57, 58, 59, 60 },
+            { 71, 72, 73, 74, 75, 76, 77, 78, 79, 80 },
+          };
+          System.out.println(Arrays.deepToString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "Each value is autoboxed to an `Integer`"
+        correct: true
+      - text: "`Integer[][]` and `int[][]` are the same type"
+        feedback: "They're different types; autoboxing converts each element."
+      - text: "It can't — it doesn't compile"
+        feedback: "It prints the four rows."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-assemblingmultidimensionalarrays
+    prompt: |
+      What does this print?
+    code: |
+      //: arrays/AssemblingMultidimensionalArrays.java
+      // Creating multidimensional arrays.
+      import java.util.*;
+
+      public class AssemblingMultidimensionalArrays {
+        public static void main(String[] args) {
+          Integer[][] a;
+          a = new Integer[3][];
+          for(int i = 0; i < a.length; i++) {
+            a[i] = new Integer[3];
+            for(int j = 0; j < a[i].length; j++)
+              a[i][j] = i * j; // Autoboxing
+          }
+          System.out.println(Arrays.deepToString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "[[0, 0, 0], [0, 1, 2], [0, 2, 4]]"
+        correct: true
+      - text: "[[0, 1, 2], [1, 2, 3], [2, 3, 4]]"
+        feedback: "Each element is `i * j`, not `i + j`."
+      - text: "[null, null, null]"
+        feedback: "Each row is created in the loop."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-multidimwrapperarray
+    prompt: |
+      What does the `a3` line print?
+    code: |
+      //: arrays/MultiDimWrapperArray.java
+      // Multidimensional arrays of "wrapper" objects.
+      import java.util.*;
+
+      public class MultiDimWrapperArray {
+        public static void main(String[] args) {
+          Integer[][] a1 = { // Autoboxing
+            { 1, 2, 3, },
+            { 4, 5, 6, },
+          };
+          Double[][][] a2 = { // Autoboxing
+            { { 1.1, 2.2 }, { 3.3, 4.4 } },
+            { { 5.5, 6.6 }, { 7.7, 8.8 } },
+            { { 9.9, 1.2 }, { 2.3, 3.4 } },
+          };
+          String[][] a3 = {
+            { "The", "Quick", "Sly", "Fox" },
+            { "Jumped", "Over" },
+            { "The", "Lazy", "Brown", "Dog", "and", "friend" },
+          };
+          System.out.println("a1: " + Arrays.deepToString(a1));
+          System.out.println("a2: " + Arrays.deepToString(a2));
+          System.out.println("a3: " + Arrays.deepToString(a3));
+        }
+      }
+    language: java
+    options:
+      - text: "a3: [[The, Quick, Sly, Fox], [Jumped, Over], [The, Lazy, Brown, Dog, and, friend]]"
+        correct: true
+      - text: "a3: [[The, Quick, Sly, Fox, null, null], [Jumped, Over, null, null, null, null], [The, Lazy, Brown, Dog, and, friend]]"
+        feedback: "Each row is exactly as long as its initializer."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

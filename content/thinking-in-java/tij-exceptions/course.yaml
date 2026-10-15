@@ -3,3 +3,6 @@ summary: Chapter 12 — the Throwable hierarchy, which handler catches what, and
 lessons:
   - exception-hierarchy
   - catching-and-overriding
+  - custom-exceptions
+  - finally-and-cleanup
+  - rethrowing-and-chaining

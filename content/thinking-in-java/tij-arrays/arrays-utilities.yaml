@@ -1,0 +1,399 @@
+title: "The Arrays utilities"
+summary: "fill, arraycopy, equals, sorting with Comparable and Comparator, and binary search."
+duration: 8
+tags: [java, arrays, Arrays.sort, Comparator, Comparable, binarySearch, arraycopy]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 16, Arrays utilities" }
+steps:
+  - type: explanation
+    title: "Fill, copy and compare"
+    body: |
+      `Arrays.fill` sets every element (or a range) to one value.
+      `System.arraycopy(src, srcPos, dest, destPos, length)` copies quickly — references only, for objects.
+      `Arrays.equals` compares element by element with `equals`.
+
+  - type: explanation
+    title: "Sort and search"
+    body: |
+      `Arrays.sort(a)` uses the elements' `Comparable` order; `Arrays.sort(a, comparator)` any other.
+      `Collections.reverseOrder()` reverses the natural order.
+      `Arrays.binarySearch` only works on a sorted array — and with the same comparator used to sort it.
+
+  - type: predict
+    id: tij-arrays-copyingarrays
+    prompt: |
+      `i` is seven 47s and `j` ten 99s. What is `j` after `System.arraycopy(i, 0, j, 0, i.length)`? (`print` is `println`.)
+    code: |
+      //: arrays/CopyingArrays.java
+      // Using System.arraycopy()
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class CopyingArrays {
+        public static void main(String[] args) {
+          int[] i = new int[7];
+          int[] j = new int[10];
+          Arrays.fill(i, 47);
+          Arrays.fill(j, 99);
+          print("i = " + Arrays.toString(i));
+          print("j = " + Arrays.toString(j));
+          System.arraycopy(i, 0, j, 0, i.length);
+          print("j = " + Arrays.toString(j));
+          int[] k = new int[5];
+          Arrays.fill(k, 103);
+          System.arraycopy(i, 0, k, 0, k.length);
+          print("k = " + Arrays.toString(k));
+          Arrays.fill(k, 103);
+          System.arraycopy(k, 0, i, 0, k.length);
+          print("i = " + Arrays.toString(i));
+          // Objects:
+          Integer[] u = new Integer[10];
+          Integer[] v = new Integer[5];
+          Arrays.fill(u, new Integer(47));
+          Arrays.fill(v, new Integer(99));
+          print("u = " + Arrays.toString(u));
+          print("v = " + Arrays.toString(v));
+          System.arraycopy(v, 0, u, u.length/2, v.length);
+          print("u = " + Arrays.toString(u));
+        }
+      }
+    language: java
+    options:
+      - text: "j = [47, 47, 47, 47, 47, 47, 47, 99, 99, 99]"
+        correct: true
+      - text: "j = [47, 47, 47, 47, 47, 47, 47]"
+        feedback: "`arraycopy` doesn't resize `j`."
+      - text: "j = [99, 99, 99, 47, 47, 47, 47, 47, 47, 47]"
+        feedback: "The destination position is 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-comparingarrays
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: arrays/ComparingArrays.java
+      // Using Arrays.equals()
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ComparingArrays {
+        public static void main(String[] args) {
+          int[] a1 = new int[10];
+          int[] a2 = new int[10];
+          Arrays.fill(a1, 47);
+          Arrays.fill(a2, 47);
+          print(Arrays.equals(a1, a2));
+          a2[3] = 11;
+          print(Arrays.equals(a1, a2));
+          String[] s1 = new String[4];
+          Arrays.fill(s1, "Hi");
+          String[] s2 = { new String("Hi"), new String("Hi"),
+            new String("Hi"), new String("Hi") };
+          print(Arrays.equals(s1, s2));
+        }
+      }
+    language: java
+    options:
+      - text: "true\nfalse\ntrue"
+        correct: true
+      - text: "true\nfalse\nfalse"
+        feedback: "`Arrays.equals` uses each element's `equals`, and `\"Hi\".equals(new String(\"Hi\"))` is true."
+      - text: "false\nfalse\nfalse"
+        feedback: "Two arrays filled with 47 have equal elements."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-comptype
+    prompt: |
+      How does `Arrays.sort(a)` order `CompType` objects? (`print` is `println`.)
+    code: |
+      //: arrays/CompType.java
+      // Implementing Comparable in a class.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class CompType implements Comparable<CompType> {
+        int i;
+        int j;
+        private static int count = 1;
+        public CompType(int n1, int n2) {
+          i = n1;
+          j = n2;
+        }
+        public String toString() {
+          String result = "[i = " + i + ", j = " + j + "]";
+          if(count++ % 3 == 0)
+            result += "\n";
+          return result;
+        }
+        public int compareTo(CompType rv) {
+          return (i < rv.i ? -1 : (i == rv.i ? 0 : 1));
+        }
+        private static Random r = new Random(47);
+        public static Generator<CompType> generator() {
+          return new Generator<CompType>() {
+            public CompType next() {
+              return new CompType(r.nextInt(100),r.nextInt(100));
+            }
+          };
+        }
+        public static void main(String[] args) {
+          CompType[] a =
+            Generated.array(new CompType[12], generator());
+          print("before sorting:");
+          print(Arrays.toString(a));
+          Arrays.sort(a);
+          print("after sorting:");
+          print(Arrays.toString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "By `i` ascending, via `compareTo`"
+        correct: true
+      - text: "By `j`"
+        feedback: "`compareTo` compares `i` only."
+      - text: "It throws — `CompType` isn't comparable"
+        feedback: "It implements `Comparable<CompType>`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-comparatortest
+    prompt: |
+      `CompType` holds `i` and `j`. After sorting with `CompTypeComparator`, which element comes first? (`print` is `println`.)
+    code: |
+      //: arrays/ComparatorTest.java
+      // Implementing a Comparator for a class.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      class CompTypeComparator implements Comparator<CompType> {
+        public int compare(CompType o1, CompType o2) {
+          return (o1.j < o2.j ? -1 : (o1.j == o2.j ? 0 : 1));
+        }
+      }
+
+      public class ComparatorTest {
+        public static void main(String[] args) {
+          CompType[] a = Generated.array(
+            new CompType[12], CompType.generator());
+          print("before sorting:");
+          print(Arrays.toString(a));
+          Arrays.sort(a, new CompTypeComparator());
+          print("after sorting:");
+          print(Arrays.toString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "[i = 68, j = 0] — the smallest `j`"
+        correct: true
+      - text: "[i = 9, j = 78] — the smallest `i`"
+        feedback: "The comparator sorts by `j`, ignoring `compareTo`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-reverse
+    prompt: |
+      What does `Arrays.sort(a, Collections.reverseOrder())` do with `CompType`s? (`print` is `println`.)
+    code: |
+      //: arrays/Reverse.java
+      // The Collections.reverseOrder() Comparator
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Reverse {
+        public static void main(String[] args) {
+          CompType[] a = Generated.array(
+            new CompType[12], CompType.generator());
+          print("before sorting:");
+          print(Arrays.toString(a));
+          Arrays.sort(a, Collections.reverseOrder());
+          print("after sorting:");
+          print(Arrays.toString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "Sorts by `i` descending — it reverses the natural `compareTo` order"
+        correct: true
+      - text: "Reverses the array as it is"
+        feedback: "It sorts, in reverse natural order."
+      - text: "Sorts by `j` descending"
+        feedback: "The natural order uses `i`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-stringsorting
+    prompt: |
+      In the plain `Arrays.sort(sa)` result, why does `YNzbr` come before `bkIna`? (`print` is `println`.)
+    code: |
+      //: arrays/StringSorting.java
+      // Sorting an array of Strings.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class StringSorting {
+        public static void main(String[] args) {
+          String[] sa = Generated.array(new String[20],
+            new RandomGenerator.String(5));
+          print("Before sort: " + Arrays.toString(sa));
+          Arrays.sort(sa);
+          print("After sort: " + Arrays.toString(sa));
+          Arrays.sort(sa, Collections.reverseOrder());
+          print("Reverse sort: " + Arrays.toString(sa));
+          Arrays.sort(sa, String.CASE_INSENSITIVE_ORDER);
+          print("Case-insensitive sort: " + Arrays.toString(sa));
+        }
+      }
+    language: java
+    options:
+      - text: "Strings compare by character code, and all uppercase letters come before lowercase ones"
+        correct: true
+      - text: "The sort is random"
+        feedback: "It's deterministic: lexicographic by char value."
+      - text: "`Y` comes after `b` in the alphabet, so that's wrong"
+        feedback: "Natural `String` order isn't alphabetical across cases."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-arraysearching
+    prompt: |
+      What does `Arrays.binarySearch(a, r)` return when `r` isn't in the array? (`print` is `println`.)
+    code: |
+      //: arrays/ArraySearching.java
+      // Using Arrays.binarySearch().
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ArraySearching {
+        public static void main(String[] args) {
+          Generator<Integer> gen =
+            new RandomGenerator.Integer(1000);
+          int[] a = ConvertTo.primitive(
+            Generated.array(new Integer[25], gen));
+          Arrays.sort(a);
+          print("Sorted array: " + Arrays.toString(a));
+          while(true) {
+            int r = gen.next();
+            int location = Arrays.binarySearch(a, r);
+            if(location >= 0) {
+              print("Location of " + r + " is " + location +
+                ", a[" + location + "] = " + a[location]);
+              break; // Out of while loop
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "A negative number: `-(insertion point) - 1`"
+        correct: true
+      - text: "-1 always"
+        feedback: "It encodes where the value would go."
+      - text: "0"
+        feedback: "0 is a valid index."
+    explanation: |
+      That's why the loop keeps going until `location >= 0`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-arrays-alphabeticsearch
+    prompt: |
+      Why pass `String.CASE_INSENSITIVE_ORDER` to `binarySearch` too?
+    code: |
+      //: arrays/AlphabeticSearch.java
+      // Searching with a Comparator.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class AlphabeticSearch {
+        public static void main(String[] args) {
+          String[] sa = Generated.array(new String[30],
+            new RandomGenerator.String(5));
+          Arrays.sort(sa, String.CASE_INSENSITIVE_ORDER);
+          System.out.println(Arrays.toString(sa));
+          int index = Arrays.binarySearch(sa, sa[10],
+            String.CASE_INSENSITIVE_ORDER);
+          System.out.println("Index: "+ index + "\n"+ sa[index]);
+        }
+      }
+    language: java
+    options:
+      - text: "The array was sorted with that comparator; searching with a different order gives wrong results"
+        correct: true
+      - text: "`binarySearch` requires a comparator for strings"
+        feedback: "Without one it uses natural order — the wrong one here."
+      - text: "To find matches regardless of case"
+        feedback: "It's about matching the sort order; it finds `sa[10]` at index 10."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-arrays-fillingarrays
+    prompt: |
+      What are the last two lines printed? (`print` is `println`.)
+    code: |
+      //: arrays/FillingArrays.java
+      // Using Arrays.fill()
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class FillingArrays {
+        public static void main(String[] args) {
+          int size = 6;
+          boolean[] a1 = new boolean[size];
+          byte[] a2 = new byte[size];
+          char[] a3 = new char[size];
+          short[] a4 = new short[size];
+          int[] a5 = new int[size];
+          long[] a6 = new long[size];
+          float[] a7 = new float[size];
+          double[] a8 = new double[size];
+          String[] a9 = new String[size];
+          Arrays.fill(a1, true);
+          print("a1 = " + Arrays.toString(a1));
+          Arrays.fill(a2, (byte)11);
+          print("a2 = " + Arrays.toString(a2));
+          Arrays.fill(a3, 'x');
+          print("a3 = " + Arrays.toString(a3));
+          Arrays.fill(a4, (short)17);
+          print("a4 = " + Arrays.toString(a4));
+          Arrays.fill(a5, 19);
+          print("a5 = " + Arrays.toString(a5));
+          Arrays.fill(a6, 23);
+          print("a6 = " + Arrays.toString(a6));
+          Arrays.fill(a7, 29);
+          print("a7 = " + Arrays.toString(a7));
+          Arrays.fill(a8, 47);
+          print("a8 = " + Arrays.toString(a8));
+          Arrays.fill(a9, "Hello");
+          print("a9 = " + Arrays.toString(a9));
+          // Manipulating ranges:
+          Arrays.fill(a9, 3, 5, "World");
+          print("a9 = " + Arrays.toString(a9));
+        }
+      }
+    language: java
+    options:
+      - text: "a9 = [Hello, Hello, Hello, Hello, Hello, Hello]\na9 = [Hello, Hello, Hello, World, World, Hello]"
+        correct: true
+      - text: "a9 = [Hello, Hello, Hello, Hello, Hello, Hello]\na9 = [Hello, Hello, Hello, World, World, World]"
+        feedback: "The range 3 to 5 excludes index 5."
+      - text: "a9 = [Hello, Hello, Hello, Hello, Hello, Hello]\na9 = [Hello, Hello, World, World, World, Hello]"
+        feedback: "The range starts at index 3."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

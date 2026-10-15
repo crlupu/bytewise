@@ -1,0 +1,390 @@
+title: "Iterable and foreach"
+summary: "Anything Iterable works in foreach; adapter methods offer other iteration orders; Collection versus Iterator as an interface."
+duration: 8
+tags: [java, collections, Iterable, foreach, adapter method, Iterator]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 11, Foreach and iterators; The Adapter Method idiom; Collection vs. Iterator" }
+steps:
+  - type: explanation
+    title: "Iterable"
+    body: |
+      Foreach works with arrays and with any `Iterable` — a type with an `iterator()` method.
+      An array is not itself an `Iterable`.
+      To iterate a different way, add a method that returns another `Iterable` (an adapter method).
+
+  - type: explanation
+    title: "Collection or Iterator?"
+    body: |
+      Taking an `Iterator` asks the least of your caller: any class can produce one.
+      Taking a `Collection` (or extending `AbstractCollection`) gives foreach and more, but requires more to implement.
+
+  - type: predict
+    id: tij-holding-foreachcollections
+    prompt: |
+      What does this print?
+    code: |
+      //: holding/ForEachCollections.java
+      // All collections work with foreach.
+      import java.util.*;
+
+      public class ForEachCollections {
+        public static void main(String[] args) {
+          Collection<String> cs = new LinkedList<String>();
+          Collections.addAll(cs,
+            "Take the long way home".split(" "));
+          for(String s : cs)
+            System.out.print("'" + s + "' ");
+        }
+      }
+    language: java
+    options:
+      - text: "'Take' 'the' 'long' 'way' 'home' "
+        correct: true
+      - text: "'Take the long way home' "
+        feedback: "`split(\" \")` breaks it into five words."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-iterableclass
+    prompt: |
+      What does this print?
+    code: |
+      //: holding/IterableClass.java
+      // Anything Iterable works with foreach.
+      import java.util.*;
+
+      public class IterableClass implements Iterable<String> {
+        protected String[] words = ("And that is how " +
+          "we know the Earth to be banana-shaped.").split(" ");
+        public Iterator<String> iterator() {
+          return new Iterator<String>() {
+            private int index = 0;
+            public boolean hasNext() {
+              return index < words.length;
+            }
+            public String next() { return words[index++]; }
+            public void remove() { // Not implemented
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        public static void main(String[] args) {
+          for(String s : new IterableClass())
+            System.out.print(s + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "And that is how we know the Earth to be banana-shaped. "
+        correct: true
+      - text: "It doesn't compile — foreach needs a `Collection`"
+        feedback: "Any `Iterable` works with foreach."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-multiiterableclass
+    prompt: |
+      `words` is `And that is how we know the Earth to be banana-shaped.` split on spaces. What is the first line printed?
+    code: |
+      //: holding/MultiIterableClass.java
+      // Adding several Adapter Methods.
+      import java.util.*;
+
+      public class MultiIterableClass extends IterableClass {
+        public Iterable<String> reversed() {
+          return new Iterable<String>() {
+            public Iterator<String> iterator() {
+              return new Iterator<String>() {
+                int current = words.length - 1;
+                public boolean hasNext() { return current > -1; }
+                public String next() { return words[current--]; }
+                public void remove() { // Not implemented
+                  throw new UnsupportedOperationException();
+                }
+              };
+            }
+          };
+        }
+        public Iterable<String> randomized() {
+          return new Iterable<String>() {
+            public Iterator<String> iterator() {
+              List<String> shuffled =
+                new ArrayList<String>(Arrays.asList(words));
+              Collections.shuffle(shuffled, new Random(47));
+              return shuffled.iterator();
+            }
+          };
+        }
+        public static void main(String[] args) {
+          MultiIterableClass mic = new MultiIterableClass();
+          for(String s : mic.reversed())
+            System.out.print(s + " ");
+          System.out.println();
+          for(String s : mic.randomized())
+            System.out.print(s + " ");
+          System.out.println();
+          for(String s : mic)
+            System.out.print(s + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "banana-shaped. be to Earth the know we how is that And "
+        correct: true
+      - text: "And that is how we know the Earth to be banana-shaped. "
+        feedback: "`reversed()` returns an `Iterable` that walks backward."
+      - text: ".depahs-ananab eb ot htraE eht wonk ew woh si taht dnA "
+        feedback: "It reverses the word order, not the characters."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-adaptermethodidiom
+    prompt: |
+      This compiled on Java 5–20. What happens on Java 21?
+    code: |
+      //: holding/AdapterMethodIdiom.java
+      // The "Adapter Method" idiom allows you to use foreach
+      // with additional kinds of Iterables.
+      import java.util.*;
+
+      class ReversibleArrayList<T> extends ArrayList<T> {
+        public ReversibleArrayList(Collection<T> c) { super(c); }
+        public Iterable<T> reversed() {
+          return new Iterable<T>() {
+            public Iterator<T> iterator() {
+              return new Iterator<T>() {
+                int current = size() - 1;
+                public boolean hasNext() { return current > -1; }
+                public T next() { return get(current--); }
+                public void remove() { // Not implemented
+                  throw new UnsupportedOperationException();
+                }
+              };
+            }
+          };
+        }
+      }
+
+      public class AdapterMethodIdiom {
+        public static void main(String[] args) {
+          ReversibleArrayList<String> ral =
+            new ReversibleArrayList<String>(
+              Arrays.asList("To be or not to be".split(" ")));
+          // Grabs the ordinary iterator via iterator():
+          for(String s : ral)
+            System.out.print(s + " ");
+          System.out.println();
+          // Hand it the Iterable of your choice
+          for(String s : ral.reversed())
+            System.out.print(s + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "Compile error: Java 21 added `List.reversed()` returning `List<T>`, and this `reversed()` returns an incompatible `Iterable<T>`"
+        correct: true
+      - text: "It compiles and prints the words, then reversed"
+        feedback: "That was the output up to Java 20."
+      - text: "It compiles, but `reversed()` now calls the JDK's version"
+        feedback: "Same signature with a different return type is a compile-time clash."
+    explanation: |
+      Java 21's sequenced collections (JEP 431) added `reversed()` to `List`. Renaming the adapter method, say to `backwards()`, fixes it.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-arrayisnotiterable
+    prompt: |
+      What does this print?
+    code: |
+      //: holding/ArrayIsNotIterable.java
+      import java.util.*;
+
+      public class ArrayIsNotIterable {
+        static <T> void test(Iterable<T> ib) {
+          for(T t : ib)
+            System.out.print(t + " ");
+        }
+        public static void main(String[] args) {
+          test(Arrays.asList(1, 2, 3));
+          String[] strings = { "A", "B", "C" };
+          // An array works in foreach, but it's not Iterable:
+          //! test(strings);
+          // You must explicitly convert it to an Iterable:
+          test(Arrays.asList(strings));
+        }
+      }
+    language: java
+    options:
+      - text: "1 2 3 A B C "
+        correct: true
+      - text: "It doesn't compile — `test(strings)`"
+        feedback: "That line is commented out with `//!`; the array is wrapped with `Arrays.asList`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-holding-interfacevsiterator
+    prompt: |
+      `petList` is `[Rat, Manx, Cymric, Mutt, Pug, Cymric, Pug, Manx]` and the names are `Ralph, Eric, Robin, Lacey, Britney, Sam, Spot, Fluffy`. What does `println(petMap.keySet())` print?
+    code: |
+      //: holding/InterfaceVsIterator.java
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      public class InterfaceVsIterator {
+        public static void display(Iterator<Pet> it) {
+          while(it.hasNext()) {
+            Pet p = it.next();
+            System.out.print(p.id() + ":" + p + " ");
+          }
+          System.out.println();
+        }
+        public static void display(Collection<Pet> pets) {
+          for(Pet p : pets)
+            System.out.print(p.id() + ":" + p + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          List<Pet> petList = Pets.arrayList(8);
+          Set<Pet> petSet = new HashSet<Pet>(petList);
+          Map<String,Pet> petMap =
+            new LinkedHashMap<String,Pet>();
+          String[] names = ("Ralph, Eric, Robin, Lacey, " +
+            "Britney, Sam, Spot, Fluffy").split(", ");
+          for(int i = 0; i < names.length; i++)
+            petMap.put(names[i], petList.get(i));
+          display(petList);
+          display(petSet);
+          display(petList.iterator());
+          display(petSet.iterator());
+          System.out.println(petMap);
+          System.out.println(petMap.keySet());
+          display(petMap.values());
+          display(petMap.values().iterator());
+        }
+      }
+    language: java
+    options:
+      - text: "[Ralph, Eric, Robin, Lacey, Britney, Sam, Spot, Fluffy]"
+        correct: true
+      - text: "[Britney, Eric, Fluffy, Lacey, Ralph, Robin, Sam, Spot]"
+        feedback: "A `LinkedHashMap` keeps insertion order."
+      - text: "[Rat, Manx, Cymric, Mutt, Pug, Cymric, Pug, Manx]"
+        feedback: "Those are the values."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-collectionsequence
+    prompt: |
+      Why extend `AbstractCollection<Pet>`?
+    code: |
+      //: holding/CollectionSequence.java
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      public class CollectionSequence
+      extends AbstractCollection<Pet> {
+        private Pet[] pets = Pets.createArray(8);
+        public int size() { return pets.length; }
+        public Iterator<Pet> iterator() {
+          return new Iterator<Pet>() {
+            private int index = 0;
+            public boolean hasNext() {
+              return index < pets.length;
+            }
+            public Pet next() { return pets[index++]; }
+            public void remove() { // Not implemented
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        public static void main(String[] args) {
+          CollectionSequence c = new CollectionSequence();
+          InterfaceVsIterator.display(c);
+          InterfaceVsIterator.display(c.iterator());
+        }
+      }
+    language: java
+    options:
+      - text: "You only implement `size()` and `iterator()`, and get a full `Collection` — usable by `display(Collection)`"
+        correct: true
+      - text: "To store the pets in a list"
+        feedback: "The pets stay in an array."
+      - text: "It's required for foreach"
+        feedback: "Implementing `Iterable` is enough for foreach."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-noncollectionsequence
+    prompt: |
+      `PetSequence` already has a superclass role. How does `NonCollectionSequence` still work with `display(Iterator<Pet>)`?
+    code: |
+      //: holding/NonCollectionSequence.java
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      class PetSequence {
+        protected Pet[] pets = Pets.createArray(8);
+      }
+
+      public class NonCollectionSequence extends PetSequence {
+        public Iterator<Pet> iterator() {
+          return new Iterator<Pet>() {
+            private int index = 0;
+            public boolean hasNext() {
+              return index < pets.length;
+            }
+            public Pet next() { return pets[index++]; }
+            public void remove() { // Not implemented
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        public static void main(String[] args) {
+          NonCollectionSequence nc = new NonCollectionSequence();
+          InterfaceVsIterator.display(nc.iterator());
+        }
+      }
+    language: java
+    options:
+      - text: "It just provides an `iterator()` method — far less work than implementing `Collection`"
+        correct: true
+      - text: "It must implement `Collection`"
+        feedback: "`display` here takes an `Iterator`, not a `Collection`."
+      - text: "It can't — this doesn't compile"
+        feedback: "It prints `0:Rat 1:Manx 2:Cymric …`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-holding-environmentvariables
+    prompt: |
+      What does it print?
+    code: |
+      //: holding/EnvironmentVariables.java
+      import java.util.*;
+
+      public class EnvironmentVariables {
+        public static void main(String[] args) {
+          for(Map.Entry entry: System.getenv().entrySet()) {
+            System.out.println(entry.getKey() + ": " +
+              entry.getValue());
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Every environment variable as `NAME: value`, in no particular order"
+        correct: true
+      - text: "Only `PATH`"
+        feedback: "It loops over all of `System.getenv()`."
+      - text: "It doesn't compile — a `Map` isn't `Iterable`"
+        feedback: "It iterates `entrySet()`, which is a `Set`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

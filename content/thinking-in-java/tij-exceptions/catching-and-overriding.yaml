@@ -108,3 +108,97 @@ steps:
         feedback: "`finally` runs after the handler, too."
       - text: "`try finally`"
         feedback: The handler matches, so it runs before `finally`.
+
+  - type: choice
+    id: tij-exceptions-stormyinning
+    prompt: |
+      In the second `try`, `i` is declared as `Inning`, though the object is a `StormyInning` whose `atBat()` throws only `PopFoul`. Why must it catch `Strike`?
+    code: |
+      //: exceptions/StormyInning.java
+      // Overridden methods may throw only the exceptions
+      // specified in their base-class versions, or exceptions
+      // derived from the base-class exceptions.
+
+      class BaseballException extends Exception {}
+      class Foul extends BaseballException {}
+      class Strike extends BaseballException {}
+
+      abstract class Inning {
+        public Inning() throws BaseballException {}
+        public void event() throws BaseballException {
+          // Doesn't actually have to throw anything
+        }
+        public abstract void atBat() throws Strike, Foul;
+        public void walk() {} // Throws no checked exceptions
+      }
+
+      class StormException extends Exception {}
+      class RainedOut extends StormException {}
+      class PopFoul extends Foul {}
+
+      interface Storm {
+        public void event() throws RainedOut;
+        public void rainHard() throws RainedOut;
+      }
+
+      public class StormyInning extends Inning implements Storm {
+        // OK to add new exceptions for constructors, but you
+        // must deal with the base constructor exceptions:
+        public StormyInning()
+          throws RainedOut, BaseballException {}
+        public StormyInning(String s)
+          throws Foul, BaseballException {}
+        // Regular methods must conform to base class:
+      //! void walk() throws PopFoul {} //Compile error
+        // Interface CANNOT add exceptions to existing
+        // methods from the base class:
+      //! public void event() throws RainedOut {}
+        // If the method doesn't already exist in the
+        // base class, the exception is OK:
+        public void rainHard() throws RainedOut {}
+        // You can choose to not throw any exceptions,
+        // even if the base version does:
+        public void event() {}
+        // Overridden methods can throw inherited exceptions:
+        public void atBat() throws PopFoul {}
+        public static void main(String[] args) {
+          try {
+            StormyInning si = new StormyInning();
+            si.atBat();
+          } catch(PopFoul e) {
+            System.out.println("Pop foul");
+          } catch(RainedOut e) {
+            System.out.println("Rained out");
+          } catch(BaseballException e) {
+            System.out.println("Generic baseball exception");
+          }
+          // Strike not thrown in derived version.
+          try {
+            // What happens if you upcast?
+            Inning i = new StormyInning();
+            i.atBat();
+            // You must catch the exceptions from the
+            // base-class version of the method:
+          } catch(Strike e) {
+            System.out.println("Strike");
+          } catch(Foul e) {
+            System.out.println("Foul");
+          } catch(RainedOut e) {
+            System.out.println("Rained out");
+          } catch(BaseballException e) {
+            System.out.println("Generic baseball exception");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "The compiler checks against `Inning.atBat()`, which declares `Strike` and `Foul`"
+        correct: true
+      - text: "Because `StormyInning.atBat()` might throw `Strike` after all"
+        feedback: "It can't; but the compiler only knows the static type `Inning`."
+      - text: "It doesn't have to"
+        feedback: "A checked exception declared by the called method must be caught or declared."
+    explanation: |
+      An override may throw fewer or narrower exceptions, never new ones — so code written for the base class still works.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

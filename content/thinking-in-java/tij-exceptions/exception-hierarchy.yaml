@@ -95,3 +95,73 @@ steps:
       The JVM tries each handler from top to bottom and runs the first one whose class is the exception's class or a superclass of it.
       `FileNotFoundException` extends `IOException`, so the first handler matches and the second never runs.
       That's also why handlers must go from specific to general: a broad handler first would make the narrower ones below unreachable, and the compiler reports that as an error.
+
+  - type: predict
+    id: tij-exceptions-human
+    prompt: |
+      What does this print?
+    code: |
+      //: exceptions/Human.java
+      // Catching exception hierarchies.
+
+      class Annoyance extends Exception {}
+      class Sneeze extends Annoyance {}
+
+      public class Human {
+        public static void main(String[] args) {
+          // Catch the exact type:
+          try {
+            throw new Sneeze();
+          } catch(Sneeze s) {
+            System.out.println("Caught Sneeze");
+          } catch(Annoyance a) {
+            System.out.println("Caught Annoyance");
+          }
+          // Catch the base type:
+          try {
+            throw new Sneeze();
+          } catch(Annoyance a) {
+            System.out.println("Caught Annoyance");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Caught Sneeze\nCaught Annoyance"
+        correct: true
+      - text: "Caught Sneeze\nCaught Sneeze"
+        feedback: "The second `try` only has a `catch(Annoyance)`, which catches the `Sneeze` as its base type."
+      - text: "Caught Annoyance\nCaught Annoyance"
+        feedback: "In the first `try`, the more specific `catch(Sneeze)` comes first and matches."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-exceptions-nevercaught
+    prompt: |
+      Why does this compile without a `throws` clause or `try`, and what happens when it runs?
+    code: |
+      //: exceptions/NeverCaught.java
+      // Ignoring RuntimeExceptions.
+
+      public class NeverCaught {
+        static void f() {
+          throw new RuntimeException("From f()");
+        }
+        static void g() {
+          f();
+        }
+        public static void main(String[] args) {
+          g();
+        }
+      }
+    language: java
+    options:
+      - text: "`RuntimeException` is unchecked; it propagates out of `main`, and the JVM prints the stack trace and exits"
+        correct: true
+      - text: "It doesn't compile without `throws RuntimeException`"
+        feedback: "Unchecked exceptions need no declaration."
+      - text: "The exception is silently ignored"
+        feedback: "It reaches the top and is printed: `Exception in thread \"main\" java.lang.RuntimeException: From f()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

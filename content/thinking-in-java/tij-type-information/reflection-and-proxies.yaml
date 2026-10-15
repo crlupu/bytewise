@@ -1,0 +1,531 @@
+title: "Reflection and dynamic proxies"
+summary: "Listing methods by reflection, simple and dynamic proxies, and how reflection gets past interfaces and access control."
+duration: 8
+tags: [java, reflection, Method, dynamic proxy, InvocationHandler, setAccessible]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 14, Reflection; Dynamic proxies; Interfaces and type information" }
+steps:
+  - type: explanation
+    title: "Reflection"
+    body: |
+      `getMethods()`, `getConstructors()` and `getDeclaredMethod(name)` describe a class at run time.
+      With `setAccessible(true)`, reflection can call even private methods and change private fields (but not `final` fields set to compile-time constants, which are inlined).
+
+  - type: explanation
+    title: "Proxies"
+    body: |
+      A proxy implements the same interface as a real object and forwards to it, adding work before or after.
+      `Proxy.newProxyInstance` builds one at run time: every call goes to your `InvocationHandler.invoke(proxy, method, args)`.
+
+  - type: choice
+    id: tij-typeinfo-showmethods
+    prompt: |
+      Run as `java ShowMethods ShowMethods`. What does the regex `\\w+\\.` remove from each method's description? (`print` is `println`.)
+    code: |
+      //: typeinfo/ShowMethods.java
+      // Using reflection to show all the methods of a class,
+      // even if the methods are defined in the base class.
+      import java.lang.reflect.*;
+      import java.util.regex.*;
+      import static net.mindview.util.Print.*;
+
+      public class ShowMethods {
+        private static String usage =
+          "usage:\n" +
+          "ShowMethods qualified.class.name\n" +
+          "To show all methods in class or:\n" +
+          "ShowMethods qualified.class.name word\n" +
+          "To search for methods involving 'word'";
+        private static Pattern p = Pattern.compile("\\w+\\.");
+        public static void main(String[] args) {
+          if(args.length < 1) {
+            print(usage);
+            System.exit(0);
+          }
+          int lines = 0;
+          try {
+            Class<?> c = Class.forName(args[0]);
+            Method[] methods = c.getMethods();
+            Constructor[] ctors = c.getConstructors();
+            if(args.length == 1) {
+              for(Method method : methods)
+                print(
+                  p.matcher(method.toString()).replaceAll(""));
+              for(Constructor ctor : ctors)
+                print(p.matcher(ctor.toString()).replaceAll(""));
+              lines = methods.length + ctors.length;
+            } else {
+              for(Method method : methods)
+                if(method.toString().indexOf(args[1]) != -1) {
+                  print(
+                    p.matcher(method.toString()).replaceAll(""));
+                  lines++;
+                }
+              for(Constructor ctor : ctors)
+                if(ctor.toString().indexOf(args[1]) != -1) {
+                  print(p.matcher(
+                    ctor.toString()).replaceAll(""));
+                  lines++;
+                }
+            }
+          } catch(ClassNotFoundException e) {
+            print("No such class: " + e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Package and class qualifiers, so `java.lang.String` shows as `String`"
+        correct: true
+      - text: "The method names"
+        feedback: "Only words followed by a dot are removed."
+      - text: "Nothing — it's only for searching"
+        feedback: "`replaceAll(\"\")` strips the qualifiers before printing."
+    explanation: |
+      It lists `main` and the methods inherited from `Object`, like `wait`, `equals` and `hashCode`, plus the constructor.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-simpleproxydemo
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: typeinfo/SimpleProxyDemo.java
+      import static net.mindview.util.Print.*;
+
+      interface Interface {
+        void doSomething();
+        void somethingElse(String arg);
+      }
+
+      class RealObject implements Interface {
+        public void doSomething() { print("doSomething"); }
+        public void somethingElse(String arg) {
+          print("somethingElse " + arg);
+        }
+      }
+
+      class SimpleProxy implements Interface {
+        private Interface proxied;
+        public SimpleProxy(Interface proxied) {
+          this.proxied = proxied;
+        }
+        public void doSomething() {
+          print("SimpleProxy doSomething");
+          proxied.doSomething();
+        }
+        public void somethingElse(String arg) {
+          print("SimpleProxy somethingElse " + arg);
+          proxied.somethingElse(arg);
+        }
+      }
+
+      class SimpleProxyDemo {
+        public static void consumer(Interface iface) {
+          iface.doSomething();
+          iface.somethingElse("bonobo");
+        }
+        public static void main(String[] args) {
+          consumer(new RealObject());
+          consumer(new SimpleProxy(new RealObject()));
+        }
+      }
+    language: java
+    options:
+      - text: "doSomething\nsomethingElse bonobo\nSimpleProxy doSomething\ndoSomething\nSimpleProxy somethingElse bonobo\nsomethingElse bonobo"
+        correct: true
+      - text: "doSomething\nsomethingElse bonobo\ndoSomething\nsomethingElse bonobo"
+        feedback: "The proxy prints its own line before forwarding each call."
+      - text: "doSomething\nsomethingElse bonobo\nSimpleProxy doSomething\nSimpleProxy somethingElse bonobo"
+        feedback: "The proxy forwards each call to the real object, which prints too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-simpledynamicproxy
+    prompt: |
+      `Interface` declares `doSomething()` and `somethingElse(String)`; `RealObject` implements them by printing. When `consumer(proxy)` calls `iface.doSomething()`, what happens?
+    code: |
+      //: typeinfo/SimpleDynamicProxy.java
+      import java.lang.reflect.*;
+
+      class DynamicProxyHandler implements InvocationHandler {
+        private Object proxied;
+        public DynamicProxyHandler(Object proxied) {
+          this.proxied = proxied;
+        }
+        public Object
+        invoke(Object proxy, Method method, Object[] args)
+        throws Throwable {
+          System.out.println("**** proxy: " + proxy.getClass() +
+            ", method: " + method + ", args: " + args);
+          if(args != null)
+            for(Object arg : args)
+              System.out.println("  " + arg);
+          return method.invoke(proxied, args);
+        }
+      }
+
+      class SimpleDynamicProxy {
+        public static void consumer(Interface iface) {
+          iface.doSomething();
+          iface.somethingElse("bonobo");
+        }
+        public static void main(String[] args) {
+          RealObject real = new RealObject();
+          consumer(real);
+          // Insert a proxy and call again:
+          Interface proxy = (Interface)Proxy.newProxyInstance(
+            Interface.class.getClassLoader(),
+            new Class[]{ Interface.class },
+            new DynamicProxyHandler(real));
+          consumer(proxy);
+        }
+      }
+    language: java
+    options:
+      - text: "The handler's `invoke` prints the proxy class and method (args `null`), then calls the real `doSomething`"
+        correct: true
+      - text: "The real `doSomething` runs directly"
+        feedback: "Every call on a dynamic proxy goes through the `InvocationHandler`."
+      - text: "`args` is an empty array"
+        feedback: "For a no-argument method, `args` is `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-selectingmethods
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: typeinfo/SelectingMethods.java
+      // Looking for particular methods in a dynamic proxy.
+      import java.lang.reflect.*;
+      import static net.mindview.util.Print.*;
+
+      class MethodSelector implements InvocationHandler {
+        private Object proxied;
+        public MethodSelector(Object proxied) {
+          this.proxied = proxied;
+        }
+        public Object
+        invoke(Object proxy, Method method, Object[] args)
+        throws Throwable {
+          if(method.getName().equals("interesting"))
+            print("Proxy detected the interesting method");
+          return method.invoke(proxied, args);
+        }
+      }
+
+      interface SomeMethods {
+        void boring1();
+        void boring2();
+        void interesting(String arg);
+        void boring3();
+      }
+
+      class Implementation implements SomeMethods {
+        public void boring1() { print("boring1"); }
+        public void boring2() { print("boring2"); }
+        public void interesting(String arg) {
+          print("interesting " + arg);
+        }
+        public void boring3() { print("boring3"); }
+      }
+
+      class SelectingMethods {
+        public static void main(String[] args) {
+          SomeMethods proxy= (SomeMethods)Proxy.newProxyInstance(
+            SomeMethods.class.getClassLoader(),
+            new Class[]{ SomeMethods.class },
+            new MethodSelector(new Implementation()));
+          proxy.boring1();
+          proxy.boring2();
+          proxy.interesting("bonobo");
+          proxy.boring3();
+        }
+      }
+    language: java
+    options:
+      - text: "boring1\nboring2\nProxy detected the interesting method\ninteresting bonobo\nboring3"
+        correct: true
+      - text: "boring1\nboring2\ninteresting bonobo\nboring3"
+        feedback: "The handler prints a line before forwarding `interesting`."
+      - text: "Proxy detected the interesting method\nboring1\nboring2\ninteresting bonobo\nboring3"
+        feedback: "The handler reacts when that call is made, in order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-interfaceviolation
+    prompt: |
+      `A` declares only `f()`. What does this show?
+    code: |
+      //: typeinfo/InterfaceViolation.java
+      // Sneaking around an interface.
+      import typeinfo.interfacea.*;
+
+      class B implements A {
+        public void f() {}
+        public void g() {}
+      }
+
+      public class InterfaceViolation {
+        public static void main(String[] args) {
+          A a = new B();
+          a.f();
+          // a.g(); // Compile error
+          System.out.println(a.getClass().getName());
+          if(a instanceof B) {
+            B b = (B)a;
+            b.g();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Client code can test the real type and downcast to call methods outside the interface"
+        correct: true
+      - text: "`a.g()` compiles"
+        feedback: "That's the commented-out compile error."
+      - text: "Interfaces hide implementations completely"
+        feedback: "`instanceof` and a cast get past them; it prints `B`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-packageaccess-hiddenc
+    prompt: |
+      `C` has package access. What can code outside `typeinfo.packageaccess` do with `HiddenC.makeA()`'s result? (`print` is `println`.)
+    code: |
+      //: typeinfo/packageaccess/HiddenC.java
+      package typeinfo.packageaccess;
+      import typeinfo.interfacea.*;
+      import static net.mindview.util.Print.*;
+
+      class C implements A {
+        public void f() { print("public C.f()"); }
+        public void g() { print("public C.g()"); }
+        void u() { print("package C.u()"); }
+        protected void v() { print("protected C.v()"); }
+        private void w() { print("private C.w()"); }
+      }
+
+      public class HiddenC {
+        public static A makeA() { return new C(); }
+      }
+    language: java
+    options:
+      - text: "Call `f()` through `A` — it can't name `C` to cast to it"
+        correct: true
+      - text: "Cast it to `C` and call `g()`"
+        feedback: "`C` isn't accessible outside its package."
+      - text: "Nothing"
+        feedback: "It can use it as an `A`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-interfacea-a
+    prompt: |
+      `A` has a single method `f()`. Given an `A a`, which call compiles?
+    code: |
+      //: typeinfo/interfacea/A.java
+      package typeinfo.interfacea;
+
+      public interface A {
+        void f();
+      }
+    language: java
+    options:
+      - text: "`a.f()`"
+        correct: true
+      - text: "`a.g()`, if the object has a `g()`"
+        feedback: "The compiler only knows the declared type `A`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-hiddenimplementation
+    prompt: |
+      `makeA()` returns a package-access class `C` whose `f`, `g`, `u`, `v` and `w` print `public C.f()`, `public C.g()`, `package C.u()`, `protected C.v()` and `private C.w()`. What does this print?
+    code: |
+      //: typeinfo/HiddenImplementation.java
+      // Sneaking around package access.
+      import typeinfo.interfacea.*;
+      import typeinfo.packageaccess.*;
+      import java.lang.reflect.*;
+
+      public class HiddenImplementation {
+        public static void main(String[] args) throws Exception {
+          A a = HiddenC.makeA();
+          a.f();
+          System.out.println(a.getClass().getName());
+          // Compile error: cannot find symbol 'C':
+          /* if(a instanceof C) {
+            C c = (C)a;
+            c.g();
+          } */
+          // Oops! Reflection still allows us to call g():
+          callHiddenMethod(a, "g");
+          // And even methods that are less accessible!
+          callHiddenMethod(a, "u");
+          callHiddenMethod(a, "v");
+          callHiddenMethod(a, "w");
+        }
+        static void callHiddenMethod(Object a, String methodName)
+        throws Exception {
+          Method g = a.getClass().getDeclaredMethod(methodName);
+          g.setAccessible(true);
+          g.invoke(a);
+        }
+      }
+    language: java
+    options:
+      - text: "public C.f()\ntypeinfo.packageaccess.C\npublic C.g()\npackage C.u()\nprotected C.v()\nprivate C.w()"
+        correct: true
+      - text: "public C.f()\ntypeinfo.packageaccess.C\npublic C.g()"
+        feedback: "`setAccessible(true)` lets reflection call package, protected and private methods too."
+      - text: "public C.f()\ntypeinfo.packageaccess.C\nIllegalAccessException"
+        feedback: "On Java 21, `setAccessible` still works for classes on the classpath (the unnamed module)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-typeinfo-innerimplementation
+    prompt: |
+      Does making `C` a private inner class hide its methods from reflection? (`print` is `println`.)
+    code: |
+      //: typeinfo/InnerImplementation.java
+      // Private inner classes can't hide from reflection.
+      import typeinfo.interfacea.*;
+      import static net.mindview.util.Print.*;
+
+      class InnerA {
+        private static class C implements A {
+          public void f() { print("public C.f()"); }
+          public void g() { print("public C.g()"); }
+          void u() { print("package C.u()"); }
+          protected void v() { print("protected C.v()"); }
+          private void w() { print("private C.w()"); }
+        }
+        public static A makeA() { return new C(); }
+      }
+
+      public class InnerImplementation {
+        public static void main(String[] args) throws Exception {
+          A a = InnerA.makeA();
+          a.f();
+          System.out.println(a.getClass().getName());
+          // Reflection still gets into the private class:
+          HiddenImplementation.callHiddenMethod(a, "g");
+          HiddenImplementation.callHiddenMethod(a, "u");
+          HiddenImplementation.callHiddenMethod(a, "v");
+          HiddenImplementation.callHiddenMethod(a, "w");
+        }
+      }
+    language: java
+    options:
+      - text: "No — `callHiddenMethod` still calls `g`, `u`, `v` and even the private `w`"
+        correct: true
+      - text: "Yes — private classes can't be reflected on"
+        feedback: "`getClass()` returns `InnerA$C`, and its methods are callable with `setAccessible`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-anonymousimplementation
+    prompt: |
+      What is the second line printed? (`print` is `println`.)
+    code: |
+      //: typeinfo/AnonymousImplementation.java
+      // Anonymous inner classes can't hide from reflection.
+      import typeinfo.interfacea.*;
+      import static net.mindview.util.Print.*;
+
+      class AnonymousA {
+        public static A makeA() {
+          return new A() {
+            public void f() { print("public C.f()"); }
+            public void g() { print("public C.g()"); }
+            void u() { print("package C.u()"); }
+            protected void v() { print("protected C.v()"); }
+            private void w() { print("private C.w()"); }
+          };
+        }
+      }
+
+      public class AnonymousImplementation {
+        public static void main(String[] args) throws Exception {
+          A a = AnonymousA.makeA();
+          a.f();
+          System.out.println(a.getClass().getName());
+          // Reflection still gets into the anonymous class:
+          HiddenImplementation.callHiddenMethod(a, "g");
+          HiddenImplementation.callHiddenMethod(a, "u");
+          HiddenImplementation.callHiddenMethod(a, "v");
+          HiddenImplementation.callHiddenMethod(a, "w");
+        }
+      }
+    language: java
+    options:
+      - text: "AnonymousA$1"
+        correct: true
+      - text: "A"
+        feedback: "`getClass()` is the anonymous class itself, named after its outer class."
+      - text: "AnonymousA"
+        feedback: "The anonymous class gets its own name: `AnonymousA$1`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-typeinfo-modifyingprivatefields
+    prompt: |
+      What is the line printed after `f.set(pf, "No, you're not!")` on the `final` field `s`?
+    code: |
+      //: typeinfo/ModifyingPrivateFields.java
+      import java.lang.reflect.*;
+
+      class WithPrivateFinalField {
+        private int i = 1;
+        private final String s = "I'm totally safe";
+        private String s2 = "Am I safe?";
+        public String toString() {
+          return "i = " + i + ", " + s + ", " + s2;
+        }
+      }
+
+      public class ModifyingPrivateFields {
+        public static void main(String[] args) throws Exception {
+          WithPrivateFinalField pf = new WithPrivateFinalField();
+          System.out.println(pf);
+          Field f = pf.getClass().getDeclaredField("i");
+          f.setAccessible(true);
+          System.out.println("f.getInt(pf): " + f.getInt(pf));
+          f.setInt(pf, 47);
+          System.out.println(pf);
+          f = pf.getClass().getDeclaredField("s");
+          f.setAccessible(true);
+          System.out.println("f.get(pf): " + f.get(pf));
+          f.set(pf, "No, you're not!");
+          System.out.println(pf);
+          f = pf.getClass().getDeclaredField("s2");
+          f.setAccessible(true);
+          System.out.println("f.get(pf): " + f.get(pf));
+          f.set(pf, "No, you're not!");
+          System.out.println(pf);
+        }
+      }
+    language: java
+    options:
+      - text: "i = 47, I'm totally safe, Am I safe?"
+        correct: true
+      - text: "i = 47, No, you're not!, Am I safe?"
+        feedback: "`s` is a final field set to a compile-time constant, so `toString` was compiled with the literal inlined — the field's new value is never read."
+      - text: "An `IllegalAccessException`"
+        feedback: "After `setAccessible(true)`, setting a final instance field is allowed; it just has no visible effect here."
+    explanation: |
+      The non-final `s2` does change: the last line is `i = 47, I'm totally safe, No, you're not!`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
