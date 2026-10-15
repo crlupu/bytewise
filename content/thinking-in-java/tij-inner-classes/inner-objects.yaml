@@ -75,3 +75,335 @@ steps:
       While the cache keeps the inner objects reachable, that hidden reference keeps each outer object reachable too, along with everything it holds.
       The garbage collector only frees unreachable objects, so the memory stays in use for as long as the cache does.
       If a nested class doesn't need the outer object, make it `static`, so it carries no hidden reference.
+
+  - type: predict
+    id: tij-innerclasses-parcel1
+    prompt: |
+      What does this print?
+    code: |
+      //: innerclasses/Parcel1.java
+      // Creating inner classes.
+
+      public class Parcel1 {
+        class Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        class Destination {
+          private String label;
+          Destination(String whereTo) {
+            label = whereTo;
+          }
+          String readLabel() { return label; }
+        }
+        // Using inner classes looks just like
+        // using any other class, within Parcel1:
+        public void ship(String dest) {
+          Contents c = new Contents();
+          Destination d = new Destination(dest);
+          System.out.println(d.readLabel());
+        }
+        public static void main(String[] args) {
+          Parcel1 p = new Parcel1();
+          p.ship("Tasmania");
+        }
+      }
+    language: java
+    options:
+      - text: "Tasmania"
+        correct: true
+      - text: "11"
+        feedback: "`ship` prints `d.readLabel()`, the destination's label."
+      - text: "It doesn't compile — inner classes can't be created with plain `new`"
+        feedback: "Inside an instance method of the outer class, `this` supplies the outer object."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-parcel2
+    prompt: |
+      What does this print?
+    code: |
+      //: innerclasses/Parcel2.java
+      // Returning a reference to an inner class.
+
+      public class Parcel2 {
+        class Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        class Destination {
+          private String label;
+          Destination(String whereTo) {
+            label = whereTo;
+          }
+          String readLabel() { return label; }
+        }
+        public Destination to(String s) {
+          return new Destination(s);
+        }
+        public Contents contents() {
+          return new Contents();
+        }
+        public void ship(String dest) {
+          Contents c = contents();
+          Destination d = to(dest);
+          System.out.println(d.readLabel());
+        }
+        public static void main(String[] args) {
+          Parcel2 p = new Parcel2();
+          p.ship("Tasmania");
+          Parcel2 q = new Parcel2();
+          // Defining references to inner classes:
+          Parcel2.Contents c = q.contents();
+          Parcel2.Destination d = q.to("Borneo");
+        }
+      }
+    language: java
+    options:
+      - text: "Tasmania"
+        correct: true
+      - text: "Tasmania\nBorneo"
+        feedback: "The `Borneo` destination is created but never printed."
+    explanation: |
+      Outside the outer class, the inner type is written `Parcel2.Destination`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel3
+    prompt: |
+      Why does `main` write `p.new Contents()` rather than `new Contents()`?
+    code: |
+      //: innerclasses/Parcel3.java
+      // Using .new to create instances of inner classes.
+
+      public class Parcel3 {
+        class Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        class Destination {
+          private String label;
+          Destination(String whereTo) { label = whereTo; }
+          String readLabel() { return label; }
+        }
+        public static void main(String[] args) {
+          Parcel3 p = new Parcel3();
+          // Must use instance of outer class
+          // to create an instance of the inner class:
+          Parcel3.Contents c = p.new Contents();
+          Parcel3.Destination d = p.new Destination("Tasmania");
+        }
+      }
+    language: java
+    options:
+      - text: "An inner object needs an outer object, and the static `main` has no `this`"
+        correct: true
+      - text: "It's optional syntax"
+        feedback: "Without `p.`, `new Contents()` doesn't compile in a static context."
+      - text: "Because `Contents` is private"
+        feedback: "It has package access."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-dotnew
+    prompt: |
+      What does `dn.new Inner()` create?
+    code: |
+      //: innerclasses/DotNew.java
+      // Creating an inner class directly using the .new syntax.
+
+      public class DotNew {
+        public class Inner {}
+        public static void main(String[] args) {
+          DotNew dn = new DotNew();
+          DotNew.Inner dni = dn.new Inner();
+        }
+      }
+    language: java
+    options:
+      - text: "An `Inner` object tied to the outer object `dn`"
+        correct: true
+      - text: "A new `DotNew` and an `Inner`"
+        feedback: "It uses the existing `dn`."
+      - text: "A static nested object"
+        feedback: "`Inner` isn't static."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-dotthis
+    prompt: |
+      What does this print?
+    code: |
+      //: innerclasses/DotThis.java
+      // Qualifying access to the outer-class object.
+
+      public class DotThis {
+        void f() { System.out.println("DotThis.f()"); }
+        public class Inner {
+          public DotThis outer() {
+            return DotThis.this;
+            // A plain "this" would be Inner's "this"
+          }
+        }
+        public Inner inner() { return new Inner(); }
+        public static void main(String[] args) {
+          DotThis dt = new DotThis();
+          DotThis.Inner dti = dt.inner();
+          dti.outer().f();
+        }
+      }
+    language: java
+    options:
+      - text: "DotThis.f()"
+        correct: true
+      - text: "It doesn't compile — `Inner` has no `f()`"
+        feedback: "`outer()` returns the outer `DotThis`, which has `f()`."
+    explanation: |
+      `DotThis.this` is the outer object; plain `this` inside `Inner` would be the `Inner`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-sequence
+    prompt: |
+      What does this print?
+    code: |
+      //: innerclasses/Sequence.java
+      // Holds a sequence of Objects.
+
+      interface Selector {
+        boolean end();
+        Object current();
+        void next();
+      }
+
+      public class Sequence {
+        private Object[] items;
+        private int next = 0;
+        public Sequence(int size) { items = new Object[size]; }
+        public void add(Object x) {
+          if(next < items.length)
+            items[next++] = x;
+        }
+        private class SequenceSelector implements Selector {
+          private int i = 0;
+          public boolean end() { return i == items.length; }
+          public Object current() { return items[i]; }
+          public void next() { if(i < items.length) i++; }
+        }
+        public Selector selector() {
+          return new SequenceSelector();
+        }
+        public static void main(String[] args) {
+          Sequence sequence = new Sequence(10);
+          for(int i = 0; i < 10; i++)
+            sequence.add(Integer.toString(i));
+          Selector selector = sequence.selector();
+          while(!selector.end()) {
+            System.out.print(selector.current() + " ");
+            selector.next();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "0 1 2 3 4 5 6 7 8 9 "
+        correct: true
+      - text: "It doesn't compile — `SequenceSelector` reads the private `items`"
+        feedback: "An inner class can access all members of its outer object, private ones included."
+      - text: "0 "
+        feedback: "The `while` loop advances through all ten items."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-multinestingaccess
+    prompt: |
+      Can `B.h()` call the private methods `g()` and `f()`?
+    code: |
+      //: innerclasses/MultiNestingAccess.java
+      // Nested classes can access all members of all
+      // levels of the classes they are nested within.
+
+      class MNA {
+        private void f() {}
+        class A {
+          private void g() {}
+          public class B {
+            void h() {
+              g();
+              f();
+            }
+          }
+        }
+      }
+
+      public class MultiNestingAccess {
+        public static void main(String[] args) {
+          MNA mna = new MNA();
+          MNA.A mnaa = mna.new A();
+          MNA.A.B mnaab = mnaa.new B();
+          mnaab.h();
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — a nested class reaches every enclosing level, private members included"
+        correct: true
+      - text: "Only `g()`, its direct outer class's"
+        feedback: "Access extends through all levels of nesting."
+      - text: "Neither — they're private"
+        feedback: "Private is per top-level class, and inner classes are inside it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-testparcel
+    prompt: |
+      `contents()` returns a `PContents` — a private inner class — as a `Contents` (an interface with `int value()`). What can `main` do with `c`?
+    code: |
+      //: innerclasses/TestParcel.java
+
+      class Parcel4 {
+        private class PContents implements Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        protected class PDestination implements Destination {
+          private String label;
+          private PDestination(String whereTo) {
+            label = whereTo;
+          }
+          public String readLabel() { return label; }
+        }
+        public Destination destination(String s) {
+          return new PDestination(s);
+        }
+        public Contents contents() {
+          return new PContents();
+        }
+      }
+
+      public class TestParcel {
+        public static void main(String[] args) {
+          Parcel4 p = new Parcel4();
+          Contents c = p.contents();
+          Destination d = p.destination("Tasmania");
+          // Illegal -- can't access private class:
+          //! Parcel4.PContents pc = p.new PContents();
+        }
+      }
+    language: java
+    options:
+      - text: "Call `value()` through the `Contents` interface; it can't even name `PContents`"
+        correct: true
+      - text: "Downcast it to `Parcel4.PContents`"
+        feedback: "The class is private, so its name isn't accessible outside `Parcel4`."
+      - text: "Nothing — private classes can't be returned"
+        feedback: "They can be returned upcast to a public interface, hiding the implementation."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

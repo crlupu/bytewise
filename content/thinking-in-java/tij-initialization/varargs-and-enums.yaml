@@ -1,0 +1,429 @@
+title: "Varargs and simple enums"
+summary: "Variable argument lists, how overloads with them are resolved, and a first look at enum."
+duration: 8
+tags: [java, varargs, overloading, enum, ordinal]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Variable argument lists; Enumerated types" }
+steps:
+  - type: explanation
+    title: "Varargs"
+    body: |
+      `f(int... args)` accepts any number of `int`s, packed into an array.
+      You can also pass an array directly, or nothing at all.
+      Overloads with varargs can become ambiguous — the compiler then refuses.
+
+  - type: explanation
+    title: "Enums"
+    body: |
+      `enum Spiciness { NOT, MILD, MEDIUM, HOT, FLAMING }` defines a fixed set of constants.
+      `values()` returns them in order, `ordinal()` gives the position from 0, and `toString()` the name.
+      Enums work in `switch`.
+
+  - type: predict
+    id: tij-initialization-autoboxingvarargs
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/AutoboxingVarargs.java
+
+      public class AutoboxingVarargs {
+        public static void f(Integer... args) {
+          for(Integer i : args)
+            System.out.print(i + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          f(new Integer(1), new Integer(2));
+          f(4, 5, 6, 7, 8, 9);
+          f(10, new Integer(11), 12);
+        }
+      }
+    language: java
+    options:
+      - text: "1 2 \n4 5 6 7 8 9 \n10 11 12 "
+        correct: true
+      - text: "It doesn't compile — `f(4, 5, …)` passes `int`s to `Integer...`"
+        feedback: "Autoboxing works for varargs too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-newvarargs
+    prompt: |
+      `A` is an empty class. What does the line for `(Object[])new Integer[]{ 1, 2, 3, 4 }` print?
+    code: |
+      //: initialization/NewVarArgs.java
+      // Using array syntax to create variable argument lists.
+
+      public class NewVarArgs {
+        static void printArray(Object... args) {
+          for(Object obj : args)
+            System.out.print(obj + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          // Can take individual elements:
+          printArray(new Integer(47), new Float(3.14),
+            new Double(11.11));
+          printArray(47, 3.14F, 11.11);
+          printArray("one", "two", "three");
+          printArray(new A(), new A(), new A());
+          // Or an array:
+          printArray((Object[])new Integer[]{ 1, 2, 3, 4 });
+          printArray(); // Empty list is OK
+        }
+      }
+    language: java
+    options:
+      - text: "1 2 3 4 "
+        correct: true
+      - text: "[Ljava.lang.Integer;@1b6d3586 "
+        feedback: "The cast to `Object[]` passes the array as the varargs array itself."
+    explanation: |
+      And `printArray()` with no arguments prints an empty line.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-varargs
+    prompt: |
+      `A` is an empty class. What does the third line look like?
+    code: |
+      //: initialization/VarArgs.java
+      // Using array syntax to create variable argument lists.
+
+      class A {}
+
+      public class VarArgs {
+        static void printArray(Object[] args) {
+          for(Object obj : args)
+            System.out.print(obj + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          printArray(new Object[]{
+            new Integer(47), new Float(3.14), new Double(11.11)
+          });
+          printArray(new Object[]{"one", "two", "three" });
+          printArray(new Object[]{new A(), new A(), new A()});
+        }
+      }
+    language: java
+    options:
+      - text: "Something like `A@14ae5a5 A@7f31245a A@6d6f6e28` — the class name and a hash code"
+        correct: true
+      - text: "`A A A`"
+        feedback: "`A` doesn't override `toString`, so `Object.toString` is used."
+      - text: "`null null null`"
+        feedback: "Three `A` objects are created."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-optionaltrailingarguments
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/OptionalTrailingArguments.java
+
+      public class OptionalTrailingArguments {
+        static void f(int required, String... trailing) {
+          System.out.print("required: " + required + " ");
+          for(String s : trailing)
+            System.out.print(s + " ");
+          System.out.println();
+        }
+        public static void main(String[] args) {
+          f(1, "one");
+          f(2, "two", "three");
+          f(0);
+        }
+      }
+    language: java
+    options:
+      - text: "required: 1 one \nrequired: 2 two three \nrequired: 0 "
+        correct: true
+      - text: "It doesn't compile — `f(0)` lacks the strings"
+        feedback: "A varargs parameter can receive zero arguments."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-overloadingvarargs
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/OverloadingVarargs.java
+
+      public class OverloadingVarargs {
+        static void f(Character... args) {
+          System.out.print("first");
+          for(Character c : args)
+            System.out.print(" " + c);
+          System.out.println();
+        }
+        static void f(Integer... args) {
+          System.out.print("second");
+          for(Integer i : args)
+            System.out.print(" " + i);
+          System.out.println();
+        }
+        static void f(Long... args) {
+          System.out.println("third");
+        }
+        public static void main(String[] args) {
+          f('a', 'b', 'c');
+          f(1);
+          f(2, 1);
+          f(0);
+          f(0L);
+          //! f(); // Won't compile -- ambiguous
+        }
+      }
+    language: java
+    options:
+      - text: "first a b c\nsecond 1\nsecond 2 1\nsecond 0\nthird"
+        correct: true
+      - text: "first a b c\nsecond 1\nsecond 2 1\nsecond 0\nsecond 0"
+        feedback: "`0L` is a `long`, boxed to `Long`."
+      - text: "first a b c\nthird\nthird\nthird\nthird"
+        feedback: "`int` literals box to `Integer`, not `Long`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-overloadingvarargs2
+    prompt: |
+      Does this compile?
+    code: |
+      //: initialization/OverloadingVarargs2.java
+
+      public class OverloadingVarargs2 {
+        static void f(float i, Character... args) {
+          System.out.println("first");
+        }
+        static void f(Character... args) {
+          System.out.print("second");
+        }
+        public static void main(String[] args) {
+          f(1, 'a');
+          f('a', 'b');
+        }
+      }
+    language: java
+    options:
+      - text: "No — `f('a', 'b')` is ambiguous between the two overloads"
+        correct: true
+      - text: "Yes, printing `first` then `second`"
+        feedback: "`'a'` can widen to `float` or box to `Character`, so neither method is more specific."
+      - text: "No — `f(1, 'a')` is ambiguous"
+        feedback: "Only the first overload accepts an `int` first, so that call is fine."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-overloadingvarargs3
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/OverloadingVarargs3.java
+
+      public class OverloadingVarargs3 {
+        static void f(float i, Character... args) {
+          System.out.println("first");
+        }
+        static void f(char c, Character... args) {
+          System.out.println("second");
+        }
+        public static void main(String[] args) {
+          f(1, 'a');
+          f('a', 'b');
+        }
+      }
+    language: java
+    options:
+      - text: "first\nsecond"
+        correct: true
+      - text: "first\nfirst"
+        feedback: "`f('a', 'b')` matches `char` exactly, so the second overload wins."
+      - text: "It doesn't compile — ambiguous"
+        feedback: "Giving both methods a non-varargs first parameter removes the ambiguity."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-varargtype
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/VarargType.java
+
+      public class VarargType {
+        static void f(Character... args) {
+          System.out.print(args.getClass());
+          System.out.println(" length " + args.length);
+        }
+        static void g(int... args) {
+          System.out.print(args.getClass());
+          System.out.println(" length " + args.length);
+        }
+        public static void main(String[] args) {
+          f('a');
+          f();
+          g(1);
+          g();
+          System.out.println("int[]: " + new int[0].getClass());
+        }
+      }
+    language: java
+    options:
+      - text: "class [Ljava.lang.Character; length 1\nclass [Ljava.lang.Character; length 0\nclass [I length 1\nclass [I length 0\nint[]: class [I"
+        correct: true
+      - text: "class [Ljava.lang.Character; length 1\nclass [Ljava.lang.Character; length 0\nclass [Ljava.lang.Integer; length 1\nclass [Ljava.lang.Integer; length 0\nint[]: class [I"
+        feedback: "`int...` makes an `int[]`, whose class name is `[I`."
+      - text: "It throws for `f()` — no array"
+        feedback: "A call with no arguments passes an empty array."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-dynamicarray
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/DynamicArray.java
+      // Array initialization.
+
+      public class DynamicArray {
+        public static void main(String[] args) {
+          Other.main(new String[]{ "fiddle", "de", "dum" });
+        }
+      }
+
+      class Other {
+        public static void main(String[] args) {
+          for(String s : args)
+            System.out.print(s + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "fiddle de dum "
+        correct: true
+      - text: "Nothing — only `DynamicArray.main` runs"
+        feedback: "It calls `Other.main` like any static method."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-spiciness
+    prompt: |
+      What is `Spiciness.HOT.ordinal()`?
+    code: |
+      //: initialization/Spiciness.java
+
+      public enum Spiciness {
+        NOT, MILD, MEDIUM, HOT, FLAMING
+      }
+    language: java
+    options:
+      - text: "3"
+        correct: true
+      - text: "4"
+        feedback: "Ordinals start at 0: NOT 0, MILD 1, MEDIUM 2, HOT 3."
+      - text: "\"HOT\""
+        feedback: "That's `toString()` or `name()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-simpleenumuse
+    prompt: |
+      `Spiciness` is `enum Spiciness { NOT, MILD, MEDIUM, HOT, FLAMING }`. What does this print?
+    code: |
+      //: initialization/SimpleEnumUse.java
+
+      public class SimpleEnumUse {
+        public static void main(String[] args) {
+          Spiciness howHot = Spiciness.MEDIUM;
+          System.out.println(howHot);
+        }
+      }
+    language: java
+    options:
+      - text: "MEDIUM"
+        correct: true
+      - text: "2"
+        feedback: "`println` uses `toString()`, which is the constant's name."
+      - text: "Spiciness.MEDIUM"
+        feedback: "Just the name."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-enumorder
+    prompt: |
+      `Spiciness` is `enum Spiciness { NOT, MILD, MEDIUM, HOT, FLAMING }`. What is the last line printed?
+    code: |
+      //: initialization/EnumOrder.java
+
+      public class EnumOrder {
+        public static void main(String[] args) {
+          for(Spiciness s : Spiciness.values())
+            System.out.println(s + ", ordinal " + s.ordinal());
+        }
+      }
+    language: java
+    options:
+      - text: "FLAMING, ordinal 4"
+        correct: true
+      - text: "FLAMING, ordinal 5"
+        feedback: "Ordinals start at 0."
+      - text: "NOT, ordinal 0"
+        feedback: "`values()` returns the constants in declaration order; NOT is first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-burrito
+    prompt: |
+      `Spiciness` is `enum Spiciness { NOT, MILD, MEDIUM, HOT, FLAMING }`. What does this print?
+    code: |
+      //: initialization/Burrito.java
+
+      public class Burrito {
+        Spiciness degree;
+        public Burrito(Spiciness degree) { this.degree = degree;}
+        public void describe() {
+          System.out.print("This burrito is ");
+          switch(degree) {
+            case NOT:    System.out.println("not spicy at all.");
+                         break;
+            case MILD:
+            case MEDIUM: System.out.println("a little hot.");
+                         break;
+            case HOT:
+            case FLAMING:
+            default:     System.out.println("maybe too hot.");
+          }
+        }
+        public static void main(String[] args) {
+          Burrito
+            plain = new Burrito(Spiciness.NOT),
+            greenChile = new Burrito(Spiciness.MEDIUM),
+            jalapeno = new Burrito(Spiciness.HOT);
+          plain.describe();
+          greenChile.describe();
+          jalapeno.describe();
+        }
+      }
+    language: java
+    options:
+      - text: "This burrito is not spicy at all.\nThis burrito is a little hot.\nThis burrito is maybe too hot."
+        correct: true
+      - text: "This burrito is not spicy at all.\nThis burrito is a little hot.\nThis burrito is a little hot."
+        feedback: "HOT is grouped with FLAMING and default."
+      - text: "This burrito is not spicy at all.\nThis burrito is maybe too hot.\nThis burrito is maybe too hot."
+        feedback: "MEDIUM falls in with MILD: \"a little hot\"."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

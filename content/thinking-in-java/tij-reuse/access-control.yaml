@@ -64,3 +64,289 @@ steps:
         correct: true
       - text: "`public`, in case others need it"
         feedback: Every public method is a commitment. You can always widen access later; narrowing it breaks clients.
+
+  - type: predict
+    id: tij-access-dinner
+    prompt: |
+      `Cookie` (shown below the program) is in another package. What does this print?
+    code: |
+      //: access/Dinner.java
+      // Uses the library.
+      import access.dessert.*;
+
+      public class Dinner {
+        public static void main(String[] args) {
+          Cookie x = new Cookie();
+          //! x.bite(); // Can't access
+        }
+      }
+
+      //: access/dessert/Cookie.java
+      // Creates a library.
+      package access.dessert;
+
+      public class Cookie {
+        public Cookie() {
+         System.out.println("Cookie constructor");
+        }
+        void bite() { System.out.println("bite"); }
+      }
+    language: java
+    options:
+      - text: "Cookie constructor"
+        correct: true
+      - text: "Cookie constructor\nbite"
+        feedback: "The `x.bite()` line is commented out with `//!` — `bite` has package access, so it wouldn't compile."
+      - text: "It doesn't compile"
+        feedback: "The constructor and class are public."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-chocolatechip
+    prompt: |
+      `ChocolateChip` extends `Cookie` (shown below) from another package. Why can't `chomp()` call `bite()`?
+    code: |
+      //: access/ChocolateChip.java
+      // Can't use package-access member from another package.
+      import access.dessert.*;
+
+      public class ChocolateChip extends Cookie {
+        public ChocolateChip() {
+         System.out.println("ChocolateChip constructor");
+        }
+        public void chomp() {
+          //! bite(); // Can't access bite
+        }
+        public static void main(String[] args) {
+          ChocolateChip x = new ChocolateChip();
+          x.chomp();
+        }
+      }
+
+      //: access/dessert/Cookie.java
+      // Creates a library.
+      package access.dessert;
+
+      public class Cookie {
+        public Cookie() {
+         System.out.println("Cookie constructor");
+        }
+        void bite() { System.out.println("bite"); }
+      }
+    language: java
+    options:
+      - text: "`bite` has package access, and a subclass in another package doesn't get package access"
+        correct: true
+      - text: "`bite` is private"
+        feedback: "It has no modifier: package access."
+      - text: "Subclasses can never call inherited methods directly"
+        feedback: "They can call public and protected ones."
+    explanation: |
+      It prints `Cookie constructor` then `ChocolateChip constructor`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-access-chocolatechip2
+    prompt: |
+      This `Cookie` (shown below) is in another package, and `bite` is `protected`. What does this print?
+    code: |
+      //: access/ChocolateChip2.java
+      import access.cookie2.*;
+
+      public class ChocolateChip2 extends Cookie {
+        public ChocolateChip2() {
+         System.out.println("ChocolateChip2 constructor");
+        }
+        public void chomp() { bite(); } // Protected method
+        public static void main(String[] args) {
+          ChocolateChip2 x = new ChocolateChip2();
+          x.chomp();
+        }
+      }
+
+      //: access/cookie2/Cookie.java
+      package access.cookie2;
+
+      public class Cookie {
+        public Cookie() {
+          System.out.println("Cookie constructor");
+        }
+        protected void bite() {
+          System.out.println("bite");
+        }
+      }
+    language: java
+    options:
+      - text: "Cookie constructor\nChocolateChip2 constructor\nbite"
+        correct: true
+      - text: "ChocolateChip2 constructor\nCookie constructor\nbite"
+        feedback: "The base-class constructor runs first."
+      - text: "It doesn't compile"
+        feedback: "`protected` gives subclasses access, even in other packages."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-icecream
+    prompt: |
+      Why does `main` call `Sundae.makeASundae()` instead of `new Sundae()`?
+    code: |
+      //: access/IceCream.java
+      // Demonstrates "private" keyword.
+
+      class Sundae {
+        private Sundae() {}
+        static Sundae makeASundae() {
+          return new Sundae();
+        }
+      }
+
+      public class IceCream {
+        public static void main(String[] args) {
+          //! Sundae x = new Sundae();
+          Sundae x = Sundae.makeASundae();
+        }
+      }
+    language: java
+    options:
+      - text: "The constructor is private; only code inside `Sundae` can call it"
+        correct: true
+      - text: "`new Sundae()` would work too; it's a style choice"
+        feedback: "The `//!` line wouldn't compile."
+      - text: "Static factories are required for package-access classes"
+        feedback: "The private constructor is the reason."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-lunch
+    prompt: |
+      How many `Soup2` objects can ever exist?
+    code: |
+      //: access/Lunch.java
+      // Demonstrates class access specifiers. Make a class
+      // effectively private with private constructors:
+
+      class Soup1 {
+        private Soup1() {}
+        // (1) Allow creation via static method:
+        public static Soup1 makeSoup() {
+          return new Soup1();
+        }
+      }
+
+      class Soup2 {
+        private Soup2() {}
+        // (2) Create a static object and return a reference
+        // upon request.(The "Singleton" pattern):
+        private static Soup2 ps1 = new Soup2();
+        public static Soup2 access() {
+          return ps1;
+        }
+        public void f() {}
+      }
+
+      // Only one public class allowed per file:
+      public class Lunch {
+        void testPrivate() {
+          // Can't do this! Private constructor:
+          //! Soup1 soup = new Soup1();
+        }
+        void testStatic() {
+          Soup1 soup = Soup1.makeSoup();
+        }
+        void testSingleton() {
+          Soup2.access().f();
+        }
+      }
+    language: java
+    options:
+      - text: "One — the constructor is private and `access()` always returns the same static instance"
+        correct: true
+      - text: "One per call to `access()`"
+        feedback: "`access` returns the existing `ps1`."
+      - text: "None — a private constructor can't be called"
+        feedback: "It's called once, inside the class, to initialize `ps1`."
+    explanation: |
+      That's the Singleton pattern.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-organizedbyaccess
+    prompt: |
+      Which members can code in another class call?
+    code: |
+      //: access/OrganizedByAccess.java
+
+      public class OrganizedByAccess {
+        public void pub1() { /* ... */ }
+        public void pub2() { /* ... */ }
+        public void pub3() { /* ... */ }
+        private void priv1() { /* ... */ }
+        private void priv2() { /* ... */ }
+        private void priv3() { /* ... */ }
+        private int i;
+        // ...
+      }
+    language: java
+    options:
+      - text: "`pub1`, `pub2` and `pub3`"
+        correct: true
+      - text: "All of them, on the same object"
+        feedback: "`private` limits access to the class itself."
+      - text: "None — the class has no constructor"
+        feedback: "It gets a default constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-orc
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/Orc.java
+      // The protected keyword.
+      import static net.mindview.util.Print.*;
+
+      class Villain {
+        private String name;
+        protected void set(String nm) { name = nm; }
+        public Villain(String name) { this.name = name; }
+        public String toString() {
+          return "I'm a Villain and my name is " + name;
+        }
+      }
+
+      public class Orc extends Villain {
+        private int orcNumber;
+        public Orc(String name, int orcNumber) {
+          super(name);
+          this.orcNumber = orcNumber;
+        }
+        public void change(String name, int orcNumber) {
+          set(name); // Available because it's protected
+          this.orcNumber = orcNumber;
+        }
+        public String toString() {
+          return "Orc " + orcNumber + ": " + super.toString();
+        }
+        public static void main(String[] args) {
+          Orc orc = new Orc("Limburger", 12);
+          print(orc);
+          orc.change("Bob", 19);
+          print(orc);
+        }
+      }
+    language: java
+    options:
+      - text: "Orc 12: I'm a Villain and my name is Limburger\nOrc 19: I'm a Villain and my name is Bob"
+        correct: true
+      - text: "Orc 12: I'm a Villain and my name is Limburger\nOrc 19: I'm a Villain and my name is Limburger"
+        feedback: "`set` is protected, so `change` can call it and update the private `name`."
+      - text: "It doesn't compile — `name` is private in `Villain`"
+        feedback: "`Orc` never touches `name` directly; it calls the protected `set`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

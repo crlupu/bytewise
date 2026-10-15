@@ -202,7 +202,9 @@ function renderStep(raw: RawStep, index: number, lessonKey: string, r: Render): 
       : permutation(os.length, seed);
     return order.map((i) => {
       const o = os[i];
-      return { html: r.inline(o.text), correct: o.correct, feedback: o.feedback ? r.block(o.feedback) : undefined };
+      // Several lines of program output show as preformatted text.
+      const html = o.text.includes("\n") ? `<pre class="option__pre">${escapeHtml(o.text.replace(/\n+$/, ""))}</pre>` : r.inline(o.text);
+      return { html, correct: o.correct, feedback: o.feedback ? r.block(o.feedback) : undefined };
     });
   };
 
@@ -518,4 +520,8 @@ function addBlankChoices(lessons: Map<string, Lesson>) {
         p.choices = permutation(choices.length, seed).map((i) => choices[i]);
       });
     }
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

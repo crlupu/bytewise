@@ -110,3 +110,92 @@ steps:
         - { from: Woodwind, to: Wind, type: extends }
         - { from: Saxophone, to: Woodwind, type: extends }
       highlight: [Saxophone]
+
+  - type: predict
+    id: tij-polymorphism-covariantreturn
+    prompt: |
+      What does this print?
+    code: |
+      //: polymorphism/CovariantReturn.java
+
+      class Grain {
+        public String toString() { return "Grain"; }
+      }
+
+      class Wheat extends Grain {
+        public String toString() { return "Wheat"; }
+      }
+
+      class Mill {
+        Grain process() { return new Grain(); }
+      }
+
+      class WheatMill extends Mill {
+        Wheat process() { return new Wheat(); }
+      }
+
+      public class CovariantReturn {
+        public static void main(String[] args) {
+          Mill m = new Mill();
+          Grain g = m.process();
+          System.out.println(g);
+          m = new WheatMill();
+          g = m.process();
+          System.out.println(g);
+        }
+      }
+    language: java
+    options:
+      - text: "Grain\nWheat"
+        correct: true
+      - text: "Grain\nGrain"
+        feedback: "`m` refers to a `WheatMill`, whose `process` overrides `Mill`'s."
+      - text: "It doesn't compile — `process` returns a different type"
+        feedback: "An override may return a subtype of the original return type (a covariant return)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-polymorphism-rtti
+    prompt: |
+      What happens at `((MoreUseful)x[0]).u()`?
+    code: |
+      //: polymorphism/RTTI.java
+      // Downcasting & Runtime type information (RTTI).
+
+      class Useful {
+        public void f() {}
+        public void g() {}
+      }
+
+      class MoreUseful extends Useful {
+        public void f() {}
+        public void g() {}
+        public void u() {}
+        public void v() {}
+        public void w() {}
+      }
+
+      public class RTTI {
+        public static void main(String[] args) {
+          Useful[] x = {
+            new Useful(),
+            new MoreUseful()
+          };
+          x[0].f();
+          x[1].g();
+          // Compile time: method not found in Useful:
+          //! x[1].u();
+          ((MoreUseful)x[1]).u(); // Downcast/RTTI
+        }
+      }
+    language: java
+    options:
+      - text: "`ClassCastException` at run time — `x[0]` is a plain `Useful`"
+        correct: true
+      - text: "It compiles and calls `u()`"
+        feedback: "The cast is checked at run time, and `x[0]` isn't a `MoreUseful`."
+      - text: "Compile error — `Useful` has no `u()`"
+        feedback: "The cast makes it compile; the failure comes at run time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

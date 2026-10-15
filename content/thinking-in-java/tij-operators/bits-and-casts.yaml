@@ -1,0 +1,333 @@
+title: "Literals, bits and casts"
+summary: "Hex and octal literals, bitwise operators and shifts, overflow, and what casts and rounding do to numbers."
+duration: 8
+tags: [java, literals, bitwise, shift, overflow, cast, rounding]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 3, Literals; Bitwise operators; Casting operators" }
+steps:
+  - type: explanation
+    title: "Bits and shifts"
+    body: |
+      `&`, `|`, `^` and `~` work bit by bit.
+      `>>` shifts right keeping the sign; `>>>` fills with zeros.
+      `int` arithmetic wraps around silently on overflow.
+
+  - type: explanation
+    title: "Casts and rounding"
+    body: |
+      Casting a `float` or `double` to an integer truncates toward zero.
+      `Math.round` rounds to the nearest.
+      `byte` and `short` are promoted to `int` before any operator runs.
+
+  - type: predict
+    id: tij-operators-literals
+    prompt: |
+      What do the first three lines print? (`print` is `println`.)
+    code: |
+      //: operators/Literals.java
+      import static net.mindview.util.Print.*;
+
+      public class Literals {
+        public static void main(String[] args) {
+          int i1 = 0x2f; // Hexadecimal (lowercase)
+          print("i1: " + Integer.toBinaryString(i1));
+          int i2 = 0X2F; // Hexadecimal (uppercase)
+          print("i2: " + Integer.toBinaryString(i2));
+          int i3 = 0177; // Octal (leading zero)
+          print("i3: " + Integer.toBinaryString(i3));
+          char c = 0xffff; // max char hex value
+          print("c: " + Integer.toBinaryString(c));
+          byte b = 0x7f; // max byte hex value
+          print("b: " + Integer.toBinaryString(b));
+          short s = 0x7fff; // max short hex value
+          print("s: " + Integer.toBinaryString(s));
+          long n1 = 200L; // long suffix
+          long n2 = 200l; // long suffix (but can be confusing)
+          long n3 = 200;
+          float f1 = 1;
+          float f2 = 1F; // float suffix
+          float f3 = 1f; // float suffix
+          double d1 = 1d; // double suffix
+          double d2 = 1D; // double suffix
+          // (Hex and Octal also work with long)
+        }
+      }
+    language: java
+    options:
+      - text: "i1: 101111\ni2: 101111\ni3: 1111111"
+        correct: true
+      - text: "i1: 101111\ni2: 101111\ni3: 10110001"
+        feedback: "`0177` has a leading zero, so it's octal: 127, which is seven 1s."
+      - text: "i1: 2f\ni2: 2F\ni3: 177"
+        feedback: "`toBinaryString` prints base 2."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-bitmanipulation
+    prompt: |
+      What are the first two lines printed? (`print` is `println`.)
+    code: |
+      //: operators/BitManipulation.java
+      // Using the bitwise operators.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class BitManipulation {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          int i = rand.nextInt();
+          int j = rand.nextInt();
+          printBinaryInt("-1", -1);
+          printBinaryInt("+1", +1);
+          int maxpos = 2147483647;
+          printBinaryInt("maxpos", maxpos);
+          int maxneg = -2147483648;
+          printBinaryInt("maxneg", maxneg);
+          printBinaryInt("i", i);
+          printBinaryInt("~i", ~i);
+          printBinaryInt("-i", -i);
+          printBinaryInt("j", j);
+          printBinaryInt("i & j", i & j);
+          printBinaryInt("i | j", i | j);
+          printBinaryInt("i ^ j", i ^ j);
+          printBinaryInt("i << 5", i << 5);
+          printBinaryInt("i >> 5", i >> 5);
+          printBinaryInt("(~i) >> 5", (~i) >> 5);
+          printBinaryInt("i >>> 5", i >>> 5);
+          printBinaryInt("(~i) >>> 5", (~i) >>> 5);
+
+          long l = rand.nextLong();
+          long m = rand.nextLong();
+          printBinaryLong("-1L", -1L);
+          printBinaryLong("+1L", +1L);
+          long ll = 9223372036854775807L;
+          printBinaryLong("maxpos", ll);
+          long lln = -9223372036854775808L;
+          printBinaryLong("maxneg", lln);
+          printBinaryLong("l", l);
+          printBinaryLong("~l", ~l);
+          printBinaryLong("-l", -l);
+          printBinaryLong("m", m);
+          printBinaryLong("l & m", l & m);
+          printBinaryLong("l | m", l | m);
+          printBinaryLong("l ^ m", l ^ m);
+          printBinaryLong("l << 5", l << 5);
+          printBinaryLong("l >> 5", l >> 5);
+          printBinaryLong("(~l) >> 5", (~l) >> 5);
+          printBinaryLong("l >>> 5", l >>> 5);
+          printBinaryLong("(~l) >>> 5", (~l) >>> 5);
+        }
+        static void printBinaryInt(String s, int i) {
+          print(s + ", int: " + i + ", binary:\n   " +
+            Integer.toBinaryString(i));
+        }
+        static void printBinaryLong(String s, long l) {
+          print(s + ", long: " + l + ", binary:\n    " +
+            Long.toBinaryString(l));
+        }
+      }
+    language: java
+    options:
+      - text: "-1, int: -1, binary:\n   11111111111111111111111111111111"
+        correct: true
+      - text: "-1, int: -1, binary:\n   -1"
+        feedback: "`toBinaryString` treats the int as unsigned, so −1 is 32 ones."
+      - text: "-1, int: -1, binary:\n   10000000000000000000000000000001"
+        feedback: "Java uses two's complement, not sign-and-magnitude."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-operators-urshift
+    prompt: |
+      `short s = -1; s >>>= 10;` — what's in `s` afterwards, and why? (`print` is `println`.)
+    code: |
+      //: operators/URShift.java
+      // Test of unsigned right shift.
+      import static net.mindview.util.Print.*;
+
+      public class URShift {
+        public static void main(String[] args) {
+          int i = -1;
+          print(Integer.toBinaryString(i));
+          i >>>= 10;
+          print(Integer.toBinaryString(i));
+          long l = -1;
+          print(Long.toBinaryString(l));
+          l >>>= 10;
+          print(Long.toBinaryString(l));
+          short s = -1;
+          print(Integer.toBinaryString(s));
+          s >>>= 10;
+          print(Integer.toBinaryString(s));
+          byte b = -1;
+          print(Integer.toBinaryString(b));
+          b >>>= 10;
+          print(Integer.toBinaryString(b));
+          b = -1;
+          print(Integer.toBinaryString(b));
+          print(Integer.toBinaryString(b>>>10));
+        }
+      }
+    language: java
+    options:
+      - text: "Still −1: `s` is promoted to `int`, shifted, then truncated back to 16 bits, all ones"
+        correct: true
+      - text: "63 — the top 10 bits are now zeros"
+        feedback: "That would be true for a 16-bit shift, but the shift happens on the 32-bit promoted value."
+      - text: "It doesn't compile"
+        feedback: "Compound assignment includes an implicit cast back to `short`."
+    explanation: |
+      The output shows 32 ones for `s` before and after. Only `b>>>10` without assigning back prints 22 ones.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-exponents
+    prompt: |
+      What does this print?
+    code: |
+      //: operators/Exponents.java
+      // "e" means "10 to the power."
+
+      public class Exponents {
+        public static void main(String[] args) {
+          // Uppercase and lowercase 'e' are the same:
+          float expFloat = 1.39e-43f;
+          expFloat = 1.39E-43f;
+          System.out.println(expFloat);
+          double expDouble = 47e47d; // 'd' is optional
+          double expDouble2 = 47e47; // Automatically double
+          System.out.println(expDouble);
+        }
+      }
+    language: java
+    options:
+      - text: "1.39E-43\n4.7E48"
+        correct: true
+      - text: "1.39E-43\n47E47"
+        feedback: "A double is printed normalized: 4.7 × 10⁴⁸."
+      - text: "0.0\n4.7E48"
+        feedback: "1.39e-43 is tiny but still representable as a (subnormal) float."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-overflow
+    prompt: |
+      What does this print?
+    code: |
+      //: operators/Overflow.java
+      // Surprise! Java lets you overflow.
+
+      public class Overflow {
+        public static void main(String[] args) {
+          int big = Integer.MAX_VALUE;
+          System.out.println("big = " + big);
+          int bigger = big * 4;
+          System.out.println("bigger = " + bigger);
+        }
+      }
+    language: java
+    options:
+      - text: "big = 2147483647\nbigger = -4"
+        correct: true
+      - text: "big = 2147483647\nbigger = 8589934588"
+        feedback: "`big * 4` is `int` arithmetic and wraps around."
+      - text: "An `ArithmeticException`"
+        feedback: "Integer overflow is silent in Java."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-operators-casting
+    prompt: |
+      Which of these casts is required for the code to compile?
+    code: |
+      //: operators/Casting.java
+
+      public class Casting {
+        public static void main(String[] args) {
+          int i = 200;
+          long lng = (long)i;
+          lng = i; // "Widening," so cast not really required
+          long lng2 = (long)200;
+          lng2 = 200;
+          // A "narrowing conversion":
+          i = (int)lng2; // Cast required
+        }
+      }
+    language: java
+    options:
+      - text: "`i = (int)lng2;`"
+        correct: true
+      - text: "`long lng = (long)i;`"
+        feedback: "Widening from `int` to `long` happens automatically."
+      - text: "`long lng2 = (long)200;`"
+        feedback: "200 is an `int` literal, widened automatically."
+    explanation: |
+      Narrowing can lose information, so Java makes you say so with a cast.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-castingnumbers
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: operators/CastingNumbers.java
+      // What happens when you cast a float
+      // or double to an integral value?
+      import static net.mindview.util.Print.*;
+
+      public class CastingNumbers {
+        public static void main(String[] args) {
+          double above = 0.7, below = 0.4;
+          float fabove = 0.7f, fbelow = 0.4f;
+          print("(int)above: " + (int)above);
+          print("(int)below: " + (int)below);
+          print("(int)fabove: " + (int)fabove);
+          print("(int)fbelow: " + (int)fbelow);
+        }
+      }
+    language: java
+    options:
+      - text: "(int)above: 0\n(int)below: 0\n(int)fabove: 0\n(int)fbelow: 0"
+        correct: true
+      - text: "(int)above: 1\n(int)below: 0\n(int)fabove: 1\n(int)fbelow: 0"
+        feedback: "A cast truncates; it doesn't round."
+    explanation: |
+      Use `Math.round` to round.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-roundingnumbers
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: operators/RoundingNumbers.java
+      // Rounding floats and doubles.
+      import static net.mindview.util.Print.*;
+
+      public class RoundingNumbers {
+        public static void main(String[] args) {
+          double above = 0.7, below = 0.4;
+          float fabove = 0.7f, fbelow = 0.4f;
+          print("Math.round(above): " + Math.round(above));
+          print("Math.round(below): " + Math.round(below));
+          print("Math.round(fabove): " + Math.round(fabove));
+          print("Math.round(fbelow): " + Math.round(fbelow));
+        }
+      }
+    language: java
+    options:
+      - text: "Math.round(above): 1\nMath.round(below): 0\nMath.round(fabove): 1\nMath.round(fbelow): 0"
+        correct: true
+      - text: "Math.round(above): 0\nMath.round(below): 0\nMath.round(fabove): 0\nMath.round(fbelow): 0"
+        feedback: "`Math.round` rounds to the nearest whole number."
+      - text: "Math.round(above): 1.0\nMath.round(below): 0.0\nMath.round(fabove): 1.0\nMath.round(fbelow): 0.0"
+        feedback: "`Math.round` returns a `long` (or `int` for a `float`), not a floating-point value."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

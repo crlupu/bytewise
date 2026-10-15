@@ -91,3 +91,337 @@ steps:
     prompt: Call a base-class constructor that takes an argument.
     template: "Chess(int moves) { [[super]](moves); }"
     code: true
+
+  - type: predict
+    id: tij-reusing-cartoon
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/Cartoon.java
+      // Constructor calls during inheritance.
+      import static net.mindview.util.Print.*;
+
+      class Art {
+        Art() { print("Art constructor"); }
+      }
+
+      class Drawing extends Art {
+        Drawing() { print("Drawing constructor"); }
+      }
+
+      public class Cartoon extends Drawing {
+        public Cartoon() { print("Cartoon constructor"); }
+        public static void main(String[] args) {
+          Cartoon x = new Cartoon();
+        }
+      }
+    language: java
+    options:
+      - text: "Art constructor\nDrawing constructor\nCartoon constructor"
+        correct: true
+      - text: "Cartoon constructor\nDrawing constructor\nArt constructor"
+        feedback: "Base-class constructors run first, from the root down."
+      - text: "Cartoon constructor"
+        feedback: "The no-arg base constructors are called automatically."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-chess
+    prompt: |
+      What happens if `super(i)` is removed from `BoardGame`'s constructor? (`print` is `println`.)
+    code: |
+      //: reusing/Chess.java
+      // Inheritance, constructors and arguments.
+      import static net.mindview.util.Print.*;
+
+      class Game {
+        Game(int i) {
+          print("Game constructor");
+        }
+      }
+
+      class BoardGame extends Game {
+        BoardGame(int i) {
+          super(i);
+          print("BoardGame constructor");
+        }
+      }
+
+      public class Chess extends BoardGame {
+        Chess() {
+          super(11);
+          print("Chess constructor");
+        }
+        public static void main(String[] args) {
+          Chess x = new Chess();
+        }
+      }
+    language: java
+    options:
+      - text: "Compile error — `Game` has no no-arg constructor to call implicitly"
+        correct: true
+      - text: "It compiles; `Game` is constructed with 0"
+        feedback: "Java doesn't invent arguments."
+      - text: "`Game`'s constructor is skipped"
+        feedback: "A base constructor always runs."
+    explanation: |
+      As written, it prints `Game constructor`, `BoardGame constructor`, `Chess constructor`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-detergent
+    prompt: |
+      What is the first line printed? (`print` is `println`.)
+    code: |
+      //: reusing/Detergent.java
+      // Inheritance syntax & properties.
+      import static net.mindview.util.Print.*;
+
+      class Cleanser {
+        private String s = "Cleanser";
+        public void append(String a) { s += a; }
+        public void dilute() { append(" dilute()"); }
+        public void apply() { append(" apply()"); }
+        public void scrub() { append(" scrub()"); }
+        public String toString() { return s; }
+        public static void main(String[] args) {
+          Cleanser x = new Cleanser();
+          x.dilute(); x.apply(); x.scrub();
+          print(x);
+        }
+      }
+
+      public class Detergent extends Cleanser {
+        // Change a method:
+        public void scrub() {
+          append(" Detergent.scrub()");
+          super.scrub(); // Call base-class version
+        }
+        // Add methods to the interface:
+        public void foam() { append(" foam()"); }
+        // Test the new class:
+        public static void main(String[] args) {
+          Detergent x = new Detergent();
+          x.dilute();
+          x.apply();
+          x.scrub();
+          x.foam();
+          print(x);
+          print("Testing base class:");
+          Cleanser.main(args);
+        }
+      }
+    language: java
+    options:
+      - text: "Cleanser dilute() apply() Detergent.scrub() scrub() foam()"
+        correct: true
+      - text: "Cleanser dilute() apply() scrub() foam()"
+        feedback: "`Detergent.scrub` appends its own text, then calls `super.scrub()`."
+      - text: "Detergent dilute() apply() Detergent.scrub() scrub() foam()"
+        feedback: "`s` is initialized to \"Cleanser\" in the base class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-beetle
+    prompt: |
+      `printInit` prints its argument and returns 47. What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/Beetle.java
+      // The full process of initialization.
+      import static net.mindview.util.Print.*;
+
+      class Insect {
+        private int i = 9;
+        protected int j;
+        Insect() {
+          print("i = " + i + ", j = " + j);
+          j = 39;
+        }
+        private static int x1 =
+          printInit("static Insect.x1 initialized");
+        static int printInit(String s) {
+          print(s);
+          return 47;
+        }
+      }
+
+      public class Beetle extends Insect {
+        private int k = printInit("Beetle.k initialized");
+        public Beetle() {
+          print("k = " + k);
+          print("j = " + j);
+        }
+        private static int x2 =
+          printInit("static Beetle.x2 initialized");
+        public static void main(String[] args) {
+          print("Beetle constructor");
+          Beetle b = new Beetle();
+        }
+      }
+    language: java
+    options:
+      - text: "static Insect.x1 initialized\nstatic Beetle.x2 initialized\nBeetle constructor\ni = 9, j = 0\nBeetle.k initialized\nk = 47\nj = 39"
+        correct: true
+      - text: "Beetle constructor\nstatic Insect.x1 initialized\nstatic Beetle.x2 initialized\ni = 9, j = 0\nBeetle.k initialized\nk = 47\nj = 39"
+        feedback: "Running `Beetle.main` loads `Beetle` — and first its base class — before `main` starts."
+      - text: "static Insect.x1 initialized\nstatic Beetle.x2 initialized\nBeetle constructor\nBeetle.k initialized\ni = 9, j = 0\nk = 47\nj = 39"
+        feedback: "The base-class constructor runs before the subclass's field initializers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-placesetting
+    prompt: |
+      What are the first three lines printed? (`print` is `println`.)
+    code: |
+      //: reusing/PlaceSetting.java
+      // Combining composition & inheritance.
+      import static net.mindview.util.Print.*;
+
+      class Plate {
+        Plate(int i) {
+          print("Plate constructor");
+        }
+      }
+
+      class DinnerPlate extends Plate {
+        DinnerPlate(int i) {
+          super(i);
+          print("DinnerPlate constructor");
+        }
+      }
+
+      class Utensil {
+        Utensil(int i) {
+          print("Utensil constructor");
+        }
+      }
+
+      class Spoon extends Utensil {
+        Spoon(int i) {
+          super(i);
+          print("Spoon constructor");
+        }
+      }
+
+      class Fork extends Utensil {
+        Fork(int i) {
+          super(i);
+          print("Fork constructor");
+        }
+      }
+
+      class Knife extends Utensil {
+        Knife(int i) {
+          super(i);
+          print("Knife constructor");
+        }
+      }
+
+      // A cultural way of doing something:
+      class Custom {
+        Custom(int i) {
+          print("Custom constructor");
+        }
+      }
+
+      public class PlaceSetting extends Custom {
+        private Spoon sp;
+        private Fork frk;
+        private Knife kn;
+        private DinnerPlate pl;
+        public PlaceSetting(int i) {
+          super(i + 1);
+          sp = new Spoon(i + 2);
+          frk = new Fork(i + 3);
+          kn = new Knife(i + 4);
+          pl = new DinnerPlate(i + 5);
+          print("PlaceSetting constructor");
+        }
+        public static void main(String[] args) {
+          PlaceSetting x = new PlaceSetting(9);
+        }
+      }
+    language: java
+    options:
+      - text: "Custom constructor\nUtensil constructor\nSpoon constructor"
+        correct: true
+      - text: "Utensil constructor\nSpoon constructor\nCustom constructor"
+        feedback: "`super(i + 1)` runs first, before the members are created."
+      - text: "Custom constructor\nSpoon constructor\nFork constructor"
+        feedback: "Each `Spoon` first runs its `Utensil` base constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-hide
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/Hide.java
+      // Overloading a base-class method name in a derived
+      // class does not hide the base-class versions.
+      import static net.mindview.util.Print.*;
+
+      class Homer {
+        char doh(char c) {
+          print("doh(char)");
+          return 'd';
+        }
+        float doh(float f) {
+          print("doh(float)");
+          return 1.0f;
+        }
+      }
+
+      class Milhouse {}
+
+      class Bart extends Homer {
+        void doh(Milhouse m) {
+          print("doh(Milhouse)");
+        }
+      }
+
+      public class Hide {
+        public static void main(String[] args) {
+          Bart b = new Bart();
+          b.doh(1);
+          b.doh('x');
+          b.doh(1.0f);
+          b.doh(new Milhouse());
+        }
+      }
+    language: java
+    options:
+      - text: "doh(float)\ndoh(char)\ndoh(float)\ndoh(Milhouse)"
+        correct: true
+      - text: "It doesn't compile — `Bart.doh` hides the inherited overloads"
+        feedback: "In Java, adding an overload in a subclass keeps the base versions available."
+      - text: "doh(char)\ndoh(char)\ndoh(float)\ndoh(Milhouse)"
+        feedback: "An `int` can't narrow to `char` automatically; it widens to `float`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-lisa
+    prompt: |
+      `Homer` has `doh(char)` and `doh(float)`; `Milhouse` is an empty class. Does this compile?
+    code: |
+      //: reusing/Lisa.java
+
+      class Lisa extends Homer {
+        @Override void doh(Milhouse m) {
+          System.out.println("doh(Milhouse)");
+        }
+      }
+    language: java
+    options:
+      - text: "No — `@Override` is on a method that doesn't override anything"
+        correct: true
+      - text: "Yes — it adds an overload"
+        feedback: "Without `@Override` it would; the annotation asks the compiler to check, and the check fails."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

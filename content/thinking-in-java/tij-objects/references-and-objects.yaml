@@ -75,3 +75,66 @@ steps:
     prompt: Create the object and point the reference at it.
     template: "String s = [[new]] String(\"asdf\");"
     code: true
+
+  - type: choice
+    id: tij-object-hellodate
+    prompt: |
+      What does this program print?
+    code: |
+      //: object/HelloDate.java
+      import java.util.*;
+
+      /** The first Thinking in Java example program.
+       * Displays a string and today's date.
+       * @author Bruce Eckel
+       * @author www.MindView.net
+       * @version 4.0
+      */
+      public class HelloDate {
+        /** Entry point to class & application.
+         * @param args array of string arguments
+         * @throws exceptions No exceptions thrown
+        */
+        public static void main(String[] args) {
+          System.out.println("Hello, it's: ");
+          System.out.println(new Date());
+        }
+      }
+    language: java
+    options:
+      - text: "`Hello, it's: ` and then the current date and time, like `Thu Oct 15 07:31:59 UTC 2026`"
+        correct: true
+      - text: "The Javadoc comment text, then the date"
+        feedback: "Comments are ignored when the program runs; Javadoc only reads them to make documentation."
+      - text: "`Hello, it's: java.util.Date@1b6d3586`"
+        feedback: "`Date` overrides `toString` to print a readable date."
+    explanation: |
+      `println(Object)` calls the object's `toString()`, and `Date`'s gives the date and time.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-object-showproperties
+    prompt: |
+      What does this program print?
+    code: |
+      //: object/ShowProperties.java
+
+      public class ShowProperties {
+        public static void main(String[] args) {
+          System.getProperties().list(System.out);
+          System.out.println(System.getProperty("user.name"));
+          System.out.println(
+            System.getProperty("java.library.path"));
+        }
+      }
+    language: java
+    options:
+      - text: "Every system property as `key=value`, then the user name, then the native library path"
+        correct: true
+      - text: "Nothing — `getProperties()` returns an empty object"
+        feedback: "The JVM fills the system properties at startup with things like `java.version` and `os.name`."
+      - text: "Only the user name"
+        feedback: "`list(System.out)` prints all the properties first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

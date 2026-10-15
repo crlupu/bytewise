@@ -79,3 +79,297 @@ steps:
         right: "`Filter`"
       - left: Translates one interface to the other
         right: "`FilterAdapter`"
+
+  - type: predict
+    id: tij-interfaces-classprocessor-apply
+    prompt: |
+      What are the last two lines printed? (`print` is `println`.)
+    code: |
+      //: interfaces/classprocessor/Apply.java
+      package interfaces.classprocessor;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Processor {
+        public String name() {
+          return getClass().getSimpleName();
+        }
+        Object process(Object input) { return input; }
+      }
+
+      class Upcase extends Processor {
+        String process(Object input) { // Covariant return
+          return ((String)input).toUpperCase();
+        }
+      }
+
+      class Downcase extends Processor {
+        String process(Object input) {
+          return ((String)input).toLowerCase();
+        }
+      }
+
+      class Splitter extends Processor {
+        String process(Object input) {
+          // The split() argument divides a String into pieces:
+          return Arrays.toString(((String)input).split(" "));
+        }
+      }
+
+      public class Apply {
+        public static void process(Processor p, Object s) {
+          print("Using Processor " + p.name());
+          print(p.process(s));
+        }
+        public static String s =
+          "Disagreement with beliefs is by definition incorrect";
+        public static void main(String[] args) {
+          process(new Upcase(), s);
+          process(new Downcase(), s);
+          process(new Splitter(), s);
+        }
+      }
+    language: java
+    options:
+      - text: "Using Processor Splitter\n[Disagreement, with, beliefs, is, by, definition, incorrect]"
+        correct: true
+      - text: "Using Processor Processor\n[Disagreement, with, beliefs, is, by, definition, incorrect]"
+        feedback: "`getClass()` returns the actual class, `Splitter`."
+      - text: "Using Processor Splitter\nDisagreement with beliefs is by definition incorrect"
+        feedback: "`Splitter.process` returns `Arrays.toString` of the split words."
+    explanation: |
+      `Apply.process` is a Strategy: the behavior varies with the `Processor` passed in. But because `Processor` is a class, only its subclasses can be used.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-interfaces-interfaceprocessor-stringprocessor
+    prompt: |
+      `Apply.process(p, s)` prints `Using Processor ` + `p.name()`, then `p.process(s)`. `Processor` is an interface with `name()` and `process(Object)`. What are the last two lines?
+    code: |
+      //: interfaces/interfaceprocessor/StringProcessor.java
+      package interfaces.interfaceprocessor;
+      import java.util.*;
+
+      public abstract class StringProcessor implements Processor{
+        public String name() {
+          return getClass().getSimpleName();
+        }
+        public abstract String process(Object input);
+        public static String s =
+          "If she weighs the same as a duck, she's made of wood";
+        public static void main(String[] args) {
+          Apply.process(new Upcase(), s);
+          Apply.process(new Downcase(), s);
+          Apply.process(new Splitter(), s);
+        }
+      }
+
+      class Upcase extends StringProcessor {
+        public String process(Object input) { // Covariant return
+          return ((String)input).toUpperCase();
+        }
+      }
+
+      class Downcase extends StringProcessor {
+        public String process(Object input) {
+          return ((String)input).toLowerCase();
+        }
+      }
+
+      class Splitter extends StringProcessor {
+        public String process(Object input) {
+          return Arrays.toString(((String)input).split(" "));
+        }
+      }
+    language: java
+    options:
+      - text: "Using Processor Splitter\n[If, she, weighs, the, same, as, a, duck,, she's, made, of, wood]"
+        correct: true
+      - text: "Using Processor Splitter\n[If, she, weighs, the, same, as, a, duck, she's, made, of, wood]"
+        feedback: "`split(\" \")` splits on spaces only, so the comma stays: `duck,`."
+      - text: "Using Processor StringProcessor\n[If, she, weighs, the, same, as, a, duck,, she's, made, of, wood]"
+        feedback: "`getClass()` gives the concrete subclass."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-interfaces-interfaceprocessor-filterprocessor
+    prompt: |
+      `Filter`s (from another library) have `name()` and `process(Waveform)`, but don't implement `Processor`. `Waveform`'s `toString` is `Waveform <id>`; this is the first `Waveform`, id 0. `Apply.process` prints `Using Processor <name>`, then the result. What are the first two lines?
+    code: |
+      //: interfaces/interfaceprocessor/FilterProcessor.java
+      package interfaces.interfaceprocessor;
+      import interfaces.filters.*;
+
+      class FilterAdapter implements Processor {
+        Filter filter;
+        public FilterAdapter(Filter filter) {
+          this.filter = filter;
+        }
+        public String name() { return filter.name(); }
+        public Waveform process(Object input) {
+          return filter.process((Waveform)input);
+        }
+      }
+
+      public class FilterProcessor {
+        public static void main(String[] args) {
+          Waveform w = new Waveform();
+          Apply.process(new FilterAdapter(new LowPass(1.0)), w);
+          Apply.process(new FilterAdapter(new HighPass(2.0)), w);
+          Apply.process(
+            new FilterAdapter(new BandPass(3.0, 4.0)), w);
+        }
+      }
+    language: java
+    options:
+      - text: "Using Processor LowPass\nWaveform 0"
+        correct: true
+      - text: "Using Processor FilterAdapter\nWaveform 0"
+        feedback: "`FilterAdapter.name()` returns the wrapped filter's name."
+      - text: "It doesn't compile — a `Filter` isn't a `Processor`"
+        feedback: "`FilterAdapter` adapts it: it implements `Processor` and delegates to the filter."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-filters-filter
+    prompt: |
+      `LowPass`, `HighPass` and `BandPass` extend this class. What does `new BandPass(3.0, 4.0).name()` return?
+    code: |
+      //: interfaces/filters/Filter.java
+      package interfaces.filters;
+
+      public class Filter {
+        public String name() {
+          return getClass().getSimpleName();
+        }
+        public Waveform process(Waveform input) { return input; }
+      }
+    language: java
+    options:
+      - text: "\"BandPass\""
+        correct: true
+      - text: "\"Filter\""
+        feedback: "`getClass()` is the runtime class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-randomdoubles
+    prompt: |
+      What does it print?
+    code: |
+      //: interfaces/RandomDoubles.java
+      import java.util.*;
+
+      public class RandomDoubles {
+        private static Random rand = new Random(47);
+        public double next() { return rand.nextDouble(); }
+        public static void main(String[] args) {
+          RandomDoubles rd = new RandomDoubles();
+          for(int i = 0; i < 7; i ++)
+            System.out.print(rd.next() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "Seven doubles between 0 and 1 — the same seven on every run"
+        correct: true
+      - text: "Seven different doubles each run"
+        feedback: "`Random(47)` is seeded."
+      - text: "Seven integers"
+        feedback: "`nextDouble` returns doubles in [0, 1)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-randomwords
+    prompt: |
+      Why does `RandomWords` implement `Readable`?
+    code: |
+      //: interfaces/RandomWords.java
+      // Implementing an interface to conform to a method.
+      import java.nio.*;
+      import java.util.*;
+
+      public class RandomWords implements Readable {
+        private static Random rand = new Random(47);
+        private static final char[] capitals =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+        private static final char[] lowers =
+          "abcdefghijklmnopqrstuvwxyz".toCharArray();
+        private static final char[] vowels =
+          "aeiou".toCharArray();
+        private int count;
+        public RandomWords(int count) { this.count = count; }
+        public int read(CharBuffer cb) {
+          if(count-- == 0)
+            return -1; // Indicates end of input
+          cb.append(capitals[rand.nextInt(capitals.length)]);
+          for(int i = 0; i < 4; i++) {
+            cb.append(vowels[rand.nextInt(vowels.length)]);
+            cb.append(lowers[rand.nextInt(lowers.length)]);
+          }
+          cb.append(" ");
+          return 10; // Number of characters appended
+        }
+        public static void main(String[] args) {
+          Scanner s = new Scanner(new RandomWords(10));
+          while(s.hasNext())
+            System.out.println(s.next());
+        }
+      }
+    language: java
+    options:
+      - text: "`Scanner` accepts any `Readable`, so implementing that interface lets Scanner read the generated words"
+        correct: true
+      - text: "To make the words random"
+        feedback: "`Random` does that; `Readable` is how Scanner gets them."
+      - text: "`Scanner` only accepts files"
+        feedback: "It takes `Readable`, `InputStream`, `File`, `String` and more."
+    explanation: |
+      It prints 10 capitalized nine-letter words, one per line, like `Yazeruyac`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-adaptedrandomdoubles
+    prompt: |
+      `RandomDoubles` has a `next()` method but doesn't implement `Readable`. What does this class do?
+    code: |
+      //: interfaces/AdaptedRandomDoubles.java
+      // Creating an adapter with inheritance.
+      import java.nio.*;
+      import java.util.*;
+
+      public class AdaptedRandomDoubles extends RandomDoubles
+      implements Readable {
+        private int count;
+        public AdaptedRandomDoubles(int count) {
+          this.count = count;
+        }
+        public int read(CharBuffer cb) {
+          if(count-- == 0)
+            return -1;
+          String result = Double.toString(next()) + " ";
+          cb.append(result);
+          return result.length();
+        }
+        public static void main(String[] args) {
+          Scanner s = new Scanner(new AdaptedRandomDoubles(7));
+          while(s.hasNextDouble())
+            System.out.print(s.nextDouble() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "Adapts it by inheritance: it extends `RandomDoubles` and implements `Readable`, so a `Scanner` can read its doubles"
+        correct: true
+      - text: "It replaces `RandomDoubles`"
+        feedback: "It reuses `next()`; it adds the interface."
+      - text: "It reads doubles from the keyboard"
+        feedback: "Scanner reads from this object's `read`, which supplies random doubles."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

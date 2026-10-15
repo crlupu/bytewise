@@ -1,0 +1,7 @@
+title: "Operators and control flow"
+summary: "Chapters 3–4 — Java's operators, literals and casts, then if, loops, labels and switch, through the book's examples."
+lessons:
+  - operators-and-precedence
+  - equality
+  - bits-and-casts
+  - control-flow

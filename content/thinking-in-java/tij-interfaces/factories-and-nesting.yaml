@@ -1,0 +1,246 @@
+title: "Factories and nested interfaces"
+summary: "Factory Method through interfaces, and interfaces nested inside classes and other interfaces."
+duration: 8
+tags: [java, interfaces, factory method, nested interfaces]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 9, Interfaces and factories; Nesting interfaces" }
+steps:
+  - type: explanation
+    title: "Factories"
+    body: |
+      Code that calls `factory.getService()` never names the implementation class.
+      Swap the factory and you swap the implementation, with no other change.
+
+  - type: explanation
+    title: "Nested interfaces"
+    body: |
+      An interface can be nested in a class or another interface.
+      Inside a class it can even be `private`: then only that class can implement or use it.
+      Inside an interface, a nested interface is always public.
+
+  - type: predict
+    id: tij-interfaces-factories
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: interfaces/Factories.java
+      import static net.mindview.util.Print.*;
+
+      interface Service {
+        void method1();
+        void method2();
+      }
+
+      interface ServiceFactory {
+        Service getService();
+      }
+
+      class Implementation1 implements Service {
+        Implementation1() {} // Package access
+        public void method1() {print("Implementation1 method1");}
+        public void method2() {print("Implementation1 method2");}
+      }
+
+      class Implementation1Factory implements ServiceFactory {
+        public Service getService() {
+          return new Implementation1();
+        }
+      }
+
+      class Implementation2 implements Service {
+        Implementation2() {} // Package access
+        public void method1() {print("Implementation2 method1");}
+        public void method2() {print("Implementation2 method2");}
+      }
+
+      class Implementation2Factory implements ServiceFactory {
+        public Service getService() {
+          return new Implementation2();
+        }
+      }
+
+      public class Factories {
+        public static void serviceConsumer(ServiceFactory fact) {
+          Service s = fact.getService();
+          s.method1();
+          s.method2();
+        }
+        public static void main(String[] args) {
+          serviceConsumer(new Implementation1Factory());
+          // Implementations are completely interchangeable:
+          serviceConsumer(new Implementation2Factory());
+        }
+      }
+    language: java
+    options:
+      - text: "Implementation1 method1\nImplementation1 method2\nImplementation2 method1\nImplementation2 method2"
+        correct: true
+      - text: "Implementation1 method1\nImplementation1 method2"
+        feedback: "`serviceConsumer` is called twice, with two different factories."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-interfaces-games
+    prompt: |
+      How many lines does `playGame(new ChessFactory())` print? (`print` is `println`.)
+    code: |
+      //: interfaces/Games.java
+      // A Game framework using Factory Methods.
+      import static net.mindview.util.Print.*;
+
+      interface Game { boolean move(); }
+      interface GameFactory { Game getGame(); }
+
+      class Checkers implements Game {
+        private int moves = 0;
+        private static final int MOVES = 3;
+        public boolean move() {
+          print("Checkers move " + moves);
+          return ++moves != MOVES;
+        }
+      }
+
+      class CheckersFactory implements GameFactory {
+        public Game getGame() { return new Checkers(); }
+      }
+
+      class Chess implements Game {
+        private int moves = 0;
+        private static final int MOVES = 4;
+        public boolean move() {
+          print("Chess move " + moves);
+          return ++moves != MOVES;
+        }
+      }
+
+      class ChessFactory implements GameFactory {
+        public Game getGame() { return new Chess(); }
+      }
+
+      public class Games {
+        public static void playGame(GameFactory factory) {
+          Game s = factory.getGame();
+          while(s.move())
+            ;
+        }
+        public static void main(String[] args) {
+          playGame(new CheckersFactory());
+          playGame(new ChessFactory());
+        }
+      }
+    language: java
+    options:
+      - text: "4"
+        correct: true
+      - text: "3"
+        feedback: "`MOVES` is 4 for Chess; the loop stops when `++moves` reaches 4, after printing moves 0–3."
+      - text: "5"
+        feedback: "Move 4 is never printed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-nesting-nestinginterfaces
+    prompt: |
+      `A.D` is a private interface. What can code outside `A` do with the result of `a.getD()`?
+    code: |
+      //: interfaces/nesting/NestingInterfaces.java
+      package interfaces.nesting;
+
+      class A {
+        interface B {
+          void f();
+        }
+        public class BImp implements B {
+          public void f() {}
+        }
+        private class BImp2 implements B {
+          public void f() {}
+        }
+        public interface C {
+          void f();
+        }
+        class CImp implements C {
+          public void f() {}
+        }
+        private class CImp2 implements C {
+          public void f() {}
+        }
+        private interface D {
+          void f();
+        }
+        private class DImp implements D {
+          public void f() {}
+        }
+        public class DImp2 implements D {
+          public void f() {}
+        }
+        public D getD() { return new DImp2(); }
+        private D dRef;
+        public void receiveD(D d) {
+          dRef = d;
+          dRef.f();
+        }
+      }
+
+      interface E {
+        interface G {
+          void f();
+        }
+        // Redundant "public":
+        public interface H {
+          void f();
+        }
+        void g();
+        // Cannot be private within an interface:
+        //! private interface I {}
+      }
+
+      public class NestingInterfaces {
+        public class BImp implements A.B {
+          public void f() {}
+        }
+        class CImp implements A.C {
+          public void f() {}
+        }
+        // Cannot implement a private interface except
+        // within that interface's defining class:
+        //! class DImp implements A.D {
+        //!  public void f() {}
+        //! }
+        class EImp implements E {
+          public void g() {}
+        }
+        class EGImp implements E.G {
+          public void f() {}
+        }
+        class EImp2 implements E {
+          public void g() {}
+          class EG implements E.G {
+            public void f() {}
+          }
+        }
+        public static void main(String[] args) {
+          A a = new A();
+          // Can't access A.D:
+          //! A.D ad = a.getD();
+          // Doesn't return anything but A.D:
+          //! A.DImp2 di2 = a.getD();
+          // Cannot access a member of the interface:
+          //! a.getD().f();
+          // Only another A can do anything with getD():
+          A a2 = new A();
+          a2.receiveD(a.getD());
+        }
+      }
+    language: java
+    options:
+      - text: "Only pass it to another `A`, for example `a2.receiveD(a.getD())`"
+        correct: true
+      - text: "Call `f()` on it"
+        feedback: "That's a `//!` line: `D`'s members aren't accessible outside `A`."
+      - text: "Store it in an `A.DImp2` variable"
+        feedback: "`getD()` returns `D`, and the cast to `DImp2` isn't possible without naming `D`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

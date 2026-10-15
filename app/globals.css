@@ -1408,6 +1408,15 @@ pre.shiki,
   flex: 1 1 auto;
   min-inline-size: 0;
 }
+.option__pre {
+  margin: 0;
+  font-family: var(--font-code);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  white-space: pre;
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
 .option__text code {
   font-size: 0.9em;
 }

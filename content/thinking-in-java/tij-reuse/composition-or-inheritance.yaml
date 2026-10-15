@@ -58,3 +58,77 @@ steps:
         correct: true
       - text: Inheritance — it saves typing
         feedback: Inheritance ties you to the base class's interface and implementation for good.
+
+  - type: choice
+    id: tij-reusing-spaceship
+    prompt: |
+      `SpaceShipControls` is shown below. What's questionable about `SpaceShip extends SpaceShipControls`?
+    code: |
+      //: reusing/SpaceShip.java
+
+      public class SpaceShip extends SpaceShipControls {
+        private String name;
+        public SpaceShip(String name) { this.name = name; }
+        public String toString() { return name; }
+        public static void main(String[] args) {
+          SpaceShip protector = new SpaceShip("NSEA Protector");
+          protector.forward(100);
+        }
+      }
+
+      //: reusing/SpaceShipControls.java
+
+      public class SpaceShipControls {
+        void up(int velocity) {}
+        void down(int velocity) {}
+        void left(int velocity) {}
+        void right(int velocity) {}
+        void forward(int velocity) {}
+        void back(int velocity) {}
+        void turboBoost() {}
+      }
+    language: java
+    options:
+      - text: "A spaceship isn't a kind of control panel; inheriting exposes all the controls' methods as its own"
+        correct: true
+      - text: "It doesn't compile"
+        feedback: "It compiles and runs, printing nothing."
+      - text: "Nothing — inheritance is always preferred"
+        feedback: "\"Is-a\" doesn't hold here, so delegation or composition fits better."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-wind
+    prompt: |
+      `Instrument.tune` takes an `Instrument`. Why can it be passed a `Wind`?
+    code: |
+      //: reusing/Wind.java
+      // Inheritance & upcasting.
+
+      class Instrument {
+        public void play() {}
+        static void tune(Instrument i) {
+          // ...
+          i.play();
+        }
+      }
+
+      // Wind objects are instruments
+      // because they have the same interface:
+      public class Wind extends Instrument {
+        public static void main(String[] args) {
+          Wind flute = new Wind();
+          Instrument.tune(flute); // Upcasting
+        }
+      }
+    language: java
+    options:
+      - text: "A `Wind` is an `Instrument` — upcasting is automatic and safe"
+        correct: true
+      - text: "It can't; a cast is required"
+        feedback: "Upcasting needs no cast."
+      - text: "Because `Wind` overrides `play`"
+        feedback: "It doesn't override anything; inheritance alone makes it an `Instrument`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -1,0 +1,359 @@
+title: "final, and cleaning up"
+summary: "What final means for data, arguments, methods and classes — and how to dispose of objects in the right order."
+duration: 8
+tags: [java, final, blank final, private methods, cleanup, dispose]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 7, The final keyword; Guaranteeing proper cleanup" }
+steps:
+  - type: explanation
+    title: "final"
+    body: |
+      A `final` field can be assigned only once — at its declaration or in every constructor (a blank final).
+      For a reference, only the reference is fixed; the object it points to can still change.
+      A `final` class can't be extended, and a `final` method can't be overridden.
+
+  - type: explanation
+    title: "private methods aren't overridden"
+    body: |
+      A `private` method is invisible to subclasses, so it's implicitly `final`.
+      A subclass method with the same name is a brand-new method, not an override.
+      For cleanup, write your own `dispose()` and call it in `finally`, in the reverse order of creation.
+
+  - type: predict
+    id: tij-reusing-cadsystem
+    prompt: |
+      What are the first five lines printed by `dispose()`? (`print` is `println`.)
+    code: |
+      //: reusing/CADSystem.java
+      // Ensuring proper cleanup.
+      package reusing;
+      import static net.mindview.util.Print.*;
+
+      class Shape {
+        Shape(int i) { print("Shape constructor"); }
+        void dispose() { print("Shape dispose"); }
+      }
+
+      class Circle extends Shape {
+        Circle(int i) {
+          super(i);
+          print("Drawing Circle");
+        }
+        void dispose() {
+          print("Erasing Circle");
+          super.dispose();
+        }
+      }
+
+      class Triangle extends Shape {
+        Triangle(int i) {
+          super(i);
+          print("Drawing Triangle");
+        }
+        void dispose() {
+          print("Erasing Triangle");
+          super.dispose();
+        }
+      }
+
+      class Line extends Shape {
+        private int start, end;
+        Line(int start, int end) {
+          super(start);
+          this.start = start;
+          this.end = end;
+          print("Drawing Line: " + start + ", " + end);
+        }
+        void dispose() {
+          print("Erasing Line: " + start + ", " + end);
+          super.dispose();
+        }
+      }
+
+      public class CADSystem extends Shape {
+        private Circle c;
+        private Triangle t;
+        private Line[] lines = new Line[3];
+        public CADSystem(int i) {
+          super(i + 1);
+          for(int j = 0; j < lines.length; j++)
+            lines[j] = new Line(j, j*j);
+          c = new Circle(1);
+          t = new Triangle(1);
+          print("Combined constructor");
+        }
+        public void dispose() {
+          print("CADSystem.dispose()");
+          // The order of cleanup is the reverse
+          // of the order of initialization:
+          t.dispose();
+          c.dispose();
+          for(int i = lines.length - 1; i >= 0; i--)
+            lines[i].dispose();
+          super.dispose();
+        }
+        public static void main(String[] args) {
+          CADSystem x = new CADSystem(47);
+          try {
+            // Code and exception handling...
+          } finally {
+            x.dispose();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "CADSystem.dispose()\nErasing Triangle\nShape dispose\nErasing Circle\nShape dispose"
+        correct: true
+      - text: "CADSystem.dispose()\nErasing Line: 0, 0\nShape dispose\nErasing Line: 1, 1\nShape dispose"
+        feedback: "Cleanup runs in the reverse order of creation: the triangle was created last."
+      - text: "CADSystem.dispose()\nShape dispose\nErasing Triangle\nShape dispose\nErasing Circle"
+        feedback: "Each `dispose` prints its own line before calling `super.dispose()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-finaldata
+    prompt: |
+      The four `rand.nextInt(20)` calls return 18, 15, 13 in order — `INT_5` is drawn once when the class loads. What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/FinalData.java
+      // The effect of final on fields.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Value {
+        int i; // Package access
+        public Value(int i) { this.i = i; }
+      }
+
+      public class FinalData {
+        private static Random rand = new Random(47);
+        private String id;
+        public FinalData(String id) { this.id = id; }
+        // Can be compile-time constants:
+        private final int valueOne = 9;
+        private static final int VALUE_TWO = 99;
+        // Typical public constant:
+        public static final int VALUE_THREE = 39;
+        // Cannot be compile-time constants:
+        private final int i4 = rand.nextInt(20);
+        static final int INT_5 = rand.nextInt(20);
+        private Value v1 = new Value(11);
+        private final Value v2 = new Value(22);
+        private static final Value VAL_3 = new Value(33);
+        // Arrays:
+        private final int[] a = { 1, 2, 3, 4, 5, 6 };
+        public String toString() {
+          return id + ": " + "i4 = " + i4 + ", INT_5 = " + INT_5;
+        }
+        public static void main(String[] args) {
+          FinalData fd1 = new FinalData("fd1");
+          //! fd1.valueOne++; // Error: can't change value
+          fd1.v2.i++; // Object isn't constant!
+          fd1.v1 = new Value(9); // OK -- not final
+          for(int i = 0; i < fd1.a.length; i++)
+            fd1.a[i]++; // Object isn't constant!
+          //! fd1.v2 = new Value(0); // Error: Can't
+          //! fd1.VAL_3 = new Value(1); // change reference
+          //! fd1.a = new int[3];
+          print(fd1);
+          print("Creating new FinalData");
+          FinalData fd2 = new FinalData("fd2");
+          print(fd1);
+          print(fd2);
+        }
+      }
+    language: java
+    options:
+      - text: "fd1: i4 = 15, INT_5 = 18\nCreating new FinalData\nfd1: i4 = 15, INT_5 = 18\nfd2: i4 = 13, INT_5 = 18"
+        correct: true
+      - text: "fd1: i4 = 15, INT_5 = 18\nCreating new FinalData\nfd1: i4 = 15, INT_5 = 18\nfd2: i4 = 13, INT_5 = 13"
+        feedback: "`INT_5` is static: set once, shared by every object."
+      - text: "fd1: i4 = 15, INT_5 = 18\nCreating new FinalData\nfd1: i4 = 13, INT_5 = 18\nfd2: i4 = 13, INT_5 = 18"
+        feedback: "`i4` is per object and final; creating `fd2` doesn't change `fd1`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-blankfinal
+    prompt: |
+      What happens if one constructor forgets to assign `j`?
+    code: |
+      //: reusing/BlankFinal.java
+      // "Blank" final fields.
+
+      class Poppet {
+        private int i;
+        Poppet(int ii) { i = ii; }
+      }
+
+      public class BlankFinal {
+        private final int i = 0; // Initialized final
+        private final int j; // Blank final
+        private final Poppet p; // Blank final reference
+        // Blank finals MUST be initialized in the constructor:
+        public BlankFinal() {
+          j = 1; // Initialize blank final
+          p = new Poppet(1); // Initialize blank final reference
+        }
+        public BlankFinal(int x) {
+          j = x; // Initialize blank final
+          p = new Poppet(x); // Initialize blank final reference
+        }
+        public static void main(String[] args) {
+          new BlankFinal();
+          new BlankFinal(47);
+        }
+      }
+    language: java
+    options:
+      - text: "Compile error — every constructor must assign each blank final exactly once"
+        correct: true
+      - text: "`j` defaults to 0"
+        feedback: "Blank finals have no default; the compiler checks definite assignment."
+      - text: "It throws when that constructor runs"
+        feedback: "It's caught at compile time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-finalarguments
+    prompt: |
+      Inside `with(final Gizmo g)`, what can't you do?
+    code: |
+      //: reusing/FinalArguments.java
+      // Using "final" with method arguments.
+
+      class Gizmo {
+        public void spin() {}
+      }
+
+      public class FinalArguments {
+        void with(final Gizmo g) {
+          //! g = new Gizmo(); // Illegal -- g is final
+        }
+        void without(Gizmo g) {
+          g = new Gizmo(); // OK -- g not final
+          g.spin();
+        }
+        // void f(final int i) { i++; } // Can't change
+        // You can only read from a final primitive:
+        int g(final int i) { return i + 1; }
+        public static void main(String[] args) {
+          FinalArguments bf = new FinalArguments();
+          bf.without(null);
+          bf.with(null);
+        }
+      }
+    language: java
+    options:
+      - text: "Assign a new object to `g`"
+        correct: true
+      - text: "Call `g.spin()`"
+        feedback: "The object isn't frozen; only the reference is."
+      - text: "Pass `null` for `g`"
+        feedback: "`main` does exactly that."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-finaloverridingillusion
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: reusing/FinalOverridingIllusion.java
+      // It only looks like you can override
+      // a private or private final method.
+      import static net.mindview.util.Print.*;
+
+      class WithFinals {
+        // Identical to "private" alone:
+        private final void f() { print("WithFinals.f()"); }
+        // Also automatically "final":
+        private void g() { print("WithFinals.g()"); }
+      }
+
+      class OverridingPrivate extends WithFinals {
+        private final void f() {
+          print("OverridingPrivate.f()");
+        }
+        private void g() {
+          print("OverridingPrivate.g()");
+        }
+      }
+
+      class OverridingPrivate2 extends OverridingPrivate {
+        public final void f() {
+          print("OverridingPrivate2.f()");
+        }
+        public void g() {
+          print("OverridingPrivate2.g()");
+        }
+      }
+
+      public class FinalOverridingIllusion {
+        public static void main(String[] args) {
+          OverridingPrivate2 op2 = new OverridingPrivate2();
+          op2.f();
+          op2.g();
+          // You can upcast:
+          OverridingPrivate op = op2;
+          // But you can't call the methods:
+          //! op.f();
+          //! op.g();
+          // Same here:
+          WithFinals wf = op2;
+          //! wf.f();
+          //! wf.g();
+        }
+      }
+    language: java
+    options:
+      - text: "OverridingPrivate2.f()\nOverridingPrivate2.g()"
+        correct: true
+      - text: "It doesn't compile — `f()` is final in `WithFinals`"
+        feedback: "A private method isn't inherited, so declaring `f` again isn't an override at all."
+      - text: "WithFinals.f()\nWithFinals.g()"
+        feedback: "`op2` is an `OverridingPrivate2`, and its public methods are called directly."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-jurassic
+    prompt: |
+      `Dinosaur` is a `final` class. Which of these is allowed?
+    code: |
+      //: reusing/Jurassic.java
+      // Making an entire class final.
+
+      class SmallBrain {}
+
+      final class Dinosaur {
+        int i = 7;
+        int j = 1;
+        SmallBrain x = new SmallBrain();
+        void f() {}
+      }
+
+      //! class Further extends Dinosaur {}
+      // error: Cannot extend final class 'Dinosaur'
+
+      public class Jurassic {
+        public static void main(String[] args) {
+          Dinosaur n = new Dinosaur();
+          n.f();
+          n.i = 40;
+          n.j++;
+        }
+      }
+    language: java
+    options:
+      - text: "Changing its fields: `n.i = 40; n.j++;`"
+        correct: true
+      - text: "`class Further extends Dinosaur {}`"
+        feedback: "A final class can't be subclassed."
+    explanation: |
+      `final` on a class prevents inheritance; it doesn't make the fields final.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -120,3 +120,122 @@ steps:
         right: The variable's declared type
       - left: Static method
         right: The declared type, at compile time
+
+  - type: predict
+    id: tij-polymorphism-privateoverride
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: polymorphism/PrivateOverride.java
+      // Trying to override a private method.
+      package polymorphism;
+      import static net.mindview.util.Print.*;
+
+      public class PrivateOverride {
+        private void f() { print("private f()"); }
+        public static void main(String[] args) {
+          PrivateOverride po = new Derived();
+          po.f();
+        }
+      }
+
+      class Derived extends PrivateOverride {
+        public void f() { print("public f()"); }
+      }
+    language: java
+    options:
+      - text: "private f()"
+        correct: true
+      - text: "public f()"
+        feedback: "A private method can't be overridden; `Derived.f` is a separate method, and `po.f()` is resolved inside `PrivateOverride`."
+      - text: "It doesn't compile"
+        feedback: "`main` is inside `PrivateOverride`, so it may call the private `f`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-polymorphism-fieldaccess
+    prompt: |
+      What is the first line printed?
+    code: |
+      //: polymorphism/FieldAccess.java
+      // Direct field access is determined at compile time.
+
+      class Super {
+        public int field = 0;
+        public int getField() { return field; }
+      }
+
+      class Sub extends Super {
+        public int field = 1;
+        public int getField() { return field; }
+        public int getSuperField() { return super.field; }
+      }
+
+      public class FieldAccess {
+        public static void main(String[] args) {
+          Super sup = new Sub(); // Upcast
+          System.out.println("sup.field = " + sup.field +
+            ", sup.getField() = " + sup.getField());
+          Sub sub = new Sub();
+          System.out.println("sub.field = " +
+            sub.field + ", sub.getField() = " +
+            sub.getField() +
+            ", sub.getSuperField() = " +
+            sub.getSuperField());
+        }
+      }
+    language: java
+    options:
+      - text: "sup.field = 0, sup.getField() = 1"
+        correct: true
+      - text: "sup.field = 1, sup.getField() = 1"
+        feedback: "Field access isn't polymorphic: `sup` has static type `Super`, so `sup.field` is `Super.field`."
+      - text: "sup.field = 0, sup.getField() = 0"
+        feedback: "`getField()` is a method, so it's bound to `Sub`'s version, which returns `Sub.field`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-polymorphism-staticpolymorphism
+    prompt: |
+      What does this print?
+    code: |
+      //: polymorphism/StaticPolymorphism.java
+      // Static methods are not polymorphic.
+
+      class StaticSuper {
+        public static String staticGet() {
+          return "Base staticGet()";
+        }
+        public String dynamicGet() {
+          return "Base dynamicGet()";
+        }
+      }
+
+      class StaticSub extends StaticSuper {
+        public static String staticGet() {
+          return "Derived staticGet()";
+        }
+        public String dynamicGet() {
+          return "Derived dynamicGet()";
+        }
+      }
+
+      public class StaticPolymorphism {
+        public static void main(String[] args) {
+          StaticSuper sup = new StaticSub(); // Upcast
+          System.out.println(sup.staticGet());
+          System.out.println(sup.dynamicGet());
+        }
+      }
+    language: java
+    options:
+      - text: "Base staticGet()\nDerived dynamicGet()"
+        correct: true
+      - text: "Derived staticGet()\nDerived dynamicGet()"
+        feedback: "Static methods belong to the class, chosen by the reference's static type `StaticSuper`."
+      - text: "Base staticGet()\nBase dynamicGet()"
+        feedback: "`dynamicGet` is an instance method, so the `StaticSub` override runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -64,3 +64,235 @@ steps:
         right: During construction, after field initializers
       - left: "In `drive()`: `if (e == null) e = new Engine();`"
         right: On first use, if ever
+
+  - type: predict
+    id: tij-reusing-sprinklersystem
+    prompt: |
+      What does this print?
+    code: |
+      //: reusing/SprinklerSystem.java
+      // Composition for code reuse.
+
+      class WaterSource {
+        private String s;
+        WaterSource() {
+          System.out.println("WaterSource()");
+          s = "Constructed";
+        }
+        public String toString() { return s; }
+      }
+
+      public class SprinklerSystem {
+        private String valve1, valve2, valve3, valve4;
+        private WaterSource source = new WaterSource();
+        private int i;
+        private float f;
+        public String toString() {
+          return
+            "valve1 = " + valve1 + " " +
+            "valve2 = " + valve2 + " " +
+            "valve3 = " + valve3 + " " +
+            "valve4 = " + valve4 + "\n" +
+            "i = " + i + " " + "f = " + f + " " +
+            "source = " + source;
+        }
+        public static void main(String[] args) {
+          SprinklerSystem sprinklers = new SprinklerSystem();
+          System.out.println(sprinklers);
+        }
+      }
+    language: java
+    options:
+      - text: "WaterSource()\nvalve1 = null valve2 = null valve3 = null valve4 = null\ni = 0 f = 0.0 source = Constructed"
+        correct: true
+      - text: "valve1 = null valve2 = null valve3 = null valve4 = null\ni = 0 f = 0.0 source = Constructed"
+        feedback: "Creating `source` prints `WaterSource()` first."
+      - text: "WaterSource()\nvalve1 =  valve2 =  valve3 =  valve4 = \ni = 0 f = 0.0 source = Constructed"
+        feedback: "Uninitialized `String` fields are `null`, and concatenation prints `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-reusing-bath
+    prompt: |
+      What are the first two lines printed? (`print` is `println`.)
+    code: |
+      //: reusing/Bath.java
+      // Constructor initialization with composition.
+      import static net.mindview.util.Print.*;
+
+      class Soap {
+        private String s;
+        Soap() {
+          print("Soap()");
+          s = "Constructed";
+        }
+        public String toString() { return s; }
+      }
+
+      public class Bath {
+        private String // Initializing at point of definition:
+          s1 = "Happy",
+          s2 = "Happy",
+          s3, s4;
+        private Soap castille;
+        private int i;
+        private float toy;
+        public Bath() {
+          print("Inside Bath()");
+          s3 = "Joy";
+          toy = 3.14f;
+          castille = new Soap();
+        }
+        // Instance initialization:
+        { i = 47; }
+        public String toString() {
+          if(s4 == null) // Delayed initialization:
+            s4 = "Joy";
+          return
+            "s1 = " + s1 + "\n" +
+            "s2 = " + s2 + "\n" +
+            "s3 = " + s3 + "\n" +
+            "s4 = " + s4 + "\n" +
+            "i = " + i + "\n" +
+            "toy = " + toy + "\n" +
+            "castille = " + castille;
+        }
+        public static void main(String[] args) {
+          Bath b = new Bath();
+          print(b);
+        }
+      }
+    language: java
+    options:
+      - text: "Inside Bath()\nSoap()"
+        correct: true
+      - text: "Soap()\nInside Bath()"
+        feedback: "`castille` is created inside the constructor, after its first `print`."
+      - text: "Inside Bath()\ns1 = Happy"
+        feedback: "Creating the `Soap` prints `Soap()` before `print(b)`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-car
+    prompt: |
+      Why are `Car`'s member objects public here?
+    code: |
+      //: reusing/Car.java
+      // Composition with public objects.
+
+      class Engine {
+        public void start() {}
+        public void rev() {}
+        public void stop() {}
+      }
+
+      class Wheel {
+        public void inflate(int psi) {}
+      }
+
+      class Window {
+        public void rollup() {}
+        public void rolldown() {}
+      }
+
+      class Door {
+        public Window window = new Window();
+        public void open() {}
+        public void close() {}
+      }
+
+      public class Car {
+        public Engine engine = new Engine();
+        public Wheel[] wheel = new Wheel[4];
+        public Door
+          left = new Door(),
+          right = new Door(); // 2-door
+        public Car() {
+          for(int i = 0; i < 4; i++)
+            wheel[i] = new Wheel();
+        }
+        public static void main(String[] args) {
+          Car car = new Car();
+          car.left.window.rollup();
+          car.wheel[0].inflate(72);
+        }
+      }
+    language: java
+    options:
+      - text: "The parts are part of what a car is, so letting clients use them directly makes it easy to understand"
+        correct: true
+      - text: "Composition requires public fields"
+        feedback: "Members are usually private; this is a special case."
+      - text: "So the program prints something"
+        feedback: "It prints nothing."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-reusing-spaceshipdelegation
+    prompt: |
+      `SpaceShipControls` (shown below) has methods like `forward`, `back` and `turboBoost`. What does `SpaceShipDelegation` do?
+    code: |
+      //: reusing/SpaceShipDelegation.java
+
+      public class SpaceShipDelegation {
+        private String name;
+        private SpaceShipControls controls =
+          new SpaceShipControls();
+        public SpaceShipDelegation(String name) {
+          this.name = name;
+        }
+        // Delegated methods:
+        public void back(int velocity) {
+          controls.back(velocity);
+        }
+        public void down(int velocity) {
+          controls.down(velocity);
+        }
+        public void forward(int velocity) {
+          controls.forward(velocity);
+        }
+        public void left(int velocity) {
+          controls.left(velocity);
+        }
+        public void right(int velocity) {
+          controls.right(velocity);
+        }
+        public void turboBoost() {
+          controls.turboBoost();
+        }
+        public void up(int velocity) {
+          controls.up(velocity);
+        }
+        public static void main(String[] args) {
+          SpaceShipDelegation protector =
+            new SpaceShipDelegation("NSEA Protector");
+          protector.forward(100);
+        }
+      }
+
+      //: reusing/SpaceShipControls.java
+
+      public class SpaceShipControls {
+        void up(int velocity) {}
+        void down(int velocity) {}
+        void left(int velocity) {}
+        void right(int velocity) {}
+        void forward(int velocity) {}
+        void back(int velocity) {}
+        void turboBoost() {}
+      }
+    language: java
+    options:
+      - text: "Holds a controls object and forwards each call to it — delegation"
+        correct: true
+      - text: "Extends `SpaceShipControls`"
+        feedback: "It has one as a field; it doesn't inherit."
+      - text: "Copies the controls' code"
+        feedback: "Each method just calls the same method on `controls`."
+    explanation: |
+      Unlike inheritance, delegation lets you choose which methods to expose.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

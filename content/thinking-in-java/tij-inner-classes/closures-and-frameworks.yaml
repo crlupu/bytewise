@@ -1,0 +1,537 @@
+title: "Closures, callbacks and control frameworks"
+summary: "Inner classes as closures and callbacks, multiple implementation inheritance, inheriting from inner classes, and an event-driven framework."
+duration: 8
+tags: [java, inner classes, closures, callbacks, control framework, inheritance]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 10, Why inner classes?; Closures & callbacks; Inheriting from inner classes" }
+steps:
+  - type: explanation
+    title: "Closures and callbacks"
+    body: |
+      An inner object remembers its outer object, so it's a closure.
+      Hand one out as a callback, and calling it reaches back into the outer object — even its private parts.
+      Inner classes let one outer class provide several implementations of the same interface or abstract class.
+
+  - type: explanation
+    title: "Inner classes and inheritance"
+    body: |
+      An inner class isn't overridden like a method: same-named inner classes in base and subclass are separate classes.
+      To extend an inner class from outside, the constructor must call `outer.super()`.
+      In a control framework, each event is an inner class that can change the outer system's state.
+
+  - type: predict
+    id: tij-innerclasses-callbacks
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: innerclasses/Callbacks.java
+      // Using inner classes for callbacks
+      package innerclasses;
+      import static net.mindview.util.Print.*;
+
+      interface Incrementable {
+        void increment();
+      }
+
+      // Very simple to just implement the interface:
+      class Callee1 implements Incrementable {
+        private int i = 0;
+        public void increment() {
+          i++;
+          print(i);
+        }
+      }
+
+      class MyIncrement {
+        public void increment() { print("Other operation"); }
+        static void f(MyIncrement mi) { mi.increment(); }
+      }
+
+      // If your class must implement increment() in
+      // some other way, you must use an inner class:
+      class Callee2 extends MyIncrement {
+        private int i = 0;
+        public void increment() {
+          super.increment();
+          i++;
+          print(i);
+        }
+        private class Closure implements Incrementable {
+          public void increment() {
+            // Specify outer-class method, otherwise
+            // you'd get an infinite recursion:
+            Callee2.this.increment();
+          }
+        }
+        Incrementable getCallbackReference() {
+          return new Closure();
+        }
+      }
+
+      class Caller {
+        private Incrementable callbackReference;
+        Caller(Incrementable cbh) { callbackReference = cbh; }
+        void go() { callbackReference.increment(); }
+      }
+
+      public class Callbacks {
+        public static void main(String[] args) {
+          Callee1 c1 = new Callee1();
+          Callee2 c2 = new Callee2();
+          MyIncrement.f(c2);
+          Caller caller1 = new Caller(c1);
+          Caller caller2 = new Caller(c2.getCallbackReference());
+          caller1.go();
+          caller1.go();
+          caller2.go();
+          caller2.go();
+        }
+      }
+    language: java
+    options:
+      - text: "Other operation\n1\n1\n2\nOther operation\n2\nOther operation\n3"
+        correct: true
+      - text: "Other operation\n1\n1\n2\n2\n3"
+        feedback: "`Callee2.increment` first calls `super.increment()`, which prints `Other operation` every time."
+      - text: "Other operation\n1\n1\n2\nOther operation\n1\nOther operation\n2"
+        feedback: "`c2`'s `i` was already 1 from `MyIncrement.f(c2)`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-multiinterfaces
+    prompt: |
+      `Y` implements only `A`. How does it satisfy `takesB`?
+    code: |
+      //: innerclasses/MultiInterfaces.java
+      // Two ways that a class can implement multiple interfaces.
+      package innerclasses;
+
+      interface A {}
+      interface B {}
+
+      class X implements A, B {}
+
+      class Y implements A {
+        B makeB() {
+          // Anonymous inner class:
+          return new B() {};
+        }
+      }
+
+      public class MultiInterfaces {
+        static void takesA(A a) {}
+        static void takesB(B b) {}
+        public static void main(String[] args) {
+          X x = new X();
+          Y y = new Y();
+          takesA(x);
+          takesA(y);
+          takesB(x);
+          takesB(y.makeB());
+        }
+      }
+    language: java
+    options:
+      - text: "`makeB()` returns an anonymous inner class that implements `B`"
+        correct: true
+      - text: "`takesB(y)` works because of autoconversion"
+        feedback: "`main` calls `takesB(y.makeB())`, not `takesB(y)`."
+      - text: "It doesn't — this won't compile"
+        feedback: "It compiles and runs, printing nothing."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-multiimplementation
+    prompt: |
+      `D` is a class and `E` an abstract class. How does `Z` act as both?
+    code: |
+      //: innerclasses/MultiImplementation.java
+      // With concrete or abstract classes, inner
+      // classes are the only way to produce the effect
+      // of "multiple implementation inheritance."
+      package innerclasses;
+
+      class D {}
+      abstract class E {}
+
+      class Z extends D {
+        E makeE() { return new E() {}; }
+      }
+
+      public class MultiImplementation {
+        static void takesD(D d) {}
+        static void takesE(E e) {}
+        public static void main(String[] args) {
+          Z z = new Z();
+          takesD(z);
+          takesE(z.makeE());
+        }
+      }
+    language: java
+    options:
+      - text: "It extends `D`, and an inner class extends `E`"
+        correct: true
+      - text: "It extends both `D` and `E`"
+        feedback: "Java allows only one superclass."
+      - text: "It implements `E` as an interface"
+        feedback: "`E` is a class; it can't be implemented."
+    explanation: |
+      With classes rather than interfaces, inner classes are the only way to get multiple implementation inheritance.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-inheritinner
+    prompt: |
+      Why does `InheritInner`'s constructor need a `WithInner` argument and `wi.super()`?
+    code: |
+      //: innerclasses/InheritInner.java
+      // Inheriting an inner class.
+
+      class WithInner {
+        class Inner {}
+      }
+
+      public class InheritInner extends WithInner.Inner {
+        //! InheritInner() {} // Won't compile
+        InheritInner(WithInner wi) {
+          wi.super();
+        }
+        public static void main(String[] args) {
+          WithInner wi = new WithInner();
+          InheritInner ii = new InheritInner(wi);
+        }
+      }
+    language: java
+    options:
+      - text: "The inner base class needs an outer object, so the constructor must supply one"
+        correct: true
+      - text: "`wi.super()` creates a new `WithInner`"
+        feedback: "It calls `Inner`'s constructor with `wi` as its outer object."
+      - text: "It doesn't — the no-arg constructor would work"
+        feedback: "That's the `//!` line: it won't compile."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-bigegg
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: innerclasses/BigEgg.java
+      // An inner class cannot be overriden like a method.
+      import static net.mindview.util.Print.*;
+
+      class Egg {
+        private Yolk y;
+        protected class Yolk {
+          public Yolk() { print("Egg.Yolk()"); }
+        }
+        public Egg() {
+          print("New Egg()");
+          y = new Yolk();
+        }
+      }
+
+      public class BigEgg extends Egg {
+        public class Yolk {
+          public Yolk() { print("BigEgg.Yolk()"); }
+        }
+        public static void main(String[] args) {
+          new BigEgg();
+        }
+      }
+    language: java
+    options:
+      - text: "New Egg()\nEgg.Yolk()"
+        correct: true
+      - text: "New Egg()\nBigEgg.Yolk()"
+        feedback: "Inner classes aren't overridden: `Egg`'s constructor creates `Egg.Yolk`."
+      - text: "Egg.Yolk()\nNew Egg()"
+        feedback: "`y` is assigned in the constructor body, after its first `print`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-bigegg2
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: innerclasses/BigEgg2.java
+      // Proper inheritance of an inner class.
+      import static net.mindview.util.Print.*;
+
+      class Egg2 {
+        protected class Yolk {
+          public Yolk() { print("Egg2.Yolk()"); }
+          public void f() { print("Egg2.Yolk.f()");}
+        }
+        private Yolk y = new Yolk();
+        public Egg2() { print("New Egg2()"); }
+        public void insertYolk(Yolk yy) { y = yy; }
+        public void g() { y.f(); }
+      }
+
+      public class BigEgg2 extends Egg2 {
+        public class Yolk extends Egg2.Yolk {
+          public Yolk() { print("BigEgg2.Yolk()"); }
+          public void f() { print("BigEgg2.Yolk.f()"); }
+        }
+        public BigEgg2() { insertYolk(new Yolk()); }
+        public static void main(String[] args) {
+          Egg2 e2 = new BigEgg2();
+          e2.g();
+        }
+      }
+    language: java
+    options:
+      - text: "Egg2.Yolk()\nNew Egg2()\nEgg2.Yolk()\nBigEgg2.Yolk()\nBigEgg2.Yolk.f()"
+        correct: true
+      - text: "New Egg2()\nEgg2.Yolk()\nBigEgg2.Yolk()\nBigEgg2.Yolk.f()"
+        feedback: "The field initializer `y = new Yolk()` runs before the `Egg2` constructor body."
+      - text: "Egg2.Yolk()\nNew Egg2()\nBigEgg2.Yolk()\nBigEgg2.Yolk.f()"
+        feedback: "`BigEgg2.Yolk` extends `Egg2.Yolk`, so its base constructor prints `Egg2.Yolk()` first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-controller-event
+    prompt: |
+      When does `ready()` return true?
+    code: |
+      //: innerclasses/controller/Event.java
+      // The common methods for any control event.
+      package innerclasses.controller;
+
+      public abstract class Event {
+        private long eventTime;
+        protected final long delayTime;
+        public Event(long delayTime) {
+          this.delayTime = delayTime;
+          start();
+        }
+        public void start() { // Allows restarting
+          eventTime = System.nanoTime() + delayTime;
+        }
+        public boolean ready() {
+          return System.nanoTime() >= eventTime;
+        }
+        public abstract void action();
+      }
+    language: java
+    options:
+      - text: "Once `delayTime` nanoseconds have passed since `start()` was last called"
+        correct: true
+      - text: "After `delayTime` milliseconds"
+        feedback: "It uses `System.nanoTime()`, so the delay is in nanoseconds."
+      - text: "Only after `action()` runs"
+        feedback: "`ready` only compares the clock with `eventTime`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-controller-controller
+    prompt: |
+      Why does `run()` loop over `new ArrayList<Event>(eventList)` instead of `eventList`?
+    code: |
+      //: innerclasses/controller/Controller.java
+      // The reusable framework for control systems.
+      package innerclasses.controller;
+      import java.util.*;
+
+      public class Controller {
+        // A class from java.util to hold Event objects:
+        private List<Event> eventList = new ArrayList<Event>();
+        public void addEvent(Event c) { eventList.add(c); }
+        public void run() {
+          while(eventList.size() > 0)
+            // Make a copy so you're not modifying the list
+            // while you're selecting the elements in it:
+            for(Event e : new ArrayList<Event>(eventList))
+              if(e.ready()) {
+                System.out.println(e);
+                e.action();
+                eventList.remove(e);
+              }
+        }
+      }
+    language: java
+    options:
+      - text: "Actions may add events and the loop removes them; changing a list while iterating it throws `ConcurrentModificationException`"
+        correct: true
+      - text: "For speed"
+        feedback: "Copying is slower; it's for safety."
+      - text: "To run each event twice"
+        feedback: "Each ready event is printed, run and removed once."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-greenhousecontrols
+    prompt: |
+      How does `LightOn.action()` change the greenhouse's `light` field?
+    code: |
+      //: innerclasses/GreenhouseControls.java
+      // This produces a specific application of the
+      // control system, all in a single class. Inner
+      // classes allow you to encapsulate different
+      // functionality for each type of event.
+      import innerclasses.controller.*;
+
+      public class GreenhouseControls extends Controller {
+        private boolean light = false;
+        public class LightOn extends Event {
+          public LightOn(long delayTime) { super(delayTime); }
+          public void action() {
+            // Put hardware control code here to
+            // physically turn on the light.
+            light = true;
+          }
+          public String toString() { return "Light is on"; }
+        }
+        public class LightOff extends Event {
+          public LightOff(long delayTime) { super(delayTime); }
+          public void action() {
+            // Put hardware control code here to
+            // physically turn off the light.
+            light = false;
+          }
+          public String toString() { return "Light is off"; }
+        }
+        private boolean water = false;
+        public class WaterOn extends Event {
+          public WaterOn(long delayTime) { super(delayTime); }
+          public void action() {
+            // Put hardware control code here.
+            water = true;
+          }
+          public String toString() {
+            return "Greenhouse water is on";
+          }
+        }
+        public class WaterOff extends Event {
+          public WaterOff(long delayTime) { super(delayTime); }
+          public void action() {
+            // Put hardware control code here.
+            water = false;
+          }
+          public String toString() {
+            return "Greenhouse water is off";
+          }
+        }
+        private String thermostat = "Day";
+        public class ThermostatNight extends Event {
+          public ThermostatNight(long delayTime) {
+            super(delayTime);
+          }
+          public void action() {
+            // Put hardware control code here.
+            thermostat = "Night";
+          }
+          public String toString() {
+            return "Thermostat on night setting";
+          }
+        }
+        public class ThermostatDay extends Event {
+          public ThermostatDay(long delayTime) {
+            super(delayTime);
+          }
+          public void action() {
+            // Put hardware control code here.
+            thermostat = "Day";
+          }
+          public String toString() {
+            return "Thermostat on day setting";
+          }
+        }
+        // An example of an action() that inserts a
+        // new one of itself into the event list:
+        public class Bell extends Event {
+          public Bell(long delayTime) { super(delayTime); }
+          public void action() {
+            addEvent(new Bell(delayTime));
+          }
+          public String toString() { return "Bing!"; }
+        }
+        public class Restart extends Event {
+          private Event[] eventList;
+          public Restart(long delayTime, Event[] eventList) {
+            super(delayTime);
+            this.eventList = eventList;
+            for(Event e : eventList)
+              addEvent(e);
+          }
+          public void action() {
+            for(Event e : eventList) {
+              e.start(); // Rerun each event
+              addEvent(e);
+            }
+            start(); // Rerun this Event
+            addEvent(this);
+          }
+          public String toString() {
+            return "Restarting system";
+          }
+        }
+        public static class Terminate extends Event {
+          public Terminate(long delayTime) { super(delayTime); }
+          public void action() { System.exit(0); }
+          public String toString() { return "Terminating";  }
+        }
+      }
+    language: java
+    options:
+      - text: "`LightOn` is an inner class, so it can set the outer object's private `light` directly"
+        correct: true
+      - text: "Through a setter in `Controller`"
+        feedback: "There's no setter; inner classes access outer fields directly."
+      - text: "It can't — `light` is private"
+        feedback: "Private members are visible to inner classes."
+    explanation: |
+      `Bell` re-adds itself in `action()`, and `Restart` re-adds every event and itself — so the system runs forever unless a `Terminate` event calls `System.exit`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-greenhousecontroller
+    prompt: |
+      `Bell` re-adds itself every time it rings, and `Restart` re-adds all the events and itself. `Terminate(n)` calls `System.exit(0)` after n nanoseconds. What happens when the program runs with no arguments?
+    code: |
+      //: innerclasses/GreenhouseController.java
+      // Configure and execute the greenhouse system.
+      import innerclasses.controller.*;
+
+      public class GreenhouseController {
+        public static void main(String[] args) {
+          GreenhouseControls gc = new GreenhouseControls();
+          // Instead of hard-wiring, you could parse
+          // configuration information from a text file here:
+          gc.addEvent(gc.new Bell(900));
+          Event[] eventList = {
+            gc.new ThermostatNight(0),
+            gc.new LightOn(200),
+            gc.new LightOff(400),
+            gc.new WaterOn(600),
+            gc.new WaterOff(800),
+            gc.new ThermostatDay(1400)
+          };
+          gc.addEvent(gc.new Restart(2000, eventList));
+          if(args.length == 1)
+            gc.addEvent(
+              new GreenhouseControls.Terminate(
+                new Integer(args[0])));
+          gc.run();
+        }
+      }
+    language: java
+    options:
+      - text: "It runs forever, printing `Bing!`, the greenhouse events and `Restarting system` over and over"
+        correct: true
+      - text: "It runs each event once and stops when the list is empty"
+        feedback: "`Bell` and `Restart` keep refilling the list."
+      - text: "It throws because no `Terminate` was added"
+        feedback: "Without an argument, nothing ever ends the loop."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

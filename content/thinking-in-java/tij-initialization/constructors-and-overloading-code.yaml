@@ -1,0 +1,136 @@
+title: "Constructors, overloading and this: in code"
+summary: "More examples for constructors, overloading and this, one question each."
+duration: 3
+tags: [java, constructors, overloading, this, promotion]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Guaranteed initialization with the constructor; Method overloading; The this keyword" }
+steps:
+  - type: explanation
+    title: "Recap: Constructors and overloading"
+    body: |
+      A constructor has the class's name and runs on `new`.
+      If you write no constructor, Java adds a no-arg one — but not once you've written any.
+      Overloads differ by parameter types or order, never by return type alone.
+
+  - type: explanation
+    title: "Recap: Promotion and this"
+    body: |
+      A primitive argument with no exact match is widened to the nearest larger type.
+      A wider one must be cast down explicitly.
+      `this` is the current object; `this(...)` calls another constructor, and only as the first statement.
+
+  - type: choice
+    id: tij-initialization-passingthis
+    prompt: |
+      Why does `Apple.getPeeled()` pass `this` to `Peeler.peel`?
+    code: |
+      //: initialization/PassingThis.java
+
+      class Person {
+        public void eat(Apple apple) {
+          Apple peeled = apple.getPeeled();
+          System.out.println("Yummy");
+        }
+      }
+
+      class Peeler {
+        static Apple peel(Apple apple) {
+          // ... remove peel
+          return apple; // Peeled
+        }
+      }
+
+      class Apple {
+        Apple getPeeled() { return Peeler.peel(this); }
+      }
+
+      public class PassingThis {
+        public static void main(String[] args) {
+          new Person().eat(new Apple());
+        }
+      }
+    language: java
+    options:
+      - text: "To hand the current object to an outside utility method"
+        correct: true
+      - text: "To create a copy of the apple"
+        feedback: "It passes a reference to the same object."
+      - text: "Because `peel` is an instance method of `Apple`"
+        feedback: "`peel` is a static method of `Peeler`."
+    explanation: |
+      The program prints `Yummy`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-flower
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/Flower.java
+      // Calling constructors with "this"
+      import static net.mindview.util.Print.*;
+
+      public class Flower {
+        int petalCount = 0;
+        String s = "initial value";
+        Flower(int petals) {
+          petalCount = petals;
+          print("Constructor w/ int arg only, petalCount= "
+            + petalCount);
+        }
+        Flower(String ss) {
+          print("Constructor w/ String arg only, s = " + ss);
+          s = ss;
+        }
+        Flower(String s, int petals) {
+          this(petals);
+      //!    this(s); // Can't call two!
+          this.s = s; // Another use of "this"
+          print("String & int args");
+        }
+        Flower() {
+          this("hi", 47);
+          print("default constructor (no args)");
+        }
+        void printPetalCount() {
+      //! this(11); // Not inside non-constructor!
+          print("petalCount = " + petalCount + " s = "+ s);
+        }
+        public static void main(String[] args) {
+          Flower x = new Flower();
+          x.printPetalCount();
+        }
+      }
+    language: java
+    options:
+      - text: "Constructor w/ int arg only, petalCount= 47\nString & int args\ndefault constructor (no args)\npetalCount = 47 s = hi"
+        correct: true
+      - text: "default constructor (no args)\nString & int args\nConstructor w/ int arg only, petalCount= 47\npetalCount = 47 s = hi"
+        feedback: "`this(...)` runs first, so the innermost constructor prints first."
+      - text: "Constructor w/ int arg only, petalCount= 47\nString & int args\ndefault constructor (no args)\npetalCount = 47 s = initial value"
+        feedback: "`this.s = s` sets the field to `\"hi\"`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-counter
+    prompt: |
+      When `new Counter()` runs, what values does `i` hold?
+    code: |
+      //: initialization/Counter.java
+      public class Counter {
+        int i;
+        Counter() { i = 7; }
+        // ...
+      }
+    language: java
+    options:
+      - text: "First 0 (the default), then 7 when the constructor runs"
+        correct: true
+      - text: "Only 7 — the constructor initializes it"
+        feedback: "Fields are set to their defaults before any constructor code."
+      - text: "Garbage until the constructor runs"
+        feedback: "Java always zeroes fields first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -111,3 +111,80 @@ steps:
         correct: true
       - text: Whether the levels are equal — here, true
         feedback: "`==` on references compares identity. Content comparison is what `equals` is for, once a class overrides it."
+
+  - type: predict
+    id: tij-operators-assignment
+    prompt: |
+      What is the third line printed? (`print` is `println`.)
+    code: |
+      //: operators/Assignment.java
+      // Assignment with objects is a bit tricky.
+      import static net.mindview.util.Print.*;
+
+      class Tank {
+        int level;
+      }
+
+      public class Assignment {
+        public static void main(String[] args) {
+          Tank t1 = new Tank();
+          Tank t2 = new Tank();
+          t1.level = 9;
+          t2.level = 47;
+          print("1: t1.level: " + t1.level +
+                ", t2.level: " + t2.level);
+          t1 = t2;
+          print("2: t1.level: " + t1.level +
+                ", t2.level: " + t2.level);
+          t1.level = 27;
+          print("3: t1.level: " + t1.level +
+                ", t2.level: " + t2.level);
+        }
+      }
+    language: java
+    options:
+      - text: "3: t1.level: 27, t2.level: 27"
+        correct: true
+      - text: "3: t1.level: 27, t2.level: 47"
+        feedback: "After `t1 = t2`, both names refer to the same `Tank`."
+      - text: "3: t1.level: 9, t2.level: 27"
+        feedback: "`t1 = t2` copies the reference, and the original first tank is no longer reachable."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-passobject
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: operators/PassObject.java
+      // Passing objects to methods may not be
+      // what you're used to.
+      import static net.mindview.util.Print.*;
+
+      class Letter {
+        char c;
+      }
+
+      public class PassObject {
+        static void f(Letter y) {
+          y.c = 'z';
+        }
+        public static void main(String[] args) {
+          Letter x = new Letter();
+          x.c = 'a';
+          print("1: x.c: " + x.c);
+          f(x);
+          print("2: x.c: " + x.c);
+        }
+      }
+    language: java
+    options:
+      - text: "1: x.c: a\n2: x.c: z"
+        correct: true
+      - text: "1: x.c: a\n2: x.c: a"
+        feedback: "`f` receives a copy of the reference, which points at the same `Letter`."
+      - text: "1: x.c: z\n2: x.c: z"
+        feedback: "The first line prints before `f` runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

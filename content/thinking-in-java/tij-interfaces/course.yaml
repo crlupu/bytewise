@@ -4,3 +4,4 @@ lessons:
   - abstract-classes
   - multiple-interfaces
   - strategy-and-adapter
+  - factories-and-nesting

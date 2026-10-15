@@ -1,0 +1,195 @@
+title: "Packages and imports"
+summary: "How packages name classes, what import does and doesn't do, and static imports."
+duration: 8
+tags: [java, packages, import, static import, classpath]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 6, package: the library unit" }
+steps:
+  - type: explanation
+    title: "Packages name classes"
+    body: |
+      A class's full name includes its package: `java.util.ArrayList`.
+      You can always write the full name; `import` just lets you write the short one.
+      Classes in the same package (or the same directory with no package) see each other without imports.
+
+  - type: explanation
+    title: "import is only a naming shortcut"
+    body: |
+      `import java.util.*;` loads nothing — it lets the compiler resolve short names.
+      `import static` brings in static members, like `print` from `net.mindview.util.Print`.
+      Two packages with the same short class name can clash; then use the full name.
+
+  - type: predict
+    id: tij-access-cake
+    prompt: |
+      `Pie` is in another file in the same directory, with no package. What does this print?
+    code: |
+      //: access/Cake.java
+      // Accesses a class in a separate compilation unit.
+
+      class Cake {
+        public static void main(String[] args) {
+          Pie x = new Pie();
+          x.f();
+        }
+      }
+
+      //: access/Pie.java
+      // The other class.
+
+      class Pie {
+        void f() { System.out.println("Pie.f()"); }
+      }
+    language: java
+    options:
+      - text: "Pie.f()"
+        correct: true
+      - text: "It doesn't compile — `Pie` isn't public"
+        feedback: "Both files are in the same (default) package, so package access is enough."
+      - text: "It doesn't compile — `Cake` isn't public, so `main` can't run"
+        feedback: "The launcher can run `main` in a package-access class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-fullqualification
+    prompt: |
+      Does this compile without any `import`?
+    code: |
+      //: access/FullQualification.java
+
+      public class FullQualification {
+        public static void main(String[] args) {
+          java.util.ArrayList list = new java.util.ArrayList();
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — the fully qualified name `java.util.ArrayList` needs no import"
+        correct: true
+      - text: "No — `java.util` must be imported"
+        feedback: "Imports only allow the short name."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-singleimport
+    prompt: |
+      Which classes from `java.util` can this file use by their short names?
+    code: |
+      //: access/SingleImport.java
+      import java.util.ArrayList;
+
+      public class SingleImport {
+        public static void main(String[] args) {
+          ArrayList list = new java.util.ArrayList();
+        }
+      }
+    language: java
+    options:
+      - text: "Only `ArrayList`"
+        correct: true
+      - text: "All of `java.util`"
+        feedback: "That needs `import java.util.*;`."
+      - text: "None — it still writes `java.util.ArrayList` on the right"
+        feedback: "The full name is allowed even when imported; the short name works too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-importedmyclass
+    prompt: |
+      `MyClass` is a public class in package `access.mypackage`. Does `new MyClass()` here compile?
+    code: |
+      //: access/ImportedMyClass.java
+      import access.mypackage.*;
+
+      public class ImportedMyClass {
+        public static void main(String[] args) {
+          MyClass m = new MyClass();
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — `import access.mypackage.*;` makes the short name available"
+        correct: true
+      - text: "No — wildcard imports don't include classes"
+        feedback: "`*` imports every public type in that package."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-access-qualifiedmyclass
+    prompt: |
+      `MyClass` is a public class in package `access.mypackage`. How does this file use it without an import?
+    code: |
+      //: access/QualifiedMyClass.java
+
+      public class QualifiedMyClass {
+        public static void main(String[] args) {
+          access.mypackage.MyClass m =
+            new access.mypackage.MyClass();
+        }
+      }
+    language: java
+    options:
+      - text: "By writing the fully qualified name `access.mypackage.MyClass`"
+        correct: true
+      - text: "It can't — this won't compile"
+        feedback: "The full name always works for a public class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-access-libtest
+    prompt: |
+      In package `net.mindview.simple`, `Vector` and `List` each have a constructor that prints its own full class name. What does this print?
+    code: |
+      //: access/LibTest.java
+      // Uses the library.
+      import net.mindview.simple.*;
+
+      public class LibTest {
+        public static void main(String[] args) {
+          Vector v = new Vector();
+          List l = new List();
+        }
+      }
+    language: java
+    options:
+      - text: "net.mindview.simple.Vector\nnet.mindview.simple.List"
+        correct: true
+      - text: "It doesn't compile — `Vector` and `List` clash with `java.util`"
+        feedback: "Only `net.mindview.simple.*` is imported; `java.util` isn't."
+      - text: "Nothing — `java.util.Vector` is used"
+        feedback: "`java.util` isn't imported, so the short names refer to `net.mindview.simple`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-access-printtest
+    prompt: |
+      `print(Object o)` in `net.mindview.util.Print` is `System.out.println(o)`. What does this print?
+    code: |
+      //: access/PrintTest.java
+      // Uses the static printing methods in Print.java.
+      import static net.mindview.util.Print.*;
+
+      public class PrintTest {
+        public static void main(String[] args) {
+          print("Available from now on!");
+          print(100);
+          print(100L);
+          print(3.14159);
+        }
+      }
+    language: java
+    options:
+      - text: "Available from now on!\n100\n100\n3.14159"
+        correct: true
+      - text: "Available from now on!\n100\n100L\n3.14159"
+        feedback: "`100L` is a `long` value; it prints as `100`."
+      - text: "It doesn't compile — `print` isn't defined"
+        feedback: "`import static` brings `print` into scope."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

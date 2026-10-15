@@ -1,0 +1,268 @@
+title: "Nested, local and test classes"
+summary: "Static nested classes, classes inside methods and scopes, classes inside interfaces, and nested test classes."
+duration: 8
+tags: [java, nested classes, static nested, local classes, scope]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 10, Inner classes in methods and scopes; Nested classes" }
+steps:
+  - type: explanation
+    title: "Static nested classes"
+    body: |
+      A `static` nested class has no link to an outer object.
+      You create it without an outer instance, and it can't touch the outer class's instance fields.
+      It can hold static members of its own, and can even live inside an interface.
+
+  - type: explanation
+    title: "Local classes"
+    body: |
+      A class defined inside a method or a block exists only in that scope.
+      It can use the enclosing method's effectively final locals.
+      Unlike an anonymous class, it has a name and can have constructors.
+
+  - type: choice
+    id: tij-innerclasses-parcel5
+    prompt: |
+      `Destination` is an interface. Where can `PDestination` be used by name?
+    code: |
+      //: innerclasses/Parcel5.java
+      // Nesting a class within a method.
+
+      public class Parcel5 {
+        public Destination destination(String s) {
+          class PDestination implements Destination {
+            private String label;
+            private PDestination(String whereTo) {
+              label = whereTo;
+            }
+            public String readLabel() { return label; }
+          }
+          return new PDestination(s);
+        }
+        public static void main(String[] args) {
+          Parcel5 p = new Parcel5();
+          Destination d = p.destination("Tasmania");
+        }
+      }
+    language: java
+    options:
+      - text: "Only inside `destination()` — it's a local class; callers see it as a `Destination`"
+        correct: true
+      - text: "Anywhere in `Parcel5`"
+        feedback: "A local class's scope is the method it's in."
+      - text: "Nowhere — `return new PDestination(s)` doesn't compile"
+        feedback: "It's in scope there, and is returned upcast."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel6
+    prompt: |
+      Why is the last `TrackingSlip` line commented out?
+    code: |
+      //: innerclasses/Parcel6.java
+      // Nesting a class within a scope.
+
+      public class Parcel6 {
+        private void internalTracking(boolean b) {
+          if(b) {
+            class TrackingSlip {
+              private String id;
+              TrackingSlip(String s) {
+                id = s;
+              }
+              String getSlip() { return id; }
+            }
+            TrackingSlip ts = new TrackingSlip("slip");
+            String s = ts.getSlip();
+          }
+          // Can't use it here! Out of scope:
+          //! TrackingSlip ts = new TrackingSlip("x");
+        }
+        public void track() { internalTracking(true); }
+        public static void main(String[] args) {
+          Parcel6 p = new Parcel6();
+          p.track();
+        }
+      }
+    language: java
+    options:
+      - text: "`TrackingSlip` is defined inside the `if` block, so it's out of scope there"
+        correct: true
+      - text: "It's created only when `b` is true at run time"
+        feedback: "Scope is decided at compile time; the class is still compiled either way."
+      - text: "Local classes can't be created twice"
+        feedback: "The problem is scope."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel11
+    prompt: |
+      Why can `main` call `contents()` and `destination("Tasmania")` without a `Parcel11` object?
+    code: |
+      //: innerclasses/Parcel11.java
+      // Nested classes (static inner classes).
+
+      public class Parcel11 {
+        private static class ParcelContents implements Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        protected static class ParcelDestination
+        implements Destination {
+          private String label;
+          private ParcelDestination(String whereTo) {
+            label = whereTo;
+          }
+          public String readLabel() { return label; }
+          // Nested classes can contain other static elements:
+          public static void f() {}
+          static int x = 10;
+          static class AnotherLevel {
+            public static void f() {}
+            static int x = 10;
+          }
+        }
+        public static Destination destination(String s) {
+          return new ParcelDestination(s);
+        }
+        public static Contents contents() {
+          return new ParcelContents();
+        }
+        public static void main(String[] args) {
+          Contents c = contents();
+          Destination d = destination("Tasmania");
+        }
+      }
+    language: java
+    options:
+      - text: "The nested classes are static, so they need no outer object, and the factory methods are static"
+        correct: true
+      - text: "Because `main` is inside `Parcel11`"
+        feedback: "A static method still has no `this`; it works because nothing needs one."
+      - text: "It can't — this doesn't compile"
+        feedback: "It compiles and runs, printing nothing."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-classininterface
+    prompt: |
+      Run with the nested class as the main class (`java ClassInInterface$Test`), what happens?
+    code: |
+      //: innerclasses/ClassInInterface.java
+
+      public interface ClassInInterface {
+        void howdy();
+        class Test implements ClassInInterface {
+          public void howdy() {
+            System.out.println("Howdy!");
+          }
+          public static void main(String[] args) {
+            new Test().howdy();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It prints `Howdy!` — a class inside an interface is implicitly public and static"
+        correct: true
+      - text: "It doesn't compile — interfaces can't contain classes"
+        feedback: "They can; the class is implicitly `static`."
+      - text: "It can't be run — the interface has no `main`"
+        feedback: "The nested class has its own `main`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-testbed
+    prompt: |
+      Why put `main` in a static nested class `Tester`?
+    code: |
+      //: innerclasses/TestBed.java
+      // Putting test code in a nested class.
+
+      public class TestBed {
+        public void f() { System.out.println("f()"); }
+        public static class Tester {
+          public static void main(String[] args) {
+            TestBed t = new TestBed();
+            t.f();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Test code lives in its own class file (`TestBed$Tester.class`) that you can leave out when shipping"
+        correct: true
+      - text: "`main` can't go in `TestBed` itself"
+        feedback: "It could; the nested class just separates the test code."
+      - text: "To make `f()` run in a separate thread"
+        feedback: "It runs `f()` normally; run `TestBed$Tester` and it prints `f()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-localinnerclass
+    prompt: |
+      What does this print? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: innerclasses/LocalInnerClass.java
+      // Holds a sequence of Objects.
+      import static net.mindview.util.Print.*;
+
+      interface Counter {
+        int next();
+      }
+
+      public class LocalInnerClass {
+        private int count = 0;
+        Counter getCounter(final String name) {
+          // A local inner class:
+          class LocalCounter implements Counter {
+            public LocalCounter() {
+              // Local inner class can have a constructor
+              print("LocalCounter()");
+            }
+            public int next() {
+              printnb(name); // Access local final
+              return count++;
+            }
+          }
+          return new LocalCounter();
+        }
+        // The same thing with an anonymous inner class:
+        Counter getCounter2(final String name) {
+          return new Counter() {
+            // Anonymous inner class cannot have a named
+            // constructor, only an instance initializer:
+            {
+              print("Counter()");
+            }
+            public int next() {
+              printnb(name); // Access local final
+              return count++;
+            }
+          };
+        }
+        public static void main(String[] args) {
+          LocalInnerClass lic = new LocalInnerClass();
+          Counter
+            c1 = lic.getCounter("Local inner "),
+            c2 = lic.getCounter2("Anonymous inner ");
+          for(int i = 0; i < 5; i++)
+            print(c1.next());
+          for(int i = 0; i < 5; i++)
+            print(c2.next());
+        }
+      }
+    language: java
+    options:
+      - text: "LocalCounter()\nCounter()\nLocal inner 0\nLocal inner 1\nLocal inner 2\nLocal inner 3\nLocal inner 4\nAnonymous inner 5\nAnonymous inner 6\nAnonymous inner 7\nAnonymous inner 8\nAnonymous inner 9"
+        correct: true
+      - text: "LocalCounter()\nCounter()\nLocal inner 0\nLocal inner 1\nLocal inner 2\nLocal inner 3\nLocal inner 4\nAnonymous inner 0\nAnonymous inner 1\nAnonymous inner 2\nAnonymous inner 3\nAnonymous inner 4"
+        feedback: "Both counters increment the same outer field `count`."
+      - text: "LocalCounter()\nLocal inner 0\nLocal inner 1\nLocal inner 2\nLocal inner 3\nLocal inner 4\nCounter()\nAnonymous inner 5\nAnonymous inner 6\nAnonymous inner 7\nAnonymous inner 8\nAnonymous inner 9"
+        feedback: "Both counters are created before either loop runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

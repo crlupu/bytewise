@@ -92,3 +92,268 @@ steps:
         feedback: "`x[1]` really is a `MoreUseful`, so the downcast succeeds."
       - text: Neither — both compile, so both run
         feedback: Compiling only proves the cast could succeed; the run-time check decides.
+
+  - type: predict
+    id: tij-polymorphism-polyconstructors
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: polymorphism/PolyConstructors.java
+      // Constructors and polymorphism
+      // don't produce what you might expect.
+      import static net.mindview.util.Print.*;
+
+      class Glyph {
+        void draw() { print("Glyph.draw()"); }
+        Glyph() {
+          print("Glyph() before draw()");
+          draw();
+          print("Glyph() after draw()");
+        }
+      }
+
+      class RoundGlyph extends Glyph {
+        private int radius = 1;
+        RoundGlyph(int r) {
+          radius = r;
+          print("RoundGlyph.RoundGlyph(), radius = " + radius);
+        }
+        void draw() {
+          print("RoundGlyph.draw(), radius = " + radius);
+        }
+      }
+
+      public class PolyConstructors {
+        public static void main(String[] args) {
+          new RoundGlyph(5);
+        }
+      }
+    language: java
+    options:
+      - text: "Glyph() before draw()\nRoundGlyph.draw(), radius = 0\nGlyph() after draw()\nRoundGlyph.RoundGlyph(), radius = 5"
+        correct: true
+      - text: "Glyph() before draw()\nGlyph.draw()\nGlyph() after draw()\nRoundGlyph.RoundGlyph(), radius = 5"
+        feedback: "`draw()` is polymorphic even inside the base constructor — `RoundGlyph.draw` runs."
+      - text: "Glyph() before draw()\nRoundGlyph.draw(), radius = 1\nGlyph() after draw()\nRoundGlyph.RoundGlyph(), radius = 5"
+        feedback: "`radius = 1` hasn't run yet: subclass field initializers run after the base constructor. It's still 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-polymorphism-sandwich
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: polymorphism/Sandwich.java
+      // Order of constructor calls.
+      package polymorphism;
+      import static net.mindview.util.Print.*;
+
+      class Meal {
+        Meal() { print("Meal()"); }
+      }
+
+      class Bread {
+        Bread() { print("Bread()"); }
+      }
+
+      class Cheese {
+        Cheese() { print("Cheese()"); }
+      }
+
+      class Lettuce {
+        Lettuce() { print("Lettuce()"); }
+      }
+
+      class Lunch extends Meal {
+        Lunch() { print("Lunch()"); }
+      }
+
+      class PortableLunch extends Lunch {
+        PortableLunch() { print("PortableLunch()");}
+      }
+
+      public class Sandwich extends PortableLunch {
+        private Bread b = new Bread();
+        private Cheese c = new Cheese();
+        private Lettuce l = new Lettuce();
+        public Sandwich() { print("Sandwich()"); }
+        public static void main(String[] args) {
+          new Sandwich();
+        }
+      }
+    language: java
+    options:
+      - text: "Meal()\nLunch()\nPortableLunch()\nBread()\nCheese()\nLettuce()\nSandwich()"
+        correct: true
+      - text: "Bread()\nCheese()\nLettuce()\nMeal()\nLunch()\nPortableLunch()\nSandwich()"
+        feedback: "Base-class constructors run before the subclass's fields are initialized."
+      - text: "Meal()\nLunch()\nPortableLunch()\nSandwich()\nBread()\nCheese()\nLettuce()"
+        feedback: "Fields are initialized before the constructor body runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-polymorphism-frog
+    prompt: |
+      What are the last four lines printed? (`print` is `println`.)
+    code: |
+      //: polymorphism/Frog.java
+      // Cleanup and inheritance.
+      package polymorphism;
+      import static net.mindview.util.Print.*;
+
+      class Characteristic {
+        private String s;
+        Characteristic(String s) {
+          this.s = s;
+          print("Creating Characteristic " + s);
+        }
+        protected void dispose() {
+          print("disposing Characteristic " + s);
+        }
+      }
+
+      class Description {
+        private String s;
+        Description(String s) {
+          this.s = s;
+          print("Creating Description " + s);
+        }
+        protected void dispose() {
+          print("disposing Description " + s);
+        }
+      }
+
+      class LivingCreature {
+        private Characteristic p =
+          new Characteristic("is alive");
+        private Description t =
+          new Description("Basic Living Creature");
+        LivingCreature() {
+          print("LivingCreature()");
+        }
+        protected void dispose() {
+          print("LivingCreature dispose");
+          t.dispose();
+          p.dispose();
+        }
+      }
+
+      class Animal extends LivingCreature {
+        private Characteristic p =
+          new Characteristic("has heart");
+        private Description t =
+          new Description("Animal not Vegetable");
+        Animal() { print("Animal()"); }
+        protected void dispose() {
+          print("Animal dispose");
+          t.dispose();
+          p.dispose();
+          super.dispose();
+        }
+      }
+
+      class Amphibian extends Animal {
+        private Characteristic p =
+          new Characteristic("can live in water");
+        private Description t =
+          new Description("Both water and land");
+        Amphibian() {
+          print("Amphibian()");
+        }
+        protected void dispose() {
+          print("Amphibian dispose");
+          t.dispose();
+          p.dispose();
+          super.dispose();
+        }
+      }
+
+      public class Frog extends Amphibian {
+        private Characteristic p = new Characteristic("Croaks");
+        private Description t = new Description("Eats Bugs");
+        public Frog() { print("Frog()"); }
+        protected void dispose() {
+          print("Frog dispose");
+          t.dispose();
+          p.dispose();
+          super.dispose();
+        }
+        public static void main(String[] args) {
+          Frog frog = new Frog();
+          print("Bye!");
+          frog.dispose();
+        }
+      }
+    language: java
+    options:
+      - text: "LivingCreature dispose\ndisposing Characteristic is alive\ndisposing Description Basic Living Creature\nBye!"
+        feedback: "`Bye!` prints before `dispose()` is called, and each `dispose` releases `t` before `p`."
+      - text: "disposing Characteristic has heart\nLivingCreature dispose\ndisposing Description Basic Living Creature\ndisposing Characteristic is alive"
+        correct: true
+      - text: "Frog dispose\ndisposing Description Eats Bugs\ndisposing Characteristic Croaks\nAmphibian dispose"
+        feedback: "Each `dispose` ends with `super.dispose()`, so the root class disposes last."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-polymorphism-referencecounting
+    prompt: |
+      When is `Disposing Shared 0` printed? (`print` is `println`.)
+    code: |
+      //: polymorphism/ReferenceCounting.java
+      // Cleaning up shared member objects.
+      import static net.mindview.util.Print.*;
+
+      class Shared {
+        private int refcount = 0;
+        private static long counter = 0;
+        private final long id = counter++;
+        public Shared() {
+          print("Creating " + this);
+        }
+        public void addRef() { refcount++; }
+        protected void dispose() {
+          if(--refcount == 0)
+            print("Disposing " + this);
+        }
+        public String toString() { return "Shared " + id; }
+      }
+
+      class Composing {
+        private Shared shared;
+        private static long counter = 0;
+        private final long id = counter++;
+        public Composing(Shared shared) {
+          print("Creating " + this);
+          this.shared = shared;
+          this.shared.addRef();
+        }
+        protected void dispose() {
+          print("disposing " + this);
+          shared.dispose();
+        }
+        public String toString() { return "Composing " + id; }
+      }
+
+      public class ReferenceCounting {
+        public static void main(String[] args) {
+          Shared shared = new Shared();
+          Composing[] composing = { new Composing(shared),
+            new Composing(shared), new Composing(shared),
+            new Composing(shared), new Composing(shared) };
+          for(Composing c : composing)
+            c.dispose();
+        }
+      }
+    language: java
+    options:
+      - text: "Once, after the fifth `Composing` is disposed — when the reference count reaches zero"
+        correct: true
+      - text: "After the first `Composing` is disposed"
+        feedback: "The count starts at 5; each dispose decrements it."
+      - text: "Never"
+        feedback: "The fifth decrement makes it 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

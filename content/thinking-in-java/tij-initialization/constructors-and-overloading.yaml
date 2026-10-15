@@ -1,0 +1,475 @@
+title: "Constructors, overloading and this"
+summary: "Constructors with and without arguments, overloading on parameter types and order, primitive promotion, and the two uses of this."
+duration: 8
+tags: [java, constructors, overloading, this, promotion]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Guaranteed initialization with the constructor; Method overloading; The this keyword" }
+steps:
+  - type: explanation
+    title: "Constructors and overloading"
+    body: |
+      A constructor has the class's name and runs on `new`.
+      If you write no constructor, Java adds a no-arg one — but not once you've written any.
+      Overloads differ by parameter types or order, never by return type alone.
+
+  - type: explanation
+    title: "Promotion and this"
+    body: |
+      A primitive argument with no exact match is widened to the nearest larger type.
+      A wider one must be cast down explicitly.
+      `this` is the current object; `this(...)` calls another constructor, and only as the first statement.
+
+  - type: predict
+    id: tij-initialization-simpleconstructor
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/SimpleConstructor.java
+      // Demonstration of a simple constructor.
+
+      class Rock {
+        Rock() { // This is the constructor
+          System.out.print("Rock ");
+        }
+      }
+
+      public class SimpleConstructor {
+        public static void main(String[] args) {
+          for(int i = 0; i < 10; i++)
+            new Rock();
+        }
+      }
+    language: java
+    options:
+      - text: "Rock Rock Rock Rock Rock Rock Rock Rock Rock Rock "
+        correct: true
+      - text: "Rock "
+        feedback: "The loop calls `new Rock()` ten times; each construction prints."
+      - text: "Nothing — the objects aren't stored"
+        feedback: "The constructor runs whether or not the reference is kept."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-simpleconstructor2
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/SimpleConstructor2.java
+      // Constructors can have arguments.
+
+      class Rock2 {
+        Rock2(int i) {
+          System.out.print("Rock " + i + " ");
+        }
+      }
+
+      public class SimpleConstructor2 {
+        public static void main(String[] args) {
+          for(int i = 0; i < 8; i++)
+            new Rock2(i);
+        }
+      }
+    language: java
+    options:
+      - text: "Rock 0 Rock 1 Rock 2 Rock 3 Rock 4 Rock 5 Rock 6 Rock 7 "
+        correct: true
+      - text: "Rock 1 Rock 2 Rock 3 Rock 4 Rock 5 Rock 6 Rock 7 Rock 8 "
+        feedback: "`i` runs from 0 to 7."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-defaultconstructor
+    prompt: |
+      `Bird` declares no constructor. What happens with `new Bird()`?
+    code: |
+      //: initialization/DefaultConstructor.java
+
+      class Bird {}
+
+      public class DefaultConstructor {
+        public static void main(String[] args) {
+          Bird b = new Bird(); // Default!
+        }
+      }
+    language: java
+    options:
+      - text: "It compiles and runs: the compiler adds a default no-arg constructor"
+        correct: true
+      - text: "Compile error: no constructor"
+        feedback: "With no constructors written, Java synthesizes `Bird() {}`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-nosynthesis
+    prompt: |
+      Why is `new Bird2()` commented out with `//!`?
+    code: |
+      //: initialization/NoSynthesis.java
+
+      class Bird2 {
+        Bird2(int i) {}
+        Bird2(double d) {}
+      }
+
+      public class NoSynthesis {
+        public static void main(String[] args) {
+          //! Bird2 b = new Bird2(); // No default
+          Bird2 b2 = new Bird2(1);
+          Bird2 b3 = new Bird2(1.0);
+        }
+      }
+    language: java
+    options:
+      - text: "`Bird2` defines constructors, so no default one is added — `new Bird2()` wouldn't compile"
+        correct: true
+      - text: "It would compile but throw at run time"
+        feedback: "It's a compile-time error."
+      - text: "It's ambiguous between `int` and `double`"
+        feedback: "There are no arguments to choose by; there's simply no no-arg constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-overloading
+    prompt: |
+      What is the last line printed? (`print` is `println`.)
+    code: |
+      //: initialization/Overloading.java
+      // Demonstration of both constructor
+      // and ordinary method overloading.
+      import static net.mindview.util.Print.*;
+
+      class Tree {
+        int height;
+        Tree() {
+          print("Planting a seedling");
+          height = 0;
+        }
+        Tree(int initialHeight) {
+          height = initialHeight;
+          print("Creating new Tree that is " +
+            height + " feet tall");
+        }
+        void info() {
+          print("Tree is " + height + " feet tall");
+        }
+        void info(String s) {
+          print(s + ": Tree is " + height + " feet tall");
+        }
+      }
+
+      public class Overloading {
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++) {
+            Tree t = new Tree(i);
+            t.info();
+            t.info("overloaded method");
+          }
+          // Overloaded constructor:
+          new Tree();
+        }
+      }
+    language: java
+    options:
+      - text: "Planting a seedling"
+        correct: true
+      - text: "Tree is 0 feet tall"
+        feedback: "`new Tree()` uses the no-arg constructor, which prints its own line."
+      - text: "overloaded method: Tree is 4 feet tall"
+        feedback: "That's printed in the loop's last pass, before `new Tree()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-overloadingorder
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/OverloadingOrder.java
+      // Overloading based on the order of the arguments.
+      import static net.mindview.util.Print.*;
+
+      public class OverloadingOrder {
+        static void f(String s, int i) {
+          print("String: " + s + ", int: " + i);
+        }
+        static void f(int i, String s) {
+          print("int: " + i + ", String: " + s);
+        }
+        public static void main(String[] args) {
+          f("String first", 11);
+          f(99, "Int first");
+        }
+      }
+    language: java
+    options:
+      - text: "String: String first, int: 11\nint: 99, String: Int first"
+        correct: true
+      - text: "String: String first, int: 11\nString: Int first, int: 99"
+        feedback: "`f(99, \"Int first\")` matches the `(int, String)` overload."
+      - text: "It doesn't compile — the two `f`s have the same parameter types"
+        feedback: "Order matters: `(String, int)` and `(int, String)` are different signatures."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-primitiveoverloading
+    prompt: |
+      Which line does the `char` test print? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: initialization/PrimitiveOverloading.java
+      // Promotion of primitives and overloading.
+      import static net.mindview.util.Print.*;
+
+      public class PrimitiveOverloading {
+        void f1(char x) { printnb("f1(char) "); }
+        void f1(byte x) { printnb("f1(byte) "); }
+        void f1(short x) { printnb("f1(short) "); }
+        void f1(int x) { printnb("f1(int) "); }
+        void f1(long x) { printnb("f1(long) "); }
+        void f1(float x) { printnb("f1(float) "); }
+        void f1(double x) { printnb("f1(double) "); }
+
+        void f2(byte x) { printnb("f2(byte) "); }
+        void f2(short x) { printnb("f2(short) "); }
+        void f2(int x) { printnb("f2(int) "); }
+        void f2(long x) { printnb("f2(long) "); }
+        void f2(float x) { printnb("f2(float) "); }
+        void f2(double x) { printnb("f2(double) "); }
+
+        void f3(short x) { printnb("f3(short) "); }
+        void f3(int x) { printnb("f3(int) "); }
+        void f3(long x) { printnb("f3(long) "); }
+        void f3(float x) { printnb("f3(float) "); }
+        void f3(double x) { printnb("f3(double) "); }
+
+        void f4(int x) { printnb("f4(int) "); }
+        void f4(long x) { printnb("f4(long) "); }
+        void f4(float x) { printnb("f4(float) "); }
+        void f4(double x) { printnb("f4(double) "); }
+
+        void f5(long x) { printnb("f5(long) "); }
+        void f5(float x) { printnb("f5(float) "); }
+        void f5(double x) { printnb("f5(double) "); }
+
+        void f6(float x) { printnb("f6(float) "); }
+        void f6(double x) { printnb("f6(double) "); }
+
+        void f7(double x) { printnb("f7(double) "); }
+
+        void testConstVal() {
+          printnb("5: ");
+          f1(5);f2(5);f3(5);f4(5);f5(5);f6(5);f7(5); print();
+        }
+        void testChar() {
+          char x = 'x';
+          printnb("char: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testByte() {
+          byte x = 0;
+          printnb("byte: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testShort() {
+          short x = 0;
+          printnb("short: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testInt() {
+          int x = 0;
+          printnb("int: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testLong() {
+          long x = 0;
+          printnb("long: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testFloat() {
+          float x = 0;
+          printnb("float: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        void testDouble() {
+          double x = 0;
+          printnb("double: ");
+          f1(x);f2(x);f3(x);f4(x);f5(x);f6(x);f7(x); print();
+        }
+        public static void main(String[] args) {
+          PrimitiveOverloading p =
+            new PrimitiveOverloading();
+          p.testConstVal();
+          p.testChar();
+          p.testByte();
+          p.testShort();
+          p.testInt();
+          p.testLong();
+          p.testFloat();
+          p.testDouble();
+        }
+      }
+    language: java
+    options:
+      - text: "char: f1(char) f2(int) f3(int) f4(int) f5(long) f6(float) f7(double) "
+        correct: true
+      - text: "char: f1(char) f2(byte) f3(short) f4(int) f5(long) f6(float) f7(double) "
+        feedback: "A `char` is never promoted to `byte` or `short` — it goes straight to `int`."
+      - text: "char: f1(char) f2(char) f3(char) f4(char) f5(char) f6(char) f7(char) "
+        feedback: "Only `f1` has a `char` overload; the rest need a widened type."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-demotion
+    prompt: |
+      Why does `testDouble` cast `x` for `f2` to `f7`? (`print` is `println`.)
+    code: |
+      //: initialization/Demotion.java
+      // Demotion of primitives and overloading.
+      import static net.mindview.util.Print.*;
+
+      public class Demotion {
+        void f1(char x) { print("f1(char)"); }
+        void f1(byte x) { print("f1(byte)"); }
+        void f1(short x) { print("f1(short)"); }
+        void f1(int x) { print("f1(int)"); }
+        void f1(long x) { print("f1(long)"); }
+        void f1(float x) { print("f1(float)"); }
+        void f1(double x) { print("f1(double)"); }
+
+        void f2(char x) { print("f2(char)"); }
+        void f2(byte x) { print("f2(byte)"); }
+        void f2(short x) { print("f2(short)"); }
+        void f2(int x) { print("f2(int)"); }
+        void f2(long x) { print("f2(long)"); }
+        void f2(float x) { print("f2(float)"); }
+
+        void f3(char x) { print("f3(char)"); }
+        void f3(byte x) { print("f3(byte)"); }
+        void f3(short x) { print("f3(short)"); }
+        void f3(int x) { print("f3(int)"); }
+        void f3(long x) { print("f3(long)"); }
+
+        void f4(char x) { print("f4(char)"); }
+        void f4(byte x) { print("f4(byte)"); }
+        void f4(short x) { print("f4(short)"); }
+        void f4(int x) { print("f4(int)"); }
+
+        void f5(char x) { print("f5(char)"); }
+        void f5(byte x) { print("f5(byte)"); }
+        void f5(short x) { print("f5(short)"); }
+
+        void f6(char x) { print("f6(char)"); }
+        void f6(byte x) { print("f6(byte)"); }
+
+        void f7(char x) { print("f7(char)"); }
+
+        void testDouble() {
+          double x = 0;
+          print("double argument:");
+          f1(x);f2((float)x);f3((long)x);f4((int)x);
+          f5((short)x);f6((byte)x);f7((char)x);
+        }
+        public static void main(String[] args) {
+          Demotion p = new Demotion();
+          p.testDouble();
+        }
+      }
+    language: java
+    options:
+      - text: "Those methods have no `double` overload, and narrowing a `double` is never automatic"
+        correct: true
+      - text: "The casts are optional; they only document intent"
+        feedback: "Without them, `f2(x)` with a `double` won't compile."
+      - text: "To round the value"
+        feedback: "Casting truncates; and 0 stays 0 anyway."
+    explanation: |
+      It prints `f1(double)`, `f2(float)`, `f3(long)` … `f7(char)` — each call matches the type it was cast to.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-bananapeel
+    prompt: |
+      How does `peel` know which banana it was called on?
+    code: |
+      //: initialization/BananaPeel.java
+
+      class Banana { void peel(int i) { /* ... */ } }
+
+      public class BananaPeel {
+        public static void main(String[] args) {
+          Banana a = new Banana(),
+                 b = new Banana();
+          a.peel(1);
+          b.peel(2);
+        }
+      }
+    language: java
+    options:
+      - text: "The compiler passes the object as a hidden first argument — `this`"
+        correct: true
+      - text: "Each object has its own copy of the method"
+        feedback: "There's one `peel` method for the class."
+      - text: "It doesn't; both calls do the same thing"
+        feedback: "Inside `peel`, `this` is `a` for the first call and `b` for the second."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-apricot
+    prompt: |
+      Inside `pit()`, `pick()` is called without `this.`. Which object does it run on?
+    code: |
+      //: initialization/Apricot.java
+      public class Apricot {
+        void pick() { /* ... */ }
+        void pit() { pick(); /* ... */ }
+      }
+    language: java
+    options:
+      - text: "The same object `pit()` was called on — `this.pick()` is implied"
+        correct: true
+      - text: "A new `Apricot`"
+        feedback: "No object is created."
+      - text: "None — it's a static call"
+        feedback: "`pick` is an instance method."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-leaf
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/Leaf.java
+      // Simple use of the "this" keyword.
+
+      public class Leaf {
+        int i = 0;
+        Leaf increment() {
+          i++;
+          return this;
+        }
+        void print() {
+          System.out.println("i = " + i);
+        }
+        public static void main(String[] args) {
+          Leaf x = new Leaf();
+          x.increment().increment().increment().print();
+        }
+      }
+    language: java
+    options:
+      - text: "i = 3"
+        correct: true
+      - text: "i = 1"
+        feedback: "`increment` returns `this`, so all three calls act on the same `Leaf`."
+      - text: "i = 0"
+        feedback: "Each call increments the same field."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

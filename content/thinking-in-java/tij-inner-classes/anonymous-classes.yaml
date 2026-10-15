@@ -59,3 +59,343 @@ steps:
         right: Several methods, or extending a class
       - left: Named inner class
         right: Reused in several places, or needs a constructor
+
+  - type: choice
+    id: tij-innerclasses-parcel7
+    prompt: |
+      `Contents` is an interface with `int value()`. What does `contents()` return?
+    code: |
+      //: innerclasses/Parcel7.java
+      // Returning an instance of an anonymous inner class.
+
+      public class Parcel7 {
+        public Contents contents() {
+          return new Contents() { // Insert a class definition
+            private int i = 11;
+            public int value() { return i; }
+          }; // Semicolon required in this case
+        }
+        public static void main(String[] args) {
+          Parcel7 p = new Parcel7();
+          Contents c = p.contents();
+        }
+      }
+    language: java
+    options:
+      - text: "An object of an unnamed class that implements `Contents`"
+        correct: true
+      - text: "A `Contents` object — interfaces can be instantiated with a body"
+        feedback: "The body defines an anonymous class implementing it; that's what gets instantiated."
+      - text: "It doesn't compile — the semicolon after `}`"
+        feedback: "The semicolon ends the `return` statement and is required."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel7b
+    prompt: |
+      How does this relate to returning `new Contents() { … }`?
+    code: |
+      //: innerclasses/Parcel7b.java
+      // Expanded version of Parcel7.java
+
+      public class Parcel7b {
+        class MyContents implements Contents {
+          private int i = 11;
+          public int value() { return i; }
+        }
+        public Contents contents() { return new MyContents(); }
+        public static void main(String[] args) {
+          Parcel7b p = new Parcel7b();
+          Contents c = p.contents();
+        }
+      }
+    language: java
+    options:
+      - text: "It's the same thing with a named inner class instead of an anonymous one"
+        correct: true
+      - text: "It's slower"
+        feedback: "Both are ordinary classes once compiled."
+      - text: "It doesn't compile — `MyContents` must be static"
+        feedback: "An inner class works fine in an instance method."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel8
+    prompt: |
+      `Wrapping(int x)` stores `x`, and `value()` returns it. What does `p.wrapping(10).value()` return?
+    code: |
+      //: innerclasses/Parcel8.java
+      // Calling the base-class constructor.
+
+      public class Parcel8 {
+        public Wrapping wrapping(int x) {
+          // Base constructor call:
+          return new Wrapping(x) { // Pass constructor argument.
+            public int value() {
+              return super.value() * 47;
+            }
+          }; // Semicolon required
+        }
+        public static void main(String[] args) {
+          Parcel8 p = new Parcel8();
+          Wrapping w = p.wrapping(10);
+        }
+      }
+
+      //: innerclasses/Wrapping.java
+      public class Wrapping {
+        private int i;
+        public Wrapping(int x) { i = x; }
+        public int value() { return i; }
+      }
+    language: java
+    options:
+      - text: "470"
+        correct: true
+      - text: "10"
+        feedback: "The anonymous subclass overrides `value()` to multiply by 47."
+      - text: "It doesn't compile — anonymous classes can't take constructor arguments"
+        feedback: "The arguments go to the base-class constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-parcel9
+    prompt: |
+      Why is `dest` declared `final`?
+    code: |
+      //: innerclasses/Parcel9.java
+      // An anonymous inner class that performs
+      // initialization. A briefer version of Parcel5.java.
+
+      public class Parcel9 {
+        // Argument must be final to use inside
+        // anonymous inner class:
+        public Destination destination(final String dest) {
+          return new Destination() {
+            private String label = dest;
+            public String readLabel() { return label; }
+          };
+        }
+        public static void main(String[] args) {
+          Parcel9 p = new Parcel9();
+          Destination d = p.destination("Tasmania");
+        }
+      }
+    language: java
+    options:
+      - text: "The anonymous class uses it; before Java 8 that required `final` (now effectively final is enough)"
+        correct: true
+      - text: "So `label` can't change"
+        feedback: "It's about capturing the local variable."
+      - text: "It isn't needed at all — any variable can be captured and modified"
+        feedback: "Captured locals can't be reassigned."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-parcel10
+    prompt: |
+      What does this print?
+    code: |
+      //: innerclasses/Parcel10.java
+      // Using "instance initialization" to perform
+      // construction on an anonymous inner class.
+
+      public class Parcel10 {
+        public Destination
+        destination(final String dest, final float price) {
+          return new Destination() {
+            private int cost;
+            // Instance initialization for each object:
+            {
+              cost = Math.round(price);
+              if(cost > 100)
+                System.out.println("Over budget!");
+            }
+            private String label = dest;
+            public String readLabel() { return label; }
+          };
+        }
+        public static void main(String[] args) {
+          Parcel10 p = new Parcel10();
+          Destination d = p.destination("Tasmania", 101.395F);
+        }
+      }
+    language: java
+    options:
+      - text: "Over budget!"
+        correct: true
+      - text: "Nothing — the initializer runs only when `readLabel` is called"
+        feedback: "An instance initializer runs when the object is created."
+      - text: "Nothing — 101.395 rounds to 101, which isn't over 100"
+        feedback: "101 > 100 is true."
+    explanation: |
+      An instance initializer acts as the anonymous class's constructor.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-anonymousconstructor
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: innerclasses/AnonymousConstructor.java
+      // Creating a constructor for an anonymous inner class.
+      import static net.mindview.util.Print.*;
+
+      abstract class Base {
+        public Base(int i) {
+          print("Base constructor, i = " + i);
+        }
+        public abstract void f();
+      }
+
+      public class AnonymousConstructor {
+        public static Base getBase(int i) {
+          return new Base(i) {
+            { print("Inside instance initializer"); }
+            public void f() {
+              print("In anonymous f()");
+            }
+          };
+        }
+        public static void main(String[] args) {
+          Base base = getBase(47);
+          base.f();
+        }
+      }
+    language: java
+    options:
+      - text: "Base constructor, i = 47\nInside instance initializer\nIn anonymous f()"
+        correct: true
+      - text: "Inside instance initializer\nBase constructor, i = 47\nIn anonymous f()"
+        feedback: "The base-class constructor runs first."
+      - text: "Base constructor, i = 47\nIn anonymous f()"
+        feedback: "The anonymous class's instance initializer prints too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-innerclasses-factories
+    prompt: |
+      What changed compared with separate `Implementation1Factory` classes? (`print` is `println`.)
+    code: |
+      //: innerclasses/Factories.java
+      import static net.mindview.util.Print.*;
+
+      interface Service {
+        void method1();
+        void method2();
+      }
+
+      interface ServiceFactory {
+        Service getService();
+      }
+
+      class Implementation1 implements Service {
+        private Implementation1() {}
+        public void method1() {print("Implementation1 method1");}
+        public void method2() {print("Implementation1 method2");}
+        public static ServiceFactory factory =
+          new ServiceFactory() {
+            public Service getService() {
+              return new Implementation1();
+            }
+          };
+      }
+
+      class Implementation2 implements Service {
+        private Implementation2() {}
+        public void method1() {print("Implementation2 method1");}
+        public void method2() {print("Implementation2 method2");}
+        public static ServiceFactory factory =
+          new ServiceFactory() {
+            public Service getService() {
+              return new Implementation2();
+            }
+          };
+      }
+
+      public class Factories {
+        public static void serviceConsumer(ServiceFactory fact) {
+          Service s = fact.getService();
+          s.method1();
+          s.method2();
+        }
+        public static void main(String[] args) {
+          serviceConsumer(Implementation1.factory);
+          // Implementations are completely interchangeable:
+          serviceConsumer(Implementation2.factory);
+        }
+      }
+    language: java
+    options:
+      - text: "Each implementation holds a static anonymous factory, and its constructor can be private"
+        correct: true
+      - text: "The output changes"
+        feedback: "It prints the same four lines."
+      - text: "Factories are no longer needed"
+        feedback: "`serviceConsumer` still takes a `ServiceFactory`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-innerclasses-games
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: innerclasses/Games.java
+      // Using anonymous inner classes with the Game framework.
+      import static net.mindview.util.Print.*;
+
+      interface Game { boolean move(); }
+      interface GameFactory { Game getGame(); }
+
+      class Checkers implements Game {
+        private Checkers() {}
+        private int moves = 0;
+        private static final int MOVES = 3;
+        public boolean move() {
+          print("Checkers move " + moves);
+          return ++moves != MOVES;
+        }
+        public static GameFactory factory = new GameFactory() {
+          public Game getGame() { return new Checkers(); }
+        };
+      }
+
+      class Chess implements Game {
+        private Chess() {}
+        private int moves = 0;
+        private static final int MOVES = 4;
+        public boolean move() {
+          print("Chess move " + moves);
+          return ++moves != MOVES;
+        }
+        public static GameFactory factory = new GameFactory() {
+          public Game getGame() { return new Chess(); }
+        };
+      }
+
+      public class Games {
+        public static void playGame(GameFactory factory) {
+          Game s = factory.getGame();
+          while(s.move())
+            ;
+        }
+        public static void main(String[] args) {
+          playGame(Checkers.factory);
+          playGame(Chess.factory);
+        }
+      }
+    language: java
+    options:
+      - text: "Checkers move 0\nCheckers move 1\nCheckers move 2\nChess move 0\nChess move 1\nChess move 2\nChess move 3"
+        correct: true
+      - text: "Checkers move 0\nCheckers move 1\nCheckers move 2\nCheckers move 3\nChess move 0\nChess move 1\nChess move 2\nChess move 3\nChess move 4"
+        feedback: "`move` returns false when `++moves` reaches `MOVES`, after printing move `MOVES − 1`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

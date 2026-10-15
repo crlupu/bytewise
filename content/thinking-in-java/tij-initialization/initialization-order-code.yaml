@@ -1,0 +1,94 @@
+title: "The order of initialization: in code"
+summary: "More examples for the order of initialization, one question each."
+duration: 3
+tags: [java, thinking in java, initialization, static, constructors]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 5, Initialization & Cleanup — Order of initialization" }
+steps:
+  - type: explanation
+    title: "Recap: Static first, and only once"
+    body: |
+      A class's static fields and static blocks run when the class is first used.
+      They run once, however many objects you create.
+      Static data belongs to the class, not to each object.
+    diagram:
+      classes:
+        - { name: Cups, fields: ["static c1: Cup", "static c2: Cup"], methods: ["Cups()"] }
+        - { name: Cup, methods: ["Cup(int marker)"] }
+      relations:
+        - { from: Cups, to: Cup, type: has, label: "2" }
+
+  - type: explanation
+    title: "Recap: Then fields, then the constructor"
+    body: |
+      For each new object, fields get their default values first: 0, false, null.
+      Then field initializers run, in the order they're written.
+      Only then does the constructor body run.
+
+  - type: choice
+    id: tij-initialization-methodinit3
+    prompt: |
+      Why would `int j = g(i);` fail to compile if it came first?
+    code: |
+      //: initialization/MethodInit3.java
+      public class MethodInit3 {
+        int i = f();
+        int f() { return 11; }
+        int g(int n) { return n * 10; }
+      }
+    language: java
+    options:
+      - text: "It's an illegal forward reference: `i` is declared later"
+        correct: true
+      - text: "`g` is declared after `j`"
+        feedback: "Methods may be used before their declaration; fields can't be read before theirs."
+      - text: "It would compile and give `j = 0`"
+        feedback: "The compiler rejects reading a field by simple name before its declaration."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-spoon
+    prompt: |
+      When does the `static` block run?
+    code: |
+      //: initialization/Spoon.java
+      public class Spoon {
+        static int i;
+        static {
+          i = 47;
+        }
+      }
+    language: java
+    options:
+      - text: "Once, when the class is first loaded — on the first object or first static access"
+        correct: true
+      - text: "Every time a `Spoon` is created"
+        feedback: "That's an instance initializer (without `static`)."
+      - text: "When the program starts, for every class"
+        feedback: "Classes load lazily, on first use."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-measurement
+    prompt: |
+      When is the `Depth` object created?
+    code: |
+      //: initialization/Measurement.java
+      class Depth {}
+
+      public class Measurement {
+        Depth d = new Depth();
+        // ...
+      }
+    language: java
+    options:
+      - text: "Each time a `Measurement` is created, before its constructor body"
+        correct: true
+      - text: "Once, when the class loads"
+        feedback: "`d` isn't static."
+      - text: "Never — it must be assigned in a constructor"
+        feedback: "A field initializer can create an object."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

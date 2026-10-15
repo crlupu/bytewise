@@ -5,3 +5,5 @@ lessons:
   - composition
   - inheritance-and-construction
   - composition-or-inheritance
+  - packages-and-imports
+  - final-and-cleanup

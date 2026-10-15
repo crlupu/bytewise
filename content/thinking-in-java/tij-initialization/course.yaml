@@ -2,4 +2,8 @@ title: Initialization and cleanup
 summary: Chapter 5 — the order things are initialized in, arrays of objects, and how unreachable objects become garbage.
 lessons:
   - initialization-order
+  - initialization-order-code
   - arrays-and-garbage
+  - constructors-and-overloading
+  - constructors-and-overloading-code
+  - varargs-and-enums

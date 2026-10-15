@@ -65,3 +65,258 @@ steps:
         correct: true
       - text: An abstract class they both extend
         feedback: Each could then extend nothing else, and they'd share an implementation they don't need.
+
+  - type: predict
+    id: tij-interfaces-music4-music4
+    prompt: |
+      `Note.MIDDLE_C` prints as `MIDDLE_C`. What does the `Brass` line print, and could you write `new Instrument()`? (`print` is `println`.)
+    code: |
+      //: interfaces/music4/Music4.java
+      // Abstract classes and methods.
+      package interfaces.music4;
+      import polymorphism.music.Note;
+      import static net.mindview.util.Print.*;
+
+      abstract class Instrument {
+        private int i; // Storage allocated for each
+        public abstract void play(Note n);
+        public String what() { return "Instrument"; }
+        public abstract void adjust();
+      }
+
+      class Wind extends Instrument {
+        public void play(Note n) {
+          print("Wind.play() " + n);
+        }
+        public String what() { return "Wind"; }
+        public void adjust() {}
+      }
+
+      class Percussion extends Instrument {
+        public void play(Note n) {
+          print("Percussion.play() " + n);
+        }
+        public String what() { return "Percussion"; }
+        public void adjust() {}
+      }
+
+      class Stringed extends Instrument {
+        public void play(Note n) {
+          print("Stringed.play() " + n);
+        }
+        public String what() { return "Stringed"; }
+        public void adjust() {}
+      }
+
+      class Brass extends Wind {
+        public void play(Note n) {
+          print("Brass.play() " + n);
+        }
+        public void adjust() { print("Brass.adjust()"); }
+      }
+
+      class Woodwind extends Wind {
+        public void play(Note n) {
+          print("Woodwind.play() " + n);
+        }
+        public String what() { return "Woodwind"; }
+      }
+
+      public class Music4 {
+        // Doesn't care about type, so new types
+        // added to the system still work right:
+        static void tune(Instrument i) {
+          // ...
+          i.play(Note.MIDDLE_C);
+        }
+        static void tuneAll(Instrument[] e) {
+          for(Instrument i : e)
+            tune(i);
+        }
+        public static void main(String[] args) {
+          // Upcasting during addition to the array:
+          Instrument[] orchestra = {
+            new Wind(),
+            new Percussion(),
+            new Stringed(),
+            new Brass(),
+            new Woodwind()
+          };
+          tuneAll(orchestra);
+        }
+      }
+    language: java
+    options:
+      - text: "`Brass.play() MIDDLE_C`; no — `Instrument` is abstract"
+        correct: true
+      - text: "`Wind.play() MIDDLE_C`; no"
+        feedback: "`Brass` overrides `play` itself."
+      - text: "`Brass.play() MIDDLE_C`; yes, it has non-abstract methods"
+        feedback: "One abstract method makes the class abstract, and abstract classes can't be instantiated."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-interfaces-music5-music5
+    prompt: |
+      `Note.MIDDLE_C` prints as `MIDDLE_C`. `Brass` and `Woodwind` only override `toString()`. What are the last two lines printed? (`print` is `println`.)
+    code: |
+      //: interfaces/music5/Music5.java
+      // Interfaces.
+      package interfaces.music5;
+      import polymorphism.music.Note;
+      import static net.mindview.util.Print.*;
+
+      interface Instrument {
+        // Compile-time constant:
+        int VALUE = 5; // static & final
+        // Cannot have method definitions:
+        void play(Note n); // Automatically public
+        void adjust();
+      }
+
+      class Wind implements Instrument {
+        public void play(Note n) {
+          print(this + ".play() " + n);
+        }
+        public String toString() { return "Wind"; }
+        public void adjust() { print(this + ".adjust()"); }
+      }
+
+      class Percussion implements Instrument {
+        public void play(Note n) {
+          print(this + ".play() " + n);
+        }
+        public String toString() { return "Percussion"; }
+        public void adjust() { print(this + ".adjust()"); }
+      }
+
+      class Stringed implements Instrument {
+        public void play(Note n) {
+          print(this + ".play() " + n);
+        }
+        public String toString() { return "Stringed"; }
+        public void adjust() { print(this + ".adjust()"); }
+      }
+
+      class Brass extends Wind {
+        public String toString() { return "Brass"; }
+      }
+
+      class Woodwind extends Wind {
+        public String toString() { return "Woodwind"; }
+      }
+
+      public class Music5 {
+        // Doesn't care about type, so new types
+        // added to the system still work right:
+        static void tune(Instrument i) {
+          // ...
+          i.play(Note.MIDDLE_C);
+        }
+        static void tuneAll(Instrument[] e) {
+          for(Instrument i : e)
+            tune(i);
+        }
+        public static void main(String[] args) {
+          // Upcasting during addition to the array:
+          Instrument[] orchestra = {
+            new Wind(),
+            new Percussion(),
+            new Stringed(),
+            new Brass(),
+            new Woodwind()
+          };
+          tuneAll(orchestra);
+        }
+      }
+    language: java
+    options:
+      - text: "Brass.play() MIDDLE_C\nWoodwind.play() MIDDLE_C"
+        correct: true
+      - text: "Wind.play() MIDDLE_C\nWind.play() MIDDLE_C"
+        feedback: "`play` prints `this`, which calls the subclass's `toString()`."
+      - text: "It doesn't compile — `play` in `Wind` must not be `public`"
+        feedback: "Interface methods are implicitly public, so implementations must be public."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-months
+    prompt: |
+      What are `Months.MARCH`'s modifiers?
+    code: |
+      //: interfaces/Months.java
+      // Using interfaces to create groups of constants.
+      package interfaces;
+
+      public interface Months {
+        int
+          JANUARY = 1, FEBRUARY = 2, MARCH = 3,
+          APRIL = 4, MAY = 5, JUNE = 6, JULY = 7,
+          AUGUST = 8, SEPTEMBER = 9, OCTOBER = 10,
+          NOVEMBER = 11, DECEMBER = 12;
+      }
+    language: java
+    options:
+      - text: "`public static final` — every field in an interface is"
+        correct: true
+      - text: "Package access, instance field"
+        feedback: "Interface fields are implicitly public, static and final."
+    explanation: |
+      Constants in interfaces were a pre-Java 5 trick; an `enum` is the better tool now.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-randvals
+    prompt: |
+      When are `RANDOM_INT` and the other fields computed?
+    code: |
+      //: interfaces/RandVals.java
+      // Initializing interface fields with
+      // non-constant initializers.
+      import java.util.*;
+
+      public interface RandVals {
+        Random RAND = new Random(47);
+        int RANDOM_INT = RAND.nextInt(10);
+        long RANDOM_LONG = RAND.nextLong() * 10;
+        float RANDOM_FLOAT = RAND.nextLong() * 10;
+        double RANDOM_DOUBLE = RAND.nextDouble() * 10;
+      }
+    language: java
+    options:
+      - text: "Once, when the interface is first used — they're static fields initialized at class-loading time"
+        correct: true
+      - text: "Every time they're read"
+        feedback: "They're `final` fields, set once."
+      - text: "At compile time"
+        feedback: "`RAND.nextInt(10)` isn't a constant expression."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-testrandvals
+    prompt: |
+      `RandVals` is an interface whose fields are initialized from a `Random(47)`. If you run this twice, are the printed values the same? (`print` is `println`.)
+    code: |
+      //: interfaces/TestRandVals.java
+      import static net.mindview.util.Print.*;
+
+      public class TestRandVals {
+        public static void main(String[] args) {
+          print(RandVals.RANDOM_INT);
+          print(RandVals.RANDOM_LONG);
+          print(RandVals.RANDOM_FLOAT);
+          print(RandVals.RANDOM_DOUBLE);
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — the seed is fixed, so the same numbers come out each run"
+        correct: true
+      - text: "No — they're random"
+        feedback: "A seeded `Random` produces the same sequence every time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

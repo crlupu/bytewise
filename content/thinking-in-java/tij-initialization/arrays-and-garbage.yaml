@@ -75,3 +75,179 @@ steps:
     prompt: Make the array's first slot refer to a new object.
     template: "a[0] = Integer.[[valueOf]](7);  // what a[0] = 7 does for you"
     code: true
+
+  - type: choice
+    id: tij-initialization-arrayclassobj
+    prompt: |
+      What would happen if the `for` loop that fills `a` were removed before `print(Arrays.toString(a))`? (`print` is `println`.)
+    code: |
+      //: initialization/ArrayClassObj.java
+      // Creating an array of nonprimitive objects.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ArrayClassObj {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          Integer[] a = new Integer[rand.nextInt(20)];
+          print("length of a = " + a.length);
+          for(int i = 0; i < a.length; i++)
+            a[i] = rand.nextInt(500); // Autoboxing
+          print(Arrays.toString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "It prints a list of `null`s — an array of objects starts with null references"
+        correct: true
+      - text: "It prints a list of zeros"
+        feedback: "`Integer[]` holds references, not `int`s."
+      - text: "It throws `NullPointerException`"
+        feedback: "`Arrays.toString` prints `null` for null elements."
+    explanation: |
+      As written, it prints the length (18 here) and 18 random numbers below 500.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-arrayinit
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/ArrayInit.java
+      // Array initialization.
+      import java.util.*;
+
+      public class ArrayInit {
+        public static void main(String[] args) {
+          Integer[] a = {
+            new Integer(1),
+            new Integer(2),
+            3, // Autoboxing
+          };
+          Integer[] b = new Integer[]{
+            new Integer(1),
+            new Integer(2),
+            3, // Autoboxing
+          };
+          System.out.println(Arrays.toString(a));
+          System.out.println(Arrays.toString(b));
+        }
+      }
+    language: java
+    options:
+      - text: "[1, 2, 3]\n[1, 2, 3]"
+        correct: true
+      - text: "It doesn't compile — the trailing comma"
+        feedback: "A trailing comma in an array initializer is allowed."
+      - text: "[1, 2, 3, null]\n[1, 2, 3, null]"
+        feedback: "The trailing comma doesn't add an element."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-arraynew
+    prompt: |
+      `rand.nextInt(20)` returns 18. What does the second line print? (`print` is `println`.)
+    code: |
+      //: initialization/ArrayNew.java
+      // Creating arrays with new.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ArrayNew {
+        public static void main(String[] args) {
+          int[] a;
+          Random rand = new Random(47);
+          a = new int[rand.nextInt(20)];
+          print("length of a = " + a.length);
+          print(Arrays.toString(a));
+        }
+      }
+    language: java
+    options:
+      - text: "Eighteen zeros, like `[0, 0, …, 0]`"
+        correct: true
+      - text: "Eighteen random numbers"
+        feedback: "Nothing is stored; an `int` array starts zeroed."
+      - text: "`[]`"
+        feedback: "The array has 18 elements."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-arraysofprimitives
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/ArraysOfPrimitives.java
+      import static net.mindview.util.Print.*;
+
+      public class ArraysOfPrimitives {
+        public static void main(String[] args) {
+          int[] a1 = { 1, 2, 3, 4, 5 };
+          int[] a2;
+          a2 = a1;
+          for(int i = 0; i < a2.length; i++)
+            a2[i] = a2[i] + 1;
+          for(int i = 0; i < a1.length; i++)
+            print("a1[" + i + "] = " + a1[i]);
+        }
+      }
+    language: java
+    options:
+      - text: "a1[0] = 2\na1[1] = 3\na1[2] = 4\na1[3] = 5\na1[4] = 6"
+        correct: true
+      - text: "a1[0] = 1\na1[1] = 2\na1[2] = 3\na1[3] = 4\na1[4] = 5"
+        feedback: "`a2 = a1` copies the reference; both names refer to the same array."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-terminationcondition
+    prompt: |
+      What does this print?
+    code: |
+      //: initialization/TerminationCondition.java
+      // Using finalize() to detect an object that
+      // hasn't been properly cleaned up.
+
+      class Book {
+        boolean checkedOut = false;
+        Book(boolean checkOut) {
+          checkedOut = checkOut;
+        }
+        void checkIn() {
+          checkedOut = false;
+        }
+        protected void finalize() {
+          if(checkedOut)
+            System.out.println("Error: checked out");
+          // Normally, you'll also do this:
+          // super.finalize(); // Call the base-class version
+        }
+      }
+
+      public class TerminationCondition {
+        public static void main(String[] args) {
+          Book novel = new Book(true);
+          // Proper cleanup:
+          novel.checkIn();
+          // Drop the reference, forget to clean up:
+          new Book(true);
+          // Force garbage collection & finalization:
+          System.gc();
+        }
+      }
+    language: java
+    options:
+      - text: "Probably `Error: checked out`, from the abandoned book's finalizer — but neither `gc()` nor finalization is guaranteed"
+        correct: true
+      - text: "`Error: checked out` twice"
+        feedback: "`novel` was checked in, and it's still referenced."
+      - text: "Nothing, ever — `finalize` is never called"
+        feedback: "On Java 21 it still usually runs after `System.gc()` (here it did)."
+    explanation: |
+      Finalization is deprecated for removal (JEP 421). Use try-with-resources or `Cleaner` instead.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

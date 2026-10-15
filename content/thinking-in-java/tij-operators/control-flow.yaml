@@ -1,0 +1,455 @@
+title: "Loops, labels and switch"
+summary: "if-else, while, for and foreach, break and continue — labeled and not — and switch with fall-through."
+duration: 8
+tags: [java, control flow, loops, foreach, labels, switch]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 4, Controlling Execution" }
+steps:
+  - type: explanation
+    title: "Loops"
+    body: |
+      `for(init; test; step)` can declare and step several variables, separated by commas.
+      Foreach `for(x : array)` visits every element in order.
+
+  - type: explanation
+    title: "break, continue and labels"
+    body: |
+      `break` leaves the innermost loop; `continue` starts its next iteration.
+      With a label, `break outer` leaves the labeled loop, and `continue outer` starts its next iteration.
+      In a `switch`, cases fall through until a `break`.
+
+  - type: predict
+    id: tij-control-ifelse
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: control/IfElse.java
+      import static net.mindview.util.Print.*;
+
+      public class IfElse {
+        static int result = 0;
+        static void test(int testval, int target) {
+          if(testval > target)
+            result = +1;
+          else if(testval < target)
+            result = -1;
+          else
+            result = 0; // Match
+        }
+        public static void main(String[] args) {
+          test(10, 5);
+          print(result);
+          test(5, 10);
+          print(result);
+          test(5, 5);
+          print(result);
+        }
+      }
+    language: java
+    options:
+      - text: "1\n-1\n0"
+        correct: true
+      - text: "-1\n1\n0"
+        feedback: "10 > 5 sets `result` to +1."
+      - text: "1\n-1\n-1"
+        feedback: "Equal values reach the final `else`, which sets 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-control-ifelse2
+    prompt: |
+      How does this differ from a version that stores the answer in a static `result` field? (`print` is `println`.)
+    code: |
+      //: control/IfElse2.java
+      import static net.mindview.util.Print.*;
+
+      public class IfElse2 {
+        static int test(int testval, int target) {
+          if(testval > target)
+            return +1;
+          else if(testval < target)
+            return -1;
+          else
+            return 0; // Match
+        }
+        public static void main(String[] args) {
+          print(test(10, 5));
+          print(test(5, 10));
+          print(test(5, 5));
+        }
+      }
+    language: java
+    options:
+      - text: "It returns straight out of each branch, so no field or `else` chain is needed after a return — the output is the same: 1, −1, 0"
+        correct: true
+      - text: "It prints different numbers"
+        feedback: "Same logic, same answers."
+      - text: "It doesn't compile — a method must have a single `return`"
+        feedback: "Java allows any number of returns."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-control-whiletest
+    prompt: |
+      `Math.random()` returns a random double in [0, 1). What does the program print?
+    code: |
+      //: control/WhileTest.java
+      // Demonstrates the while loop.
+
+      public class WhileTest {
+        static boolean condition() {
+          boolean result = Math.random() < 0.99;
+          System.out.print(result + ", ");
+          return result;
+        }
+        public static void main(String[] args) {
+          while(condition())
+            System.out.println("Inside 'while'");
+          System.out.println("Exited 'while'");
+        }
+      }
+    language: java
+    options:
+      - text: "A random number of `true, Inside 'while'` lines, then `false, Exited 'while'`"
+        correct: true
+      - text: "Exactly 99 `Inside 'while'` lines"
+        feedback: "Each test has a 1% chance of being false, so the count varies."
+      - text: "`Exited 'while'` only"
+        feedback: "The condition is true 99% of the time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-listcharacters
+    prompt: |
+      What is the first line printed?
+    code: |
+      //: control/ListCharacters.java
+      // Demonstrates "for" loop by listing
+      // all the lowercase ASCII letters.
+
+      public class ListCharacters {
+        public static void main(String[] args) {
+          for(char c = 0; c < 128; c++)
+            if(Character.isLowerCase(c))
+              System.out.println("value: " + (int)c +
+                " character: " + c);
+        }
+      }
+    language: java
+    options:
+      - text: "value: 97 character: a"
+        correct: true
+      - text: "value: 65 character: A"
+        feedback: "`isLowerCase` skips the capitals."
+      - text: "value: 0 character: a"
+        feedback: "The loop variable is the character code itself."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-commaoperator
+    prompt: |
+      What does this print?
+    code: |
+      //: control/CommaOperator.java
+
+      public class CommaOperator {
+        public static void main(String[] args) {
+          for(int i = 1, j = i + 10; i < 5; i++, j = i * 2) {
+            System.out.println("i = " + i + " j = " + j);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "i = 1 j = 11\ni = 2 j = 4\ni = 3 j = 6\ni = 4 j = 8"
+        correct: true
+      - text: "i = 1 j = 11\ni = 2 j = 12\ni = 3 j = 13\ni = 4 j = 14"
+        feedback: "The step part sets `j = i * 2` after incrementing `i`."
+      - text: "i = 1 j = 2\ni = 2 j = 4\ni = 3 j = 6\ni = 4 j = 8"
+        feedback: "The initializer sets `j = i + 10` = 11 for the first pass."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-control-foreachfloat
+    prompt: |
+      What does the foreach loop print?
+    code: |
+      //: control/ForEachFloat.java
+      import java.util.*;
+
+      public class ForEachFloat {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          float f[] = new float[10];
+          for(int i = 0; i < 10; i++)
+            f[i] = rand.nextFloat();
+          for(float x : f)
+            System.out.println(x);
+        }
+      }
+    language: java
+    options:
+      - text: "All 10 floats, one per line, in array order"
+        correct: true
+      - text: "The indexes 0 to 9"
+        feedback: "Foreach gives the elements, not their indexes."
+      - text: "The floats in sorted order"
+        feedback: "Foreach visits elements in index order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-foreachstring
+    prompt: |
+      What does this print?
+    code: |
+      //: control/ForEachString.java
+
+      public class ForEachString {
+        public static void main(String[] args) {
+          for(char c : "An African Swallow".toCharArray() )
+            System.out.print(c + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "A n   A f r i c a n   S w a l l o w "
+        correct: true
+      - text: "An African Swallow "
+        feedback: "Each `char` is printed with a space after it, including the spaces."
+      - text: "AnAfricanSwallow"
+        feedback: "The space characters are elements too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-foreachint
+    prompt: |
+      `range(n)` gives 0 … n−1, `range(a, b)` gives a … b−1, and `range(a, b, step)` counts from a by step while below b. What does this print? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: control/ForEachInt.java
+      import static net.mindview.util.Range.*;
+      import static net.mindview.util.Print.*;
+
+      public class ForEachInt {
+        public static void main(String[] args) {
+          for(int i : range(10)) // 0..9
+            printnb(i + " ");
+          print();
+          for(int i : range(5, 10)) // 5..9
+            printnb(i + " ");
+          print();
+          for(int i : range(5, 20, 3)) // 5..20 step 3
+            printnb(i + " ");
+          print();
+        }
+      }
+    language: java
+    options:
+      - text: "0 1 2 3 4 5 6 7 8 9 \n5 6 7 8 9 \n5 8 11 14 17 "
+        correct: true
+      - text: "0 1 2 3 4 5 6 7 8 9 10 \n5 6 7 8 9 10 \n5 8 11 14 17 20 "
+        feedback: "The upper bound is exclusive."
+      - text: "0 1 2 3 4 5 6 7 8 9 \n5 6 7 8 9 \n5 8 11 14 17 20 "
+        feedback: "20 isn't below 20."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-vowelsandconsonants
+    prompt: |
+      The first random letter is `y` (code 121). What is the first line printed? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: control/VowelsAndConsonants.java
+      // Demonstrates the switch statement.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class VowelsAndConsonants {
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          for(int i = 0; i < 100; i++) {
+            int c = rand.nextInt(26) + 'a';
+            printnb((char)c + ", " + c + ": ");
+            switch(c) {
+              case 'a':
+              case 'e':
+              case 'i':
+              case 'o':
+              case 'u': print("vowel");
+                        break;
+              case 'y':
+              case 'w': print("Sometimes a vowel");
+                        break;
+              default:  print("consonant");
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "y, 121: Sometimes a vowel"
+        correct: true
+      - text: "y, 121: consonant"
+        feedback: "`case 'y':` matches."
+      - text: "y, 121: Sometimes a vowel\nconsonant"
+        feedback: "`break` stops the fall-through before `default`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-breakandcontinue
+    prompt: |
+      `range(100)` yields 0 … 99. What is the third line printed?
+    code: |
+      //: control/BreakAndContinue.java
+      // Demonstrates break and continue keywords.
+      import static net.mindview.util.Range.*;
+
+      public class BreakAndContinue {
+        public static void main(String[] args) {
+          for(int i = 0; i < 100; i++) {
+            if(i == 74) break; // Out of for loop
+            if(i % 9 != 0) continue; // Next iteration
+            System.out.print(i + " ");
+          }
+          System.out.println();
+          // Using foreach:
+          for(int i : range(100)) {
+            if(i == 74) break; // Out of for loop
+            if(i % 9 != 0) continue; // Next iteration
+            System.out.print(i + " ");
+          }
+          System.out.println();
+          int i = 0;
+          // An "infinite loop":
+          while(true) {
+            i++;
+            int j = i * 27;
+            if(j == 1269) break; // Out of loop
+            if(i % 10 != 0) continue; // Top of loop
+            System.out.print(i + " ");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "10 20 30 40 "
+        correct: true
+      - text: "10 20 30 40 50 "
+        feedback: "At i = 47, j = 1269 and the loop breaks."
+      - text: "0 9 18 27 36 45 54 63 72 "
+        feedback: "That's the first two lines."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-labeledfor
+    prompt: |
+      What are the last four lines printed? (`print` is `println`.)
+    code: |
+      //: control/LabeledFor.java
+      // For loops with "labeled break" and "labeled continue."
+      import static net.mindview.util.Print.*;
+
+      public class LabeledFor {
+        public static void main(String[] args) {
+          int i = 0;
+          outer: // Can't have statements here
+          for(; true ;) { // infinite loop
+            inner: // Can't have statements here
+            for(; i < 10; i++) {
+              print("i = " + i);
+              if(i == 2) {
+                print("continue");
+                continue;
+              }
+              if(i == 3) {
+                print("break");
+                i++; // Otherwise i never
+                     // gets incremented.
+                break;
+              }
+              if(i == 7) {
+                print("continue outer");
+                i++; // Otherwise i never
+                     // gets incremented.
+                continue outer;
+              }
+              if(i == 8) {
+                print("break outer");
+                break outer;
+              }
+              for(int k = 0; k < 5; k++) {
+                if(k == 3) {
+                  print("continue inner");
+                  continue inner;
+                }
+              }
+            }
+          }
+          // Can't break or continue to labels here
+        }
+      }
+    language: java
+    options:
+      - text: "i = 7\ncontinue outer\ni = 8\nbreak outer"
+        correct: true
+      - text: "i = 7\ncontinue outer\ni = 7\ncontinue outer"
+        feedback: "`i++` runs before `continue outer`, so the next pass starts at 8."
+      - text: "i = 8\nbreak outer\ni = 9\ncontinue inner"
+        feedback: "`break outer` leaves both loops."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-control-labeledwhile
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: control/LabeledWhile.java
+      // While loops with "labeled break" and "labeled continue."
+      import static net.mindview.util.Print.*;
+
+      public class LabeledWhile {
+        public static void main(String[] args) {
+          int i = 0;
+          outer:
+          while(true) {
+            print("Outer while loop");
+            while(true) {
+              i++;
+              print("i = " + i);
+              if(i == 1) {
+                print("continue");
+                continue;
+              }
+              if(i == 3) {
+                print("continue outer");
+                continue outer;
+              }
+              if(i == 5) {
+                print("break");
+                break;
+              }
+              if(i == 7) {
+                print("break outer");
+                break outer;
+              }
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Outer while loop\ni = 1\ncontinue\ni = 2\ni = 3\ncontinue outer\nOuter while loop\ni = 4\ni = 5\nbreak\nOuter while loop\ni = 6\ni = 7\nbreak outer"
+        correct: true
+      - text: "Outer while loop\ni = 1\ncontinue\ni = 2\ni = 3\ncontinue outer\ni = 4\ni = 5\nbreak\ni = 6\ni = 7\nbreak outer"
+        feedback: "`continue outer` and `break` both go back to the outer loop, which prints its line again."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

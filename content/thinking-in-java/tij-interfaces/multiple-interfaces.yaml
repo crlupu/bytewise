@@ -100,3 +100,162 @@ steps:
         - { from: DangerousMonster, to: Monster, type: extends }
         - { from: Vampire, to: DangerousMonster, type: extends }
         - { from: Vampire, to: Lethal, type: extends }
+
+  - type: choice
+    id: tij-interfaces-adventure
+    prompt: |
+      `Hero` implements `CanFight` but doesn't define `fight()`. Why does it compile?
+    code: |
+      //: interfaces/Adventure.java
+      // Multiple interfaces.
+
+      interface CanFight {
+        void fight();
+      }
+
+      interface CanSwim {
+        void swim();
+      }
+
+      interface CanFly {
+        void fly();
+      }
+
+      class ActionCharacter {
+        public void fight() {}
+      }
+
+      class Hero extends ActionCharacter
+          implements CanFight, CanSwim, CanFly {
+        public void swim() {}
+        public void fly() {}
+      }
+
+      public class Adventure {
+        public static void t(CanFight x) { x.fight(); }
+        public static void u(CanSwim x) { x.swim(); }
+        public static void v(CanFly x) { x.fly(); }
+        public static void w(ActionCharacter x) { x.fight(); }
+        public static void main(String[] args) {
+          Hero h = new Hero();
+          t(h); // Treat it as a CanFight
+          u(h); // Treat it as a CanSwim
+          v(h); // Treat it as a CanFly
+          w(h); // Treat it as an ActionCharacter
+        }
+      }
+    language: java
+    options:
+      - text: "It inherits a public `fight()` from `ActionCharacter`, which satisfies `CanFight`"
+        correct: true
+      - text: "Interfaces don't require their methods to be implemented"
+        feedback: "A concrete class must implement every interface method."
+      - text: "It doesn't compile"
+        feedback: "It compiles and runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-horrorshow
+    prompt: |
+      Which of these is true about `Vampire`?
+    code: |
+      //: interfaces/HorrorShow.java
+      // Extending an interface with inheritance.
+
+      interface Monster {
+        void menace();
+      }
+
+      interface DangerousMonster extends Monster {
+        void destroy();
+      }
+
+      interface Lethal {
+        void kill();
+      }
+
+      class DragonZilla implements DangerousMonster {
+        public void menace() {}
+        public void destroy() {}
+      }
+
+      interface Vampire extends DangerousMonster, Lethal {
+        void drinkBlood();
+      }
+
+      class VeryBadVampire implements Vampire {
+        public void menace() {}
+        public void destroy() {}
+        public void kill() {}
+        public void drinkBlood() {}
+      }
+
+      public class HorrorShow {
+        static void u(Monster b) { b.menace(); }
+        static void v(DangerousMonster d) {
+          d.menace();
+          d.destroy();
+        }
+        static void w(Lethal l) { l.kill(); }
+        public static void main(String[] args) {
+          DangerousMonster barney = new DragonZilla();
+          u(barney);
+          v(barney);
+          Vampire vlad = new VeryBadVampire();
+          u(vlad);
+          v(vlad);
+          w(vlad);
+        }
+      }
+    language: java
+    options:
+      - text: "It extends two interfaces at once — allowed for interfaces, not classes"
+        correct: true
+      - text: "It can't extend `DangerousMonster` and `Lethal` together"
+        feedback: "An interface can extend several interfaces."
+      - text: "`VeryBadVampire` only needs `drinkBlood()`"
+        feedback: "It must implement every inherited method: `menace`, `destroy`, `kill` and `drinkBlood`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-interfaces-interfacecollision
+    prompt: |
+      Why won't `class C5 extends C implements I1 {}` compile?
+    code: |
+      //: interfaces/InterfaceCollision.java
+      package interfaces;
+
+      interface I1 { void f(); }
+      interface I2 { int f(int i); }
+      interface I3 { int f(); }
+      class C { public int f() { return 1; } }
+
+      class C2 implements I1, I2 {
+        public void f() {}
+        public int f(int i) { return 1; } // overloaded
+      }
+
+      class C3 extends C implements I2 {
+        public int f(int i) { return 1; } // overloaded
+      }
+
+      class C4 extends C implements I3 {
+        // Identical, no problem:
+        public int f() { return 1; }
+      }
+
+      // Methods differ only by return type:
+      //! class C5 extends C implements I1 {}
+      //! interface I4 extends I1, I3 {}
+    language: java
+    options:
+      - text: "`C.f()` returns `int`, and `I1.f()` returns `void` — methods can't differ only by return type"
+        correct: true
+      - text: "A class can't both extend and implement"
+        feedback: "`C3` and `C4` do exactly that."
+      - text: "`C5` has no body"
+        feedback: "An empty body is fine if everything required is inherited."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

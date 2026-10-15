@@ -73,3 +73,334 @@ steps:
         correct: true
       - text: After the constructor
         feedback: Field initializers always run before the constructor body; only their order among themselves follows the source.
+
+  - type: predict
+    id: tij-initialization-orderofinitialization
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/OrderOfInitialization.java
+      // Demonstrates initialization order.
+      import static net.mindview.util.Print.*;
+
+      // When the constructor is called to create a
+      // Window object, you'll see a message:
+      class Window {
+        Window(int marker) { print("Window(" + marker + ")"); }
+      }
+
+      class House {
+        Window w1 = new Window(1); // Before constructor
+        House() {
+          // Show that we're in the constructor:
+          print("House()");
+          w3 = new Window(33); // Reinitialize w3
+        }
+        Window w2 = new Window(2); // After constructor
+        void f() { print("f()"); }
+        Window w3 = new Window(3); // At end
+      }
+
+      public class OrderOfInitialization {
+        public static void main(String[] args) {
+          House h = new House();
+          h.f(); // Shows that construction is done
+        }
+      }
+    language: java
+    options:
+      - text: "Window(1)\nWindow(2)\nWindow(3)\nHouse()\nWindow(33)\nf()"
+        correct: true
+      - text: "Window(1)\nHouse()\nWindow(33)\nWindow(2)\nWindow(3)\nf()"
+        feedback: "All field initializers run before the constructor body, wherever they appear."
+      - text: "House()\nWindow(1)\nWindow(2)\nWindow(3)\nWindow(33)\nf()"
+        feedback: "Field initializers come before the constructor body."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-staticinitialization
+    prompt: |
+      What are the first five lines printed? (`print` is `println`.)
+    code: |
+      //: initialization/StaticInitialization.java
+      // Specifying initial values in a class definition.
+      import static net.mindview.util.Print.*;
+
+      class Bowl {
+        Bowl(int marker) {
+          print("Bowl(" + marker + ")");
+        }
+        void f1(int marker) {
+          print("f1(" + marker + ")");
+        }
+      }
+
+      class Table {
+        static Bowl bowl1 = new Bowl(1);
+        Table() {
+          print("Table()");
+          bowl2.f1(1);
+        }
+        void f2(int marker) {
+          print("f2(" + marker + ")");
+        }
+        static Bowl bowl2 = new Bowl(2);
+      }
+
+      class Cupboard {
+        Bowl bowl3 = new Bowl(3);
+        static Bowl bowl4 = new Bowl(4);
+        Cupboard() {
+          print("Cupboard()");
+          bowl4.f1(2);
+        }
+        void f3(int marker) {
+          print("f3(" + marker + ")");
+        }
+        static Bowl bowl5 = new Bowl(5);
+      }
+
+      public class StaticInitialization {
+        public static void main(String[] args) {
+          print("Creating new Cupboard() in main");
+          new Cupboard();
+          print("Creating new Cupboard() in main");
+          new Cupboard();
+          table.f2(1);
+          cupboard.f3(1);
+        }
+        static Table table = new Table();
+        static Cupboard cupboard = new Cupboard();
+      }
+    language: java
+    options:
+      - text: "Bowl(1)\nBowl(2)\nTable()\nf1(1)\nBowl(4)"
+        correct: true
+      - text: "Creating new Cupboard() in main\nBowl(4)\nBowl(5)\nBowl(3)\nCupboard()"
+        feedback: "The static fields of `StaticInitialization` (`table`, `cupboard`) are initialized before `main` runs."
+      - text: "Bowl(1)\nTable()\nBowl(2)\nf1(1)\nBowl(4)"
+        feedback: "Both static `Bowl`s in `Table` are initialized before its constructor runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-explicitstatic
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/ExplicitStatic.java
+      // Explicit static initialization with the "static" clause.
+      import static net.mindview.util.Print.*;
+
+      class Cup {
+        Cup(int marker) {
+          print("Cup(" + marker + ")");
+        }
+        void f(int marker) {
+          print("f(" + marker + ")");
+        }
+      }
+
+      class Cups {
+        static Cup cup1;
+        static Cup cup2;
+        static {
+          cup1 = new Cup(1);
+          cup2 = new Cup(2);
+        }
+        Cups() {
+          print("Cups()");
+        }
+      }
+
+      public class ExplicitStatic {
+        public static void main(String[] args) {
+          print("Inside main()");
+          Cups.cup1.f(99);  // (1)
+        }
+        // static Cups cups1 = new Cups();  // (2)
+        // static Cups cups2 = new Cups();  // (2)
+      }
+    language: java
+    options:
+      - text: "Inside main()\nCup(1)\nCup(2)\nf(99)"
+        correct: true
+      - text: "Cup(1)\nCup(2)\nInside main()\nf(99)"
+        feedback: "`Cups` is loaded only when it's first used, at line (1)."
+      - text: "Inside main()\nCup(1)\nCup(2)\nCups()\nf(99)"
+        feedback: "No `Cups` object is created; only the static block runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-initialization-mugs
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: initialization/Mugs.java
+      // Java "Instance Initialization."
+      import static net.mindview.util.Print.*;
+
+      class Mug {
+        Mug(int marker) {
+          print("Mug(" + marker + ")");
+        }
+        void f(int marker) {
+          print("f(" + marker + ")");
+        }
+      }
+
+      public class Mugs {
+        Mug mug1;
+        Mug mug2;
+        {
+          mug1 = new Mug(1);
+          mug2 = new Mug(2);
+          print("mug1 & mug2 initialized");
+        }
+        Mugs() {
+          print("Mugs()");
+        }
+        Mugs(int i) {
+          print("Mugs(int)");
+        }
+        public static void main(String[] args) {
+          print("Inside main()");
+          new Mugs();
+          print("new Mugs() completed");
+          new Mugs(1);
+          print("new Mugs(1) completed");
+        }
+      }
+    language: java
+    options:
+      - text: "Inside main()\nMug(1)\nMug(2)\nmug1 & mug2 initialized\nMugs()\nnew Mugs() completed\nMug(1)\nMug(2)\nmug1 & mug2 initialized\nMugs(int)\nnew Mugs(1) completed"
+        correct: true
+      - text: "Inside main()\nMug(1)\nMug(2)\nmug1 & mug2 initialized\nMugs()\nnew Mugs() completed\nMugs(int)\nnew Mugs(1) completed"
+        feedback: "The instance initializer runs for every object, whichever constructor is used."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-initialvalues
+    prompt: |
+      What does it print for the `float` field and for `reference`? (`print` is `println`.)
+    code: |
+      //: initialization/InitialValues.java
+      // Shows default initial values.
+      import static net.mindview.util.Print.*;
+
+      public class InitialValues {
+        boolean t;
+        char c;
+        byte b;
+        short s;
+        int i;
+        long l;
+        float f;
+        double d;
+        InitialValues reference;
+        void printInitialValues() {
+          print("Data type      Initial value");
+          print("boolean        " + t);
+          print("char           [" + c + "]");
+          print("byte           " + b);
+          print("short          " + s);
+          print("int            " + i);
+          print("long           " + l);
+          print("float          " + f);
+          print("double         " + d);
+          print("reference      " + reference);
+        }
+        public static void main(String[] args) {
+          InitialValues iv = new InitialValues();
+          iv.printInitialValues();
+          /* You could also say:
+          new InitialValues().printInitialValues();
+          */
+        }
+      }
+    language: java
+    options:
+      - text: "`0.0` and `null`"
+        correct: true
+      - text: "`0` and `0`"
+        feedback: "Floats print as `0.0`, and references default to `null`."
+      - text: "Nothing — uninitialized fields are a compile error"
+        feedback: "Fields get default values; only local variables must be initialized."
+    explanation: |
+      Fields get default values: `false`, `'\u0000'`, `0`, `0.0` and `null`. The `char` prints as an invisible character.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-initialvalues2
+    prompt: |
+      Does `short s = 0xff;` compile?
+    code: |
+      //: initialization/InitialValues2.java
+      // Providing explicit initial values.
+
+      public class InitialValues2 {
+        boolean bool = true;
+        char ch = 'x';
+        byte b = 47;
+        short s = 0xff;
+        int i = 999;
+        long lng = 1;
+        float f = 3.14f;
+        double d = 3.14159;
+      }
+    language: java
+    options:
+      - text: "Yes — 0xff is 255, which fits in a `short`"
+        correct: true
+      - text: "No — hex literals are `int`"
+        feedback: "A constant `int` that fits is narrowed automatically in an initializer."
+      - text: "No — `short` can't hold 255"
+        feedback: "A `short` goes up to 32767."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-methodinit
+    prompt: |
+      What is `i` in a new `MethodInit`?
+    code: |
+      //: initialization/MethodInit.java
+      public class MethodInit {
+        int i = f();
+        int f() { return 11; }
+      }
+    language: java
+    options:
+      - text: "11 — a field can be initialized by calling a method"
+        correct: true
+      - text: "0 — `f()` isn't defined yet at that point"
+        feedback: "Methods can be called regardless of where they're declared."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-initialization-methodinit2
+    prompt: |
+      What are `i` and `j` in a new `MethodInit2`?
+    code: |
+      //: initialization/MethodInit2.java
+      public class MethodInit2 {
+        int i = f();
+        int j = g(i);
+        int f() { return 11; }
+        int g(int n) { return n * 10; }
+      }
+    language: java
+    options:
+      - text: "11 and 110"
+        correct: true
+      - text: "11 and 0"
+        feedback: "`i` is initialized first, so `g(i)` sees 11."
+      - text: "It doesn't compile"
+        feedback: "`i` is declared before `j` uses it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

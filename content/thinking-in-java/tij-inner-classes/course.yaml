@@ -3,3 +3,5 @@ summary: Chapter 10 — the hidden link from an inner object to its outer object
 lessons:
   - inner-objects
   - anonymous-classes
+  - nested-and-local
+  - closures-and-frameworks

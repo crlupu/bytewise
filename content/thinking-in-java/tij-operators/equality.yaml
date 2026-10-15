@@ -1,0 +1,96 @@
+title: "== and equals()"
+summary: "`==` compares references; `equals` compares contents only when a class overrides it."
+duration: 8
+tags: [java, equality, equals, references, Integer]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 3, Testing object equivalence" }
+steps:
+  - type: explanation
+    title: "== compares references"
+    body: |
+      For objects, `==` asks: are these the same object?
+      Two objects with equal contents are still two objects.
+
+  - type: explanation
+    title: "equals compares contents — if overridden"
+    body: |
+      Library classes like `Integer` and `String` override `equals` to compare values.
+      Your own class inherits `Object.equals`, which is just `==`.
+
+  - type: predict
+    id: tij-operators-equivalence
+    prompt: |
+      What does this print?
+    code: |
+      //: operators/Equivalence.java
+
+      public class Equivalence {
+        public static void main(String[] args) {
+          Integer n1 = new Integer(47);
+          Integer n2 = new Integer(47);
+          System.out.println(n1 == n2);
+          System.out.println(n1 != n2);
+        }
+      }
+    language: java
+    options:
+      - text: "false\ntrue"
+        correct: true
+      - text: "true\nfalse"
+        feedback: "`new` makes two distinct `Integer` objects; `==` compares the references."
+      - text: "It doesn't compile — `new Integer` is removed"
+        feedback: "It's deprecated since Java 9 but still compiles (with a warning)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-equalsmethod
+    prompt: |
+      What does this print?
+    code: |
+      //: operators/EqualsMethod.java
+
+      public class EqualsMethod {
+        public static void main(String[] args) {
+          Integer n1 = new Integer(47);
+          Integer n2 = new Integer(47);
+          System.out.println(n1.equals(n2));
+        }
+      }
+    language: java
+    options:
+      - text: "true"
+        correct: true
+      - text: "false"
+        feedback: "`Integer.equals` compares the wrapped values."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-operators-equalsmethod2
+    prompt: |
+      What does this print?
+    code: |
+      //: operators/EqualsMethod2.java
+      // Default equals() does not compare contents.
+
+      class Value {
+        int i;
+      }
+
+      public class EqualsMethod2 {
+        public static void main(String[] args) {
+          Value v1 = new Value();
+          Value v2 = new Value();
+          v1.i = v2.i = 100;
+          System.out.println(v1.equals(v2));
+        }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "`Value` doesn't override `equals`, so it inherits `Object.equals`, which is `==`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
