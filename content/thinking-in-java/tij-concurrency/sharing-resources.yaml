@@ -1,0 +1,846 @@
+title: "Sharing resources"
+summary: "Race conditions, synchronized and Lock, atomicity and visibility, atomic classes, critical sections and ThreadLocal."
+duration: 8
+tags: [java, concurrency, synchronized, ReentrantLock, atomicity, volatile, AtomicInteger, ThreadLocal]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Sharing resources" }
+steps:
+  - type: explanation
+    title: "Locks"
+    body: |
+      When threads share mutable state, every access — reads included — must hold the same lock.
+      `synchronized` methods lock `this`; a `synchronized(obj)` block locks `obj`; a `ReentrantLock` must be unlocked in `finally`, but can also `tryLock()` and give up.
+      Two different locks protect nothing from each other.
+
+  - type: explanation
+    title: "Atomicity and visibility"
+    body: |
+      `i++` is several bytecode steps (read, add, write), so two threads can lose updates.
+      `volatile` makes writes visible to other threads but doesn't make `i++` atomic.
+      `AtomicInteger.addAndGet()` is atomic; a `ThreadLocal` gives each thread its own copy, so nothing is shared at all.
+
+  - type: choice
+    id: tij-concurrency-intgenerator
+    prompt: |
+      Why is `canceled` declared `volatile`?
+    code: |
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+    language: java
+    options:
+      - text: "So a `cancel()` on one thread is seen by the other threads checking `isCanceled()`"
+        correct: true
+      - text: "To make `next()` atomic"
+        feedback: "`volatile` affects only the `canceled` field, and only visibility."
+      - text: "It's required for `abstract` classes"
+        feedback: "No such rule."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-evenchecker
+    prompt: |
+      `test(gp)` starts ten `EvenChecker`s. What do they share?
+    code: |
+      //: concurrency/EvenChecker.java
+      import java.util.concurrent.*;
+
+      public class EvenChecker implements Runnable {
+        private IntGenerator generator;
+        private final int id;
+        public EvenChecker(IntGenerator g, int ident) {
+          generator = g;
+          id = ident;
+        }
+        public void run() {
+          while(!generator.isCanceled()) {
+            int val = generator.next();
+            if(val % 2 != 0) {
+              System.out.println(val + " not even!");
+              generator.cancel(); // Cancels all EvenCheckers
+            }
+          }
+        }
+        // Test any type of IntGenerator:
+        public static void test(IntGenerator gp, int count) {
+          System.out.println("Press Control-C to exit");
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < count; i++)
+            exec.execute(new EvenChecker(gp, i));
+          exec.shutdown();
+        }
+        // Default value for count:
+        public static void test(IntGenerator gp) {
+          test(gp, 10);
+        }
+      }
+
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+    language: java
+    options:
+      - text: "The single generator `gp` — all ten call `next()` on it concurrently"
+        correct: true
+      - text: "Nothing; each checker makes its own generator"
+        feedback: "They're all given the same `gp`."
+      - text: "Only the `id`"
+        feedback: "Each has its own `id`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-evengenerator
+    prompt: |
+      Ten threads call `next()` at the same time. What happens?
+    code: |
+      //: concurrency/EvenGenerator.java
+      // When threads collide.
+
+      public class EvenGenerator extends IntGenerator {
+        private int currentEvenValue = 0;
+        public int next() {
+          ++currentEvenValue; // Danger point here!
+          ++currentEvenValue;
+          return currentEvenValue;
+        }
+        public static void main(String[] args) {
+          EvenChecker.test(new EvenGenerator());
+        }
+      }
+
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+
+      //: concurrency/EvenChecker.java
+      import java.util.concurrent.*;
+
+      public class EvenChecker implements Runnable {
+        private IntGenerator generator;
+        private final int id;
+        public EvenChecker(IntGenerator g, int ident) {
+          generator = g;
+          id = ident;
+        }
+        public void run() {
+          while(!generator.isCanceled()) {
+            int val = generator.next();
+            if(val % 2 != 0) {
+              System.out.println(val + " not even!");
+              generator.cancel(); // Cancels all EvenCheckers
+            }
+          }
+        }
+        // Test any type of IntGenerator:
+        public static void test(IntGenerator gp, int count) {
+          System.out.println("Press Control-C to exit");
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < count; i++)
+            exec.execute(new EvenChecker(gp, i));
+          exec.shutdown();
+        }
+        // Default value for count:
+        public static void test(IntGenerator gp) {
+          test(gp, 10);
+        }
+      }
+    language: java
+    options:
+      - text: "`Press Control-C to exit`, then quickly some `N not even!` lines, and the checkers stop"
+        correct: true
+      - text: "It runs forever; `next()` always adds 2"
+        feedback: "One thread can read the value between another thread's two increments."
+      - text: "Exactly one `not even!` line"
+        feedback: "Other checkers may also find odd values before they see `canceled`."
+    explanation: |
+      On a Java 21 run ten checkers each reported an odd value, like `26875 not even!`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-synchronizedevengenerator
+    prompt: |
+      `next()` is now `synchronized`, even with a `yield()` between the increments. What happens?
+    code: |
+      //: concurrency/SynchronizedEvenGenerator.java
+      // Simplifying mutexes with the synchronized keyword.
+
+      public class
+      SynchronizedEvenGenerator extends IntGenerator {
+        private int currentEvenValue = 0;
+        public synchronized int next() {
+          ++currentEvenValue;
+          Thread.yield();
+          ++currentEvenValue;
+          return currentEvenValue;
+        }
+        public static void main(String[] args) {
+          EvenChecker.test(new SynchronizedEvenGenerator());
+        }
+      }
+
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+
+      //: concurrency/EvenChecker.java
+      import java.util.concurrent.*;
+
+      public class EvenChecker implements Runnable {
+        private IntGenerator generator;
+        private final int id;
+        public EvenChecker(IntGenerator g, int ident) {
+          generator = g;
+          id = ident;
+        }
+        public void run() {
+          while(!generator.isCanceled()) {
+            int val = generator.next();
+            if(val % 2 != 0) {
+              System.out.println(val + " not even!");
+              generator.cancel(); // Cancels all EvenCheckers
+            }
+          }
+        }
+        // Test any type of IntGenerator:
+        public static void test(IntGenerator gp, int count) {
+          System.out.println("Press Control-C to exit");
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < count; i++)
+            exec.execute(new EvenChecker(gp, i));
+          exec.shutdown();
+        }
+        // Default value for count:
+        public static void test(IntGenerator gp) {
+          test(gp, 10);
+        }
+      }
+    language: java
+    options:
+      - text: "It never reports an odd value — it runs until you stop it"
+        correct: true
+      - text: "It still prints `not even!`, because of the `yield()`"
+        feedback: "`yield()` doesn't release the lock, so no other thread can enter `next()` in between."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-mutexevengenerator
+    prompt: |
+      Why is the `return` inside the `try`, before `unlock()` in `finally`?
+    code: |
+      //: concurrency/MutexEvenGenerator.java
+      // Preventing thread collisions with mutexes.
+      import java.util.concurrent.locks.*;
+
+      public class MutexEvenGenerator extends IntGenerator {
+        private int currentEvenValue = 0;
+        private Lock lock = new ReentrantLock();
+        public int next() {
+          lock.lock();
+          try {
+            ++currentEvenValue;
+            Thread.yield();
+            ++currentEvenValue;
+            return currentEvenValue;
+          } finally {
+            lock.unlock();
+          }
+        }
+        public static void main(String[] args) {
+          EvenChecker.test(new MutexEvenGenerator());
+        }
+      }
+
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+
+      //: concurrency/EvenChecker.java
+      import java.util.concurrent.*;
+
+      public class EvenChecker implements Runnable {
+        private IntGenerator generator;
+        private final int id;
+        public EvenChecker(IntGenerator g, int ident) {
+          generator = g;
+          id = ident;
+        }
+        public void run() {
+          while(!generator.isCanceled()) {
+            int val = generator.next();
+            if(val % 2 != 0) {
+              System.out.println(val + " not even!");
+              generator.cancel(); // Cancels all EvenCheckers
+            }
+          }
+        }
+        // Test any type of IntGenerator:
+        public static void test(IntGenerator gp, int count) {
+          System.out.println("Press Control-C to exit");
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < count; i++)
+            exec.execute(new EvenChecker(gp, i));
+          exec.shutdown();
+        }
+        // Default value for count:
+        public static void test(IntGenerator gp) {
+          test(gp, 10);
+        }
+      }
+    language: java
+    options:
+      - text: "So the value is read while the lock is still held — `finally` runs after the return value is computed"
+        correct: true
+      - text: "Because `return` can't come after a `finally`"
+        feedback: "It could, but then it would read `currentEvenValue` without the lock."
+      - text: "It makes no difference"
+        feedback: "Reading after unlocking would let another thread change the value first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-attemptlocking
+    prompt: |
+      The book expects the last two calls to print `false`. What do they really print?
+    code: |
+      //: concurrency/AttemptLocking.java
+      // Locks in the concurrent library allow you
+      // to give up on trying to acquire a lock.
+      import java.util.concurrent.*;
+      import java.util.concurrent.locks.*;
+
+      public class AttemptLocking {
+        private ReentrantLock lock = new ReentrantLock();
+        public void untimed() {
+          boolean captured = lock.tryLock();
+          try {
+            System.out.println("tryLock(): " + captured);
+          } finally {
+            if(captured)
+              lock.unlock();
+          }
+        }
+        public void timed() {
+          boolean captured = false;
+          try {
+            captured = lock.tryLock(2, TimeUnit.SECONDS);
+          } catch(InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+          try {
+            System.out.println("tryLock(2, TimeUnit.SECONDS): " +
+              captured);
+          } finally {
+            if(captured)
+              lock.unlock();
+          }
+        }
+        public static void main(String[] args) {
+          final AttemptLocking al = new AttemptLocking();
+          al.untimed();
+          al.timed();
+          // Now create a separate task to grab the lock:
+          new Thread() {
+            { setDaemon(true); }
+            public void run() {
+              al.lock.lock();
+              System.out.println("acquired");
+            }
+          }.start();
+          Thread.yield(); // Give the 2nd task a chance
+          al.untimed();
+          al.timed();
+        }
+      }
+    language: java
+    options:
+      - text: "It depends on timing: if the new thread hasn't called `lock()` yet, they print `true`; `yield()` guarantees nothing"
+        correct: true
+      - text: "Always `false` — `yield()` lets the new thread run first"
+        feedback: "`yield()` is only a hint."
+      - text: "`untimed` prints `false`, and `timed` waits forever"
+        feedback: "`tryLock(2, SECONDS)` gives up after 2 seconds."
+    explanation: |
+      On a Java 21 run all four printed `true`, and `acquired` came last — the daemon took the lock only after `main` was done with it.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-atomicity
+    prompt: |
+      `javap -c Atomicity` shows `f1()`'s bytecode. Is `i++` atomic?
+    code: |
+      //: concurrency/Atomicity.java
+
+      public class Atomicity {
+        int i;
+        void f1() { i++; }
+        void f2() { i += 3; }
+      }
+    language: java
+    options:
+      - text: "No — it's a `getfield`, an add, and a `putfield`; another thread can run between them"
+        correct: true
+      - text: "Yes — it's a single statement"
+        feedback: "One statement can be several bytecode steps."
+      - text: "Yes, because `int` writes are atomic"
+        feedback: "Each read and write is atomic, but the read-add-write sequence isn't."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-atomicitytest
+    prompt: |
+      `evenIncrement()` is `synchronized`, so `i` changes by 2 at a time. What does this program do?
+    code: |
+      //: concurrency/AtomicityTest.java
+      import java.util.concurrent.*;
+
+      public class AtomicityTest implements Runnable {
+        private int i = 0;
+        public int getValue() { return i; }
+        private synchronized void evenIncrement() { i++; i++; }
+        public void run() {
+          while(true)
+            evenIncrement();
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          AtomicityTest at = new AtomicityTest();
+          exec.execute(at);
+          while(true) {
+            int val = at.getValue();
+            if(val % 2 != 0) {
+              System.out.println(val);
+              System.exit(0);
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Prints an odd number and exits — `getValue()` isn't synchronized, so it can read `i` between the two increments"
+        correct: true
+      - text: "Runs forever; `i` is always even"
+        feedback: "Only writers hold the lock; the reader doesn't."
+      - text: "Deadlocks"
+        feedback: "There's only one lock, and the reader never takes it."
+    explanation: |
+      On a Java 21 run it printed `1` straight away.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-serialnumbergenerator
+    prompt: |
+      `serialNumber` is `volatile`. Is `nextSerialNumber()` thread-safe?
+    code: |
+      //: concurrency/SerialNumberGenerator.java
+
+      public class SerialNumberGenerator {
+        private static volatile int serialNumber = 0;
+        public static int nextSerialNumber() {
+          return serialNumber++; // Not thread-safe
+        }
+      }
+    language: java
+    options:
+      - text: "No — `volatile` gives visibility, but `serialNumber++` is still a read-modify-write that two threads can interleave"
+        correct: true
+      - text: "Yes, thanks to `volatile`"
+        feedback: "That's the trap the example shows."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-serialnumberchecker
+    prompt: |
+      With no argument, ten checkers call `nextSerialNumber()` in a loop. What happens?
+    code: |
+      //: concurrency/SerialNumberChecker.java
+      // Operations that may seem safe are not,
+      // when threads are present.
+      import java.util.concurrent.*;
+
+      // Reuses storage so we don't run out of memory:
+      class CircularSet {
+        private int[] array;
+        private int len;
+        private int index = 0;
+        public CircularSet(int size) {
+          array = new int[size];
+          len = size;
+          // Initialize to a value not produced
+          // by the SerialNumberGenerator:
+          for(int i = 0; i < size; i++)
+            array[i] = -1;
+        }
+        public synchronized void add(int i) {
+          array[index] = i;
+          // Wrap index and write over old elements:
+          index = ++index % len;
+        }
+        public synchronized boolean contains(int val) {
+          for(int i = 0; i < len; i++)
+            if(array[i] == val) return true;
+          return false;
+        }
+      }
+
+      public class SerialNumberChecker {
+        private static final int SIZE = 10;
+        private static CircularSet serials =
+          new CircularSet(1000);
+        private static ExecutorService exec =
+          Executors.newCachedThreadPool();
+        static class SerialChecker implements Runnable {
+          public void run() {
+            while(true) {
+              int serial =
+                SerialNumberGenerator.nextSerialNumber();
+              if(serials.contains(serial)) {
+                System.out.println("Duplicate: " + serial);
+                System.exit(0);
+              }
+              serials.add(serial);
+            }
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          for(int i = 0; i < SIZE; i++)
+            exec.execute(new SerialChecker());
+          // Stop after n seconds if there's an argument:
+          if(args.length > 0) {
+            TimeUnit.SECONDS.sleep(new Integer(args[0]));
+            System.out.println("No duplicates detected");
+            System.exit(0);
+          }
+        }
+      }
+
+      //: concurrency/SerialNumberGenerator.java
+
+      public class SerialNumberGenerator {
+        private static volatile int serialNumber = 0;
+        public static int nextSerialNumber() {
+          return serialNumber++; // Not thread-safe
+        }
+      }
+    language: java
+    options:
+      - text: "Soon one or more `Duplicate: N` lines, then the program exits"
+        correct: true
+      - text: "It runs forever: serial numbers are unique"
+        feedback: "Two threads can read the same value before either writes it back."
+      - text: "`No duplicates detected`"
+        feedback: "That's printed only with an argument, and only if no duplicate was found in time."
+    explanation: |
+      On a Java 21 run several checkers each printed a duplicate (like `Duplicate: 4103`) before `System.exit` took effect.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-atomicintegertest
+    prompt: |
+      This is `AtomicityTest` rewritten with an `AtomicInteger`. What happens?
+    code: |
+      //: concurrency/AtomicIntegerTest.java
+      import java.util.concurrent.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.*;
+
+      public class AtomicIntegerTest implements Runnable {
+        private AtomicInteger i = new AtomicInteger(0);
+        public int getValue() { return i.get(); }
+        private void evenIncrement() { i.addAndGet(2); }
+        public void run() {
+          while(true)
+            evenIncrement();
+        }
+        public static void main(String[] args) {
+          new Timer().schedule(new TimerTask() {
+            public void run() {
+              System.err.println("Aborting");
+              System.exit(0);
+            }
+          }, 5000);
+          ExecutorService exec = Executors.newCachedThreadPool();
+          AtomicIntegerTest ait = new AtomicIntegerTest();
+          exec.execute(ait);
+          while(true) {
+            int val = ait.getValue();
+            if(val % 2 != 0) {
+              System.out.println(val);
+              System.exit(0);
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "No odd value is ever seen; after 5 seconds the timer prints `Aborting` to stderr and exits"
+        correct: true
+      - text: "It prints an odd number, like `AtomicityTest`"
+        feedback: "`addAndGet(2)` is one atomic step, so there's never an in-between value."
+      - text: "It runs forever"
+        feedback: "The `Timer` calls `System.exit(0)` after 5 seconds."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-atomicevengenerator
+    prompt: |
+      What happens?
+    code: |
+      //: concurrency/AtomicEvenGenerator.java
+      // Atomic classes are occasionally useful in regular code.
+      import java.util.concurrent.atomic.*;
+
+      public class AtomicEvenGenerator extends IntGenerator {
+        private AtomicInteger currentEvenValue =
+          new AtomicInteger(0);
+        public int next() {
+          return currentEvenValue.addAndGet(2);
+        }
+        public static void main(String[] args) {
+          EvenChecker.test(new AtomicEvenGenerator());
+        }
+      }
+
+      //: concurrency/IntGenerator.java
+
+      public abstract class IntGenerator {
+        private volatile boolean canceled = false;
+        public abstract int next();
+        // Allow this to be canceled:
+        public void cancel() { canceled = true; }
+        public boolean isCanceled() { return canceled; }
+      }
+
+      //: concurrency/EvenChecker.java
+      import java.util.concurrent.*;
+
+      public class EvenChecker implements Runnable {
+        private IntGenerator generator;
+        private final int id;
+        public EvenChecker(IntGenerator g, int ident) {
+          generator = g;
+          id = ident;
+        }
+        public void run() {
+          while(!generator.isCanceled()) {
+            int val = generator.next();
+            if(val % 2 != 0) {
+              System.out.println(val + " not even!");
+              generator.cancel(); // Cancels all EvenCheckers
+            }
+          }
+        }
+        // Test any type of IntGenerator:
+        public static void test(IntGenerator gp, int count) {
+          System.out.println("Press Control-C to exit");
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < count; i++)
+            exec.execute(new EvenChecker(gp, i));
+          exec.shutdown();
+        }
+        // Default value for count:
+        public static void test(IntGenerator gp) {
+          test(gp, 10);
+        }
+      }
+    language: java
+    options:
+      - text: "Only `Press Control-C to exit` — `addAndGet(2)` never exposes an odd value, so it runs until stopped"
+        correct: true
+      - text: "`not even!` lines, since `next()` isn't `synchronized`"
+        feedback: "The atomic operation needs no lock."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-criticalsection
+    prompt: |
+      `PairManager1` locks the whole `increment()` (including the slow `store()`); `PairManager2` locks only the updates. After 500 ms, which shows the higher `checkCounter`?
+    code: |
+      //: concurrency/CriticalSection.java
+      // Synchronizing blocks instead of entire methods. Also
+      // demonstrates protection of a non-thread-safe class
+      // with a thread-safe one.
+      package concurrency;
+      import java.util.concurrent.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.*;
+
+      class Pair { // Not thread-safe
+        private int x, y;
+        public Pair(int x, int y) {
+          this.x = x;
+          this.y = y;
+        }
+        public Pair() { this(0, 0); }
+        public int getX() { return x; }
+        public int getY() { return y; }
+        public void incrementX() { x++; }
+        public void incrementY() { y++; }
+        public String toString() {
+          return "x: " + x + ", y: " + y;
+        }
+        public class PairValuesNotEqualException
+        extends RuntimeException {
+          public PairValuesNotEqualException() {
+            super("Pair values not equal: " + Pair.this);
+          }
+        }
+        // Arbitrary invariant -- both variables must be equal:
+        public void checkState() {
+          if(x != y)
+            throw new PairValuesNotEqualException();
+        }
+      }
+
+      // Protect a Pair inside a thread-safe class:
+      abstract class PairManager {
+        AtomicInteger checkCounter = new AtomicInteger(0);
+        protected Pair p = new Pair();
+        private List<Pair> storage =
+          Collections.synchronizedList(new ArrayList<Pair>());
+        public synchronized Pair getPair() {
+          // Make a copy to keep the original safe:
+          return new Pair(p.getX(), p.getY());
+        }
+        // Assume this is a time consuming operation
+        protected void store(Pair p) {
+          storage.add(p);
+          try {
+            TimeUnit.MILLISECONDS.sleep(50);
+          } catch(InterruptedException ignore) {}
+        }
+        public abstract void increment();
+      }
+
+      // Synchronize the entire method:
+      class PairManager1 extends PairManager {
+        public synchronized void increment() {
+          p.incrementX();
+          p.incrementY();
+          store(getPair());
+        }
+      }
+
+      // Use a critical section:
+      class PairManager2 extends PairManager {
+        public void increment() {
+          Pair temp;
+          synchronized(this) {
+            p.incrementX();
+            p.incrementY();
+            temp = getPair();
+          }
+          store(temp);
+        }
+      }
+
+      class PairManipulator implements Runnable {
+        private PairManager pm;
+        public PairManipulator(PairManager pm) {
+          this.pm = pm;
+        }
+        public void run() {
+          while(true)
+            pm.increment();
+        }
+        public String toString() {
+          return "Pair: " + pm.getPair() +
+            " checkCounter = " + pm.checkCounter.get();
+        }
+      }
+
+      class PairChecker implements Runnable {
+        private PairManager pm;
+        public PairChecker(PairManager pm) {
+          this.pm = pm;
+        }
+        public void run() {
+          while(true) {
+            pm.checkCounter.incrementAndGet();
+            pm.getPair().checkState();
+          }
+        }
+      }
+
+      public class CriticalSection {
+        // Test the two different approaches:
+        static void
+        testApproaches(PairManager pman1, PairManager pman2) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          PairManipulator
+            pm1 = new PairManipulator(pman1),
+            pm2 = new PairManipulator(pman2);
+          PairChecker
+            pcheck1 = new PairChecker(pman1),
+            pcheck2 = new PairChecker(pman2);
+          exec.execute(pm1);
+          exec.execute(pm2);
+          exec.execute(pcheck1);
+          exec.execute(pcheck2);
+          try {
+            TimeUnit.MILLISECONDS.sleep(500);
+          } catch(InterruptedException e) {
+            System.out.println("Sleep interrupted");
+          }
+          System.out.println("pm1: " + pm1 + "\npm2: " + pm2);
+          System.exit(0);
+        }
+        public static void main(String[] args) {
+          PairManager
+            pman1 = new PairManager1(),
+            pman2 = new PairManager2();
+          testApproaches(pman1, pman2);
+        }
+      }
+    language: java
+    options:
+      - text: "`pm2` — by far: its lock is free during the 50 ms `store()`, so the checker gets in far more often"
+        correct: true
+      - text: "`pm1`"
+        feedback: "`pm1`'s checker waits for the lock almost all the time."
+      - text: "About the same"
+        feedback: "On a Java 21 run: 823 checks for `pm1`, 354,726,926 for `pm2`."
+    explanation: |
+      Hold a lock only as long as you must. On some runs the main thread itself can starve waiting for `pm1`'s lock, so the program may print nothing for a while.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

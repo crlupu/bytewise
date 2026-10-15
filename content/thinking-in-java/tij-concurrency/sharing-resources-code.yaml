@@ -1,0 +1,326 @@
+title: "Sharing resources: in code"
+summary: "More examples for sharing resources, one question each."
+duration: 3
+tags: [java, concurrency, synchronized, ReentrantLock, atomicity, volatile, AtomicInteger, ThreadLocal]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Sharing resources" }
+steps:
+  - type: explanation
+    title: "Recap: Locks"
+    body: |
+      When threads share mutable state, every access — reads included — must hold the same lock.
+      `synchronized` methods lock `this`; a `synchronized(obj)` block locks `obj`; a `ReentrantLock` must be unlocked in `finally`, but can also `tryLock()` and give up.
+      Two different locks protect nothing from each other.
+
+  - type: explanation
+    title: "Recap: Atomicity and visibility"
+    body: |
+      `i++` is several bytecode steps (read, add, write), so two threads can lose updates.
+      `volatile` makes writes visible to other threads but doesn't make `i++` atomic.
+      `AtomicInteger.addAndGet()` is atomic; a `ThreadLocal` gives each thread its own copy, so nothing is shared at all.
+
+  - type: choice
+    id: tij-concurrency-explicitcriticalsection
+    prompt: |
+      `ExplicitPairManager2.increment()` uses a `ReentrantLock`, but the inherited `getPair()` is `synchronized`. What happens on Java 21?
+    code: |
+      //: concurrency/ExplicitCriticalSection.java
+      // Using explicit Lock objects to create critical sections.
+      package concurrency;
+      import java.util.concurrent.locks.*;
+
+      // Synchronize the entire method:
+      class ExplicitPairManager1 extends PairManager {
+        private Lock lock = new ReentrantLock();
+        public synchronized void increment() {
+          lock.lock();
+          try {
+            p.incrementX();
+            p.incrementY();
+            store(getPair());
+          } finally {
+            lock.unlock();
+          }
+        }
+      }
+
+      // Use a critical section:
+      class ExplicitPairManager2 extends PairManager {
+        private Lock lock = new ReentrantLock();
+        public void increment() {
+          Pair temp;
+          lock.lock();
+          try {
+            p.incrementX();
+            p.incrementY();
+            temp = getPair();
+          } finally {
+            lock.unlock();
+          }
+          store(temp);
+        }
+      }
+
+      public class ExplicitCriticalSection {
+        public static void main(String[] args) throws Exception {
+          PairManager
+            pman1 = new ExplicitPairManager1(),
+            pman2 = new ExplicitPairManager2();
+          CriticalSection.testApproaches(pman1, pman2);
+        }
+      }
+
+      //: concurrency/CriticalSection.java
+      // Synchronizing blocks instead of entire methods. Also
+      // demonstrates protection of a non-thread-safe class
+      // with a thread-safe one.
+      package concurrency;
+      import java.util.concurrent.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.*;
+
+      class Pair { // Not thread-safe
+        private int x, y;
+        public Pair(int x, int y) {
+          this.x = x;
+          this.y = y;
+        }
+        public Pair() { this(0, 0); }
+        public int getX() { return x; }
+        public int getY() { return y; }
+        public void incrementX() { x++; }
+        public void incrementY() { y++; }
+        public String toString() {
+          return "x: " + x + ", y: " + y;
+        }
+        public class PairValuesNotEqualException
+        extends RuntimeException {
+          public PairValuesNotEqualException() {
+            super("Pair values not equal: " + Pair.this);
+          }
+        }
+        // Arbitrary invariant -- both variables must be equal:
+        public void checkState() {
+          if(x != y)
+            throw new PairValuesNotEqualException();
+        }
+      }
+
+      // Protect a Pair inside a thread-safe class:
+      abstract class PairManager {
+        AtomicInteger checkCounter = new AtomicInteger(0);
+        protected Pair p = new Pair();
+        private List<Pair> storage =
+          Collections.synchronizedList(new ArrayList<Pair>());
+        public synchronized Pair getPair() {
+          // Make a copy to keep the original safe:
+          return new Pair(p.getX(), p.getY());
+        }
+        // Assume this is a time consuming operation
+        protected void store(Pair p) {
+          storage.add(p);
+          try {
+            TimeUnit.MILLISECONDS.sleep(50);
+          } catch(InterruptedException ignore) {}
+        }
+        public abstract void increment();
+      }
+
+      // Synchronize the entire method:
+      class PairManager1 extends PairManager {
+        public synchronized void increment() {
+          p.incrementX();
+          p.incrementY();
+          store(getPair());
+        }
+      }
+
+      // Use a critical section:
+      class PairManager2 extends PairManager {
+        public void increment() {
+          Pair temp;
+          synchronized(this) {
+            p.incrementX();
+            p.incrementY();
+            temp = getPair();
+          }
+          store(temp);
+        }
+      }
+
+      class PairManipulator implements Runnable {
+        private PairManager pm;
+        public PairManipulator(PairManager pm) {
+          this.pm = pm;
+        }
+        public void run() {
+          while(true)
+            pm.increment();
+        }
+        public String toString() {
+          return "Pair: " + pm.getPair() +
+            " checkCounter = " + pm.checkCounter.get();
+        }
+      }
+
+      class PairChecker implements Runnable {
+        private PairManager pm;
+        public PairChecker(PairManager pm) {
+          this.pm = pm;
+        }
+        public void run() {
+          while(true) {
+            pm.checkCounter.incrementAndGet();
+            pm.getPair().checkState();
+          }
+        }
+      }
+
+      public class CriticalSection {
+        // Test the two different approaches:
+        static void
+        testApproaches(PairManager pman1, PairManager pman2) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          PairManipulator
+            pm1 = new PairManipulator(pman1),
+            pm2 = new PairManipulator(pman2);
+          PairChecker
+            pcheck1 = new PairChecker(pman1),
+            pcheck2 = new PairChecker(pman2);
+          exec.execute(pm1);
+          exec.execute(pm2);
+          exec.execute(pcheck1);
+          exec.execute(pcheck2);
+          try {
+            TimeUnit.MILLISECONDS.sleep(500);
+          } catch(InterruptedException e) {
+            System.out.println("Sleep interrupted");
+          }
+          System.out.println("pm1: " + pm1 + "\npm2: " + pm2);
+          System.exit(0);
+        }
+        public static void main(String[] args) {
+          PairManager
+            pman1 = new PairManager1(),
+            pman2 = new PairManager2();
+          testApproaches(pman1, pman2);
+        }
+      }
+    language: java
+    options:
+      - text: "A `PairValuesNotEqualException` — `getPair()` takes the object's monitor, not the `Lock`, so it can read the pair between `incrementX()` and `incrementY()`"
+        correct: true
+      - text: "It works like `CriticalSection`, just with explicit locks"
+        feedback: "Two different locks don't exclude each other."
+      - text: "Deadlock"
+        feedback: "No thread holds one lock while waiting for the other."
+    explanation: |
+      Running it on Java 21 gave `Pair values not equal: x: 3, y: 2` from a checker thread. The book's sample output missed this bug: the reader and the writer must use the same lock.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-syncobject
+    prompt: |
+      `f()` is `synchronized` (locks `ds`), and `g()` locks `syncObject`. Can their output interleave? (`print` is `println`.)
+    code: |
+      //: concurrency/SyncObject.java
+      // Synchronizing on another object.
+      import static net.mindview.util.Print.*;
+
+      class DualSynch {
+        private Object syncObject = new Object();
+        public synchronized void f() {
+          for(int i = 0; i < 5; i++) {
+            print("f()");
+            Thread.yield();
+          }
+        }
+        public void g() {
+          synchronized(syncObject) {
+            for(int i = 0; i < 5; i++) {
+              print("g()");
+              Thread.yield();
+            }
+          }
+        }
+      }
+
+      public class SyncObject {
+        public static void main(String[] args) {
+          final DualSynch ds = new DualSynch();
+          new Thread() {
+            public void run() {
+              ds.f();
+            }
+          }.start();
+          ds.g();
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — they hold different locks, so both can run at once"
+        correct: true
+      - text: "No — all of `f()`'s lines come before or after all of `g()`'s"
+        feedback: "That would need both to lock the same object."
+    explanation: |
+      On a Java 21 run: `g() g() f() f() f() f() f() g() g() g()`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-threadlocalvariableholder
+    prompt: |
+      Five threads call `increment()` on the static `value`. Do they interfere with each other?
+    code: |
+      //: concurrency/ThreadLocalVariableHolder.java
+      // Automatically giving each thread its own storage.
+      import java.util.concurrent.*;
+      import java.util.*;
+
+      class Accessor implements Runnable {
+        private final int id;
+        public Accessor(int idn) { id = idn; }
+        public void run() {
+          while(!Thread.currentThread().isInterrupted()) {
+            ThreadLocalVariableHolder.increment();
+            System.out.println(this);
+            Thread.yield();
+          }
+        }
+        public String toString() {
+          return "#" + id + ": " +
+            ThreadLocalVariableHolder.get();
+        }
+      }
+
+      public class ThreadLocalVariableHolder {
+        private static ThreadLocal<Integer> value =
+          new ThreadLocal<Integer>() {
+            private Random rand = new Random(47);
+            protected synchronized Integer initialValue() {
+              return rand.nextInt(10000);
+            }
+          };
+        public static void increment() {
+          value.set(value.get() + 1);
+        }
+        public static int get() { return value.get(); }
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new Accessor(i));
+          TimeUnit.SECONDS.sleep(3);  // Run for a while
+          exec.shutdownNow();         // All Accessors will quit
+        }
+      }
+    language: java
+    options:
+      - text: "No — `ThreadLocal` keeps a separate value per thread; each thread counts up from its own random start"
+        correct: true
+      - text: "Yes — `value` is static, so they share one counter"
+        feedback: "The `ThreadLocal` object is shared, but each thread sees its own value."
+      - text: "They would without `synchronized` on `increment()`"
+        feedback: "Nothing is shared, so nothing needs locking."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -1,0 +1,485 @@
+title: "Daemons, joining and exceptions"
+summary: "Daemon threads, join() and interrupt(), keeping a UI responsive, and catching exceptions that escape a thread."
+duration: 8
+tags: [java, concurrency, daemon threads, join, UncaughtExceptionHandler]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Basic threading — daemon threads, joining a thread, catching exceptions" }
+steps:
+  - type: explanation
+    title: "Daemons and join"
+    body: |
+      A daemon thread doesn't keep the program alive: when the last non-daemon thread ends, the JVM exits and daemons stop abruptly — even their `finally` blocks don't run.
+      `setDaemon(true)` must come before `start()`, and threads a daemon creates are daemons too.
+      `t.join()` waits for `t` to finish; interrupting a sleeping thread throws `InterruptedException` and clears its interrupted flag.
+
+  - type: explanation
+    title: "Exceptions in threads"
+    body: |
+      An exception thrown in a task can't be caught by a `try` around `exec.execute(...)` — it happens on another thread.
+      It goes to the thread's `UncaughtExceptionHandler`, which you set per thread (e.g. in a `ThreadFactory`) or for all threads with `Thread.setDefaultUncaughtExceptionHandler`.
+      Without one, the stack trace is printed to `System.err`.
+
+  - type: choice
+    id: tij-concurrency-simpledaemons
+    prompt: |
+      Each daemon prints every 100 ms in an endless loop, and `main` sleeps 175 ms. What happens? (`print` is `println`.)
+    code: |
+      //: concurrency/SimpleDaemons.java
+      // Daemon threads don't prevent the program from ending.
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      public class SimpleDaemons implements Runnable {
+        public void run() {
+          try {
+            while(true) {
+              TimeUnit.MILLISECONDS.sleep(100);
+              print(Thread.currentThread() + " " + this);
+            }
+          } catch(InterruptedException e) {
+            print("sleep() interrupted");
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          for(int i = 0; i < 10; i++) {
+            Thread daemon = new Thread(new SimpleDaemons());
+            daemon.setDaemon(true); // Must call before start()
+            daemon.start();
+          }
+          print("All daemons started");
+          TimeUnit.MILLISECONDS.sleep(175);
+        }
+      }
+    language: java
+    options:
+      - text: "`All daemons started`, then about one round of daemon lines, then the program ends — daemons don't keep it alive"
+        correct: true
+      - text: "It runs forever"
+        feedback: "Only non-daemon threads keep the JVM running."
+      - text: "`sleep() interrupted` ten times at the end"
+        feedback: "Daemons are stopped without any interrupt or cleanup."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-daemonfromfactory
+    prompt: |
+      `DaemonThreadFactory` (from `net.mindview.util`) makes each new thread with `setDaemon(true)`. What ends this program? (`print` is `println`.)
+    code: |
+      //: concurrency/DaemonFromFactory.java
+      // Using a Thread Factory to create daemons.
+      import java.util.concurrent.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class DaemonFromFactory implements Runnable {
+        public void run() {
+          try {
+            while(true) {
+              TimeUnit.MILLISECONDS.sleep(100);
+              print(Thread.currentThread() + " " + this);
+            }
+          } catch(InterruptedException e) {
+            print("Interrupted");
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool(
+            new DaemonThreadFactory());
+          for(int i = 0; i < 10; i++)
+            exec.execute(new DaemonFromFactory());
+          print("All daemons started");
+          TimeUnit.MILLISECONDS.sleep(500); // Run for a while
+        }
+      }
+    language: java
+    options:
+      - text: "`main` returning after 500 ms — every pool thread is a daemon, so nothing keeps the JVM alive"
+        correct: true
+      - text: "Nothing; it loops forever"
+        feedback: "With a normal factory it would; the daemon factory changes that."
+      - text: "Each task being interrupted"
+        feedback: "No `Interrupted` line is printed — daemons just stop."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-daemons
+    prompt: |
+      `Daemon` never calls `setDaemon` on the ten threads it creates. What does `t[i].isDaemon()` print for them? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: concurrency/Daemons.java
+      // Daemon threads spawn other daemon threads.
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      class Daemon implements Runnable {
+        private Thread[] t = new Thread[10];
+        public void run() {
+          for(int i = 0; i < t.length; i++) {
+            t[i] = new Thread(new DaemonSpawn());
+            t[i].start();
+            printnb("DaemonSpawn " + i + " started, ");
+          }
+          for(int i = 0; i < t.length; i++)
+            printnb("t[" + i + "].isDaemon() = " +
+              t[i].isDaemon() + ", ");
+          while(true)
+            Thread.yield();
+        }
+      }
+
+      class DaemonSpawn implements Runnable {
+        public void run() {
+          while(true)
+            Thread.yield();
+        }
+      }
+
+      public class Daemons {
+        public static void main(String[] args) throws Exception {
+          Thread d = new Thread(new Daemon());
+          d.setDaemon(true);
+          d.start();
+          printnb("d.isDaemon() = " + d.isDaemon() + ", ");
+          // Allow the daemon threads to
+          // finish their startup processes:
+          TimeUnit.SECONDS.sleep(1);
+        }
+      }
+    language: java
+    options:
+      - text: "`true` — a new thread inherits daemon status from the thread that creates it"
+        correct: true
+      - text: "`false` — threads are non-daemon unless you say otherwise"
+        feedback: "The default is copied from the creating thread, which is a daemon here."
+    explanation: |
+      On Java 21 all ten printed `true`, and the program ended when `main` finished its one-second sleep.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-daemonsdontrunfinally
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: concurrency/DaemonsDontRunFinally.java
+      // Daemon threads don't run the finally clause
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      class ADaemon implements Runnable {
+        public void run() {
+          try {
+            print("Starting ADaemon");
+            TimeUnit.SECONDS.sleep(1);
+          } catch(InterruptedException e) {
+            print("Exiting via InterruptedException");
+          } finally {
+            print("This should always run?");
+          }
+        }
+      }
+
+      public class DaemonsDontRunFinally {
+        public static void main(String[] args) throws Exception {
+          Thread t = new Thread(new ADaemon());
+          t.setDaemon(true);
+          t.start();
+        }
+      }
+    language: java
+    options:
+      - text: "Starting ADaemon"
+        correct: true
+      - text: "Starting ADaemon\nThis should always run?"
+        feedback: "When `main` ends, the JVM stops the daemon in the middle of its sleep — the `finally` never runs."
+      - text: "Starting ADaemon\nExiting via InterruptedException\nThis should always run?"
+        feedback: "Daemons aren't interrupted; they're simply abandoned."
+    explanation: |
+      The daemon may not even get to print before `main` returns, so in principle the output could be empty.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-joining
+    prompt: |
+      Sleepy and Grumpy each sleep 1.5 s; Dopey joins Sleepy and Doc joins Grumpy; then `main` interrupts Grumpy. What does this print? (`print` is `println`.)
+    code: |
+      //: concurrency/Joining.java
+      // Understanding join().
+      import static net.mindview.util.Print.*;
+
+      class Sleeper extends Thread {
+        private int duration;
+        public Sleeper(String name, int sleepTime) {
+          super(name);
+          duration = sleepTime;
+          start();
+        }
+        public void run() {
+          try {
+            sleep(duration);
+          } catch(InterruptedException e) {
+            print(getName() + " was interrupted. " +
+              "isInterrupted(): " + isInterrupted());
+            return;
+          }
+          print(getName() + " has awakened");
+        }
+      }
+
+      class Joiner extends Thread {
+        private Sleeper sleeper;
+        public Joiner(String name, Sleeper sleeper) {
+          super(name);
+          this.sleeper = sleeper;
+          start();
+        }
+        public void run() {
+         try {
+            sleeper.join();
+          } catch(InterruptedException e) {
+            print("Interrupted");
+          }
+          print(getName() + " join completed");
+        }
+      }
+
+      public class Joining {
+        public static void main(String[] args) {
+          Sleeper
+            sleepy = new Sleeper("Sleepy", 1500),
+            grumpy = new Sleeper("Grumpy", 1500);
+          Joiner
+            dopey = new Joiner("Dopey", sleepy),
+            doc = new Joiner("Doc", grumpy);
+          grumpy.interrupt();
+        }
+      }
+    language: java
+    options:
+      - text: "Grumpy was interrupted. isInterrupted(): false\nDoc join completed\nSleepy has awakened\nDopey join completed"
+        correct: true
+      - text: "Grumpy was interrupted. isInterrupted(): true\nDoc join completed\nSleepy has awakened\nDopey join completed"
+        feedback: "When `InterruptedException` is thrown, the interrupted flag is cleared, so `isInterrupted()` is `false`."
+      - text: "Sleepy has awakened\nDopey join completed\nGrumpy was interrupted. isInterrupted(): false\nDoc join completed"
+        feedback: "Grumpy is interrupted at once; Sleepy wakes 1.5 s later."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-responsiveui
+    prompt: |
+      Why would `new UnresponsiveUI()` (commented out) make the program hang, while `ResponsiveUI` reacts to Enter?
+    code: |
+      //: concurrency/ResponsiveUI.java
+      // User interface responsiveness.
+
+      class UnresponsiveUI {
+        private volatile double d = 1;
+        public UnresponsiveUI() throws Exception {
+          while(d > 0)
+            d = d + (Math.PI + Math.E) / d;
+          System.in.read();
+        }
+      }
+
+      public class ResponsiveUI extends Thread {
+        private static volatile double d = 1;
+        public ResponsiveUI() {
+          setDaemon(true);
+          start();
+        }
+        public void run() {
+          while(true) {
+            d = d + (Math.PI + Math.E) / d;
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          //! new UnresponsiveUI(); // Must kill this process
+          new ResponsiveUI();
+          System.in.read();
+          System.out.println(d); // Shows progress
+        }
+      }
+    language: java
+    options:
+      - text: "`UnresponsiveUI` computes forever on the main thread and never reaches `read()`; `ResponsiveUI` computes on a separate daemon thread, so `main` can wait for input"
+        correct: true
+      - text: "`UnresponsiveUI` throws an exception"
+        feedback: "`d` grows forever and stays positive; the loop never ends."
+      - text: "`ResponsiveUI` stops computing when Enter is pressed"
+        feedback: "It keeps computing; `main` prints `d` and returns, and the daemon dies with the JVM."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-exceptionthread
+    prompt: |
+      What happens when this runs?
+    code: |
+      //: concurrency/ExceptionThread.java
+      import java.util.concurrent.*;
+
+      public class ExceptionThread implements Runnable {
+        public void run() {
+          throw new RuntimeException();
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new ExceptionThread());
+        }
+      }
+    language: java
+    options:
+      - text: "A stack trace `Exception in thread \"pool-1-thread-1\" java.lang.RuntimeException` goes to stderr; `main` isn't affected"
+        correct: true
+      - text: "`main` throws the `RuntimeException`"
+        feedback: "It's thrown on the pool's thread, not `main`."
+      - text: "Nothing at all — the exception is swallowed"
+        feedback: "With no handler set, the default prints the stack trace."
+    explanation: |
+      On Java 21 the program then lingers for about a minute: the cached pool keeps idle threads alive 60 s, and nobody called `shutdown()`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-naiveexceptionhandling
+    prompt: |
+      Does `Exception has been handled!` print?
+    code: |
+      //: concurrency/NaiveExceptionHandling.java
+      import java.util.concurrent.*;
+
+      public class NaiveExceptionHandling {
+        public static void main(String[] args) {
+          try {
+            ExecutorService exec =
+              Executors.newCachedThreadPool();
+            exec.execute(new ExceptionThread());
+          } catch(RuntimeException ue) {
+            System.out.println("Exception has been handled!");
+          }
+        }
+      }
+
+      //: concurrency/ExceptionThread.java
+      import java.util.concurrent.*;
+
+      public class ExceptionThread implements Runnable {
+        public void run() {
+          throw new RuntimeException();
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new ExceptionThread());
+        }
+      }
+    language: java
+    options:
+      - text: "No — the exception is thrown on a pool thread, so the `try` in `main` never sees it"
+        correct: true
+      - text: "Yes — `execute()` rethrows task exceptions"
+        feedback: "`execute()` returns before the task even runs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-captureuncaughtexception
+    prompt: |
+      The factory gives every thread a `MyUncaughtExceptionHandler`. What's the last line this prints?
+    code: |
+      //: concurrency/CaptureUncaughtException.java
+      import java.util.concurrent.*;
+
+      class ExceptionThread2 implements Runnable {
+        public void run() {
+          Thread t = Thread.currentThread();
+          System.out.println("run() by " + t);
+          System.out.println(
+            "eh = " + t.getUncaughtExceptionHandler());
+          throw new RuntimeException();
+        }
+      }
+
+      class MyUncaughtExceptionHandler implements
+      Thread.UncaughtExceptionHandler {
+        public void uncaughtException(Thread t, Throwable e) {
+          System.out.println("caught " + e);
+        }
+      }
+
+      class HandlerThreadFactory implements ThreadFactory {
+        public Thread newThread(Runnable r) {
+          System.out.println(this + " creating new Thread");
+          Thread t = new Thread(r);
+          System.out.println("created " + t);
+          t.setUncaughtExceptionHandler(
+            new MyUncaughtExceptionHandler());
+          System.out.println(
+            "eh = " + t.getUncaughtExceptionHandler());
+          return t;
+        }
+      }
+
+      public class CaptureUncaughtException {
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool(
+            new HandlerThreadFactory());
+          exec.execute(new ExceptionThread2());
+        }
+      }
+    language: java
+    options:
+      - text: "caught java.lang.RuntimeException"
+        correct: true
+      - text: "Exception in thread \"Thread-0\" java.lang.RuntimeException"
+        feedback: "The handler replaces the default stack trace."
+      - text: "eh = null"
+        feedback: "The factory sets the handler before returning the thread."
+    explanation: |
+      On Java 21 the factory runs twice: when the task's thread dies, the pool creates a replacement worker, so you see a second `creating new Thread` before `caught java.lang.RuntimeException`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-settingdefaulthandler
+    prompt: |
+      `MyUncaughtExceptionHandler.uncaughtException` prints `"caught " + e`. What does this print?
+    code: |
+      //: concurrency/SettingDefaultHandler.java
+      import java.util.concurrent.*;
+
+      public class SettingDefaultHandler {
+        public static void main(String[] args) {
+          Thread.setDefaultUncaughtExceptionHandler(
+            new MyUncaughtExceptionHandler());
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new ExceptionThread());
+        }
+      }
+
+      //: concurrency/ExceptionThread.java
+      // {ThrowsException}
+      import java.util.concurrent.*;
+
+      public class ExceptionThread implements Runnable {
+        public void run() {
+          throw new RuntimeException();
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new ExceptionThread());
+        }
+      }
+    language: java
+    options:
+      - text: "caught java.lang.RuntimeException"
+        correct: true
+      - text: "Exception in thread \"pool-1-thread-1\" java.lang.RuntimeException"
+        feedback: "The default handler applies to every thread without its own handler."
+      - text: "Nothing"
+        feedback: "The task throws, and the default handler catches it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

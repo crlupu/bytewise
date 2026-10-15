@@ -1,0 +1,1046 @@
+title: "Cooperation between tasks"
+summary: "wait/notifyAll and Condition, producer–consumer with blocking queues and pipes, and deadlock with the dining philosophers."
+duration: 8
+tags: [java, concurrency, wait, notifyAll, Condition, BlockingQueue, deadlock]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Cooperation between tasks; Deadlock" }
+steps:
+  - type: explanation
+    title: "wait and notifyAll"
+    body: |
+      `wait()` releases the object's lock and suspends the thread until a `notify()`/`notifyAll()` on the same object; it must be called while holding that lock.
+      Always wait in a `while` loop that rechecks the condition — another thread may have changed it, or the wakeup may be spurious.
+      `notify()` wakes one waiting thread, `notifyAll()` wakes all threads waiting on that object.
+      A `Lock`'s `Condition` offers the same with `await()`/`signalAll()`.
+
+  - type: explanation
+    title: "Queues and deadlock"
+    body: |
+      A `BlockingQueue` does the waiting for you: `take()` blocks while it's empty, `put()` while it's full.
+      A chain of tasks joined by queues needs no explicit locking.
+      Deadlock needs four things at once, including a circular wait; with dining philosophers, making one philosopher pick up the chopsticks in the opposite order breaks the circle.
+
+  - type: choice
+    id: tij-concurrency-waxomatic-waxomatic
+    prompt: |
+      `WaxOn` waxes, then waits for buffing; `WaxOff` waits for waxing, then buffs. What does the first line of output look like? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: concurrency/waxomatic/WaxOMatic.java
+      // Basic task cooperation.
+      package concurrency.waxomatic;
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      class Car {
+        private boolean waxOn = false;
+        public synchronized void waxed() {
+          waxOn = true; // Ready to buff
+          notifyAll();
+        }
+        public synchronized void buffed() {
+          waxOn = false; // Ready for another coat of wax
+          notifyAll();
+        }
+        public synchronized void waitForWaxing()
+        throws InterruptedException {
+          while(waxOn == false)
+            wait();
+        }
+        public synchronized void waitForBuffing()
+        throws InterruptedException {
+          while(waxOn == true)
+            wait();
+        }
+      }
+
+      class WaxOn implements Runnable {
+        private Car car;
+        public WaxOn(Car c) { car = c; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              printnb("Wax On! ");
+              TimeUnit.MILLISECONDS.sleep(200);
+              car.waxed();
+              car.waitForBuffing();
+            }
+          } catch(InterruptedException e) {
+            print("Exiting via interrupt");
+          }
+          print("Ending Wax On task");
+        }
+      }
+
+      class WaxOff implements Runnable {
+        private Car car;
+        public WaxOff(Car c) { car = c; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              car.waitForWaxing();
+              printnb("Wax Off! ");
+              TimeUnit.MILLISECONDS.sleep(200);
+              car.buffed();
+            }
+          } catch(InterruptedException e) {
+            print("Exiting via interrupt");
+          }
+          print("Ending Wax Off task");
+        }
+      }
+
+      public class WaxOMatic {
+        public static void main(String[] args) throws Exception {
+          Car car = new Car();
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new WaxOff(car));
+          exec.execute(new WaxOn(car));
+          TimeUnit.SECONDS.sleep(5); // Run for a while...
+          exec.shutdownNow(); // Interrupt all tasks
+        }
+      }
+    language: java
+    options:
+      - text: "`Wax On! Wax Off! Wax On! Wax Off! …` strictly alternating, ending with `Exiting via interrupt` after 5 s"
+        correct: true
+      - text: "Random runs like `Wax On! Wax On! Wax Off!`"
+        feedback: "Each task waits for the other's state change, so they alternate."
+      - text: "Nothing — both tasks wait forever"
+        feedback: "`waxOn` starts `false`, so `WaxOn` goes first without waiting."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-notifyvsnotifyall
+    prompt: |
+      Five `Task`s wait on `Task.blocker`; one `Task2` waits on a separate `Task2.blocker`. What do the timer's `notify()` and `notifyAll()` lines show?
+    code: |
+      //: concurrency/NotifyVsNotifyAll.java
+      import java.util.concurrent.*;
+      import java.util.*;
+
+      class Blocker {
+        synchronized void waitingCall() {
+          try {
+            while(!Thread.interrupted()) {
+              wait();
+              System.out.print(Thread.currentThread() + " ");
+            }
+          } catch(InterruptedException e) {
+            // OK to exit this way
+          }
+        }
+        synchronized void prod() { notify(); }
+        synchronized void prodAll() { notifyAll(); }
+      }
+
+      class Task implements Runnable {
+        static Blocker blocker = new Blocker();
+        public void run() { blocker.waitingCall(); }
+      }
+
+      class Task2 implements Runnable {
+        // A separate Blocker object:
+        static Blocker blocker = new Blocker();
+        public void run() { blocker.waitingCall(); }
+      }
+
+      public class NotifyVsNotifyAll {
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new Task());
+          exec.execute(new Task2());
+          Timer timer = new Timer();
+          timer.scheduleAtFixedRate(new TimerTask() {
+            boolean prod = true;
+            public void run() {
+              if(prod) {
+                System.out.print("\nnotify() ");
+                Task.blocker.prod();
+                prod = false;
+              } else {
+                System.out.print("\nnotifyAll() ");
+                Task.blocker.prodAll();
+                prod = true;
+              }
+            }
+          }, 400, 400); // Run every .4 second
+          TimeUnit.SECONDS.sleep(5); // Run for a while...
+          timer.cancel();
+          System.out.println("\nTimer canceled");
+          TimeUnit.MILLISECONDS.sleep(500);
+          System.out.print("Task2.blocker.prodAll() ");
+          Task2.blocker.prodAll();
+          TimeUnit.MILLISECONDS.sleep(500);
+          System.out.println("\nShutting down");
+          exec.shutdownNow(); // Interrupt all tasks
+        }
+      }
+    language: java
+    options:
+      - text: "`notify()` wakes one `Task` thread; `notifyAll()` wakes all five — and `Task2` wakes only when its own blocker is prodded"
+        correct: true
+      - text: "`notifyAll()` wakes all six threads"
+        feedback: "It wakes only threads waiting on that object; `Task2` waits on a different one."
+      - text: "`notify()` wakes all five, in order"
+        feedback: "`notify()` wakes just one."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-restaurant
+    prompt: |
+      The chef shuts everything down with `shutdownNow()` when `++count` reaches 10. What does this print? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: concurrency/Restaurant.java
+      // The producer-consumer approach to task cooperation.
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      class Meal {
+        private final int orderNum;
+        public Meal(int orderNum) { this.orderNum = orderNum; }
+        public String toString() { return "Meal " + orderNum; }
+      }
+
+      class WaitPerson implements Runnable {
+        private Restaurant restaurant;
+        public WaitPerson(Restaurant r) { restaurant = r; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              synchronized(this) {
+                while(restaurant.meal == null)
+                  wait(); // ... for the chef to produce a meal
+              }
+              print("Waitperson got " + restaurant.meal);
+              synchronized(restaurant.chef) {
+                restaurant.meal = null;
+                restaurant.chef.notifyAll(); // Ready for another
+              }
+            }
+          } catch(InterruptedException e) {
+            print("WaitPerson interrupted");
+          }
+        }
+      }
+
+      class Chef implements Runnable {
+        private Restaurant restaurant;
+        private int count = 0;
+        public Chef(Restaurant r) { restaurant = r; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              synchronized(this) {
+                while(restaurant.meal != null)
+                  wait(); // ... for the meal to be taken
+              }
+              if(++count == 10) {
+                print("Out of food, closing");
+                restaurant.exec.shutdownNow();
+              }
+              printnb("Order up! ");
+              synchronized(restaurant.waitPerson) {
+                restaurant.meal = new Meal(count);
+                restaurant.waitPerson.notifyAll();
+              }
+              TimeUnit.MILLISECONDS.sleep(100);
+            }
+          } catch(InterruptedException e) {
+            print("Chef interrupted");
+          }
+        }
+      }
+
+      public class Restaurant {
+        Meal meal;
+        ExecutorService exec = Executors.newCachedThreadPool();
+        WaitPerson waitPerson = new WaitPerson(this);
+        Chef chef = new Chef(this);
+        public Restaurant() {
+          exec.execute(chef);
+          exec.execute(waitPerson);
+        }
+        public static void main(String[] args) {
+          new Restaurant();
+        }
+      }
+    language: java
+    options:
+      - text: "Order up! Waitperson got Meal 1\nOrder up! Waitperson got Meal 2\nOrder up! Waitperson got Meal 3\nOrder up! Waitperson got Meal 4\nOrder up! Waitperson got Meal 5\nOrder up! Waitperson got Meal 6\nOrder up! Waitperson got Meal 7\nOrder up! Waitperson got Meal 8\nOrder up! Waitperson got Meal 9\nOut of food, closing\nOrder up! Chef interrupted\nWaitPerson interrupted"
+        correct: true
+      - text: "Order up! Waitperson got Meal 1\nOrder up! Waitperson got Meal 2\nOrder up! Waitperson got Meal 3\nOrder up! Waitperson got Meal 4\nOrder up! Waitperson got Meal 5\nOrder up! Waitperson got Meal 6\nOrder up! Waitperson got Meal 7\nOrder up! Waitperson got Meal 8\nOrder up! Waitperson got Meal 9\nOrder up! Waitperson got Meal 10\nOut of food, closing"
+        feedback: "`shutdownNow()` doesn't stop the chef on the spot: it sets meal 10, then its `sleep()` throws `InterruptedException`. The waitperson is interrupted in `wait()` before it can print meal 10."
+      - text: "Order up! Waitperson got Meal 1\nOrder up! Waitperson got Meal 2\nOrder up! Waitperson got Meal 3\nOrder up! Waitperson got Meal 4\nOrder up! Waitperson got Meal 5\nOrder up! Waitperson got Meal 6\nOrder up! Waitperson got Meal 7\nOrder up! Waitperson got Meal 8\nOrder up! Waitperson got Meal 9\nOut of food, closing"
+        feedback: "After closing, the chef still runs to the end of the loop body: it prints `Order up! ` and is interrupted in `sleep()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-waxomatic2-waxomatic2
+    prompt: |
+      This is `WaxOMatic` rewritten with a `ReentrantLock` and a `Condition`. What changes in the output? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: concurrency/waxomatic2/WaxOMatic2.java
+      // Using Lock and Condition objects.
+      package concurrency.waxomatic2;
+      import java.util.concurrent.*;
+      import java.util.concurrent.locks.*;
+      import static net.mindview.util.Print.*;
+
+      class Car {
+        private Lock lock = new ReentrantLock();
+        private Condition condition = lock.newCondition();
+        private boolean waxOn = false;
+        public void waxed() {
+          lock.lock();
+          try {
+            waxOn = true; // Ready to buff
+            condition.signalAll();
+          } finally {
+            lock.unlock();
+          }
+        }
+        public void buffed() {
+          lock.lock();
+          try {
+            waxOn = false; // Ready for another coat of wax
+            condition.signalAll();
+          } finally {
+            lock.unlock();
+          }
+        }
+        public void waitForWaxing() throws InterruptedException {
+          lock.lock();
+          try {
+            while(waxOn == false)
+              condition.await();
+          } finally {
+            lock.unlock();
+          }
+        }
+        public void waitForBuffing() throws InterruptedException{
+          lock.lock();
+          try {
+            while(waxOn == true)
+              condition.await();
+          } finally {
+            lock.unlock();
+          }
+        }
+      }
+
+      class WaxOn implements Runnable {
+        private Car car;
+        public WaxOn(Car c) { car = c; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              printnb("Wax On! ");
+              TimeUnit.MILLISECONDS.sleep(200);
+              car.waxed();
+              car.waitForBuffing();
+            }
+          } catch(InterruptedException e) {
+            print("Exiting via interrupt");
+          }
+          print("Ending Wax On task");
+        }
+      }
+
+      class WaxOff implements Runnable {
+        private Car car;
+        public WaxOff(Car c) { car = c; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              car.waitForWaxing();
+              printnb("Wax Off! ");
+              TimeUnit.MILLISECONDS.sleep(200);
+              car.buffed();
+            }
+          } catch(InterruptedException e) {
+            print("Exiting via interrupt");
+          }
+          print("Ending Wax Off task");
+        }
+      }
+
+      public class WaxOMatic2 {
+        public static void main(String[] args) throws Exception {
+          Car car = new Car();
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new WaxOff(car));
+          exec.execute(new WaxOn(car));
+          TimeUnit.SECONDS.sleep(5);
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "Nothing important — the same strictly alternating `Wax On! Wax Off!`; `await()`/`signalAll()` replace `wait()`/`notifyAll()`"
+        correct: true
+      - text: "The tasks no longer alternate"
+        feedback: "The logic is identical; only the mechanism changes."
+      - text: "They can't be interrupted any more"
+        feedback: "`Condition.await()` throws `InterruptedException` too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-testblockingqueues
+    prompt: |
+      `main` puts five `LiftOff(5)` rockets into each queue while a runner takes and runs them. Which `put()` calls can block the main thread? (`print` is `println`.)
+    code: |
+      //: concurrency/TestBlockingQueues.java
+      import java.util.concurrent.*;
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      class LiftOffRunner implements Runnable {
+        private BlockingQueue<LiftOff> rockets;
+        public LiftOffRunner(BlockingQueue<LiftOff> queue) {
+          rockets = queue;
+        }
+        public void add(LiftOff lo) {
+          try {
+            rockets.put(lo);
+          } catch(InterruptedException e) {
+            print("Interrupted during put()");
+          }
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              LiftOff rocket = rockets.take();
+              rocket.run(); // Use this thread
+            }
+          } catch(InterruptedException e) {
+            print("Waking from take()");
+          }
+          print("Exiting LiftOffRunner");
+        }
+      }
+
+      public class TestBlockingQueues {
+        static void getkey() {
+          try {
+            // Compensate for Windows/Linux difference in the
+            // length of the result produced by the Enter key:
+            new BufferedReader(
+              new InputStreamReader(System.in)).readLine();
+          } catch(java.io.IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+        static void getkey(String message) {
+          print(message);
+          getkey();
+        }
+        static void
+        test(String msg, BlockingQueue<LiftOff> queue) {
+          print(msg);
+          LiftOffRunner runner = new LiftOffRunner(queue);
+          Thread t = new Thread(runner);
+          t.start();
+          for(int i = 0; i < 5; i++)
+            runner.add(new LiftOff(5));
+          getkey("Press 'Enter' (" + msg + ")");
+          t.interrupt();
+          print("Finished " + msg + " test");
+        }
+        public static void main(String[] args) {
+          test("LinkedBlockingQueue", // Unlimited size
+            new LinkedBlockingQueue<LiftOff>());
+          test("ArrayBlockingQueue", // Fixed size
+            new ArrayBlockingQueue<LiftOff>(3));
+          test("SynchronousQueue", // Size of 1
+            new SynchronousQueue<LiftOff>());
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`ArrayBlockingQueue(3)` when it holds 3, and `SynchronousQueue` on every `put()` until the runner takes it; `LinkedBlockingQueue` never"
+        correct: true
+      - text: "None — `put()` never blocks"
+        feedback: "`put()` blocks when the queue is full."
+      - text: "Only `LinkedBlockingQueue`"
+        feedback: "It's unbounded here, so it never fills."
+    explanation: |
+      That's why, on a Java 21 run, the `SynchronousQueue` test printed four whole countdowns before its `Press 'Enter'` line: each `put()` waits for the runner.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-toastomatic
+    prompt: |
+      Toaster → Butterer → Jammer → Eater, joined by three queues. The Eater checks each toast's id and status. Does it ever print `>>>> Error`? (`print` is `println`.)
+    code: |
+      //: concurrency/ToastOMatic.java
+      // A toaster that uses queues.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Toast {
+        public enum Status { DRY, BUTTERED, JAMMED }
+        private Status status = Status.DRY;
+        private final int id;
+        public Toast(int idn) { id = idn; }
+        public void butter() { status = Status.BUTTERED; }
+        public void jam() { status = Status.JAMMED; }
+        public Status getStatus() { return status; }
+        public int getId() { return id; }
+        public String toString() {
+          return "Toast " + id + ": " + status;
+        }
+      }
+
+      class ToastQueue extends LinkedBlockingQueue<Toast> {}
+
+      class Toaster implements Runnable {
+        private ToastQueue toastQueue;
+        private int count = 0;
+        private Random rand = new Random(47);
+        public Toaster(ToastQueue tq) { toastQueue = tq; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              TimeUnit.MILLISECONDS.sleep(
+                100 + rand.nextInt(500));
+              // Make toast
+              Toast t = new Toast(count++);
+              print(t);
+              // Insert into queue
+              toastQueue.put(t);
+            }
+          } catch(InterruptedException e) {
+            print("Toaster interrupted");
+          }
+          print("Toaster off");
+        }
+      }
+
+      // Apply butter to toast:
+      class Butterer implements Runnable {
+        private ToastQueue dryQueue, butteredQueue;
+        public Butterer(ToastQueue dry, ToastQueue buttered) {
+          dryQueue = dry;
+          butteredQueue = buttered;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until next piece of toast is available:
+              Toast t = dryQueue.take();
+              t.butter();
+              print(t);
+              butteredQueue.put(t);
+            }
+          } catch(InterruptedException e) {
+            print("Butterer interrupted");
+          }
+          print("Butterer off");
+        }
+      }
+
+      // Apply jam to buttered toast:
+      class Jammer implements Runnable {
+        private ToastQueue butteredQueue, finishedQueue;
+        public Jammer(ToastQueue buttered, ToastQueue finished) {
+          butteredQueue = buttered;
+          finishedQueue = finished;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until next piece of toast is available:
+              Toast t = butteredQueue.take();
+              t.jam();
+              print(t);
+              finishedQueue.put(t);
+            }
+          } catch(InterruptedException e) {
+            print("Jammer interrupted");
+          }
+          print("Jammer off");
+        }
+      }
+
+      // Consume the toast:
+      class Eater implements Runnable {
+        private ToastQueue finishedQueue;
+        private int counter = 0;
+        public Eater(ToastQueue finished) {
+          finishedQueue = finished;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until next piece of toast is available:
+              Toast t = finishedQueue.take();
+              // Verify that the toast is coming in order,
+              // and that all pieces are getting jammed:
+              if(t.getId() != counter++ ||
+                 t.getStatus() != Toast.Status.JAMMED) {
+                print(">>>> Error: " + t);
+                System.exit(1);
+              } else
+                print("Chomp! " + t);
+            }
+          } catch(InterruptedException e) {
+            print("Eater interrupted");
+          }
+          print("Eater off");
+        }
+      }
+
+      public class ToastOMatic {
+        public static void main(String[] args) throws Exception {
+          ToastQueue dryQueue = new ToastQueue(),
+                     butteredQueue = new ToastQueue(),
+                     finishedQueue = new ToastQueue();
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(new Toaster(dryQueue));
+          exec.execute(new Butterer(dryQueue, butteredQueue));
+          exec.execute(new Jammer(butteredQueue, finishedQueue));
+          exec.execute(new Eater(finishedQueue));
+          TimeUnit.SECONDS.sleep(5);
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "No — every toast arrives in order and fully jammed: `DRY`, `BUTTERED`, `JAMMED`, `Chomp!`"
+        correct: true
+      - text: "Yes — without `synchronized`, toast arrives out of order"
+        feedback: "Each queue is FIFO and each stage is one task, so the order is kept."
+    explanation: |
+      Each `Toast` is touched by only one task at a time, handed over through the queues — so `Toast` needs no locking.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-pipedio
+    prompt: |
+      After 4 s, `shutdownNow()` interrupts the `Sender` (in `sleep`) and the `Receiver` (in `in.read()`). How does the `Receiver` end? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: concurrency/PipedIO.java
+      // Using pipes for inter-task I/O
+      import java.util.concurrent.*;
+      import java.io.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Sender implements Runnable {
+        private Random rand = new Random(47);
+        private PipedWriter out = new PipedWriter();
+        public PipedWriter getPipedWriter() { return out; }
+        public void run() {
+          try {
+            while(true)
+              for(char c = 'A'; c <= 'z'; c++) {
+                out.write(c);
+                TimeUnit.MILLISECONDS.sleep(rand.nextInt(500));
+              }
+          } catch(IOException e) {
+            print(e + " Sender write exception");
+          } catch(InterruptedException e) {
+            print(e + " Sender sleep interrupted");
+          }
+        }
+      }
+
+      class Receiver implements Runnable {
+        private PipedReader in;
+        public Receiver(Sender sender) throws IOException {
+          in = new PipedReader(sender.getPipedWriter());
+        }
+        public void run() {
+          try {
+            while(true) {
+              // Blocks until characters are there:
+              printnb("Read: " + (char)in.read() + ", ");
+            }
+          } catch(IOException e) {
+            print(e + " Receiver read exception");
+          }
+        }
+      }
+
+      public class PipedIO {
+        public static void main(String[] args) throws Exception {
+          Sender sender = new Sender();
+          Receiver receiver = new Receiver(sender);
+          ExecutorService exec = Executors.newCachedThreadPool();
+          exec.execute(sender);
+          exec.execute(receiver);
+          TimeUnit.SECONDS.sleep(4);
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "With `java.io.InterruptedIOException Receiver read exception` — unlike other stream I/O, a `PipedReader` read does respond to interrupts"
+        correct: true
+      - text: "It stays blocked forever"
+        feedback: "`PipedReader.read()` polls and checks for interruption."
+      - text: "With `InterruptedException`"
+        feedback: "`read()` can only throw `IOException`; it throws the `InterruptedIOException` subclass."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-chopstick
+    prompt: |
+      Why does `take()` use `while(taken) wait();` rather than `if`?
+    code: |
+      //: concurrency/Chopstick.java
+      // Chopsticks for dining philosophers.
+
+      public class Chopstick {
+        private boolean taken = false;
+        public synchronized
+        void take() throws InterruptedException {
+          while(taken)
+            wait();
+          taken = true;
+        }
+        public synchronized void drop() {
+          taken = false;
+          notifyAll();
+        }
+      }
+    language: java
+    options:
+      - text: "`drop()` calls `notifyAll()`, so several waiters may wake, but only one gets the chopstick — the others must check again"
+        correct: true
+      - text: "`if` doesn't compile with `wait()`"
+        feedback: "It compiles; it's just wrong."
+      - text: "To spin without releasing the lock"
+        feedback: "`wait()` releases the lock while waiting."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-philosopher
+    prompt: |
+      In what order does a philosopher pick up the chopsticks, and when does it release them? (`print` is `println`.)
+    code: |
+      //: concurrency/Philosopher.java
+      // A dining philosopher
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Philosopher implements Runnable {
+        private Chopstick left;
+        private Chopstick right;
+        private final int id;
+        private final int ponderFactor;
+        private Random rand = new Random(47);
+        private void pause() throws InterruptedException {
+          if(ponderFactor == 0) return;
+          TimeUnit.MILLISECONDS.sleep(
+            rand.nextInt(ponderFactor * 250));
+        }
+        public Philosopher(Chopstick left, Chopstick right,
+          int ident, int ponder) {
+          this.left = left;
+          this.right = right;
+          id = ident;
+          ponderFactor = ponder;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              print(this + " " + "thinking");
+              pause();
+              // Philosopher becomes hungry
+              print(this + " " + "grabbing right");
+              right.take();
+              print(this + " " + "grabbing left");
+              left.take();
+              print(this + " " + "eating");
+              pause();
+              right.drop();
+              left.drop();
+            }
+          } catch(InterruptedException e) {
+            print(this + " " + "exiting via interrupt");
+          }
+        }
+        public String toString() { return "Philosopher " + id; }
+      }
+
+      //: concurrency/Chopstick.java
+      // Chopsticks for dining philosophers.
+
+      public class Chopstick {
+        private boolean taken = false;
+        public synchronized
+        void take() throws InterruptedException {
+          while(taken)
+            wait();
+          taken = true;
+        }
+        public synchronized void drop() {
+          taken = false;
+          notifyAll();
+        }
+      }
+    language: java
+    options:
+      - text: "Right, then left; it drops both after eating"
+        correct: true
+      - text: "Left, then right"
+        feedback: "It calls `right.take()` first."
+      - text: "Both at once, in one atomic step"
+        feedback: "They're two separate `take()` calls, so it can hold one and wait for the other."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-deadlockingdiningphilosophers
+    prompt: |
+      Philosopher i gets `sticks[i]` as its left and `sticks[(i+1) % size]` as its right chopstick. With `ponder` 0, what can happen? (`print` is `println`.)
+    code: |
+      //: concurrency/DeadlockingDiningPhilosophers.java
+      // Demonstrates how deadlock can be hidden in a program.
+      import java.util.concurrent.*;
+
+      public class DeadlockingDiningPhilosophers {
+        public static void main(String[] args) throws Exception {
+          int ponder = 5;
+          if(args.length > 0)
+            ponder = Integer.parseInt(args[0]);
+          int size = 5;
+          if(args.length > 1)
+            size = Integer.parseInt(args[1]);
+          ExecutorService exec = Executors.newCachedThreadPool();
+          Chopstick[] sticks = new Chopstick[size];
+          for(int i = 0; i < size; i++)
+            sticks[i] = new Chopstick();
+          for(int i = 0; i < size; i++)
+            exec.execute(new Philosopher(
+              sticks[i], sticks[(i+1) % size], i, ponder));
+          if(args.length == 3 && args[2].equals("timeout"))
+            TimeUnit.SECONDS.sleep(5);
+          else {
+            System.out.println("Press 'Enter' to quit");
+            System.in.read();
+          }
+          exec.shutdownNow();
+        }
+      }
+
+      //: concurrency/Chopstick.java
+      // Chopsticks for dining philosophers.
+
+      public class Chopstick {
+        private boolean taken = false;
+        public synchronized
+        void take() throws InterruptedException {
+          while(taken)
+            wait();
+          taken = true;
+        }
+        public synchronized void drop() {
+          taken = false;
+          notifyAll();
+        }
+      }
+
+      //: concurrency/Philosopher.java
+      // A dining philosopher
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Philosopher implements Runnable {
+        private Chopstick left;
+        private Chopstick right;
+        private final int id;
+        private final int ponderFactor;
+        private Random rand = new Random(47);
+        private void pause() throws InterruptedException {
+          if(ponderFactor == 0) return;
+          TimeUnit.MILLISECONDS.sleep(
+            rand.nextInt(ponderFactor * 250));
+        }
+        public Philosopher(Chopstick left, Chopstick right,
+          int ident, int ponder) {
+          this.left = left;
+          this.right = right;
+          id = ident;
+          ponderFactor = ponder;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              print(this + " " + "thinking");
+              pause();
+              // Philosopher becomes hungry
+              print(this + " " + "grabbing right");
+              right.take();
+              print(this + " " + "grabbing left");
+              left.take();
+              print(this + " " + "eating");
+              pause();
+              right.drop();
+              left.drop();
+            }
+          } catch(InterruptedException e) {
+            print(this + " " + "exiting via interrupt");
+          }
+        }
+        public String toString() { return "Philosopher " + id; }
+      }
+    language: java
+    options:
+      - text: "Deadlock: every philosopher holds its right chopstick and waits forever for its left, which a neighbour holds"
+        correct: true
+      - text: "Nothing bad — `Chopstick` is synchronized"
+        feedback: "Synchronization stops two people taking one chopstick, not a circular wait."
+      - text: "An `IllegalMonitorStateException`"
+        feedback: "`wait()`/`notifyAll()` are called from inside `synchronized` methods."
+    explanation: |
+      With a larger ponder value, deadlock is rare but still possible — a hidden deadlock.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-fixeddiningphilosophers
+    prompt: |
+      The last philosopher is given `(sticks[0], sticks[i])` instead of `(sticks[i], sticks[0])`. Why does that prevent deadlock? (`print` is `println`.)
+    code: |
+      //: concurrency/FixedDiningPhilosophers.java
+      // Dining philosophers without deadlock.
+      import java.util.concurrent.*;
+
+      public class FixedDiningPhilosophers {
+        public static void main(String[] args) throws Exception {
+          int ponder = 5;
+          if(args.length > 0)
+            ponder = Integer.parseInt(args[0]);
+          int size = 5;
+          if(args.length > 1)
+            size = Integer.parseInt(args[1]);
+          ExecutorService exec = Executors.newCachedThreadPool();
+          Chopstick[] sticks = new Chopstick[size];
+          for(int i = 0; i < size; i++)
+            sticks[i] = new Chopstick();
+          for(int i = 0; i < size; i++)
+            if(i < (size-1))
+              exec.execute(new Philosopher(
+                sticks[i], sticks[i+1], i, ponder));
+            else
+              exec.execute(new Philosopher(
+                sticks[0], sticks[i], i, ponder));
+          if(args.length == 3 && args[2].equals("timeout"))
+            TimeUnit.SECONDS.sleep(5);
+          else {
+            System.out.println("Press 'Enter' to quit");
+            System.in.read();
+          }
+          exec.shutdownNow();
+        }
+      }
+
+      //: concurrency/Chopstick.java
+      // Chopsticks for dining philosophers.
+
+      public class Chopstick {
+        private boolean taken = false;
+        public synchronized
+        void take() throws InterruptedException {
+          while(taken)
+            wait();
+          taken = true;
+        }
+        public synchronized void drop() {
+          taken = false;
+          notifyAll();
+        }
+      }
+
+      //: concurrency/Philosopher.java
+      // A dining philosopher
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Philosopher implements Runnable {
+        private Chopstick left;
+        private Chopstick right;
+        private final int id;
+        private final int ponderFactor;
+        private Random rand = new Random(47);
+        private void pause() throws InterruptedException {
+          if(ponderFactor == 0) return;
+          TimeUnit.MILLISECONDS.sleep(
+            rand.nextInt(ponderFactor * 250));
+        }
+        public Philosopher(Chopstick left, Chopstick right,
+          int ident, int ponder) {
+          this.left = left;
+          this.right = right;
+          id = ident;
+          ponderFactor = ponder;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              print(this + " " + "thinking");
+              pause();
+              // Philosopher becomes hungry
+              print(this + " " + "grabbing right");
+              right.take();
+              print(this + " " + "grabbing left");
+              left.take();
+              print(this + " " + "eating");
+              pause();
+              right.drop();
+              left.drop();
+            }
+          } catch(InterruptedException e) {
+            print(this + " " + "exiting via interrupt");
+          }
+        }
+        public String toString() { return "Philosopher " + id; }
+      }
+    language: java
+    options:
+      - text: "It reaches for chopstick 0 first, like philosopher 0 — so the philosophers can't all be holding one and waiting in a circle"
+        correct: true
+      - text: "It gives the last philosopher priority"
+        feedback: "It changes the order of acquisition, not priority."
+      - text: "It doesn't — it only makes deadlock less likely"
+        feedback: "Breaking the circular wait removes deadlock entirely."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

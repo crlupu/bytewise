@@ -1,0 +1,779 @@
+title: "Tasks, threads and executors"
+summary: "Runnable tasks, Thread, the three classic executors, Callable and Future, sleep, priorities and the ways to write a thread."
+duration: 8
+tags: [java, concurrency, Runnable, Thread, ExecutorService, Callable, Future]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Basic threading" }
+steps:
+  - type: explanation
+    title: "Tasks and threads"
+    body: |
+      A task is a `Runnable`: its `run()` is just a method, and calling it directly runs it on the current thread.
+      To run it concurrently, hand it to a `Thread` and call `start()`, which returns at once while the new thread runs `run()`.
+      The interleaving of several threads is decided by the scheduler, so it changes from run to run.
+
+  - type: explanation
+    title: "Executors"
+    body: |
+      `Executors.newCachedThreadPool()` makes threads as needed; `newFixedThreadPool(n)` uses at most n; `newSingleThreadExecutor()` runs tasks one at a time, in submission order.
+      `shutdown()` stops new submissions but lets queued tasks finish.
+      A `Callable<T>` returns a value; `submit()` gives back a `Future<T>` whose `get()` blocks until the result is ready.
+
+  - type: choice
+    id: tij-concurrency-liftoff
+    prompt: |
+      Each `LiftOff` gets an `id` from the static `taskCount`. What does one `LiftOff` print as it counts down from the default 10?
+    code: |
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`#0(9), #0(8), … #0(1), #0(Liftoff!), ` — nine numbers then `Liftoff!`"
+        correct: true
+      - text: "`#0(10), #0(9), … #0(1), ` — ten numbers, no `Liftoff!`"
+        feedback: "`countDown--` is post-decrement: the test sees 10, then `status()` sees 9; the last pass sees 0 and prints `Liftoff!`."
+      - text: "Nothing — a `Runnable` needs a `Thread` to run"
+        feedback: "It prints when someone calls `run()`, on whatever thread that is."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-mainthread
+    prompt: |
+      `main` calls `run()` directly on a `LiftOff`. What does this print?
+    code: |
+      //: concurrency/MainThread.java
+
+      public class MainThread {
+        public static void main(String[] args) {
+          LiftOff launch = new LiftOff();
+          launch.run();
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "#0(9), #0(8), #0(7), #0(6), #0(5), #0(4), #0(3), #0(2), #0(1), #0(Liftoff!), "
+        correct: true
+      - text: "#0(10), #0(9), #0(8), #0(7), #0(6), #0(5), #0(4), #0(3), #0(2), #0(1), "
+        feedback: "The decrement happens in the test, before `status()` runs, and the last pass prints `Liftoff!`."
+      - text: "Nothing — `run()` doesn't start a thread"
+        feedback: "It doesn't start a thread, but it still runs — on the main thread."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-basicthreads
+    prompt: |
+      What comes out first?
+    code: |
+      //: concurrency/BasicThreads.java
+      // The most basic use of the Thread class.
+
+      public class BasicThreads {
+        public static void main(String[] args) {
+          Thread t = new Thread(new LiftOff());
+          t.start();
+          System.out.println("Waiting for LiftOff");
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Usually `Waiting for LiftOff` — `start()` returns at once, before the new thread gets going"
+        correct: true
+      - text: "Always the countdown — `start()` waits for `run()` to finish"
+        feedback: "`start()` doesn't wait; that's what makes it concurrent."
+      - text: "Only `Waiting for LiftOff` — `main` ends before the thread runs"
+        feedback: "A normal (non-daemon) thread keeps the JVM alive until it finishes."
+    explanation: |
+      On a Java 21 run, `Waiting for LiftOff` came first, then the whole countdown. The order isn't guaranteed.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-morebasicthreads
+    prompt: |
+      Five threads each run a `LiftOff`. What does the output look like?
+    code: |
+      //: concurrency/MoreBasicThreads.java
+      // Adding more threads.
+
+      public class MoreBasicThreads {
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++)
+            new Thread(new LiftOff()).start();
+          System.out.println("Waiting for LiftOff");
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "The five countdowns interleave, in a different order on each run"
+        correct: true
+      - text: "`#0` counts down fully, then `#1`, … then `#4`"
+        feedback: "They run at the same time; the scheduler interleaves them."
+      - text: "`#0(9), #1(9), #2(9), #3(9), #4(9), #0(8), …` in strict rotation"
+        feedback: "Nothing forces a round-robin order; `yield()` is only a hint."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-cachedthreadpool
+    prompt: |
+      What does `exec.shutdown()` do here?
+    code: |
+      //: concurrency/CachedThreadPool.java
+      import java.util.concurrent.*;
+
+      public class CachedThreadPool {
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new LiftOff());
+          exec.shutdown();
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Stops new tasks from being submitted; the five already submitted still run to completion"
+        correct: true
+      - text: "Interrupts the five tasks right away"
+        feedback: "That's `shutdownNow()`."
+      - text: "Waits for the tasks to finish before returning"
+        feedback: "That's `awaitTermination()`; `shutdown()` returns immediately."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-fixedthreadpool
+    prompt: |
+      How does this differ from using `newCachedThreadPool()`?
+    code: |
+      //: concurrency/FixedThreadPool.java
+      import java.util.concurrent.*;
+
+      public class FixedThreadPool {
+        public static void main(String[] args) {
+          // Constructor argument is number of threads:
+          ExecutorService exec = Executors.newFixedThreadPool(5);
+          for(int i = 0; i < 5; i++)
+            exec.execute(new LiftOff());
+          exec.shutdown();
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "The pool never has more than 5 threads; extra tasks would wait in a queue — with 5 tasks the output looks just as interleaved"
+        correct: true
+      - text: "Tasks run one after another"
+        feedback: "That's `newSingleThreadExecutor()`."
+      - text: "It can only accept 5 tasks in total"
+        feedback: "It accepts any number; at most 5 run at once."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-singlethreadexecutor
+    prompt: |
+      What does this print?
+    code: |
+      //: concurrency/SingleThreadExecutor.java
+      import java.util.concurrent.*;
+
+      public class SingleThreadExecutor {
+        public static void main(String[] args) {
+          ExecutorService exec =
+            Executors.newSingleThreadExecutor();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new LiftOff());
+          exec.shutdown();
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "#0(9), #0(8), #0(7), #0(6), #0(5), #0(4), #0(3), #0(2), #0(1), #0(Liftoff!), #1(9), #1(8), #1(7), #1(6), #1(5), #1(4), #1(3), #1(2), #1(1), #1(Liftoff!), #2(9), #2(8), #2(7), #2(6), #2(5), #2(4), #2(3), #2(2), #2(1), #2(Liftoff!), #3(9), #3(8), #3(7), #3(6), #3(5), #3(4), #3(3), #3(2), #3(1), #3(Liftoff!), #4(9), #4(8), #4(7), #4(6), #4(5), #4(4), #4(3), #4(2), #4(1), #4(Liftoff!), "
+        correct: true
+      - text: "#0(9), #1(9), #2(9), #3(9), #4(9), #0(8), #1(8), #2(8), #3(8), #4(8), #0(7), #1(7), #2(7), #3(7), #4(7), #0(6), #1(6), #2(6), #3(6), #4(6), #0(5), #1(5), #2(5), #3(5), #4(5), #0(4), #1(4), #2(4), #3(4), #4(4), #0(3), #1(3), #2(3), #3(3), #4(3), #0(2), #1(2), #2(2), #3(2), #4(2), #0(1), #1(1), #2(1), #3(1), #4(1), #0(Liftoff!), #1(Liftoff!), #2(Liftoff!), #3(Liftoff!), #4(Liftoff!), "
+        feedback: "There's only one thread, so each task runs to the end before the next starts."
+    explanation: |
+      A single-thread executor queues tasks and runs them one by one in submission order — the output is the same on every run.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-callabledemo
+    prompt: |
+      Ten `TaskWithResult` tasks are submitted to a cached pool and may finish in any order. What does this print?
+    code: |
+      //: concurrency/CallableDemo.java
+      import java.util.concurrent.*;
+      import java.util.*;
+
+      class TaskWithResult implements Callable<String> {
+        private int id;
+        public TaskWithResult(int id) {
+          this.id = id;
+        }
+        public String call() {
+          return "result of TaskWithResult " + id;
+        }
+      }
+
+      public class CallableDemo {
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          ArrayList<Future<String>> results =
+            new ArrayList<Future<String>>();
+          for(int i = 0; i < 10; i++)
+            results.add(exec.submit(new TaskWithResult(i)));
+          for(Future<String> fs : results)
+            try {
+              // get() blocks until completion:
+              System.out.println(fs.get());
+            } catch(InterruptedException e) {
+              System.out.println(e);
+              return;
+            } catch(ExecutionException e) {
+              System.out.println(e);
+            } finally {
+              exec.shutdown();
+            }
+        }
+      }
+    language: java
+    options:
+      - text: "result of TaskWithResult 0\nresult of TaskWithResult 1\nresult of TaskWithResult 2\nresult of TaskWithResult 3\nresult of TaskWithResult 4\nresult of TaskWithResult 5\nresult of TaskWithResult 6\nresult of TaskWithResult 7\nresult of TaskWithResult 8\nresult of TaskWithResult 9"
+        correct: true
+      - text: "The ten results in whatever order the tasks finished"
+        feedback: "The loop walks the `Future`s in submission order, and `get()` waits for each one."
+      - text: "java.util.concurrent.RejectedExecutionException"
+        feedback: "`shutdown()` in the `finally` stops new submissions, but every task was already submitted before the loop."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-sleepingtask
+    prompt: |
+      Each task sleeps 100 ms between steps. What does the output look like?
+    code: |
+      //: concurrency/SleepingTask.java
+      // Calling sleep() to pause for a while.
+      import java.util.concurrent.*;
+
+      public class SleepingTask extends LiftOff {
+        public void run() {
+          try {
+            while(countDown-- > 0) {
+              System.out.print(status());
+              // Old-style:
+              // Thread.sleep(100);
+              // Java SE5/6-style:
+              TimeUnit.MILLISECONDS.sleep(100);
+            }
+          } catch(InterruptedException e) {
+            System.err.println("Interrupted");
+          }
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new SleepingTask());
+          exec.shutdown();
+        }
+      }
+
+      //: concurrency/LiftOff.java
+      // Demonstration of the Runnable interface.
+
+      public class LiftOff implements Runnable {
+        protected int countDown = 10; // Default
+        private static int taskCount = 0;
+        private final int id = taskCount++;
+        public LiftOff() {}
+        public LiftOff(int countDown) {
+          this.countDown = countDown;
+        }
+        public String status() {
+          return "#" + id + "(" +
+            (countDown > 0 ? countDown : "Liftoff!") + "), ";
+        }
+        public void run() {
+          while(countDown-- > 0) {
+            System.out.print(status());
+            Thread.yield();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Roughly in rounds: all five print a 9, then all print an 8, … — though within a round the order varies"
+        correct: true
+      - text: "Exactly `#0 #1 #2 #3 #4` in every round"
+        feedback: "Sleep doesn't order the threads; each round's order can differ."
+      - text: "`Interrupted` five times"
+        feedback: "Nothing interrupts them; `shutdown()` lets them finish."
+    explanation: |
+      On a Java 21 run the rounds came out as `#0(9), #3(9), #1(9), #2(9), #4(9), #0(8), #1(8), …` — grouped by count, shuffled inside each group.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-simplepriorities
+    prompt: |
+      Five threads run at `MIN_PRIORITY` and one at `MAX_PRIORITY`. What can you rely on?
+    code: |
+      //: concurrency/SimplePriorities.java
+      // Shows the use of thread priorities.
+      import java.util.concurrent.*;
+
+      public class SimplePriorities implements Runnable {
+        private int countDown = 5;
+        private volatile double d; // No optimization
+        private int priority;
+        public SimplePriorities(int priority) {
+          this.priority = priority;
+        }
+        public String toString() {
+          return Thread.currentThread() + ": " + countDown;
+        }
+        public void run() {
+          Thread.currentThread().setPriority(priority);
+          while(true) {
+            // An expensive, interruptable operation:
+            for(int i = 1; i < 100000; i++) {
+              d += (Math.PI + Math.E) / (double)i;
+              if(i % 1000 == 0)
+                Thread.yield();
+            }
+            System.out.println(this);
+            if(--countDown == 0) return;
+          }
+        }
+        public static void main(String[] args) {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(
+              new SimplePriorities(Thread.MIN_PRIORITY));
+          exec.execute(
+              new SimplePriorities(Thread.MAX_PRIORITY));
+          exec.shutdown();
+        }
+      }
+    language: java
+    options:
+      - text: "Very little — priority is a hint to the OS scheduler; the high-priority thread may tend to finish first, but the order isn't guaranteed"
+        correct: true
+      - text: "The MAX_PRIORITY thread prints all five lines before any other thread prints"
+        feedback: "On a Java 21 run, low-priority threads printed between its lines."
+      - text: "Low-priority threads never run while a high-priority one is runnable"
+        feedback: "Java doesn't promise strict priority scheduling."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-simplethread
+    prompt: |
+      What's a drawback of calling `start()` inside the constructor, as `SimpleThread` does?
+    code: |
+      //: concurrency/SimpleThread.java
+      // Inheriting directly from the Thread class.
+
+      public class SimpleThread extends Thread {
+        private int countDown = 5;
+        private static int threadCount = 0;
+        public SimpleThread() {
+          // Store the thread name:
+          super(Integer.toString(++threadCount));
+          start();
+        }
+        public String toString() {
+          return "#" + getName() + "(" + countDown + "), ";
+        }
+        public void run() {
+          while(true) {
+            System.out.print(this);
+            if(--countDown == 0)
+              return;
+          }
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++)
+            new SimpleThread();
+        }
+      }
+    language: java
+    options:
+      - text: "The thread can start running before the constructor (and any subclass constructor) has finished, so it may see a half-built object"
+        correct: true
+      - text: "It doesn't compile"
+        feedback: "It compiles and runs."
+      - text: "The thread runs on the caller's thread"
+        feedback: "`start()` always creates a new thread."
+    explanation: |
+      The book recommends executors over starting threads in constructors for exactly this reason.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-selfmanaged
+    prompt: |
+      What does `SelfManaged`'s `toString()` show?
+    code: |
+      //: concurrency/SelfManaged.java
+      // A Runnable containing its own driver Thread.
+
+      public class SelfManaged implements Runnable {
+        private int countDown = 5;
+        private Thread t = new Thread(this);
+        public SelfManaged() { t.start(); }
+        public String toString() {
+          return Thread.currentThread().getName() +
+            "(" + countDown + "), ";
+        }
+        public void run() {
+          while(true) {
+            System.out.print(this);
+            if(--countDown == 0)
+              return;
+          }
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++)
+            new SelfManaged();
+        }
+      }
+    language: java
+    options:
+      - text: "The name of the thread running the task (`Thread-0`…`Thread-4`) and the current count"
+        correct: true
+      - text: "Always `main`"
+        feedback: "`run()` executes on the thread `t`, so `currentThread()` is that thread."
+      - text: "The object's hash code"
+        feedback: "`toString()` is overridden."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-threadvariations
+    prompt: |
+      Five classes each create a thread that prints its name and a count from 5 down to 1, sleeping 10 ms between prints. What does the output look like? (`print` is `println`.)
+    code: |
+      //: concurrency/ThreadVariations.java
+      // Creating threads with inner classes.
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      // Using a named inner class:
+      class InnerThread1 {
+        private int countDown = 5;
+        private Inner inner;
+        private class Inner extends Thread {
+          Inner(String name) {
+            super(name);
+            start();
+          }
+          public void run() {
+            try {
+              while(true) {
+                print(this);
+                if(--countDown == 0) return;
+                sleep(10);
+              }
+            } catch(InterruptedException e) {
+              print("interrupted");
+            }
+          }
+          public String toString() {
+            return getName() + ": " + countDown;
+          }
+        }
+        public InnerThread1(String name) {
+          inner = new Inner(name);
+        }
+      }
+
+      // Using an anonymous inner class:
+      class InnerThread2 {
+        private int countDown = 5;
+        private Thread t;
+        public InnerThread2(String name) {
+          t = new Thread(name) {
+            public void run() {
+              try {
+                while(true) {
+                  print(this);
+                  if(--countDown == 0) return;
+                  sleep(10);
+                }
+              } catch(InterruptedException e) {
+                print("sleep() interrupted");
+              }
+            }
+            public String toString() {
+              return getName() + ": " + countDown;
+            }
+          };
+          t.start();
+        }
+      }
+
+      // Using a named Runnable implementation:
+      class InnerRunnable1 {
+        private int countDown = 5;
+        private Inner inner;
+        private class Inner implements Runnable {
+          Thread t;
+          Inner(String name) {
+            t = new Thread(this, name);
+            t.start();
+          }
+          public void run() {
+            try {
+              while(true) {
+                print(this);
+                if(--countDown == 0) return;
+                TimeUnit.MILLISECONDS.sleep(10);
+              }
+            } catch(InterruptedException e) {
+              print("sleep() interrupted");
+            }
+          }
+          public String toString() {
+            return t.getName() + ": " + countDown;
+          }
+        }
+        public InnerRunnable1(String name) {
+          inner = new Inner(name);
+        }
+      }
+
+      // Using an anonymous Runnable implementation:
+      class InnerRunnable2 {
+        private int countDown = 5;
+        private Thread t;
+        public InnerRunnable2(String name) {
+          t = new Thread(new Runnable() {
+            public void run() {
+              try {
+                while(true) {
+                  print(this);
+                  if(--countDown == 0) return;
+                  TimeUnit.MILLISECONDS.sleep(10);
+                }
+              } catch(InterruptedException e) {
+                print("sleep() interrupted");
+              }
+            }
+            public String toString() {
+              return Thread.currentThread().getName() +
+                ": " + countDown;
+            }
+          }, name);
+          t.start();
+        }
+      }
+
+      // A separate method to run some code as a task:
+      class ThreadMethod {
+        private int countDown = 5;
+        private Thread t;
+        private String name;
+        public ThreadMethod(String name) { this.name = name; }
+        public void runTask() {
+          if(t == null) {
+            t = new Thread(name) {
+              public void run() {
+                try {
+                  while(true) {
+                    print(this);
+                    if(--countDown == 0) return;
+                    sleep(10);
+                  }
+                } catch(InterruptedException e) {
+                  print("sleep() interrupted");
+                }
+              }
+              public String toString() {
+                return getName() + ": " + countDown;
+              }
+            };
+            t.start();
+          }
+        }
+      }
+
+      public class ThreadVariations {
+        public static void main(String[] args) {
+          new InnerThread1("InnerThread1");
+          new InnerThread2("InnerThread2");
+          new InnerRunnable1("InnerRunnable1");
+          new InnerRunnable2("InnerRunnable2");
+          new ThreadMethod("ThreadMethod").runTask();
+        }
+      }
+    language: java
+    options:
+      - text: "25 lines: the five names interleaved, each counting 5 to 1"
+        correct: true
+      - text: "`InnerThread1` counts down fully first, then the next class, and so on"
+        feedback: "All five threads run at once."
+      - text: "Only `ThreadMethod` prints — the others never start their threads"
+        feedback: "Each constructor calls `start()`; `ThreadMethod` starts its thread in `runTask()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

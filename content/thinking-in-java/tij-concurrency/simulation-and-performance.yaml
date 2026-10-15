@@ -1,0 +1,1426 @@
+title: "Simulations and performance"
+summary: "A bank teller, a restaurant and a car assembly line built from tasks and queues; comparing locks, atomics and concurrent containers; active objects."
+duration: 8
+tags: [java, concurrency, simulation, performance, CopyOnWriteArrayList, ConcurrentHashMap, ReadWriteLock]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Simulation; Performance tuning; Active objects" }
+steps:
+  - type: explanation
+    title: "Simulations"
+    body: |
+      Model each actor (teller, customer, robot) as a task, and connect them with blocking queues and barriers.
+      Read-only objects can be shared freely; mutable state stays inside one task or behind a lock.
+
+  - type: explanation
+    title: "Measuring"
+    body: |
+      Microbenchmarks mislead: the JIT can optimise a single-threaded loop until the lock costs nothing.
+      Under contention, `synchronized`, `Lock` and atomics rank differently from run to run and JVM to JVM — measure your real workload.
+      `CopyOnWriteArrayList` and `ConcurrentHashMap` make reads cheap.
+      A `ReadWriteLock` lets many readers in at once, but only one writer.
+
+  - type: choice
+    id: tij-concurrency-banktellersimulation
+    prompt: |
+      `workingTellers` is a `PriorityQueue<Teller>` ordered by `compareTo` on `customersServed`. When the line is short, which teller does `reassignOneTeller()` take away?
+    code: |
+      //: concurrency/BankTellerSimulation.java
+      // Using queues and multithreading.
+      import java.util.concurrent.*;
+      import java.util.*;
+
+      // Read-only objects don't require synchronization:
+      class Customer {
+        private final int serviceTime;
+        public Customer(int tm) { serviceTime = tm; }
+        public int getServiceTime() { return serviceTime; }
+        public String toString() {
+          return "[" + serviceTime + "]";
+        }
+      }
+
+      // Teach the customer line to display itself:
+      class CustomerLine extends ArrayBlockingQueue<Customer> {
+        public CustomerLine(int maxLineSize) {
+          super(maxLineSize);
+        }
+        public String toString() {
+          if(this.size() == 0)
+            return "[Empty]";
+          StringBuilder result = new StringBuilder();
+          for(Customer customer : this)
+            result.append(customer);
+          return result.toString();
+        }
+      }
+
+      // Randomly add customers to a queue:
+      class CustomerGenerator implements Runnable {
+        private CustomerLine customers;
+        private static Random rand = new Random(47);
+        public CustomerGenerator(CustomerLine cq) {
+          customers = cq;
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              TimeUnit.MILLISECONDS.sleep(rand.nextInt(300));
+              customers.put(new Customer(rand.nextInt(1000)));
+            }
+          } catch(InterruptedException e) {
+            System.out.println("CustomerGenerator interrupted");
+          }
+          System.out.println("CustomerGenerator terminating");
+        }
+      }
+
+      class Teller implements Runnable, Comparable<Teller> {
+        private static int counter = 0;
+        private final int id = counter++;
+        // Customers served during this shift:
+        private int customersServed = 0;
+        private CustomerLine customers;
+        private boolean servingCustomerLine = true;
+        public Teller(CustomerLine cq) { customers = cq; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              Customer customer = customers.take();
+              TimeUnit.MILLISECONDS.sleep(
+                customer.getServiceTime());
+              synchronized(this) {
+                customersServed++;
+                while(!servingCustomerLine)
+                  wait();
+              }
+            }
+          } catch(InterruptedException e) {
+            System.out.println(this + "interrupted");
+          }
+          System.out.println(this + "terminating");
+        }
+        public synchronized void doSomethingElse() {
+          customersServed = 0;
+          servingCustomerLine = false;
+        }
+        public synchronized void serveCustomerLine() {
+          assert !servingCustomerLine:"already serving: " + this;
+          servingCustomerLine = true;
+          notifyAll();
+        }
+        public String toString() { return "Teller " + id + " "; }
+        public String shortString() { return "T" + id; }
+        // Used by priority queue:
+        public synchronized int compareTo(Teller other) {
+          return customersServed < other.customersServed ? -1 :
+            (customersServed == other.customersServed ? 0 : 1);
+        }
+      }
+
+      class TellerManager implements Runnable {
+        private ExecutorService exec;
+        private CustomerLine customers;
+        private PriorityQueue<Teller> workingTellers =
+          new PriorityQueue<Teller>();
+        private Queue<Teller> tellersDoingOtherThings =
+          new LinkedList<Teller>();
+        private int adjustmentPeriod;
+        private static Random rand = new Random(47);
+        public TellerManager(ExecutorService e,
+          CustomerLine customers, int adjustmentPeriod) {
+          exec = e;
+          this.customers = customers;
+          this.adjustmentPeriod = adjustmentPeriod;
+          // Start with a single teller:
+          Teller teller = new Teller(customers);
+          exec.execute(teller);
+          workingTellers.add(teller);
+        }
+        public void adjustTellerNumber() {
+          // This is actually a control system. By adjusting
+          // the numbers, you can reveal stability issues in
+          // the control mechanism.
+          // If line is too long, add another teller:
+          if(customers.size() / workingTellers.size() > 2) {
+              // If tellers are on break or doing
+              // another job, bring one back:
+              if(tellersDoingOtherThings.size() > 0) {
+                Teller teller = tellersDoingOtherThings.remove();
+                teller.serveCustomerLine();
+                workingTellers.offer(teller);
+                return;
+              }
+            // Else create (hire) a new teller
+            Teller teller = new Teller(customers);
+            exec.execute(teller);
+            workingTellers.add(teller);
+            return;
+          }
+          // If line is short enough, remove a teller:
+          if(workingTellers.size() > 1 &&
+            customers.size() / workingTellers.size() < 2)
+              reassignOneTeller();
+          // If there is no line, we only need one teller:
+          if(customers.size() == 0)
+            while(workingTellers.size() > 1)
+              reassignOneTeller();
+        }
+        // Give a teller a different job or a break:
+        private void reassignOneTeller() {
+          Teller teller = workingTellers.poll();
+          teller.doSomethingElse();
+          tellersDoingOtherThings.offer(teller);
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              TimeUnit.MILLISECONDS.sleep(adjustmentPeriod);
+              adjustTellerNumber();
+              System.out.print(customers + " { ");
+              for(Teller teller : workingTellers)
+                System.out.print(teller.shortString() + " ");
+              System.out.println("}");
+            }
+          } catch(InterruptedException e) {
+            System.out.println(this + "interrupted");
+          }
+          System.out.println(this + "terminating");
+        }
+        public String toString() { return "TellerManager "; }
+      }
+
+      public class BankTellerSimulation {
+        static final int MAX_LINE_SIZE = 50;
+        static final int ADJUSTMENT_PERIOD = 1000;
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          // If line is too long, customers will leave:
+          CustomerLine customers =
+            new CustomerLine(MAX_LINE_SIZE);
+          exec.execute(new CustomerGenerator(customers));
+          // Manager will add and remove tellers as necessary:
+          exec.execute(new TellerManager(
+            exec, customers, ADJUSTMENT_PERIOD));
+          if(args.length > 0) // Optional argument
+            TimeUnit.SECONDS.sleep(new Integer(args[0]));
+          else {
+            System.out.println("Press 'Enter' to quit");
+            System.in.read();
+          }
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "The one who has served the fewest customers — the head of the queue"
+        correct: true
+      - text: "The most recently hired"
+        feedback: "`poll()` takes the head, the smallest by `compareTo`."
+      - text: "The one who has served the most"
+        feedback: "That would be the tail of the queue."
+    explanation: |
+      With no argument it waits for Enter; with `5` it runs five seconds and then `shutdownNow()` interrupts every task.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-restaurant2-restaurantwithqueues
+    prompt: |
+      Each `Customer` receives courses through a `SynchronousQueue<Plate>`. What does that guarantee? (`print` is `println`.)
+    code: |
+      //: concurrency/restaurant2/RestaurantWithQueues.java
+      package concurrency.restaurant2;
+      import enumerated.menu.*;
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      // This is given to the waiter, who gives it to the chef:
+      class Order { // (A data-transfer object)
+        private static int counter = 0;
+        private final int id = counter++;
+        private final Customer customer;
+        private final WaitPerson waitPerson;
+        private final Food food;
+        public Order(Customer cust, WaitPerson wp, Food f) {
+          customer = cust;
+          waitPerson = wp;
+          food = f;
+        }
+        public Food item() { return food; }
+        public Customer getCustomer() { return customer; }
+        public WaitPerson getWaitPerson() { return waitPerson; }
+        public String toString() {
+          return "Order: " + id + " item: " + food +
+            " for: " + customer +
+            " served by: " + waitPerson;
+        }
+      }
+
+      // This is what comes back from the chef:
+      class Plate {
+        private final Order order;
+        private final Food food;
+        public Plate(Order ord, Food f) {
+          order = ord;
+          food = f;
+        }
+        public Order getOrder() { return order; }
+        public Food getFood() { return food; }
+        public String toString() { return food.toString(); }
+      }
+
+      class Customer implements Runnable {
+        private static int counter = 0;
+        private final int id = counter++;
+        private final WaitPerson waitPerson;
+        // Only one course at a time can be received:
+        private SynchronousQueue<Plate> placeSetting =
+          new SynchronousQueue<Plate>();
+        public Customer(WaitPerson w) { waitPerson = w; }
+        public void
+        deliver(Plate p) throws InterruptedException {
+          // Only blocks if customer is still
+          // eating the previous course:
+          placeSetting.put(p);
+        }
+        public void run() {
+          for(Course course : Course.values()) {
+            Food food = course.randomSelection();
+            try {
+              waitPerson.placeOrder(this, food);
+              // Blocks until course has been delivered:
+              print(this + "eating " + placeSetting.take());
+            } catch(InterruptedException e) {
+              print(this + "waiting for " +
+                course + " interrupted");
+              break;
+            }
+          }
+          print(this + "finished meal, leaving");
+        }
+        public String toString() {
+          return "Customer " + id + " ";
+        }
+      }
+
+      class WaitPerson implements Runnable {
+        private static int counter = 0;
+        private final int id = counter++;
+        private final Restaurant restaurant;
+        BlockingQueue<Plate> filledOrders =
+          new LinkedBlockingQueue<Plate>();
+        public WaitPerson(Restaurant rest) { restaurant = rest; }
+        public void placeOrder(Customer cust, Food food) {
+          try {
+            // Shouldn't actually block because this is
+            // a LinkedBlockingQueue with no size limit:
+            restaurant.orders.put(new Order(cust, this, food));
+          } catch(InterruptedException e) {
+            print(this + " placeOrder interrupted");
+          }
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until a course is ready
+              Plate plate = filledOrders.take();
+              print(this + "received " + plate +
+                " delivering to " +
+                plate.getOrder().getCustomer());
+              plate.getOrder().getCustomer().deliver(plate);
+            }
+          } catch(InterruptedException e) {
+            print(this + " interrupted");
+          }
+          print(this + " off duty");
+        }
+        public String toString() {
+          return "WaitPerson " + id + " ";
+        }
+      }
+
+      class Chef implements Runnable {
+        private static int counter = 0;
+        private final int id = counter++;
+        private final Restaurant restaurant;
+        private static Random rand = new Random(47);
+        public Chef(Restaurant rest) { restaurant = rest; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until an order appears:
+              Order order = restaurant.orders.take();
+              Food requestedItem = order.item();
+              // Time to prepare order:
+              TimeUnit.MILLISECONDS.sleep(rand.nextInt(500));
+              Plate plate = new Plate(order, requestedItem);
+              order.getWaitPerson().filledOrders.put(plate);
+            }
+          } catch(InterruptedException e) {
+            print(this + " interrupted");
+          }
+          print(this + " off duty");
+        }
+        public String toString() { return "Chef " + id + " "; }
+      }
+
+      class Restaurant implements Runnable {
+        private List<WaitPerson> waitPersons =
+          new ArrayList<WaitPerson>();
+        private List<Chef> chefs = new ArrayList<Chef>();
+        private ExecutorService exec;
+        private static Random rand = new Random(47);
+        BlockingQueue<Order>
+          orders = new LinkedBlockingQueue<Order>();
+        public Restaurant(ExecutorService e, int nWaitPersons,
+          int nChefs) {
+          exec = e;
+          for(int i = 0; i < nWaitPersons; i++) {
+            WaitPerson waitPerson = new WaitPerson(this);
+            waitPersons.add(waitPerson);
+            exec.execute(waitPerson);
+          }
+          for(int i = 0; i < nChefs; i++) {
+            Chef chef = new Chef(this);
+            chefs.add(chef);
+            exec.execute(chef);
+          }
+        }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // A new customer arrives; assign a WaitPerson:
+              WaitPerson wp = waitPersons.get(
+                rand.nextInt(waitPersons.size()));
+              Customer c = new Customer(wp);
+              exec.execute(c);
+              TimeUnit.MILLISECONDS.sleep(100);
+            }
+          } catch(InterruptedException e) {
+            print("Restaurant interrupted");
+          }
+          print("Restaurant closing");
+        }
+      }
+
+      public class RestaurantWithQueues {
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          Restaurant restaurant = new Restaurant(exec, 5, 2);
+          exec.execute(restaurant);
+          if(args.length > 0) // Optional argument
+            TimeUnit.SECONDS.sleep(new Integer(args[0]));
+          else {
+            print("Press 'Enter' to quit");
+            System.in.read();
+          }
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "A waitperson's `deliver()` blocks until the customer `take()`s the plate — one course at a time"
+        correct: true
+      - text: "Courses queue up on the table"
+        feedback: "A `SynchronousQueue` has no capacity."
+      - text: "The customer never blocks"
+        feedback: "`take()` blocks until a plate is delivered."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-carbuilder
+    prompt: |
+      The engine, drive-train and wheel robots work on each car in any order. What does the `Reporter` print for each car? (`print` is `println`.)
+    code: |
+      //: concurrency/CarBuilder.java
+      // A complex example of tasks working together.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Car {
+        private final int id;
+        private boolean
+          engine = false, driveTrain = false, wheels = false;
+        public Car(int idn)  { id = idn; }
+        // Empty Car object:
+        public Car()  { id = -1; }
+        public synchronized int getId() { return id; }
+        public synchronized void addEngine() { engine = true; }
+        public synchronized void addDriveTrain() {
+          driveTrain = true;
+        }
+        public synchronized void addWheels() { wheels = true; }
+        public synchronized String toString() {
+          return "Car " + id + " [" + " engine: " + engine
+            + " driveTrain: " + driveTrain
+            + " wheels: " + wheels + " ]";
+        }
+      }
+
+      class CarQueue extends LinkedBlockingQueue<Car> {}
+
+      class ChassisBuilder implements Runnable {
+        private CarQueue carQueue;
+        private int counter = 0;
+        public ChassisBuilder(CarQueue cq) { carQueue = cq; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              TimeUnit.MILLISECONDS.sleep(500);
+              // Make chassis:
+              Car c = new Car(counter++);
+              print("ChassisBuilder created " + c);
+              // Insert into queue
+              carQueue.put(c);
+            }
+          } catch(InterruptedException e) {
+            print("Interrupted: ChassisBuilder");
+          }
+          print("ChassisBuilder off");
+        }
+      }
+
+      class Assembler implements Runnable {
+        private CarQueue chassisQueue, finishingQueue;
+        private Car car;
+        private CyclicBarrier barrier = new CyclicBarrier(4);
+        private RobotPool robotPool;
+        public Assembler(CarQueue cq, CarQueue fq, RobotPool rp){
+          chassisQueue = cq;
+          finishingQueue = fq;
+          robotPool = rp;
+        }
+        public Car car() { return car; }
+        public CyclicBarrier barrier() { return barrier; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // Blocks until chassis is available:
+              car = chassisQueue.take();
+              // Hire robots to perform work:
+              robotPool.hire(EngineRobot.class, this);
+              robotPool.hire(DriveTrainRobot.class, this);
+              robotPool.hire(WheelRobot.class, this);
+              barrier.await(); // Until the robots finish
+              // Put car into finishingQueue for further work
+              finishingQueue.put(car);
+            }
+          } catch(InterruptedException e) {
+            print("Exiting Assembler via interrupt");
+          } catch(BrokenBarrierException e) {
+            // This one we want to know about
+            throw new RuntimeException(e);
+          }
+          print("Assembler off");
+        }
+      }
+
+      class Reporter implements Runnable {
+        private CarQueue carQueue;
+        public Reporter(CarQueue cq) { carQueue = cq; }
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              print(carQueue.take());
+            }
+          } catch(InterruptedException e) {
+            print("Exiting Reporter via interrupt");
+          }
+          print("Reporter off");
+        }
+      }
+
+      abstract class Robot implements Runnable {
+        private RobotPool pool;
+        public Robot(RobotPool p) { pool = p; }
+        protected Assembler assembler;
+        public Robot assignAssembler(Assembler assembler) {
+          this.assembler = assembler;
+          return this;
+        }
+        private boolean engage = false;
+        public synchronized void engage() {
+          engage = true;
+          notifyAll();
+        }
+        // The part of run() that's different for each robot:
+        abstract protected void performService();
+        public void run() {
+          try {
+            powerDown(); // Wait until needed
+            while(!Thread.interrupted()) {
+              performService();
+              assembler.barrier().await(); // Synchronize
+              // We're done with that job...
+              powerDown();
+            }
+          } catch(InterruptedException e) {
+            print("Exiting " + this + " via interrupt");
+          } catch(BrokenBarrierException e) {
+            // This one we want to know about
+            throw new RuntimeException(e);
+          }
+          print(this + " off");
+        }
+        private synchronized void
+        powerDown() throws InterruptedException {
+          engage = false;
+          assembler = null; // Disconnect from the Assembler
+          // Put ourselves back in the available pool:
+          pool.release(this);
+          while(engage == false)  // Power down
+            wait();
+        }
+        public String toString() { return getClass().getName(); }
+      }
+
+      class EngineRobot extends Robot {
+        public EngineRobot(RobotPool pool) { super(pool); }
+        protected void performService() {
+          print(this + " installing engine");
+          assembler.car().addEngine();
+        }
+      }
+
+      class DriveTrainRobot extends Robot {
+        public DriveTrainRobot(RobotPool pool) { super(pool); }
+        protected void performService() {
+          print(this + " installing DriveTrain");
+          assembler.car().addDriveTrain();
+        }
+      }
+
+      class WheelRobot extends Robot {
+        public WheelRobot(RobotPool pool) { super(pool); }
+        protected void performService() {
+          print(this + " installing Wheels");
+          assembler.car().addWheels();
+        }
+      }
+
+      class RobotPool {
+        // Quietly prevents identical entries:
+        private Set<Robot> pool = new HashSet<Robot>();
+        public synchronized void add(Robot r) {
+          pool.add(r);
+          notifyAll();
+        }
+        public synchronized void
+        hire(Class<? extends Robot> robotType, Assembler d)
+        throws InterruptedException {
+          for(Robot r : pool)
+            if(r.getClass().equals(robotType)) {
+              pool.remove(r);
+              r.assignAssembler(d);
+              r.engage(); // Power it up to do the task
+              return;
+            }
+          wait(); // None available
+          hire(robotType, d); // Try again, recursively
+        }
+        public synchronized void release(Robot r) { add(r); }
+      }
+
+      public class CarBuilder {
+        public static void main(String[] args) throws Exception {
+          CarQueue chassisQueue = new CarQueue(),
+                   finishingQueue = new CarQueue();
+          ExecutorService exec = Executors.newCachedThreadPool();
+          RobotPool robotPool = new RobotPool();
+          exec.execute(new EngineRobot(robotPool));
+          exec.execute(new DriveTrainRobot(robotPool));
+          exec.execute(new WheelRobot(robotPool));
+          exec.execute(new Assembler(
+            chassisQueue, finishingQueue, robotPool));
+          exec.execute(new Reporter(finishingQueue));
+          // Start everything running by producing chassis:
+          exec.execute(new ChassisBuilder(chassisQueue));
+          TimeUnit.SECONDS.sleep(7);
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "Always `engine: true driveTrain: true wheels: true` — the `Assembler` waits on a `CyclicBarrier(4)` until all three robots finish"
+        correct: true
+      - text: "Sometimes a part is still `false`"
+        feedback: "The car goes to the finishing queue only after the barrier trips."
+      - text: "Nothing; the robots deadlock"
+        feedback: "Each robot powers down and returns to the pool after the barrier."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-simplemicrobenchmark
+    prompt: |
+      This times 10 million single-threaded increments with `synchronized` and with a `ReentrantLock`. What does the result tell you?
+    code: |
+      //: concurrency/SimpleMicroBenchmark.java
+      // The dangers of microbenchmarking.
+      import java.util.concurrent.locks.*;
+
+      abstract class Incrementable {
+        protected long counter = 0;
+        public abstract void increment();
+      }
+
+      class SynchronizingTest extends Incrementable {
+        public synchronized void increment() { ++counter; }
+      }
+
+      class LockingTest extends Incrementable {
+        private Lock lock = new ReentrantLock();
+        public void increment() {
+          lock.lock();
+          try {
+            ++counter;
+          } finally {
+            lock.unlock();
+          }
+        }
+      }
+
+      public class SimpleMicroBenchmark {
+        static long test(Incrementable incr) {
+          long start = System.nanoTime();
+          for(long i = 0; i < 10000000L; i++)
+            incr.increment();
+          return System.nanoTime() - start;
+        }
+        public static void main(String[] args) {
+          long synchTime = test(new SynchronizingTest());
+          long lockTime = test(new LockingTest());
+          System.out.printf("synchronized: %1$10d\n", synchTime);
+          System.out.printf("Lock:         %1$10d\n", lockTime);
+          System.out.printf("Lock/synchronized = %1$.3f",
+            (double)lockTime/(double)synchTime);
+        }
+      }
+    language: java
+    options:
+      - text: "Little about real code: with no contention, the JIT can optimise both, so the ratio says nothing about locks under load"
+        correct: true
+      - text: "That `Lock` is always faster"
+        feedback: "Without contention, this doesn't measure locking at all."
+      - text: "That `synchronized` is always faster"
+        feedback: "The ratio changes with JVM, hardware and contention."
+    explanation: |
+      On Java 21 it printed `Lock/synchronized = 0.763`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-synchronizationcomparisons
+    prompt: |
+      Four modifiers and four readers share each accumulator. What does the `AtomicTest` comment admit? (`print` is `println`.)
+    code: |
+      //: concurrency/SynchronizationComparisons.java
+      // Comparing the performance of explicit Locks
+      // and Atomics versus the synchronized keyword.
+      import java.util.concurrent.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.concurrent.locks.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      abstract class Accumulator {
+        public static long cycles = 50000L;
+        // Number of Modifiers and Readers during each test:
+        private static final int N = 4;
+        public static ExecutorService exec =
+          Executors.newFixedThreadPool(N*2);
+        private static CyclicBarrier barrier =
+          new CyclicBarrier(N*2 + 1);
+        protected volatile int index = 0;
+        protected volatile long value = 0;
+        protected long duration = 0;
+        protected String id = "error";
+        protected final static int SIZE = 100000;
+        protected static int[] preLoaded = new int[SIZE];
+        static {
+          // Load the array of random numbers:
+          Random rand = new Random(47);
+          for(int i = 0; i < SIZE; i++)
+            preLoaded[i] = rand.nextInt();
+        }
+        public abstract void accumulate();
+        public abstract long read();
+        private class Modifier implements Runnable {
+          public void run() {
+            for(long i = 0; i < cycles; i++)
+              accumulate();
+            try {
+              barrier.await();
+            } catch(Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        private class Reader implements Runnable {
+          private volatile long value;
+          public void run() {
+            for(long i = 0; i < cycles; i++)
+              value = read();
+            try {
+              barrier.await();
+            } catch(Exception e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+        public void timedTest() {
+          long start = System.nanoTime();
+          for(int i = 0; i < N; i++) {
+            exec.execute(new Modifier());
+            exec.execute(new Reader());
+          }
+          try {
+            barrier.await();
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+          duration = System.nanoTime() - start;
+          printf("%-13s: %13d\n", id, duration);
+        }
+        public static void
+        report(Accumulator acc1, Accumulator acc2) {
+          printf("%-22s: %.2f\n", acc1.id + "/" + acc2.id,
+            (double)acc1.duration/(double)acc2.duration);
+        }
+      }
+
+      class BaseLine extends Accumulator {
+        { id = "BaseLine"; }
+        public void accumulate() {
+          value += preLoaded[index++];
+          if(index >= SIZE) index = 0;
+        }
+        public long read() { return value; }
+      }
+
+      class SynchronizedTest extends Accumulator {
+        { id = "synchronized"; }
+        public synchronized void accumulate() {
+          value += preLoaded[index++];
+          if(index >= SIZE) index = 0;
+        }
+        public synchronized long read() {
+          return value;
+        }
+      }
+
+      class LockTest extends Accumulator {
+        { id = "Lock"; }
+        private Lock lock = new ReentrantLock();
+        public void accumulate() {
+          lock.lock();
+          try {
+            value += preLoaded[index++];
+            if(index >= SIZE) index = 0;
+          } finally {
+            lock.unlock();
+          }
+        }
+        public long read() {
+          lock.lock();
+          try {
+            return value;
+          } finally {
+            lock.unlock();
+          }
+        }
+      }
+
+      class AtomicTest extends Accumulator {
+        { id = "Atomic"; }
+        private AtomicInteger index = new AtomicInteger(0);
+        private AtomicLong value = new AtomicLong(0);
+        public void accumulate() {
+          // Oops! Relying on more than one Atomic at
+          // a time doesn't work. But it still gives us
+          // a performance indicator:
+          int i = index.getAndIncrement();
+          value.getAndAdd(preLoaded[i]);
+          if(++i >= SIZE)
+            index.set(0);
+        }
+        public long read() { return value.get(); }
+      }
+
+      public class SynchronizationComparisons {
+        static BaseLine baseLine = new BaseLine();
+        static SynchronizedTest synch = new SynchronizedTest();
+        static LockTest lock = new LockTest();
+        static AtomicTest atomic = new AtomicTest();
+        static void test() {
+          print("============================");
+          printf("%-12s : %13d\n", "Cycles", Accumulator.cycles);
+          baseLine.timedTest();
+          synch.timedTest();
+          lock.timedTest();
+          atomic.timedTest();
+          Accumulator.report(synch, baseLine);
+          Accumulator.report(lock, baseLine);
+          Accumulator.report(atomic, baseLine);
+          Accumulator.report(synch, lock);
+          Accumulator.report(synch, atomic);
+          Accumulator.report(lock, atomic);
+        }
+        public static void main(String[] args) {
+          int iterations = 5; // Default
+          if(args.length > 0) // Optionally change iterations
+            iterations = new Integer(args[0]);
+          // The first time fills the thread pool:
+          print("Warmup");
+          baseLine.timedTest();
+          // Now the initial test doesn't include the cost
+          // of starting the threads for the first time.
+          // Produce multiple data points:
+          for(int i = 0; i < iterations; i++) {
+            test();
+            Accumulator.cycles *= 2;
+          }
+          Accumulator.exec.shutdown();
+        }
+      }
+    language: java
+    options:
+      - text: "Using two atomics (`index` and `value`) together isn't atomic as a whole, so the result is wrong — it's kept only as a timing indicator"
+        correct: true
+      - text: "Atomics are always slower than locks"
+        feedback: "The comment is about correctness, not speed."
+      - text: "`AtomicLong` can overflow"
+        feedback: "That's not the issue."
+    explanation: |
+      The timings vary a lot by JVM. On Java 21, `synchronized` took about 2.6× the baseline and `Lock` about 1.4× in the first round — the book's run had `Lock` slower.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-tester
+    prompt: |
+      How does `runTest()` know when all readers and writers have finished?
+    code: |
+      //: concurrency/Tester.java
+      // Framework to test performance of concurrency containers.
+      import java.util.concurrent.*;
+      import net.mindview.util.*;
+
+      public abstract class Tester<C> {
+        static int testReps = 10;
+        static int testCycles = 1000;
+        static int containerSize = 1000;
+        abstract C containerInitializer();
+        abstract void startReadersAndWriters();
+        C testContainer;
+        String testId;
+        int nReaders;
+        int nWriters;
+        volatile long readResult = 0;
+        volatile long readTime = 0;
+        volatile long writeTime = 0;
+        CountDownLatch endLatch;
+        static ExecutorService exec =
+          Executors.newCachedThreadPool();
+        Integer[] writeData;
+        Tester(String testId, int nReaders, int nWriters) {
+          this.testId = testId + " " +
+            nReaders + "r " + nWriters + "w";
+          this.nReaders = nReaders;
+          this.nWriters = nWriters;
+          writeData = Generated.array(Integer.class,
+            new RandomGenerator.Integer(), containerSize);
+          for(int i = 0; i < testReps; i++) {
+            runTest();
+            readTime = 0;
+            writeTime = 0;
+          }
+        }
+        void runTest() {
+          endLatch = new CountDownLatch(nReaders + nWriters);
+          testContainer = containerInitializer();
+          startReadersAndWriters();
+          try {
+            endLatch.await();
+          } catch(InterruptedException ex) {
+            System.out.println("endLatch interrupted");
+          }
+          System.out.printf("%-27s %14d %14d\n",
+            testId, readTime, writeTime);
+          if(readTime != 0 && writeTime != 0)
+            System.out.printf("%-27s %14d\n",
+              "readTime + writeTime =", readTime + writeTime);
+        }
+        abstract class TestTask implements Runnable {
+          abstract void test();
+          abstract void putResults();
+          long duration;
+          public void run() {
+            long startTime = System.nanoTime();
+            test();
+            duration = System.nanoTime() - startTime;
+            synchronized(Tester.this) {
+              putResults();
+            }
+            endLatch.countDown();
+          }
+        }
+        public static void initMain(String[] args) {
+          if(args.length > 0)
+            testReps = new Integer(args[0]);
+          if(args.length > 1)
+            testCycles = new Integer(args[1]);
+          if(args.length > 2)
+            containerSize = new Integer(args[2]);
+          System.out.printf("%-27s %14s %14s\n",
+            "Type", "Read time", "Write time");
+        }
+      }
+    language: java
+    options:
+      - text: "Each `TestTask` calls `endLatch.countDown()` at the end; `runTest()` blocks in `endLatch.await()`"
+        correct: true
+      - text: "It calls `exec.awaitTermination()`"
+        feedback: "The executor is shared and stays alive between tests."
+      - text: "It sleeps for a fixed time"
+        feedback: "It waits on the `CountDownLatch`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-listcomparisons
+    prompt: |
+      Readers call `get()` and writers call `set()`. Which list is fast for readers, and when does it get slow?
+    code: |
+      //: concurrency/ListComparisons.java
+      // Rough comparison of thread-safe List performance.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      abstract class ListTest extends Tester<List<Integer>> {
+        ListTest(String testId, int nReaders, int nWriters) {
+          super(testId, nReaders, nWriters);
+        }
+        class Reader extends TestTask {
+          long result = 0;
+          void test() {
+            for(long i = 0; i < testCycles; i++)
+              for(int index = 0; index < containerSize; index++)
+                result += testContainer.get(index);
+          }
+          void putResults() {
+            readResult += result;
+            readTime += duration;
+          }
+        }
+        class Writer extends TestTask {
+          void test() {
+            for(long i = 0; i < testCycles; i++)
+              for(int index = 0; index < containerSize; index++)
+                testContainer.set(index, writeData[index]);
+          }
+          void putResults() {
+            writeTime += duration;
+          }
+        }
+        void startReadersAndWriters() {
+          for(int i = 0; i < nReaders; i++)
+            exec.execute(new Reader());
+          for(int i = 0; i < nWriters; i++)
+            exec.execute(new Writer());
+        }
+      }
+
+      class SynchronizedArrayListTest extends ListTest {
+        List<Integer> containerInitializer() {
+          return Collections.synchronizedList(
+            new ArrayList<Integer>(
+              new CountingIntegerList(containerSize)));
+        }
+        SynchronizedArrayListTest(int nReaders, int nWriters) {
+          super("Synched ArrayList", nReaders, nWriters);
+        }
+      }
+
+      class CopyOnWriteArrayListTest extends ListTest {
+        List<Integer> containerInitializer() {
+          return new CopyOnWriteArrayList<Integer>(
+            new CountingIntegerList(containerSize));
+        }
+        CopyOnWriteArrayListTest(int nReaders, int nWriters) {
+          super("CopyOnWriteArrayList", nReaders, nWriters);
+        }
+      }
+
+      public class ListComparisons {
+        public static void main(String[] args) {
+          Tester.initMain(args);
+          new SynchronizedArrayListTest(10, 0);
+          new SynchronizedArrayListTest(9, 1);
+          new SynchronizedArrayListTest(5, 5);
+          new CopyOnWriteArrayListTest(10, 0);
+          new CopyOnWriteArrayListTest(9, 1);
+          new CopyOnWriteArrayListTest(5, 5);
+          Tester.exec.shutdown();
+        }
+      }
+    language: java
+    options:
+      - text: "`CopyOnWriteArrayList`: reads take no lock, but each write copies the whole array, so it slows down with many writers"
+        correct: true
+      - text: "The synchronized `ArrayList` — it's fastest in every case"
+        feedback: "Every read on it takes the lock."
+      - text: "They perform the same"
+        feedback: "In the book's run, synchronized reads were hundreds of times slower."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-mapcomparisons
+    prompt: |
+      Why does `ConcurrentHashMap` beat `Collections.synchronizedMap(new HashMap())` here?
+    code: |
+      //: concurrency/MapComparisons.java
+      // Rough comparison of thread-safe Map performance.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      abstract class MapTest
+      extends Tester<Map<Integer,Integer>> {
+        MapTest(String testId, int nReaders, int nWriters) {
+          super(testId, nReaders, nWriters);
+        }
+        class Reader extends TestTask {
+          long result = 0;
+          void test() {
+            for(long i = 0; i < testCycles; i++)
+              for(int index = 0; index < containerSize; index++)
+                result += testContainer.get(index);
+          }
+          void putResults() {
+            readResult += result;
+            readTime += duration;
+          }
+        }
+        class Writer extends TestTask {
+          void test() {
+            for(long i = 0; i < testCycles; i++)
+              for(int index = 0; index < containerSize; index++)
+                testContainer.put(index, writeData[index]);
+          }
+          void putResults() {
+            writeTime += duration;
+          }
+        }
+        void startReadersAndWriters() {
+          for(int i = 0; i < nReaders; i++)
+            exec.execute(new Reader());
+          for(int i = 0; i < nWriters; i++)
+            exec.execute(new Writer());
+        }
+      }
+
+      class SynchronizedHashMapTest extends MapTest {
+        Map<Integer,Integer> containerInitializer() {
+          return Collections.synchronizedMap(
+            new HashMap<Integer,Integer>(
+              MapData.map(
+                new CountingGenerator.Integer(),
+                new CountingGenerator.Integer(),
+                containerSize)));
+        }
+        SynchronizedHashMapTest(int nReaders, int nWriters) {
+          super("Synched HashMap", nReaders, nWriters);
+        }
+      }
+
+      class ConcurrentHashMapTest extends MapTest {
+        Map<Integer,Integer> containerInitializer() {
+          return new ConcurrentHashMap<Integer,Integer>(
+            MapData.map(
+              new CountingGenerator.Integer(),
+              new CountingGenerator.Integer(), containerSize));
+        }
+        ConcurrentHashMapTest(int nReaders, int nWriters) {
+          super("ConcurrentHashMap", nReaders, nWriters);
+        }
+      }
+
+      public class MapComparisons {
+        public static void main(String[] args) {
+          Tester.initMain(args);
+          new SynchronizedHashMapTest(10, 0);
+          new SynchronizedHashMapTest(9, 1);
+          new SynchronizedHashMapTest(5, 5);
+          new ConcurrentHashMapTest(10, 0);
+          new ConcurrentHashMapTest(9, 1);
+          new ConcurrentHashMapTest(5, 5);
+          Tester.exec.shutdown();
+        }
+      }
+    language: java
+    options:
+      - text: "Its reads take no lock and its writes lock only a small part of the table, so threads rarely block each other"
+        correct: true
+      - text: "It copies the map on every write"
+        feedback: "That's the copy-on-write strategy, not `ConcurrentHashMap`."
+      - text: "It isn't thread-safe"
+        feedback: "It is, without one lock for the whole map."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-fastsimulation
+    prompt: |
+      When does an `Evolver` print `Old value changed from …`? (`print` is `println`.)
+    code: |
+      //: concurrency/FastSimulation.java
+      import java.util.concurrent.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class FastSimulation {
+        static final int N_ELEMENTS = 100000;
+        static final int N_GENES = 30;
+        static final int N_EVOLVERS = 50;
+        static final AtomicInteger[][] GRID =
+          new AtomicInteger[N_ELEMENTS][N_GENES];
+        static Random rand = new Random(47);
+        static class Evolver implements Runnable {
+          public void run() {
+            while(!Thread.interrupted()) {
+              // Randomly select an element to work on:
+              int element = rand.nextInt(N_ELEMENTS);
+              for(int i = 0; i < N_GENES; i++) {
+                int previous = element - 1;
+                if(previous < 0) previous = N_ELEMENTS - 1;
+                int next = element + 1;
+                if(next >= N_ELEMENTS) next = 0;
+                int oldvalue = GRID[element][i].get();
+                // Perform some kind of modeling calculation:
+                int newvalue = oldvalue +
+                  GRID[previous][i].get() + GRID[next][i].get();
+                newvalue /= 3; // Average the three values
+                if(!GRID[element][i]
+                  .compareAndSet(oldvalue, newvalue)) {
+                  // Policy here to deal with failure. Here, we
+                  // just report it and ignore it; our model
+                  // will eventually deal with it.
+                  print("Old value changed from " + oldvalue);
+                }
+              }
+            }
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < N_ELEMENTS; i++)
+            for(int j = 0; j < N_GENES; j++)
+              GRID[i][j] = new AtomicInteger(rand.nextInt(1000));
+          for(int i = 0; i < N_EVOLVERS; i++)
+            exec.execute(new Evolver());
+          TimeUnit.SECONDS.sleep(5);
+          exec.shutdownNow();
+        }
+      }
+    language: java
+    options:
+      - text: "When `compareAndSet` fails because another thread changed that cell after this one read it"
+        correct: true
+      - text: "Every time it updates a cell"
+        feedback: "Only when the compare-and-set fails."
+      - text: "Never — atomics can't fail"
+        feedback: "`compareAndSet` returns `false` when the current value isn't the expected one."
+    explanation: |
+      With 50 threads on Java 21, it printed over 200 such lines in 5 seconds; the program just reports them and carries on.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-readerwriterlist
+    prompt: |
+      `get()` prints `getReadLockCount()` whenever it's above 1. What do the printed numbers show? (`print` is `println`.)
+    code: |
+      //: concurrency/ReaderWriterList.java
+      import java.util.concurrent.*;
+      import java.util.concurrent.locks.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ReaderWriterList<T> {
+        private ArrayList<T> lockedList;
+        // Make the ordering fair:
+        private ReentrantReadWriteLock lock =
+          new ReentrantReadWriteLock(true);
+        public ReaderWriterList(int size, T initialValue) {
+          lockedList = new ArrayList<T>(
+            Collections.nCopies(size, initialValue));
+        }
+        public T set(int index, T element) {
+          Lock wlock = lock.writeLock();
+          wlock.lock();
+          try {
+            return lockedList.set(index, element);
+          } finally {
+            wlock.unlock();
+          }
+        }
+        public T get(int index) {
+          Lock rlock = lock.readLock();
+          rlock.lock();
+          try {
+            // Show that multiple readers
+            // may acquire the read lock:
+            if(lock.getReadLockCount() > 1)
+              print(lock.getReadLockCount());
+            return lockedList.get(index);
+          } finally {
+            rlock.unlock();
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          new ReaderWriterListTest(30, 1);
+        }
+      }
+
+      class ReaderWriterListTest {
+        ExecutorService exec = Executors.newCachedThreadPool();
+        private final static int SIZE = 100;
+        private static Random rand = new Random(47);
+        private ReaderWriterList<Integer> list =
+          new ReaderWriterList<Integer>(SIZE, 0);
+        private class Writer implements Runnable {
+          public void run() {
+            try {
+              for(int i = 0; i < 20; i++) { // 2 second test
+                list.set(i, rand.nextInt());
+                TimeUnit.MILLISECONDS.sleep(100);
+              }
+            } catch(InterruptedException e) {
+              // Acceptable way to exit
+            }
+            print("Writer finished, shutting down");
+            exec.shutdownNow();
+          }
+        }
+        private class Reader implements Runnable {
+          public void run() {
+            try {
+              while(!Thread.interrupted()) {
+                for(int i = 0; i < SIZE; i++) {
+                  list.get(i);
+                  TimeUnit.MILLISECONDS.sleep(1);
+                }
+              }
+            } catch(InterruptedException e) {
+              // Acceptable way to exit
+            }
+          }
+        }
+        public ReaderWriterListTest(int readers, int writers) {
+          for(int i = 0; i < readers; i++)
+            exec.execute(new Reader());
+          for(int i = 0; i < writers; i++)
+            exec.execute(new Writer());
+        }
+      }
+    language: java
+    options:
+      - text: "That several readers hold the read lock at once — the write lock alone is exclusive"
+        correct: true
+      - text: "How many writers are waiting"
+        feedback: "It counts read-lock holds."
+      - text: "Nothing is printed — a read lock is exclusive"
+        feedback: "Read locks are shared; on Java 21 it printed over 2,000 counts."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-activeobjectdemo
+    prompt: |
+      Why is `results` a `CopyOnWriteArrayList`? (`print` is `println`.)
+    code: |
+      //: concurrency/ActiveObjectDemo.java
+      // Can only pass constants, immutables, "disconnected
+      // objects," or other active objects as arguments
+      // to asynch methods.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ActiveObjectDemo {
+        private ExecutorService ex =
+          Executors.newSingleThreadExecutor();
+        private Random rand = new Random(47);
+        // Insert a random delay to produce the effect
+        // of a calculation time:
+        private void pause(int factor) {
+          try {
+            TimeUnit.MILLISECONDS.sleep(
+              100 + rand.nextInt(factor));
+          } catch(InterruptedException e) {
+            print("sleep() interrupted");
+          }
+        }
+        public Future<Integer>
+        calculateInt(final int x, final int y) {
+          return ex.submit(new Callable<Integer>() {
+            public Integer call() {
+              print("starting " + x + " + " + y);
+              pause(500);
+              return x + y;
+            }
+          });
+        }
+        public Future<Float>
+        calculateFloat(final float x, final float y) {
+          return ex.submit(new Callable<Float>() {
+            public Float call() {
+              print("starting " + x + " + " + y);
+              pause(2000);
+              return x + y;
+            }
+          });
+        }
+        public void shutdown() { ex.shutdown(); }
+        public static void main(String[] args) {
+          ActiveObjectDemo d1 = new ActiveObjectDemo();
+          List<Future<?>> results =
+            new CopyOnWriteArrayList<Future<?>>();
+          for(float f = 0.0f; f < 1.0f; f += 0.2f)
+            results.add(d1.calculateFloat(f, f));
+          for(int i = 0; i < 5; i++)
+            results.add(d1.calculateInt(i, i));
+          print("All asynch calls made");
+          while(results.size() > 0) {
+            for(Future<?> f : results)
+              if(f.isDone()) {
+                try {
+                  print(f.get());
+                } catch(Exception e) {
+                  throw new RuntimeException(e);
+                }
+                results.remove(f);
+              }
+          }
+          d1.shutdown();
+        }
+      }
+    language: java
+    options:
+      - text: "The loop removes finished futures while iterating over the list; a copy-on-write list iterates over a snapshot, so that's safe"
+        correct: true
+      - text: "Because the executor's thread adds to it"
+        feedback: "Only `main` touches `results`."
+      - text: "To keep the results in order"
+        feedback: "Any `List` keeps insertion order."
+    explanation: |
+      All calls run on one thread of a single-thread executor, so the calculations happen one at a time, in the order they were made. That's the point of an active object.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

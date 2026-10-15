@@ -1,0 +1,492 @@
+title: "Terminating and interrupting tasks"
+summary: "Stopping tasks with a cancel flag, interrupt() and Future.cancel(), which blocking calls react to it, and cleaning up afterwards."
+duration: 8
+tags: [java, concurrency, interrupt, cancellation, InterruptedException, NIO]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 21, Terminating tasks" }
+steps:
+  - type: explanation
+    title: "What an interrupt can wake"
+    body: |
+      `interrupt()` (or `shutdownNow()` / `future.cancel(true)`) sets a flag and wakes threads blocked in `sleep`, `wait`, `join`, `lockInterruptibly` or NIO channel I/O.
+      It does not wake a thread blocked on classic stream I/O or waiting to enter a `synchronized` block.
+      Closing the stream or channel underneath releases blocked I/O.
+
+  - type: explanation
+    title: "The interruption idiom"
+    body: |
+      A task checks `Thread.interrupted()` in its loop, and catches `InterruptedException` from blocking calls — either way it exits.
+      Every resource gets a `try`/`finally` right after it's created, so it's cleaned up whichever way the task leaves.
+      A `synchronized` method can call another `synchronized` method on the same object: the lock is reentrant.
+
+  - type: choice
+    id: tij-concurrency-ornamentalgarden
+    prompt: |
+      Five entrances count visitors for 3 seconds, then `cancel()` sets the `volatile` flag. What do the last two lines show? (`print` is `println`.)
+    code: |
+      //: concurrency/OrnamentalGarden.java
+      import java.util.concurrent.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Count {
+        private int count = 0;
+        private Random rand = new Random(47);
+        public synchronized int increment() {
+          int temp = count;
+          if(rand.nextBoolean()) // Yield half the time
+            Thread.yield();
+          return (count = ++temp);
+        }
+        public synchronized int value() { return count; }
+      }
+
+      class Entrance implements Runnable {
+        private static Count count = new Count();
+        private static List<Entrance> entrances =
+          new ArrayList<Entrance>();
+        private int number = 0;
+        // Doesn't need synchronization to read:
+        private final int id;
+        private static volatile boolean canceled = false;
+        // Atomic operation on a volatile field:
+        public static void cancel() { canceled = true; }
+        public Entrance(int id) {
+          this.id = id;
+          // Keep this task in a list. Also prevents
+          // garbage collection of dead tasks:
+          entrances.add(this);
+        }
+        public void run() {
+          while(!canceled) {
+            synchronized(this) {
+              ++number;
+            }
+            print(this + " Total: " + count.increment());
+            try {
+              TimeUnit.MILLISECONDS.sleep(100);
+            } catch(InterruptedException e) {
+              print("sleep interrupted");
+            }
+          }
+          print("Stopping " + this);
+        }
+        public synchronized int getValue() { return number; }
+        public String toString() {
+          return "Entrance " + id + ": " + getValue();
+        }
+        public static int getTotalCount() {
+          return count.value();
+        }
+        public static int sumEntrances() {
+          int sum = 0;
+          for(Entrance entrance : entrances)
+            sum += entrance.getValue();
+          return sum;
+        }
+      }
+
+      public class OrnamentalGarden {
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          for(int i = 0; i < 5; i++)
+            exec.execute(new Entrance(i));
+          // Run for a while, then stop and collect the data:
+          TimeUnit.SECONDS.sleep(3);
+          Entrance.cancel();
+          exec.shutdown();
+          if(!exec.awaitTermination(250, TimeUnit.MILLISECONDS))
+            print("Some tasks were not terminated!");
+          print("Total: " + Entrance.getTotalCount());
+          print("Sum of Entrances: " + Entrance.sumEntrances());
+        }
+      }
+    language: java
+    options:
+      - text: "`Total` and `Sum of Entrances` are equal (150 and 150 on a Java 21 run)"
+        correct: true
+      - text: "`Total` is lower, because updates are lost"
+        feedback: "`Count.increment()` is `synchronized`; remove that and they'd differ."
+      - text: "`Some tasks were not terminated!` first"
+        feedback: "Each task sees the flag within 100 ms, well inside the 250 ms wait."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-interrupting
+    prompt: |
+      `f.cancel(true)` interrupts each task in turn: one blocked in `sleep`, one in `System.in.read()`, one waiting to enter a `synchronized` method. Which interrupts work? (`print` is `println`.)
+    code: |
+      //: concurrency/Interrupting.java
+      // Interrupting a blocked thread.
+      import java.util.concurrent.*;
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      class SleepBlocked implements Runnable {
+        public void run() {
+          try {
+            TimeUnit.SECONDS.sleep(100);
+          } catch(InterruptedException e) {
+            print("InterruptedException");
+          }
+          print("Exiting SleepBlocked.run()");
+        }
+      }
+
+      class IOBlocked implements Runnable {
+        private InputStream in;
+        public IOBlocked(InputStream is) { in = is; }
+        public void run() {
+          try {
+            print("Waiting for read():");
+            in.read();
+          } catch(IOException e) {
+            if(Thread.currentThread().isInterrupted()) {
+              print("Interrupted from blocked I/O");
+            } else {
+              throw new RuntimeException(e);
+            }
+          }
+          print("Exiting IOBlocked.run()");
+        }
+      }
+
+      class SynchronizedBlocked implements Runnable {
+        public synchronized void f() {
+          while(true) // Never releases lock
+            Thread.yield();
+        }
+        public SynchronizedBlocked() {
+          new Thread() {
+            public void run() {
+              f(); // Lock acquired by this thread
+            }
+          }.start();
+        }
+        public void run() {
+          print("Trying to call f()");
+          f();
+          print("Exiting SynchronizedBlocked.run()");
+        }
+      }
+
+      public class Interrupting {
+        private static ExecutorService exec =
+          Executors.newCachedThreadPool();
+        static void test(Runnable r) throws InterruptedException{
+          Future<?> f = exec.submit(r);
+          TimeUnit.MILLISECONDS.sleep(100);
+          print("Interrupting " + r.getClass().getName());
+          f.cancel(true); // Interrupts if running
+          print("Interrupt sent to " + r.getClass().getName());
+        }
+        public static void main(String[] args) throws Exception {
+          test(new SleepBlocked());
+          test(new IOBlocked(System.in));
+          test(new SynchronizedBlocked());
+          TimeUnit.SECONDS.sleep(3);
+          print("Aborting with System.exit(0)");
+          System.exit(0);
+        }
+      }
+    language: java
+    options:
+      - text: "Only the `sleep` — blocked stream I/O and waiting for a monitor can't be interrupted, so `main` ends with `System.exit(0)`"
+        correct: true
+      - text: "All three"
+        feedback: "Only `sleep`, `wait` and similar calls throw `InterruptedException`."
+      - text: "`sleep` and `read()`"
+        feedback: "Classic stream I/O ignores interrupts."
+    explanation: |
+      When we ran it, stdin was empty, so `read()` returned at once (`Exiting IOBlocked.run()`); at a console it would block until you typed something.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-closeresource
+    prompt: |
+      `IOBlocked` (from `Interrupting`) prints `Waiting for read():`, calls `in.read()`, and on an `IOException` prints `Interrupted from blocked I/O` if its thread is interrupted. What frees the task blocked on the socket? (`print` is `println`.)
+    code: |
+      //: concurrency/CloseResource.java
+      // Interrupting a blocked task by
+      // closing the underlying resource.
+      import java.net.*;
+      import java.util.concurrent.*;
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      public class CloseResource {
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          ServerSocket server = new ServerSocket(8080);
+          InputStream socketInput =
+            new Socket("localhost", 8080).getInputStream();
+          exec.execute(new IOBlocked(socketInput));
+          exec.execute(new IOBlocked(System.in));
+          TimeUnit.MILLISECONDS.sleep(100);
+          print("Shutting down all threads");
+          exec.shutdownNow();
+          TimeUnit.SECONDS.sleep(1);
+          print("Closing " + socketInput.getClass().getName());
+          socketInput.close();
+          TimeUnit.SECONDS.sleep(1);
+          print("Closing " + System.in.getClass().getName());
+          System.in.close();
+        }
+      }
+    language: java
+    options:
+      - text: "Closing `socketInput` — `shutdownNow()` alone does nothing to a blocked `read()`"
+        correct: true
+      - text: "`shutdownNow()`"
+        feedback: "The interrupt is recorded, but the blocked read doesn't notice it."
+      - text: "Nothing; it stays blocked"
+        feedback: "Closing the stream makes `read()` throw."
+    explanation: |
+      On a Java 21 run, `Interrupted from blocked I/O` appeared right after `Closing java.net.Socket$SocketInputStream`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-concurrency-niointerruption
+    prompt: |
+      One task is cancelled with `f.cancel(true)`; the other's channel `sc2` is closed. Which exceptions do they get? (`print` is `println`.)
+    code: |
+      //: concurrency/NIOInterruption.java
+      // Interrupting a blocked NIO channel.
+      import java.net.*;
+      import java.nio.*;
+      import java.nio.channels.*;
+      import java.util.concurrent.*;
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      class NIOBlocked implements Runnable {
+        private final SocketChannel sc;
+        public NIOBlocked(SocketChannel sc) { this.sc = sc; }
+        public void run() {
+          try {
+            print("Waiting for read() in " + this);
+            sc.read(ByteBuffer.allocate(1));
+          } catch(ClosedByInterruptException e) {
+            print("ClosedByInterruptException");
+          } catch(AsynchronousCloseException e) {
+            print("AsynchronousCloseException");
+          } catch(IOException e) {
+            throw new RuntimeException(e);
+          }
+          print("Exiting NIOBlocked.run() " + this);
+        }
+      }
+
+      public class NIOInterruption {
+        public static void main(String[] args) throws Exception {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          ServerSocket server = new ServerSocket(8080);
+          InetSocketAddress isa =
+            new InetSocketAddress("localhost", 8080);
+          SocketChannel sc1 = SocketChannel.open(isa);
+          SocketChannel sc2 = SocketChannel.open(isa);
+          Future<?> f = exec.submit(new NIOBlocked(sc1));
+          exec.execute(new NIOBlocked(sc2));
+          exec.shutdown();
+          TimeUnit.SECONDS.sleep(1);
+          // Produce an interrupt via cancel:
+          f.cancel(true);
+          TimeUnit.SECONDS.sleep(1);
+          // Release the block by closing the channel:
+          sc2.close();
+        }
+      }
+    language: java
+    options:
+      - text: "`ClosedByInterruptException` for the cancelled one, `AsynchronousCloseException` for the closed one"
+        correct: true
+      - text: "Neither — NIO reads, like stream reads, ignore interrupts"
+        feedback: "NIO channels respond to interrupts."
+      - text: "`InterruptedException` for both"
+        feedback: "Channel reads don't throw `InterruptedException`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-multilock
+    prompt: |
+      `f1()` and `f2()` are both `synchronized` and call each other. What does this print? (`print` is `println`.)
+    code: |
+      //: concurrency/MultiLock.java
+      // One thread can reacquire the same lock.
+      import static net.mindview.util.Print.*;
+
+      public class MultiLock {
+        public synchronized void f1(int count) {
+          if(count-- > 0) {
+            print("f1() calling f2() with count " + count);
+            f2(count);
+          }
+        }
+        public synchronized void f2(int count) {
+          if(count-- > 0) {
+            print("f2() calling f1() with count " + count);
+            f1(count);
+          }
+        }
+        public static void main(String[] args) throws Exception {
+          final MultiLock multiLock = new MultiLock();
+          new Thread() {
+            public void run() {
+              multiLock.f1(10);
+            }
+          }.start();
+        }
+      }
+    language: java
+    options:
+      - text: "f1() calling f2() with count 9\nf2() calling f1() with count 8\nf1() calling f2() with count 7\nf2() calling f1() with count 6\nf1() calling f2() with count 5\nf2() calling f1() with count 4\nf1() calling f2() with count 3\nf2() calling f1() with count 2\nf1() calling f2() with count 1\nf2() calling f1() with count 0"
+        correct: true
+      - text: "f1() calling f2() with count 9"
+        feedback: "The thread already holds the lock, so it can enter `f2()` — locks are reentrant."
+      - text: "f1() calling f2() with count 10\nf2() calling f1() with count 9\nf1() calling f2() with count 8\nf2() calling f1() with count 7\nf1() calling f2() with count 6\nf2() calling f1() with count 5\nf1() calling f2() with count 4\nf2() calling f1() with count 3\nf1() calling f2() with count 2\nf2() calling f1() with count 1"
+        feedback: "`count--` in the test lowers the count before it's printed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-interrupting2
+    prompt: |
+      The `BlockedMutex` constructor locks the lock on the main thread, so `f()` can never get it. What does this print? (`print` is `println`.)
+    code: |
+      //: concurrency/Interrupting2.java
+      // Interrupting a task blocked with a ReentrantLock.
+      import java.util.concurrent.*;
+      import java.util.concurrent.locks.*;
+      import static net.mindview.util.Print.*;
+
+      class BlockedMutex {
+        private Lock lock = new ReentrantLock();
+        public BlockedMutex() {
+          // Acquire it right away, to demonstrate interruption
+          // of a task blocked on a ReentrantLock:
+          lock.lock();
+        }
+        public void f() {
+          try {
+            // This will never be available to a second task
+            lock.lockInterruptibly(); // Special call
+            print("lock acquired in f()");
+          } catch(InterruptedException e) {
+            print("Interrupted from lock acquisition in f()");
+          }
+        }
+      }
+
+      class Blocked2 implements Runnable {
+        BlockedMutex blocked = new BlockedMutex();
+        public void run() {
+          print("Waiting for f() in BlockedMutex");
+          blocked.f();
+          print("Broken out of blocked call");
+        }
+      }
+
+      public class Interrupting2 {
+        public static void main(String[] args) throws Exception {
+          Thread t = new Thread(new Blocked2());
+          t.start();
+          TimeUnit.SECONDS.sleep(1);
+          System.out.println("Issuing t.interrupt()");
+          t.interrupt();
+        }
+      }
+    language: java
+    options:
+      - text: "Waiting for f() in BlockedMutex\nIssuing t.interrupt()\nInterrupted from lock acquisition in f()\nBroken out of blocked call"
+        correct: true
+      - text: "Waiting for f() in BlockedMutex\nIssuing t.interrupt()"
+        feedback: "`lockInterruptibly()` reacts to the interrupt, unlike entering a `synchronized` block."
+      - text: "Waiting for f() in BlockedMutex\nlock acquired in f()\nBroken out of blocked call\nIssuing t.interrupt()"
+        feedback: "The lock is held by the main thread and never released."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-concurrency-interruptingidiom
+    prompt: |
+      Run as `java InterruptingIdiom 1100` on Java 21, where the 2.5-million-step calculation takes only a few milliseconds. What does it print? (`print` is `println`.)
+    code: |
+      //: concurrency/InterruptingIdiom.java
+      // General idiom for interrupting a task.
+      import java.util.concurrent.*;
+      import static net.mindview.util.Print.*;
+
+      class NeedsCleanup {
+        private final int id;
+        public NeedsCleanup(int ident) {
+          id = ident;
+          print("NeedsCleanup " + id);
+        }
+        public void cleanup() {
+          print("Cleaning up " + id);
+        }
+      }
+
+      class Blocked3 implements Runnable {
+        private volatile double d = 0.0;
+        public void run() {
+          try {
+            while(!Thread.interrupted()) {
+              // point1
+              NeedsCleanup n1 = new NeedsCleanup(1);
+              // Start try-finally immediately after definition
+              // of n1, to guarantee proper cleanup of n1:
+              try {
+                print("Sleeping");
+                TimeUnit.SECONDS.sleep(1);
+                // point2
+                NeedsCleanup n2 = new NeedsCleanup(2);
+                // Guarantee proper cleanup of n2:
+                try {
+                  print("Calculating");
+                  // A time-consuming, non-blocking operation:
+                  for(int i = 1; i < 2500000; i++)
+                    d = d + (Math.PI + Math.E) / d;
+                  print("Finished time-consuming operation");
+                } finally {
+                  n2.cleanup();
+                }
+              } finally {
+                n1.cleanup();
+              }
+            }
+            print("Exiting via while() test");
+          } catch(InterruptedException e) {
+            print("Exiting via InterruptedException");
+          }
+        }
+      }
+
+      public class InterruptingIdiom {
+        public static void main(String[] args) throws Exception {
+          if(args.length != 1) {
+            print("usage: java InterruptingIdiom delay-in-mS");
+            System.exit(1);
+          }
+          Thread t = new Thread(new Blocked3());
+          t.start();
+          TimeUnit.MILLISECONDS.sleep(new Integer(args[0]));
+          t.interrupt();
+        }
+      }
+    language: java
+    options:
+      - text: "NeedsCleanup 1\nSleeping\nNeedsCleanup 2\nCalculating\nFinished time-consuming operation\nCleaning up 2\nCleaning up 1\nNeedsCleanup 1\nSleeping\nCleaning up 1\nExiting via InterruptedException"
+        correct: true
+      - text: "NeedsCleanup 1\nSleeping\nNeedsCleanup 2\nCalculating\nFinished time-consuming operation\nCleaning up 2\nCleaning up 1\nExiting via while() test"
+        feedback: "On the book's slower machine the interrupt arrived during the calculation. Here the loop is already in its second `sleep` at 1100 ms."
+      - text: "NeedsCleanup 1\nSleeping\nExiting via InterruptedException"
+        feedback: "The `finally` cleans up `n1` before the exception reaches the outer `catch`."
+    explanation: |
+      We ran it on Java 21 with argument 1100, and the output was the same each time. With no argument it only prints the usage line.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

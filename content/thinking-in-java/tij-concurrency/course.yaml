@@ -1,0 +1,11 @@
+title: "Concurrency"
+summary: "Chapter 21 — tasks and executors, sharing resources safely, stopping tasks, cooperation with wait/notify and queues, the java.util.concurrent toolkit, and simulations, through the book's examples run on Java 21."
+lessons:
+  - tasks-and-executors
+  - daemons-joining-exceptions
+  - sharing-resources
+  - sharing-resources-code
+  - terminating-tasks
+  - cooperation
+  - library-components
+  - simulation-and-performance
