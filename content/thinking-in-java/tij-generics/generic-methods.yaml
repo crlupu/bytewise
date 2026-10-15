@@ -1,0 +1,541 @@
+title: "Generic methods and generators"
+summary: "Methods with their own type parameters, argument inference, varargs, and generators that produce objects of a type."
+duration: 8
+tags: [java, generics, generic methods, type inference, generators]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Generic methods; Generic interfaces" }
+steps:
+  - type: explanation
+    title: "Generic methods"
+    body: |
+      `public <T> void f(T x)` — the type parameter goes before the return type.
+      The compiler infers `T` from the arguments; you can also state it: `New.<Person, List<Pet>>map()`.
+      Prefer a generic method to making the whole class generic.
+
+  - type: explanation
+    title: "Generators"
+    body: |
+      A `Generator<T>` has one method, `T next()`, and makes objects without being told how.
+      Combine one with a generic `fill(Collection<T>, Generator<T>, n)` to populate any collection.
+
+  - type: predict
+    id: tij-generics-genericmethods
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/GenericMethods.java
+
+      public class GenericMethods {
+        public <T> void f(T x) {
+          System.out.println(x.getClass().getName());
+        }
+        public static void main(String[] args) {
+          GenericMethods gm = new GenericMethods();
+          gm.f("");
+          gm.f(1);
+          gm.f(1.0);
+          gm.f(1.0F);
+          gm.f('c');
+          gm.f(gm);
+        }
+      }
+    language: java
+    options:
+      - text: "java.lang.String\njava.lang.Integer\njava.lang.Double\njava.lang.Float\njava.lang.Character\nGenericMethods"
+        correct: true
+      - text: "java.lang.String\nint\ndouble\nfloat\nchar\nGenericMethods"
+        feedback: "Primitives are autoboxed to wrapper objects before `getClass()`."
+      - text: "T\nT\nT\nT\nT\nT"
+        feedback: "`getClass()` gives the argument's actual class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-genericvarargs
+    prompt: |
+      What are the first two lines printed?
+    code: |
+      //: generics/GenericVarargs.java
+      import java.util.*;
+
+      public class GenericVarargs {
+        public static <T> List<T> makeList(T... args) {
+          List<T> result = new ArrayList<T>();
+          for(T item : args)
+            result.add(item);
+          return result;
+        }
+        public static void main(String[] args) {
+          List<String> ls = makeList("A");
+          System.out.println(ls);
+          ls = makeList("A", "B", "C");
+          System.out.println(ls);
+          ls = makeList("ABCDEFFHIJKLMNOPQRSTUVWXYZ".split(""));
+          System.out.println(ls);
+        }
+      }
+    language: java
+    options:
+      - text: "[A]\n[A, B, C]"
+        correct: true
+      - text: "[A]\n[ABC]"
+        feedback: "Each argument becomes one element."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-explicittypespecification
+    prompt: |
+      Why write `New.<Person, List<Pet>>map()` instead of `New.map()`?
+    code: |
+      //: generics/ExplicitTypeSpecification.java
+      import typeinfo.pets.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class ExplicitTypeSpecification {
+        static void f(Map<Person, List<Pet>> petPeople) {}
+        public static void main(String[] args) {
+          f(New.<Person, List<Pet>>map());
+        }
+      }
+    language: java
+    options:
+      - text: "In Java 5/6, inference didn't use the parameter type of `f`, so the type arguments had to be explicit"
+        correct: true
+      - text: "`map()` isn't generic"
+        feedback: "It's a generic method; the explicit form names its type arguments."
+      - text: "It creates a special map"
+        feedback: "Same `HashMap`, just typed explicitly."
+    explanation: |
+      Since Java 8, `f(New.map())` compiles: inference uses the target type.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-limitsofinference
+    prompt: |
+      `f(New.map())` was commented out because it didn't compile in Java 5/6. What about Java 21?
+    code: |
+      //: generics/LimitsOfInference.java
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      public class LimitsOfInference {
+        static void
+        f(Map<Person, List<? extends Pet>> petPeople) {}
+        public static void main(String[] args) {
+          // f(New.map()); // Does not compile
+        }
+      }
+    language: java
+    options:
+      - text: "It compiles — Java 8 made inference use the method's parameter type"
+        correct: true
+      - text: "It still fails"
+        feedback: "Target typing in argument positions arrived in Java 8."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-simplerpets
+    prompt: |
+      `New.map()` is `static <K,V> Map<K,V> map() { return new HashMap<K,V>(); }`. What does it save?
+    code: |
+      //: generics/SimplerPets.java
+      import typeinfo.pets.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class SimplerPets {
+        public static void main(String[] args) {
+          Map<Person, List<? extends Pet>> petPeople = New.map();
+          // Rest of the code is the same...
+        }
+      }
+    language: java
+    options:
+      - text: "Repeating the long type arguments: the compiler infers them from the variable's type"
+        correct: true
+      - text: "Memory"
+        feedback: "It creates the same `HashMap`."
+    explanation: |
+      Java 7's diamond, `new HashMap<>()`, does the same job built in.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-fibonacci
+    prompt: |
+      `fib(n)` is 1 for n < 2, else `fib(n-2) + fib(n-1)`. What are the first 8 numbers printed?
+    code: |
+      //: generics/Fibonacci.java
+      // Generate a Fibonacci sequence.
+      import net.mindview.util.*;
+
+      public class Fibonacci implements Generator<Integer> {
+        private int count = 0;
+        public Integer next() { return fib(count++); }
+        private int fib(int n) {
+          if(n < 2) return 1;
+          return fib(n-2) + fib(n-1);
+        }
+        public static void main(String[] args) {
+          Fibonacci gen = new Fibonacci();
+          for(int i = 0; i < 18; i++)
+            System.out.print(gen.next() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "1 1 2 3 5 8 13 21"
+        correct: true
+      - text: "0 1 1 2 3 5 8 13"
+        feedback: "`fib(0)` and `fib(1)` are both 1 here."
+      - text: "1 2 3 5 8 13 21 34"
+        feedback: "It starts with `fib(0)`, which is 1."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-iterablefibonacci
+    prompt: |
+      How does `IterableFibonacci` make `Fibonacci` usable in foreach without modifying it?
+    code: |
+      //: generics/IterableFibonacci.java
+      // Adapt the Fibonacci class to make it Iterable.
+      import java.util.*;
+
+      public class IterableFibonacci
+      extends Fibonacci implements Iterable<Integer> {
+        private int n;
+        public IterableFibonacci(int count) { n = count; }
+        public Iterator<Integer> iterator() {
+          return new Iterator<Integer>() {
+            public boolean hasNext() { return n > 0; }
+            public Integer next() {
+              n--;
+              return IterableFibonacci.this.next();
+            }
+            public void remove() { // Not implemented
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+        public static void main(String[] args) {
+          for(int i : new IterableFibonacci(18))
+            System.out.print(i + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "It extends `Fibonacci` and adds `iterator()`, whose `next()` calls the inherited generator — an adapter"
+        correct: true
+      - text: "It modifies `Fibonacci` to implement `Iterable`"
+        feedback: "It leaves `Fibonacci` unchanged."
+      - text: "Generators work in foreach automatically"
+        feedback: "Foreach needs an `Iterable`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-generators
+    prompt: |
+      `fill(coll, gen, n)` adds `n` items from `gen`. The Fibonacci generator yields 1, 1, 2, 3, 5 … What is the last line printed?
+    code: |
+      //: generics/Generators.java
+      // A utility to use with Generators.
+      import generics.coffee.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class Generators {
+        public static <T> Collection<T>
+        fill(Collection<T> coll, Generator<T> gen, int n) {
+          for(int i = 0; i < n; i++)
+            coll.add(gen.next());
+          return coll;
+        }
+        public static void main(String[] args) {
+          Collection<Coffee> coffee = fill(
+            new ArrayList<Coffee>(), new CoffeeGenerator(), 4);
+          for(Coffee c : coffee)
+            System.out.println(c);
+          Collection<Integer> fnumbers = fill(
+            new ArrayList<Integer>(), new Fibonacci(), 12);
+          for(int i : fnumbers)
+            System.out.print(i + ", ");
+        }
+      }
+    language: java
+    options:
+      - text: "1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, "
+        correct: true
+      - text: "1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, "
+        feedback: "`fill` adds 12 numbers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-basicgeneratordemo
+    prompt: |
+      `BasicGenerator.create(type)` makes a generator that calls `type.newInstance()`. `CountedObject` prints as `CountedObject <id>`, ids from 0. What does this print?
+    code: |
+      //: generics/BasicGeneratorDemo.java
+      import net.mindview.util.*;
+
+      public class BasicGeneratorDemo {
+        public static void main(String[] args) {
+          Generator<CountedObject> gen =
+            BasicGenerator.create(CountedObject.class);
+          for(int i = 0; i < 5; i++)
+            System.out.println(gen.next());
+        }
+      }
+    language: java
+    options:
+      - text: "CountedObject 0\nCountedObject 1\nCountedObject 2\nCountedObject 3\nCountedObject 4"
+        correct: true
+      - text: "CountedObject 0\nCountedObject 0\nCountedObject 0\nCountedObject 0\nCountedObject 0"
+        feedback: "Each `next()` creates a new object with the next id."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-countedobject
+    prompt: |
+      Why can `BasicGenerator` create `CountedObject`s?
+    code: |
+      //: generics/CountedObject.java
+
+      public class CountedObject {
+        private static long counter = 0;
+        private final long id = counter++;
+        public long id() { return id; }
+        public String toString() { return "CountedObject " + id;}
+      }
+    language: java
+    options:
+      - text: "It's public with a public no-arg (default) constructor, which `newInstance` needs"
+        correct: true
+      - text: "Because it has a `toString`"
+        feedback: "Creation needs an accessible no-arg constructor."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-bankteller
+    prompt: |
+      `Customer.generator()` and `Teller.generator` produce new objects with private constructors. How does that work?
+    code: |
+      //: generics/BankTeller.java
+      // A very simple bank teller simulation.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      class Customer {
+        private static long counter = 1;
+        private final long id = counter++;
+        private Customer() {}
+        public String toString() { return "Customer " + id; }
+        // A method to produce Generator objects:
+        public static Generator<Customer> generator() {
+          return new Generator<Customer>() {
+            public Customer next() { return new Customer(); }
+          };
+        }
+      }
+
+      class Teller {
+        private static long counter = 1;
+        private final long id = counter++;
+        private Teller() {}
+        public String toString() { return "Teller " + id; }
+        // A single Generator object:
+        public static Generator<Teller> generator =
+          new Generator<Teller>() {
+            public Teller next() { return new Teller(); }
+          };
+      }
+
+      public class BankTeller {
+        public static void serve(Teller t, Customer c) {
+          System.out.println(t + " serves " + c);
+        }
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          Queue<Customer> line = new LinkedList<Customer>();
+          Generators.fill(line, Customer.generator(), 15);
+          List<Teller> tellers = new ArrayList<Teller>();
+          Generators.fill(tellers, Teller.generator, 4);
+          for(Customer c : line)
+            serve(tellers.get(rand.nextInt(tellers.size())), c);
+        }
+      }
+    language: java
+    options:
+      - text: "The anonymous generator classes are inside `Customer` and `Teller`, so they can call the private constructors"
+        correct: true
+      - text: "Via reflection"
+        feedback: "They call `new Customer()` directly."
+      - text: "It doesn't compile"
+        feedback: "It prints 15 lines like `Teller 3 serves Customer 1`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-coffee-coffeegenerator
+    prompt: |
+      `new CoffeeGenerator(5)` in a foreach — how many coffees, and why does the loop end?
+    code: |
+      //: generics/coffee/CoffeeGenerator.java
+      // Generate different types of Coffee:
+      package generics.coffee;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class CoffeeGenerator
+      implements Generator<Coffee>, Iterable<Coffee> {
+        private Class[] types = { Latte.class, Mocha.class,
+          Cappuccino.class, Americano.class, Breve.class, };
+        private static Random rand = new Random(47);
+        public CoffeeGenerator() {}
+        // For iteration:
+        private int size = 0;
+        public CoffeeGenerator(int sz) { size = sz; }
+        public Coffee next() {
+          try {
+            return (Coffee)
+              types[rand.nextInt(types.length)].newInstance();
+            // Report programmer errors at run time:
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+        class CoffeeIterator implements Iterator<Coffee> {
+          int count = size;
+          public boolean hasNext() { return count > 0; }
+          public Coffee next() {
+            count--;
+            return CoffeeGenerator.this.next();
+          }
+          public void remove() { // Not implemented
+            throw new UnsupportedOperationException();
+          }
+        };
+        public Iterator<Coffee> iterator() {
+          return new CoffeeIterator();
+        }
+        public static void main(String[] args) {
+          CoffeeGenerator gen = new CoffeeGenerator();
+          for(int i = 0; i < 5; i++)
+            System.out.println(gen.next());
+          for(Coffee c : new CoffeeGenerator(5))
+            System.out.println(c);
+        }
+      }
+    language: java
+    options:
+      - text: "5 — the iterator counts down `size` and stops at 0"
+        correct: true
+      - text: "Infinitely — generators never end"
+        feedback: "The iterator's `hasNext()` checks the count."
+      - text: "0 — the size constructor is for something else"
+        feedback: "`size` sets how many the iterator yields."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-coffee-coffee
+    prompt: |
+      `Latte`, `Mocha`, `Cappuccino`, `Americano` and `Breve` all just extend `Coffee`. What does a new `Latte` print as, if it's the 4th coffee created?
+    code: |
+      //: generics/coffee/Coffee.java
+      package generics.coffee;
+
+      public class Coffee {
+        private static long counter = 0;
+        private final long id = counter++;
+        public String toString() {
+          return getClass().getSimpleName() + " " + id;
+        }
+      }
+    language: java
+    options:
+      - text: "Latte 3"
+        correct: true
+      - text: "Coffee 3"
+        feedback: "`getClass().getSimpleName()` is the actual class."
+      - text: "Latte 4"
+        feedback: "Ids start at 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-watercolorsets
+    prompt: |
+      `Sets.union`, `intersection`, `difference` and `complement` are generic methods like `<T> Set<T> union(Set<T> a, Set<T> b)`. What does `intersection(set1, set2)` contain? (`print` is `println`.)
+    code: |
+      //: generics/WatercolorSets.java
+      import generics.watercolors.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+      import static net.mindview.util.Sets.*;
+      import static generics.watercolors.Watercolors.*;
+
+      public class WatercolorSets {
+        public static void main(String[] args) {
+          Set<Watercolors> set1 =
+            EnumSet.range(BRILLIANT_RED, VIRIDIAN_HUE);
+          Set<Watercolors> set2 =
+            EnumSet.range(CERULEAN_BLUE_HUE, BURNT_UMBER);
+          print("set1: " + set1);
+          print("set2: " + set2);
+          print("union(set1, set2): " + union(set1, set2));
+          Set<Watercolors> subset = intersection(set1, set2);
+          print("intersection(set1, set2): " + subset);
+          print("difference(set1, subset): " +
+            difference(set1, subset));
+          print("difference(set2, subset): " +
+            difference(set2, subset));
+          print("complement(set1, set2): " +
+            complement(set1, set2));
+        }
+      }
+    language: java
+    options:
+      - text: "The colors in both ranges: CERULEAN_BLUE_HUE through VIRIDIAN_HUE"
+        correct: true
+      - text: "Every color in either range"
+        feedback: "That's `union`."
+      - text: "The colors in exactly one of them"
+        feedback: "That's `complement` (the symmetric difference)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-watercolors-watercolors
+    prompt: |
+      What does `EnumSet.range(BRILLIANT_RED, VIRIDIAN_HUE)` contain?
+    code: |
+      //: generics/watercolors/Watercolors.java
+      package generics.watercolors;
+
+      public enum Watercolors {
+        ZINC, LEMON_YELLOW, MEDIUM_YELLOW, DEEP_YELLOW, ORANGE,
+        BRILLIANT_RED, CRIMSON, MAGENTA, ROSE_MADDER, VIOLET,
+        CERULEAN_BLUE_HUE, PHTHALO_BLUE, ULTRAMARINE,
+        COBALT_BLUE_HUE, PERMANENT_GREEN, VIRIDIAN_HUE,
+        SAP_GREEN, YELLOW_OCHRE, BURNT_SIENNA, RAW_UMBER,
+        BURNT_UMBER, PAYNES_GRAY, IVORY_BLACK
+      }
+    language: java
+    options:
+      - text: "Every constant from BRILLIANT_RED to VIRIDIAN_HUE, inclusive, in declaration order"
+        correct: true
+      - text: "Just the two constants"
+        feedback: "`range` includes everything between."
+      - text: "The constants between them, excluding both ends"
+        feedback: "Both ends are included."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

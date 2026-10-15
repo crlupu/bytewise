@@ -1,0 +1,627 @@
+title: "Filling containers, Collection and List"
+summary: "Ways to fill containers with test data, the operations every Collection supports, optional operations, and legacy containers."
+duration: 8
+tags: [java, containers, Collection, List, unsupported operations, Vector, BitSet]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 17, Filling containers; Collection functionality; Optional operations; List functionality; Holding references; Java 1.0/1.1 containers" }
+steps:
+  - type: explanation
+    title: "Collection operations"
+    body: |
+      Every `Collection` can `add`, `addAll`, `remove`, `removeAll`, `retainAll`, `contains`, `containsAll`, `clear`, `size` and `toArray`.
+      `Collections.nCopies` and `Collections.fill` fill lists — with the same object reference in every slot.
+
+  - type: explanation
+    title: "Optional operations"
+    body: |
+      Some implementations don't support every operation and throw `UnsupportedOperationException`.
+      `Arrays.asList` is fixed-size: `set` works, but nothing that changes the size.
+      An unmodifiable wrapper rejects every change.
+
+  - type: choice
+    id: tij-containers-collectiondatatest
+    prompt: |
+      Both adds use 15 words from a generator over `"strange women lying in ponds distributing swords is no basis for a system of government"`. Why does the set print each word once?
+    code: |
+      //: containers/CollectionDataTest.java
+      import java.util.*;
+      import net.mindview.util.*;
+
+      class Government implements Generator<String> {
+        String[] foundation = ("strange women lying in ponds " +
+          "distributing swords is no basis for a system of " +
+          "government").split(" ");
+        private int index;
+        public String next() { return foundation[index++]; }
+      }
+
+      public class CollectionDataTest {
+        public static void main(String[] args) {
+          Set<String> set = new LinkedHashSet<String>(
+            new CollectionData<String>(new Government(), 15));
+          // Using the convenience method:
+          set.addAll(CollectionData.list(new Government(), 15));
+          System.out.println(set);
+        }
+      }
+    language: java
+    options:
+      - text: "It's a `LinkedHashSet`: the second batch only repeats words already present, and insertion order is kept"
+        correct: true
+      - text: "The second add fails"
+        feedback: "It succeeds; sets just ignore duplicates."
+      - text: "`CollectionData` removes duplicates"
+        feedback: "The set does."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-collectiondatageneration
+    prompt: |
+      What does `new CollectionData<Integer>(gen, 10)` give you?
+    code: |
+      //: containers/CollectionDataGeneration.java
+      // Using the Generators defined in the Arrays chapter.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class CollectionDataGeneration {
+        public static void main(String[] args) {
+          System.out.println(new ArrayList<String>(
+            CollectionData.list( // Convenience method
+              new RandomGenerator.String(9), 10)));
+          System.out.println(new HashSet<Integer>(
+            new CollectionData<Integer>(
+              new RandomGenerator.Integer(), 10)));
+        }
+      }
+    language: java
+    options:
+      - text: "A collection holding 10 values from the generator, ready to pass to any container's constructor"
+        correct: true
+      - text: "A generator that produces 10 values lazily"
+        feedback: "It fills itself immediately."
+      - text: "A map"
+        feedback: "`MapData` does maps."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-mapdatatest
+    prompt: |
+      `Letters` generates pairs `1=A, 2=B, …`. What does `MapData.map(new Letters(), 11)` print? (`print` is `println`.)
+    code: |
+      //: containers/MapDataTest.java
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Letters implements Generator<Pair<Integer,String>>,
+        Iterable<Integer> {
+        private int size = 9;
+        private int number = 1;
+        private char letter = 'A';
+        public Pair<Integer,String> next() {
+          return new Pair<Integer,String>(
+            number++, "" + letter++);
+        }
+        public Iterator<Integer> iterator() {
+          return new Iterator<Integer>() {
+            public Integer next() { return number++; }
+            public boolean hasNext() { return number < size; }
+            public void remove() {
+              throw new UnsupportedOperationException();
+            }
+          };
+        }
+      }
+
+      public class MapDataTest {
+        public static void main(String[] args) {
+          // Pair Generator:
+          print(MapData.map(new Letters(), 11));
+          // Two separate generators:
+          print(MapData.map(new CountingGenerator.Character(),
+            new RandomGenerator.String(3), 8));
+          // A key Generator and a single value:
+          print(MapData.map(new CountingGenerator.Character(),
+            "Value", 6));
+          // An Iterable and a value Generator:
+          print(MapData.map(new Letters(),
+            new RandomGenerator.String(3)));
+          // An Iterable and a single value:
+          print(MapData.map(new Letters(), "Pop"));
+        }
+      }
+    language: java
+    options:
+      - text: "{1=A, 2=B, 3=C, 4=D, 5=E, 6=F, 7=G, 8=H, 9=I, 10=J, 11=K}"
+        correct: true
+      - text: "{1=A, 2=B, 3=C, 4=D, 5=E, 6=F, 7=G, 8=H}"
+        feedback: "With a pair generator and a count, it makes 11 entries."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-fillinglists
+    prompt: |
+      `StringAddress.toString()` shows `super.toString()` (class@hash) and the string. In the first line, why do all four elements show the same hash?
+    code: |
+      //: containers/FillingLists.java
+      // The Collections.fill() & Collections.nCopies() methods.
+      import java.util.*;
+
+      class StringAddress {
+        private String s;
+        public StringAddress(String s) { this.s = s; }
+        public String toString() {
+          return super.toString() + " " + s;
+        }
+      }
+
+      public class FillingLists {
+        public static void main(String[] args) {
+          List<StringAddress> list= new ArrayList<StringAddress>(
+            Collections.nCopies(4, new StringAddress("Hello")));
+          System.out.println(list);
+          Collections.fill(list, new StringAddress("World!"));
+          System.out.println(list);
+        }
+      }
+    language: java
+    options:
+      - text: "`nCopies(4, x)` holds the same object four times"
+        correct: true
+      - text: "Hash codes are per class"
+        feedback: "`Object.hashCode` differs per object; it's one object."
+      - text: "They're four equal copies"
+        feedback: "No copies are made — just four references."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-collectionmethods
+    prompt: |
+      `c` is `[ALGERIA, ANGOLA, BENIN, BOTSWANA, BURKINA FASO, BURUNDI, ten, eleven]`. What are `Collections.max(c)` and `Collections.min(c)`? (`print` is `println`.)
+    code: |
+      //: containers/CollectionMethods.java
+      // Things you can do with all Collections.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class CollectionMethods {
+        public static void main(String[] args) {
+          Collection<String> c = new ArrayList<String>();
+          c.addAll(Countries.names(6));
+          c.add("ten");
+          c.add("eleven");
+          print(c);
+          // Make an array from the List:
+          Object[] array = c.toArray();
+          // Make a String array from the List:
+          String[] str = c.toArray(new String[0]);
+          // Find max and min elements; this means
+          // different things depending on the way
+          // the Comparable interface is implemented:
+          print("Collections.max(c) = " + Collections.max(c));
+          print("Collections.min(c) = " + Collections.min(c));
+          // Add a Collection to another Collection
+          Collection<String> c2 = new ArrayList<String>();
+          c2.addAll(Countries.names(6));
+          c.addAll(c2);
+          print(c);
+          c.remove(Countries.DATA[0][0]);
+          print(c);
+          c.remove(Countries.DATA[1][0]);
+          print(c);
+          // Remove all components that are
+          // in the argument collection:
+          c.removeAll(c2);
+          print(c);
+          c.addAll(c2);
+          print(c);
+          // Is an element in this Collection?
+          String val = Countries.DATA[3][0];
+          print("c.contains(" + val  + ") = " + c.contains(val));
+          // Is a Collection in this Collection?
+          print("c.containsAll(c2) = " + c.containsAll(c2));
+          Collection<String> c3 =
+            ((List<String>)c).subList(3, 5);
+          // Keep all the elements that are in both
+          // c2 and c3 (an intersection of sets):
+          c2.retainAll(c3);
+          print(c2);
+          // Throw away all the elements
+          // in c2 that also appear in c3:
+          c2.removeAll(c3);
+          print("c2.isEmpty() = " +  c2.isEmpty());
+          c = new ArrayList<String>();
+          c.addAll(Countries.names(6));
+          print(c);
+          c.clear(); // Remove all elements
+          print("after c.clear():" + c);
+        }
+      }
+    language: java
+    options:
+      - text: "Collections.max(c) = ten\nCollections.min(c) = ALGERIA"
+        correct: true
+      - text: "Collections.max(c) = BURUNDI\nCollections.min(c) = ALGERIA"
+        feedback: "Natural string order puts lowercase after uppercase, so `ten` is the max."
+      - text: "Collections.max(c) = ten\nCollections.min(c) = eleven"
+        feedback: "Uppercase letters sort before lowercase."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-unsupported
+    prompt: |
+      For the `Arrays.asList()` list, which operation does NOT throw?
+    code: |
+      //: containers/Unsupported.java
+      // Unsupported operations in Java containers.
+      import java.util.*;
+
+      public class Unsupported {
+        static void test(String msg, List<String> list) {
+          System.out.println("--- " + msg + " ---");
+          Collection<String> c = list;
+          Collection<String> subList = list.subList(1,8);
+          // Copy of the sublist:
+          Collection<String> c2 = new ArrayList<String>(subList);
+          try { c.retainAll(c2); } catch(Exception e) {
+            System.out.println("retainAll(): " + e);
+          }
+          try { c.removeAll(c2); } catch(Exception e) {
+            System.out.println("removeAll(): " + e);
+          }
+          try { c.clear(); } catch(Exception e) {
+            System.out.println("clear(): " + e);
+          }
+          try { c.add("X"); } catch(Exception e) {
+            System.out.println("add(): " + e);
+          }
+          try { c.addAll(c2); } catch(Exception e) {
+            System.out.println("addAll(): " + e);
+          }
+          try { c.remove("C"); } catch(Exception e) {
+            System.out.println("remove(): " + e);
+          }
+          // The List.set() method modifies the value but
+          // doesn't change the size of the data structure:
+          try {
+            list.set(0, "X");
+          } catch(Exception e) {
+            System.out.println("List.set(): " + e);
+          }
+        }
+        public static void main(String[] args) {
+          List<String> list =
+            Arrays.asList("A B C D E F G H I J K L".split(" "));
+          test("Modifiable Copy", new ArrayList<String>(list));
+          test("Arrays.asList()", list);
+          test("unmodifiableList()",
+            Collections.unmodifiableList(
+              new ArrayList<String>(list)));
+        }
+      }
+    language: java
+    options:
+      - text: "`list.set(0, \"X\")`"
+        correct: true
+      - text: "`c.add(\"X\")`"
+        feedback: "The backing array can't grow."
+      - text: "`c.clear()`"
+        feedback: "Clearing changes the size."
+    explanation: |
+      For the modifiable copy nothing throws; for `unmodifiableList()` even `set` throws.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-lists
+    prompt: |
+      In `iterManipulation`, why call `it.next()` between `it.add("47")` and `it.remove()`? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: containers/Lists.java
+      // Things you can do with Lists.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Lists {
+        private static boolean b;
+        private static String s;
+        private static int i;
+        private static Iterator<String> it;
+        private static ListIterator<String> lit;
+        public static void basicTest(List<String> a) {
+          a.add(1, "x"); // Add at location 1
+          a.add("x"); // Add at end
+          // Add a collection:
+          a.addAll(Countries.names(25));
+          // Add a collection starting at location 3:
+          a.addAll(3, Countries.names(25));
+          b = a.contains("1"); // Is it in there?
+          // Is the entire collection in there?
+          b = a.containsAll(Countries.names(25));
+          // Lists allow random access, which is cheap
+          // for ArrayList, expensive for LinkedList:
+          s = a.get(1); // Get (typed) object at location 1
+          i = a.indexOf("1"); // Tell index of object
+          b = a.isEmpty(); // Any elements inside?
+          it = a.iterator(); // Ordinary Iterator
+          lit = a.listIterator(); // ListIterator
+          lit = a.listIterator(3); // Start at loc 3
+          i = a.lastIndexOf("1"); // Last match
+          a.remove(1); // Remove location 1
+          a.remove("3"); // Remove this object
+          a.set(1, "y"); // Set location 1 to "y"
+          // Keep everything that's in the argument
+          // (the intersection of the two sets):
+          a.retainAll(Countries.names(25));
+          // Remove everything that's in the argument:
+          a.removeAll(Countries.names(25));
+          i = a.size(); // How big is it?
+          a.clear(); // Remove all elements
+        }
+        public static void iterMotion(List<String> a) {
+          ListIterator<String> it = a.listIterator();
+          b = it.hasNext();
+          b = it.hasPrevious();
+          s = it.next();
+          i = it.nextIndex();
+          s = it.previous();
+          i = it.previousIndex();
+        }
+        public static void iterManipulation(List<String> a) {
+          ListIterator<String> it = a.listIterator();
+          it.add("47");
+          // Must move to an element after add():
+          it.next();
+          // Remove the element after the newly produced one:
+          it.remove();
+          // Must move to an element after remove():
+          it.next();
+          // Change the element after the deleted one:
+          it.set("47");
+        }
+        public static void testVisual(List<String> a) {
+          print(a);
+          List<String> b = Countries.names(25);
+          print("b = " + b);
+          a.addAll(b);
+          a.addAll(b);
+          print(a);
+          // Insert, remove, and replace elements
+          // using a ListIterator:
+          ListIterator<String> x = a.listIterator(a.size()/2);
+          x.add("one");
+          print(a);
+          print(x.next());
+          x.remove();
+          print(x.next());
+          x.set("47");
+          print(a);
+          // Traverse the list backwards:
+          x = a.listIterator(a.size());
+          while(x.hasPrevious())
+            printnb(x.previous() + " ");
+          print();
+          print("testVisual finished");
+        }
+        // There are some things that only LinkedLists can do:
+        public static void testLinkedList() {
+          LinkedList<String> ll = new LinkedList<String>();
+          ll.addAll(Countries.names(25));
+          print(ll);
+          // Treat it like a stack, pushing:
+          ll.addFirst("one");
+          ll.addFirst("two");
+          print(ll);
+          // Like "peeking" at the top of a stack:
+          print(ll.getFirst());
+          // Like popping a stack:
+          print(ll.removeFirst());
+          print(ll.removeFirst());
+          // Treat it like a queue, pulling elements
+          // off the tail end:
+          print(ll.removeLast());
+          print(ll);
+        }
+        public static void main(String[] args) {
+          // Make and fill a new list each time:
+          basicTest(
+            new LinkedList<String>(Countries.names(25)));
+          basicTest(
+            new ArrayList<String>(Countries.names(25)));
+          iterMotion(
+            new LinkedList<String>(Countries.names(25)));
+          iterMotion(
+            new ArrayList<String>(Countries.names(25)));
+          iterManipulation(
+            new LinkedList<String>(Countries.names(25)));
+          iterManipulation(
+            new ArrayList<String>(Countries.names(25)));
+          testVisual(
+            new LinkedList<String>(Countries.names(25)));
+          testLinkedList();
+        }
+      }
+    language: java
+    options:
+      - text: "`remove()` removes the element last returned by `next`/`previous`; after `add` there is none"
+        correct: true
+      - text: "`add` moves the iterator back"
+        feedback: "It inserts before the cursor; `remove` still needs a fresh `next`."
+      - text: "It's optional"
+        feedback: "Without it, `remove()` throws `IllegalStateException`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-enumerations
+    prompt: |
+      How does an old-style `Enumeration` compare with an `Iterator`?
+    code: |
+      //: containers/Enumerations.java
+      // Java 1.0/1.1 Vector and Enumeration.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class Enumerations {
+        public static void main(String[] args) {
+          Vector<String> v =
+            new Vector<String>(Countries.names(10));
+          Enumeration<String> e = v.elements();
+          while(e.hasMoreElements())
+            System.out.print(e.nextElement() + ", ");
+          // Produce an Enumeration from a Collection:
+          e = Collections.enumeration(new ArrayList<String>());
+        }
+      }
+    language: java
+    options:
+      - text: "Same idea with longer names — `hasMoreElements`/`nextElement` — and no `remove`"
+        correct: true
+      - text: "It's faster"
+        feedback: "It's legacy; `Iterator` replaced it."
+      - text: "It works only for arrays"
+        feedback: "`Vector.elements()` returns one."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-stacks
+    prompt: |
+      `Month` lists JANUARY … NOVEMBER (11 months), pushed in order. What is the `element 5` line? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: containers/Stacks.java
+      // Demonstration of Stack Class.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      enum Month { JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
+        JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER }
+
+      public class Stacks {
+        public static void main(String[] args) {
+          Stack<String> stack = new Stack<String>();
+          for(Month m : Month.values())
+            stack.push(m.toString());
+          print("stack = " + stack);
+          // Treating a stack as a Vector:
+          stack.addElement("The last line");
+          print("element 5 = " + stack.elementAt(5));
+          print("popping elements:");
+          while(!stack.empty())
+            printnb(stack.pop() + " ");
+
+          // Using a LinkedList as a Stack:
+          LinkedList<String> lstack = new LinkedList<String>();
+          for(Month m : Month.values())
+            lstack.addFirst(m.toString());
+          print("lstack = " + lstack);
+          while(!lstack.isEmpty())
+            printnb(lstack.removeFirst() + " ");
+
+          // Using the Stack class from
+          // the Holding Your Objects Chapter:
+          net.mindview.util.Stack<String> stack2 =
+            new net.mindview.util.Stack<String>();
+          for(Month m : Month.values())
+            stack2.push(m.toString());
+          print("stack2 = " + stack2);
+          while(!stack2.empty())
+            printnb(stack2.pop() + " ");
+
+        }
+      }
+    language: java
+    options:
+      - text: "element 5 = JUNE"
+        correct: true
+      - text: "element 5 = MAY"
+        feedback: "Index 5 is the sixth element."
+      - text: "element 5 = JULY"
+        feedback: "`elementAt` counts from the bottom of the stack, index 0 = JANUARY."
+    explanation: |
+      `java.util.Stack` extends `Vector`, so it exposes all of Vector's methods — a design flaw. Use `ArrayDeque` instead.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-bits
+    prompt: |
+      The byte value is −107 (binary `10010101`). What does the `bits:` line show for it? (`print` is `println`.)
+    code: |
+      //: containers/Bits.java
+      // Demonstration of BitSet.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Bits {
+        public static void printBitSet(BitSet b) {
+          print("bits: " + b);
+          StringBuilder bbits = new StringBuilder();
+          for(int j = 0; j < b.size() ; j++)
+            bbits.append(b.get(j) ? "1" : "0");
+          print("bit pattern: " + bbits);
+        }
+        public static void main(String[] args) {
+          Random rand = new Random(47);
+          // Take the LSB of nextInt():
+          byte bt = (byte)rand.nextInt();
+          BitSet bb = new BitSet();
+          for(int i = 7; i >= 0; i--)
+            if(((1 << i) &  bt) != 0)
+              bb.set(i);
+            else
+              bb.clear(i);
+          print("byte value: " + bt);
+          printBitSet(bb);
+
+          short st = (short)rand.nextInt();
+          BitSet bs = new BitSet();
+          for(int i = 15; i >= 0; i--)
+            if(((1 << i) &  st) != 0)
+              bs.set(i);
+            else
+              bs.clear(i);
+          print("short value: " + st);
+          printBitSet(bs);
+
+          int it = rand.nextInt();
+          BitSet bi = new BitSet();
+          for(int i = 31; i >= 0; i--)
+            if(((1 << i) &  it) != 0)
+              bi.set(i);
+            else
+              bi.clear(i);
+          print("int value: " + it);
+          printBitSet(bi);
+
+          // Test bitsets >= 64 bits:
+          BitSet b127 = new BitSet();
+          b127.set(127);
+          print("set bit 127: " + b127);
+          BitSet b255 = new BitSet(65);
+          b255.set(255);
+          print("set bit 255: " + b255);
+          BitSet b1023 = new BitSet(512);
+          b1023.set(1023);
+          b1023.set(1024);
+          print("set bit 1023: " + b1023);
+        }
+      }
+    language: java
+    options:
+      - text: "bits: {0, 2, 4, 7}"
+        correct: true
+      - text: "bits: {7, 4, 2, 0}"
+        feedback: "A `BitSet` lists set bits from lowest to highest."
+      - text: "bits: {1, 3, 5, 6}"
+        feedback: "Those are the clear bits."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

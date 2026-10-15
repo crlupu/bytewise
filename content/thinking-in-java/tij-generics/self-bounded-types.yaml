@@ -1,0 +1,465 @@
+title: "Self-bounded types"
+summary: "The curiously recurring generic, SelfBounded<T extends SelfBounded<T>>, and how it gives covariant arguments."
+duration: 8
+tags: [java, generics, self-bounding, CRTP, covariant return]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Self-bounded types" }
+steps:
+  - type: explanation
+    title: "The curiously recurring generic"
+    body: |
+      `class Subtype extends BasicHolder<Subtype>` makes the base class use the subclass as its type argument.
+      The base class's methods then take and return the subclass type exactly.
+
+  - type: explanation
+    title: "Self-bounding"
+    body: |
+      `class SelfBounded<T extends SelfBounded<T>>` forces `T` to be such a class.
+      It makes method arguments vary with the subclass (covariant arguments) — normally a subclass method with a narrower parameter only overloads.
+      An interface like `Comparable` can only be implemented with one type argument per class.
+
+  - type: choice
+    id: tij-generics-curiouslyrecurringgeneric
+    prompt: |
+      What's "curious" about `class CuriouslyRecurringGeneric extends GenericType<CuriouslyRecurringGeneric>`?
+    code: |
+      //: generics/CuriouslyRecurringGeneric.java
+
+      class GenericType<T> {}
+
+      public class CuriouslyRecurringGeneric
+        extends GenericType<CuriouslyRecurringGeneric> {}
+    language: java
+    options:
+      - text: "The class passes itself as the type argument of its own base class"
+        correct: true
+      - text: "It extends itself"
+        feedback: "It extends `GenericType`, parameterized with itself."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-basicholder
+    prompt: |
+      What does `f()` print for a holder whose element is a `Subtype` object?
+    code: |
+      //: generics/BasicHolder.java
+
+      public class BasicHolder<T> {
+        T element;
+        void set(T arg) { element = arg; }
+        T get() { return element; }
+        void f() {
+          System.out.println(element.getClass().getSimpleName());
+        }
+      }
+    language: java
+    options:
+      - text: "Subtype"
+        correct: true
+      - text: "BasicHolder"
+        feedback: "It prints the element's class, not the holder's."
+      - text: "T"
+        feedback: "`getClass()` gives the runtime class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-crgwithbasicholder
+    prompt: |
+      `Subtype extends BasicHolder<Subtype>`. What type does `st1.get()` return?
+    code: |
+      //: generics/CRGWithBasicHolder.java
+
+      class Subtype extends BasicHolder<Subtype> {}
+
+      public class CRGWithBasicHolder {
+        public static void main(String[] args) {
+          Subtype st1 = new Subtype(), st2 = new Subtype();
+          st1.set(st2);
+          Subtype st3 = st1.get();
+          st1.f();
+        }
+      }
+    language: java
+    options:
+      - text: "`Subtype` — the base class's `T` is the subclass itself"
+        correct: true
+      - text: "`Object`"
+        feedback: "`T` is `Subtype`."
+      - text: "`BasicHolder`"
+        feedback: "`get()` returns `T`."
+    explanation: |
+      It prints `Subtype`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-unconstrained
+    prompt: |
+      `BasicOther extends BasicHolder<Other>` — what does this show?
+    code: |
+      //: generics/Unconstrained.java
+
+      class Other {}
+      class BasicOther extends BasicHolder<Other> {}
+
+      public class Unconstrained {
+        public static void main(String[] args) {
+          BasicOther b = new BasicOther(), b2 = new BasicOther();
+          b.set(new Other());
+          Other other = b.get();
+          b.f();
+        }
+      }
+    language: java
+    options:
+      - text: "Without a self-bound, any type argument works; nothing forces the curiously recurring form"
+        correct: true
+      - text: "It doesn't compile"
+        feedback: "It prints `Other`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-notselfbounded
+    prompt: |
+      Without a self-bound, which is allowed?
+    code: |
+      //: generics/NotSelfBounded.java
+
+      public class NotSelfBounded<T> {
+        T element;
+        NotSelfBounded<T> set(T arg) {
+          element = arg;
+          return this;
+        }
+        T get() { return element; }
+      }
+
+      class A2 extends NotSelfBounded<A2> {}
+      class B2 extends NotSelfBounded<A2> {}
+
+      class C2 extends NotSelfBounded<C2> {
+        C2 setAndGet(C2 arg) { set(arg); return get(); }
+      }
+
+      class D2 {}
+      // Now this is OK:
+      class E2 extends NotSelfBounded<D2> {}
+    language: java
+    options:
+      - text: "`class E2 extends NotSelfBounded<D2> {}` with an unrelated `D2`"
+        correct: true
+      - text: "Nothing new"
+        feedback: "The unbounded version accepts any type argument."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-selfbounding
+    prompt: |
+      `class SelfBounded<T extends SelfBounded<T>>`. Which is NOT allowed?
+    code: |
+      //: generics/SelfBounding.java
+
+      class SelfBounded<T extends SelfBounded<T>> {
+        T element;
+        SelfBounded<T> set(T arg) {
+          element = arg;
+          return this;
+        }
+        T get() { return element; }
+      }
+
+      class A extends SelfBounded<A> {}
+      class B extends SelfBounded<A> {} // Also OK
+
+      class C extends SelfBounded<C> {
+        C setAndGet(C arg) { set(arg); return get(); }
+      }
+
+      class D {}
+      // Can't do this:
+      // class E extends SelfBounded<D> {}
+      // Compile error: Type parameter D is not within its bound
+
+      // Alas, you can do this, so you can't force the idiom:
+      class F extends SelfBounded {}
+
+      public class SelfBounding {
+        public static void main(String[] args) {
+          A a = new A();
+          a.set(new A());
+          a = a.set(new A()).get();
+          a = a.get();
+          C c = new C();
+          c = c.setAndGet(new C());
+        }
+      }
+    language: java
+    options:
+      - text: "`class E extends SelfBounded<D> {}` where `D` is unrelated"
+        correct: true
+      - text: "`class B extends SelfBounded<A> {}` where `A extends SelfBounded<A>`"
+        feedback: "`A` meets the bound, so that's allowed."
+      - text: "`class F extends SelfBounded {}` (raw)"
+        feedback: "Raw use is allowed — so the idiom can't be fully enforced."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-selfboundingmethods
+    prompt: |
+      `static <T extends SelfBounded<T>> T f(T arg)` — what does it accept?
+    code: |
+      //: generics/SelfBoundingMethods.java
+
+      public class SelfBoundingMethods {
+        static <T extends SelfBounded<T>> T f(T arg) {
+          return arg.set(arg).get();
+        }
+        public static void main(String[] args) {
+          A a = f(new A());
+        }
+      }
+    language: java
+    options:
+      - text: "Only types that are self-bounded, like `A extends SelfBounded<A>`"
+        correct: true
+      - text: "Any object"
+        feedback: "The bound restricts `T`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-covariantreturntypes
+    prompt: |
+      `DerivedGetter extends OrdinaryGetter` and redeclares `Derived get()` (instead of `Base get()`). Is that allowed?
+    code: |
+      //: generics/CovariantReturnTypes.java
+
+      class Base {}
+      class Derived extends Base {}
+
+      interface OrdinaryGetter {
+        Base get();
+      }
+
+      interface DerivedGetter extends OrdinaryGetter {
+        // Return type of overridden method is allowed to vary:
+        Derived get();
+      }
+
+      public class CovariantReturnTypes {
+        void test(DerivedGetter d) {
+          Derived d2 = d.get();
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — an override may return a subtype (covariant return)"
+        correct: true
+      - text: "No — overrides must match exactly"
+        feedback: "Java 5 added covariant return types."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericsandreturntypes
+    prompt: |
+      `interface Getter extends GenericGetter<Getter>`. What does `g.get()` return?
+    code: |
+      //: generics/GenericsAndReturnTypes.java
+
+      interface GenericGetter<T extends GenericGetter<T>> {
+        T get();
+      }
+
+      interface Getter extends GenericGetter<Getter> {}
+
+      public class GenericsAndReturnTypes {
+        void test(Getter g) {
+          Getter result = g.get();
+          GenericGetter gg = g.get(); // Also the base type
+        }
+      }
+    language: java
+    options:
+      - text: "A `Getter` — the self-bound gives the exact type, like a covariant return"
+        correct: true
+      - text: "A `GenericGetter` only"
+        feedback: "It's the derived type, `Getter`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-ordinaryarguments
+    prompt: |
+      `Derived extends Base`. What does this print?
+    code: |
+      //: generics/OrdinaryArguments.java
+
+      class OrdinarySetter {
+        void set(Base base) {
+          System.out.println("OrdinarySetter.set(Base)");
+        }
+      }
+
+      class DerivedSetter extends OrdinarySetter {
+        void set(Derived derived) {
+          System.out.println("DerivedSetter.set(Derived)");
+        }
+      }
+
+      public class OrdinaryArguments {
+        public static void main(String[] args) {
+          Base base = new Base();
+          Derived derived = new Derived();
+          DerivedSetter ds = new DerivedSetter();
+          ds.set(derived);
+          ds.set(base); // Compiles: overloaded, not overridden!
+        }
+      }
+    language: java
+    options:
+      - text: "DerivedSetter.set(Derived)\nOrdinarySetter.set(Base)"
+        correct: true
+      - text: "DerivedSetter.set(Derived)\nDerivedSetter.set(Derived)"
+        feedback: "`set(Derived)` overloads `set(Base)`; it doesn't override it."
+      - text: "It doesn't compile — `ds.set(base)`"
+        feedback: "The inherited `set(Base)` is still available."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-plaingenericinheritance
+    prompt: |
+      `DerivedGS extends GenericSetter<Base>` and adds `set(Derived)`. What does this print?
+    code: |
+      //: generics/PlainGenericInheritance.java
+
+      class GenericSetter<T> { // Not self-bounded
+        void set(T arg){
+          System.out.println("GenericSetter.set(Base)");
+        }
+      }
+
+      class DerivedGS extends GenericSetter<Base> {
+        void set(Derived derived){
+          System.out.println("DerivedGS.set(Derived)");
+        }
+      }
+
+      public class PlainGenericInheritance {
+        public static void main(String[] args) {
+          Base base = new Base();
+          Derived derived = new Derived();
+          DerivedGS dgs = new DerivedGS();
+          dgs.set(derived);
+          dgs.set(base); // Compiles: overloaded, not overridden!
+        }
+      }
+    language: java
+    options:
+      - text: "DerivedGS.set(Derived)\nGenericSetter.set(Base)"
+        correct: true
+      - text: "DerivedGS.set(Derived)\nDerivedGS.set(Derived)"
+        feedback: "Still an overload: `set(Base)` is inherited."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-selfboundingandcovariantarguments
+    prompt: |
+      `Setter extends SelfBoundSetter<Setter>`. Why won't `s1.set(sbs)` compile with a raw `SelfBoundSetter`?
+    code: |
+      //: generics/SelfBoundingAndCovariantArguments.java
+
+      interface SelfBoundSetter<T extends SelfBoundSetter<T>> {
+        void set(T arg);
+      }
+
+      interface Setter extends SelfBoundSetter<Setter> {}
+
+      public class SelfBoundingAndCovariantArguments {
+        void testA(Setter s1, Setter s2, SelfBoundSetter sbs) {
+          s1.set(s2);
+          // s1.set(sbs); // Error:
+          // set(Setter) in SelfBoundSetter<Setter>
+          // cannot be applied to (SelfBoundSetter)
+        }
+      }
+    language: java
+    options:
+      - text: "`set` in `Setter` takes exactly a `Setter` — self-bounding gives covariant arguments, so there's no `set(base)` overload"
+        correct: true
+      - text: "`set` is private"
+        feedback: "It's an interface method."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-comparablepet
+    prompt: |
+      `ComparablePet implements Comparable<ComparablePet>`. What can a subclass `Cat` compare itself to?
+    code: |
+      //: generics/ComparablePet.java
+
+      public class ComparablePet
+      implements Comparable<ComparablePet> {
+        public int compareTo(ComparablePet arg) { return 0; }
+      }
+    language: java
+    options:
+      - text: "Any `ComparablePet` — it can't switch to `Comparable<Cat>`"
+        correct: true
+      - text: "Only `Cat`s"
+        feedback: "The base class fixed the type argument."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-hijackedinterface
+    prompt: |
+      Why won't `class Cat extends ComparablePet implements Comparable<Cat>` compile?
+    code: |
+      //: generics/HijackedInterface.java
+
+      class Cat extends ComparablePet implements Comparable<Cat>{
+        public int compareTo(Cat arg) { return 0; }
+      }
+    language: java
+    options:
+      - text: "`Comparable` can't be inherited with two different arguments, `<ComparablePet>` and `<Cat>`"
+        correct: true
+      - text: "`compareTo(Cat)` is the wrong name"
+        feedback: "The name's fine; the two parameterizations clash."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-restrictedcomparablepets
+    prompt: |
+      What can a subclass of `ComparablePet` do about `Comparable`?
+    code: |
+      //: generics/RestrictedComparablePets.java
+
+      class Hamster extends ComparablePet
+      implements Comparable<ComparablePet> {
+        public int compareTo(ComparablePet arg) { return 0; }
+      }
+
+      // Or just:
+
+      class Gecko extends ComparablePet {
+        public int compareTo(ComparablePet arg) { return 0; }
+      }
+    language: java
+    options:
+      - text: "Repeat `implements Comparable<ComparablePet>` (or nothing) and override `compareTo(ComparablePet)`"
+        correct: true
+      - text: "Implement `Comparable<Hamster>`"
+        feedback: "That's the clash."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

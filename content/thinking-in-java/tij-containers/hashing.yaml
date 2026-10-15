@@ -1,0 +1,568 @@
+title: "Hashing and hash codes"
+summary: "Why a key needs both hashCode and equals, how a hashed map works inside, writing a good hashCode, and weak references."
+duration: 8
+tags: [java, containers, hashCode, equals, HashMap, WeakHashMap, references]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 17, Hashing and hash codes; Holding references" }
+steps:
+  - type: explanation
+    title: "hashCode and equals"
+    body: |
+      A `HashMap` uses `hashCode()` to pick a bucket, then `equals()` to find the key in it.
+      `Object`'s versions use identity, so two "equal" objects you create are different keys — unless you override both, consistently.
+
+  - type: explanation
+    title: "Inside a hash map"
+    body: |
+      The hash code, modulo the table size, selects a bucket; each bucket is a short list of entries.
+      A good `hashCode` spreads values evenly: start with a constant like 17 and fold in each significant field with `37 * result + field`.
+      A `WeakHashMap` lets its keys be garbage-collected when nothing else refers to them.
+
+  - type: choice
+    id: tij-containers-groundhog
+    prompt: |
+      Two `new Groundhog(3)` objects — are they the same `HashMap` key?
+    code: |
+      //: containers/Groundhog.java
+      // Looks plausible, but doesn't work as a HashMap key.
+
+      public class Groundhog {
+        protected int number;
+        public Groundhog(int n) { number = n; }
+        public String toString() {
+          return "Groundhog #" + number;
+        }
+      }
+    language: java
+    options:
+      - text: "No — `Groundhog` inherits `Object`'s identity-based `hashCode` and `equals`"
+        correct: true
+      - text: "Yes — they have the same number"
+        feedback: "Nothing compares `number`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-groundhog2
+    prompt: |
+      Why does `equals` check `o instanceof Groundhog2`?
+    code: |
+      //: containers/Groundhog2.java
+      // A class that's used as a key in a HashMap
+      // must override hashCode() and equals().
+
+      public class Groundhog2 extends Groundhog {
+        public Groundhog2(int n) { super(n); }
+        public int hashCode() { return number; }
+        public boolean equals(Object o) {
+          return o instanceof Groundhog2 &&
+            (number == ((Groundhog2)o).number);
+        }
+      }
+    language: java
+    options:
+      - text: "`equals` takes any `Object`; it must return false for other types (and for `null`)"
+        correct: true
+      - text: "For speed"
+        feedback: "It's for correctness."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-prediction
+    prompt: |
+      When is each `Prediction`'s outcome decided?
+    code: |
+      //: containers/Prediction.java
+      // Predicting the weather with groundhogs.
+      import java.util.*;
+
+      public class Prediction {
+        private static Random rand = new Random(47);
+        private boolean shadow = rand.nextDouble() > 0.5;
+        public String toString() {
+          if(shadow)
+            return "Six more weeks of Winter!";
+          else
+            return "Early Spring!";
+        }
+      }
+    language: java
+    options:
+      - text: "When it's created: the `shadow` field is set from a shared seeded `Random`"
+        correct: true
+      - text: "Each time `toString()` is called"
+        feedback: "`toString` only reads the stored field."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-springdetector
+    prompt: |
+      The map has keys `Groundhog #0` … `#9`. A new `Groundhog(3)` is looked up. What is the last line printed? (`print` is `println`.)
+    code: |
+      //: containers/SpringDetector.java
+      // What will the weather be?
+      import java.lang.reflect.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class SpringDetector {
+        // Uses a Groundhog or class derived from Groundhog:
+        public static <T extends Groundhog>
+        void detectSpring(Class<T> type) throws Exception {
+          Constructor<T> ghog = type.getConstructor(int.class);
+          Map<Groundhog,Prediction> map =
+            new HashMap<Groundhog,Prediction>();
+          for(int i = 0; i < 10; i++)
+            map.put(ghog.newInstance(i), new Prediction());
+          print("map = " + map);
+          Groundhog gh = ghog.newInstance(3);
+          print("Looking up prediction for " + gh);
+          if(map.containsKey(gh))
+            print(map.get(gh));
+          else
+            print("Key not found: " + gh);
+        }
+        public static void main(String[] args) throws Exception {
+          detectSpring(Groundhog.class);
+        }
+      }
+    language: java
+    options:
+      - text: "Key not found: Groundhog #3"
+        correct: true
+      - text: "Early Spring!"
+        feedback: "`Groundhog` doesn't override `hashCode`/`equals`, so the new object matches no key."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-springdetector2
+    prompt: |
+      With `Groundhog2` (overriding `hashCode` and `equals`), what does looking up a new `Groundhog2(3)` find?
+    code: |
+      //: containers/SpringDetector2.java
+      // A working key.
+
+      public class SpringDetector2 {
+        public static void main(String[] args) throws Exception {
+          SpringDetector.detectSpring(Groundhog2.class);
+        }
+      }
+    language: java
+    options:
+      - text: "The stored prediction for groundhog #3"
+        correct: true
+      - text: "Key not found"
+        feedback: "Equal number now means equal key."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-mapentry
+    prompt: |
+      Why does `MapEntry.hashCode` combine the key's and value's hash codes with `^`?
+    code: |
+      //: containers/MapEntry.java
+      // A simple Map.Entry for sample Map implementations.
+      import java.util.*;
+
+      public class MapEntry<K,V> implements Map.Entry<K,V> {
+        private K key;
+        private V value;
+        public MapEntry(K key, V value) {
+          this.key = key;
+          this.value = value;
+        }
+        public K getKey() { return key; }
+        public V getValue() { return value; }
+        public V setValue(V v) {
+          V result = value;
+          value = v;
+          return result;
+        }
+        public int hashCode() {
+          return (key==null ? 0 : key.hashCode()) ^
+            (value==null ? 0 : value.hashCode());
+        }
+        public boolean equals(Object o) {
+          if(!(o instanceof MapEntry)) return false;
+          MapEntry me = (MapEntry)o;
+          return
+            (key == null ?
+             me.getKey() == null : key.equals(me.getKey())) &&
+            (value == null ?
+             me.getValue()== null : value.equals(me.getValue()));
+        }
+        public String toString() { return key + "=" + value; }
+      }
+    language: java
+    options:
+      - text: "That's the contract for `Map.Entry`: equal entries (same key and value) must have equal hash codes"
+        correct: true
+      - text: "For speed only"
+        feedback: "It follows the `Map.Entry` specification."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-slowmap
+    prompt: |
+      Why is `SlowMap` slow?
+    code: |
+      //: containers/SlowMap.java
+      // A Map implemented with ArrayLists.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class SlowMap<K,V> extends AbstractMap<K,V> {
+        private List<K> keys = new ArrayList<K>();
+        private List<V> values = new ArrayList<V>();
+        public V put(K key, V value) {
+          V oldValue = get(key); // The old value or null
+          if(!keys.contains(key)) {
+            keys.add(key);
+            values.add(value);
+          } else
+            values.set(keys.indexOf(key), value);
+          return oldValue;
+        }
+        public V get(Object key) { // key is type Object, not K
+          if(!keys.contains(key))
+            return null;
+          return values.get(keys.indexOf(key));
+        }
+        public Set<Map.Entry<K,V>> entrySet() {
+          Set<Map.Entry<K,V>> set= new HashSet<Map.Entry<K,V>>();
+          Iterator<K> ki = keys.iterator();
+          Iterator<V> vi = values.iterator();
+          while(ki.hasNext())
+            set.add(new MapEntry<K,V>(ki.next(), vi.next()));
+          return set;
+        }
+        public static void main(String[] args) {
+          SlowMap<String,String> m= new SlowMap<String,String>();
+          m.putAll(Countries.capitals(15));
+          System.out.println(m);
+          System.out.println(m.get("BULGARIA"));
+          System.out.println(m.entrySet());
+        }
+      }
+    language: java
+    options:
+      - text: "`get` searches the key list linearly — O(n) per lookup"
+        correct: true
+      - text: "It copies the lists on every `put`"
+        feedback: "The search is the cost."
+    explanation: |
+      `m.get("BULGARIA")` prints `null`: it isn't among the 15 countries.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-simplehashmap
+    prompt: |
+      How does `put` find where a key goes?
+    code: |
+      //: containers/SimpleHashMap.java
+      // A demonstration hashed Map.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class SimpleHashMap<K,V> extends AbstractMap<K,V> {
+        // Choose a prime number for the hash table
+        // size, to achieve a uniform distribution:
+        static final int SIZE = 997;
+        // You can't have a physical array of generics,
+        // but you can upcast to one:
+        @SuppressWarnings("unchecked")
+        LinkedList<MapEntry<K,V>>[] buckets =
+          new LinkedList[SIZE];
+        public V put(K key, V value) {
+          V oldValue = null;
+          int index = Math.abs(key.hashCode()) % SIZE;
+          if(buckets[index] == null)
+            buckets[index] = new LinkedList<MapEntry<K,V>>();
+          LinkedList<MapEntry<K,V>> bucket = buckets[index];
+          MapEntry<K,V> pair = new MapEntry<K,V>(key, value);
+          boolean found = false;
+          ListIterator<MapEntry<K,V>> it = bucket.listIterator();
+          while(it.hasNext()) {
+            MapEntry<K,V> iPair = it.next();
+            if(iPair.getKey().equals(key)) {
+              oldValue = iPair.getValue();
+              it.set(pair); // Replace old with new
+              found = true;
+              break;
+            }
+          }
+          if(!found)
+            buckets[index].add(pair);
+          return oldValue;
+        }
+        public V get(Object key) {
+          int index = Math.abs(key.hashCode()) % SIZE;
+          if(buckets[index] == null) return null;
+          for(MapEntry<K,V> iPair : buckets[index])
+            if(iPair.getKey().equals(key))
+              return iPair.getValue();
+          return null;
+        }
+        public Set<Map.Entry<K,V>> entrySet() {
+          Set<Map.Entry<K,V>> set= new HashSet<Map.Entry<K,V>>();
+          for(LinkedList<MapEntry<K,V>> bucket : buckets) {
+            if(bucket == null) continue;
+            for(MapEntry<K,V> mpair : bucket)
+              set.add(mpair);
+          }
+          return set;
+        }
+        public static void main(String[] args) {
+          SimpleHashMap<String,String> m =
+            new SimpleHashMap<String,String>();
+          m.putAll(Countries.capitals(25));
+          System.out.println(m);
+          System.out.println(m.get("ERITREA"));
+          System.out.println(m.entrySet());
+        }
+      }
+    language: java
+    options:
+      - text: "`Math.abs(key.hashCode()) % SIZE` picks a bucket; then it searches that bucket's list with `equals`"
+        correct: true
+      - text: "It searches every bucket"
+        feedback: "Only the one bucket the hash selects."
+      - text: "It sorts the keys"
+        feedback: "No sorting — that's a `TreeMap`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-stringhashcode
+    prompt: |
+      `hellos` holds two separate `String` objects, both `"Hello"`. What does this print?
+    code: |
+      //: containers/StringHashCode.java
+
+      public class StringHashCode {
+        public static void main(String[] args) {
+          String[] hellos = "Hello Hello".split(" ");
+          System.out.println(hellos[0].hashCode());
+          System.out.println(hellos[1].hashCode());
+        }
+      }
+    language: java
+    options:
+      - text: "69609650\n69609650"
+        correct: true
+      - text: "Two different numbers"
+        feedback: "`String.hashCode` depends on the characters, not the object."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-countedstring
+    prompt: |
+      Five `CountedString("hi")` objects get ids 1–5. Why does each lookup find its own value? (`print` is `println`.)
+    code: |
+      //: containers/CountedString.java
+      // Creating a good hashCode().
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class CountedString {
+        private static List<String> created =
+          new ArrayList<String>();
+        private String s;
+        private int id = 0;
+        public CountedString(String str) {
+          s = str;
+          created.add(s);
+          // id is the total number of instances
+          // of this string in use by CountedString:
+          for(String s2 : created)
+            if(s2.equals(s))
+              id++;
+        }
+        public String toString() {
+          return "String: " + s + " id: " + id +
+            " hashCode(): " + hashCode();
+        }
+        public int hashCode() {
+          // The very simple approach:
+          // return s.hashCode() * id;
+          // Using Joshua Bloch's recipe:
+          int result = 17;
+          result = 37 * result + s.hashCode();
+          result = 37 * result + id;
+          return result;
+        }
+        public boolean equals(Object o) {
+          return o instanceof CountedString &&
+            s.equals(((CountedString)o).s) &&
+            id == ((CountedString)o).id;
+        }
+        public static void main(String[] args) {
+          Map<CountedString,Integer> map =
+            new HashMap<CountedString,Integer>();
+          CountedString[] cs = new CountedString[5];
+          for(int i = 0; i < cs.length; i++) {
+            cs[i] = new CountedString("hi");
+            map.put(cs[i], i); // Autobox int -> Integer
+          }
+          print(map);
+          for(CountedString cstring : cs) {
+            print("Looking up " + cstring);
+            print(map.get(cstring));
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`hashCode` and `equals` both use the string and the id, so each is a distinct, findable key"
+        correct: true
+      - text: "They all collide on one entry"
+        feedback: "The id makes each key different."
+      - text: "`HashMap` compares by identity"
+        feedback: "It uses `hashCode` and `equals`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-canonicalmapping
+    prompt: |
+      Every third key is kept in `keys[]`. After `System.gc()`, which entries can the `WeakHashMap` drop?
+    code: |
+      //: containers/CanonicalMapping.java
+      // Demonstrates WeakHashMap.
+      import java.util.*;
+
+      class Element {
+        private String ident;
+        public Element(String id) { ident = id; }
+        public String toString() { return ident; }
+        public int hashCode() { return ident.hashCode(); }
+        public boolean equals(Object r) {
+          return r instanceof Element &&
+            ident.equals(((Element)r).ident);
+        }
+        protected void finalize() {
+          System.out.println("Finalizing " +
+            getClass().getSimpleName() + " " + ident);
+        }
+      }
+
+      class Key extends Element {
+        public Key(String id) { super(id); }
+      }
+
+      class Value extends Element {
+        public Value(String id) { super(id); }
+      }
+
+      public class CanonicalMapping {
+        public static void main(String[] args) {
+          int size = 1000;
+          // Or, choose size via the command line:
+          if(args.length > 0)
+            size = new Integer(args[0]);
+          Key[] keys = new Key[size];
+          WeakHashMap<Key,Value> map =
+            new WeakHashMap<Key,Value>();
+          for(int i = 0; i < size; i++) {
+            Key k = new Key(Integer.toString(i));
+            Value v = new Value(Integer.toString(i));
+            if(i % 3 == 0)
+              keys[i] = k; // Save as "real" references
+            map.put(k, v);
+          }
+          System.gc();
+        }
+      }
+    language: java
+    options:
+      - text: "Those whose keys aren't stored in `keys[]` — nothing else refers to them"
+        correct: true
+      - text: "All of them"
+        feedback: "Keys still referenced from `keys[]` stay."
+      - text: "None — maps hold strong references"
+        feedback: "A `WeakHashMap` holds its keys weakly."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-references
+    prompt: |
+      Which reference type is cleared most readily by the garbage collector?
+    code: |
+      //: containers/References.java
+      // Demonstrates Reference objects
+      import java.lang.ref.*;
+      import java.util.*;
+
+      class VeryBig {
+        private static final int SIZE = 10000;
+        private long[] la = new long[SIZE];
+        private String ident;
+        public VeryBig(String id) { ident = id; }
+        public String toString() { return ident; }
+        protected void finalize() {
+          System.out.println("Finalizing " + ident);
+        }
+      }
+
+      public class References {
+        private static ReferenceQueue<VeryBig> rq =
+          new ReferenceQueue<VeryBig>();
+        public static void checkQueue() {
+          Reference<? extends VeryBig> inq = rq.poll();
+          if(inq != null)
+            System.out.println("In queue: " + inq.get());
+        }
+        public static void main(String[] args) {
+          int size = 10;
+          // Or, choose size via the command line:
+          if(args.length > 0)
+            size = new Integer(args[0]);
+          LinkedList<SoftReference<VeryBig>> sa =
+            new LinkedList<SoftReference<VeryBig>>();
+          for(int i = 0; i < size; i++) {
+            sa.add(new SoftReference<VeryBig>(
+              new VeryBig("Soft " + i), rq));
+            System.out.println("Just created: " + sa.getLast());
+            checkQueue();
+          }
+          LinkedList<WeakReference<VeryBig>> wa =
+            new LinkedList<WeakReference<VeryBig>>();
+          for(int i = 0; i < size; i++) {
+            wa.add(new WeakReference<VeryBig>(
+              new VeryBig("Weak " + i), rq));
+            System.out.println("Just created: " + wa.getLast());
+            checkQueue();
+          }
+          SoftReference<VeryBig> s =
+            new SoftReference<VeryBig>(new VeryBig("Soft"));
+          WeakReference<VeryBig> w =
+            new WeakReference<VeryBig>(new VeryBig("Weak"));
+          System.gc();
+          LinkedList<PhantomReference<VeryBig>> pa =
+            new LinkedList<PhantomReference<VeryBig>>();
+          for(int i = 0; i < size; i++) {
+            pa.add(new PhantomReference<VeryBig>(
+              new VeryBig("Phantom " + i), rq));
+            System.out.println("Just created: " + pa.getLast());
+            checkQueue();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`WeakReference` (and `PhantomReference`, which never lets you `get` the object at all)"
+        correct: true
+      - text: "`SoftReference`"
+        feedback: "Soft references are kept until memory runs low."
+      - text: "A normal reference"
+        feedback: "Strong references are never cleared while reachable."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

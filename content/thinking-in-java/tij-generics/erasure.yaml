@@ -1,0 +1,525 @@
+title: "Erasure and its workarounds"
+summary: "Generic types are erased at run time — what you lose, and how bounds, type tokens and factories bring it back."
+duration: 8
+tags: [java, generics, erasure, type token, factory]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, The mystery of erasure; Compensating for erasure" }
+steps:
+  - type: explanation
+    title: "Erasure"
+    body: |
+      At run time `ArrayList<String>` and `ArrayList<Integer>` are the same class; `T` is erased to its bound, or to `Object`.
+      So inside a generic class you can't call methods on `T` (unless bounded), test `instanceof T`, or write `new T()`.
+
+  - type: explanation
+    title: "Working around it"
+    body: |
+      A bound like `<T extends HasF>` erases to `HasF`, so you can call its methods.
+      Pass a `Class<T>` type token to test types and create instances, or pass a factory object for things without a no-arg constructor.
+
+  - type: predict
+    id: tij-generics-erasedtypeequivalence
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/ErasedTypeEquivalence.java
+      import java.util.*;
+
+      public class ErasedTypeEquivalence {
+        public static void main(String[] args) {
+          Class c1 = new ArrayList<String>().getClass();
+          Class c2 = new ArrayList<Integer>().getClass();
+          System.out.println(c1 == c2);
+        }
+      }
+    language: java
+    options:
+      - text: "true"
+        correct: true
+      - text: "false"
+        feedback: "Erasure: both are just `ArrayList` at run time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-lostinformation
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/LostInformation.java
+      import java.util.*;
+
+      class Frob {}
+      class Fnorkle {}
+      class Quark<Q> {}
+      class Particle<POSITION,MOMENTUM> {}
+
+      public class LostInformation {
+        public static void main(String[] args) {
+          List<Frob> list = new ArrayList<Frob>();
+          Map<Frob,Fnorkle> map = new HashMap<Frob,Fnorkle>();
+          Quark<Fnorkle> quark = new Quark<Fnorkle>();
+          Particle<Long,Double> p = new Particle<Long,Double>();
+          System.out.println(Arrays.toString(
+            list.getClass().getTypeParameters()));
+          System.out.println(Arrays.toString(
+            map.getClass().getTypeParameters()));
+          System.out.println(Arrays.toString(
+            quark.getClass().getTypeParameters()));
+          System.out.println(Arrays.toString(
+            p.getClass().getTypeParameters()));
+        }
+      }
+    language: java
+    options:
+      - text: "[E]\n[K, V]\n[Q]\n[POSITION, MOMENTUM]"
+        correct: true
+      - text: "[Frob]\n[Frob, Fnorkle]\n[Fnorkle]\n[Long, Double]"
+        feedback: "`getTypeParameters()` gives the declared placeholder names; the actual type arguments are erased."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-hasf
+    prompt: |
+      `HasF` has a method `f()`. Inside `class Manipulator<T>`, can you call `obj.f()` on a field `T obj`?
+    code: |
+      //: generics/HasF.java
+
+      public class HasF {
+        public void f() { System.out.println("HasF.f()"); }
+      }
+    language: java
+    options:
+      - text: "No — `T` erases to `Object`, which has no `f()`; you need `<T extends HasF>`"
+        correct: true
+      - text: "Yes, if `T` is `HasF` at the call site"
+        feedback: "The class is compiled once, without knowing `T`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-manipulation
+    prompt: |
+      `HasF` has `f()`. Does this compile?
+    code: |
+      //: generics/Manipulation.java
+
+      class Manipulator<T> {
+        private T obj;
+        public Manipulator(T x) { obj = x; }
+        public void manipulate() { obj.f(); }
+      }
+
+      public class Manipulation {
+        public static void main(String[] args) {
+          HasF hf = new HasF();
+          Manipulator<HasF> manipulator =
+            new Manipulator<HasF>(hf);
+          manipulator.manipulate();
+        }
+      }
+    language: java
+    options:
+      - text: "No — inside `Manipulator<T>`, `obj.f()` can't be resolved, since `T` erases to `Object`"
+        correct: true
+      - text: "Yes — `T` is `HasF`"
+        feedback: "Only `main` knows that; `Manipulator` is compiled for any `T`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-manipulator2
+    prompt: |
+      Why does `obj.f()` compile now?
+    code: |
+      //: generics/Manipulator2.java
+
+      class Manipulator2<T extends HasF> {
+        private T obj;
+        public Manipulator2(T x) { obj = x; }
+        public void manipulate() { obj.f(); }
+      }
+    language: java
+    options:
+      - text: "`T extends HasF` — `T` erases to `HasF`, which has `f()`"
+        correct: true
+      - text: "Because `obj` is private"
+        feedback: "The bound is what makes it compile."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-manipulator3
+    prompt: |
+      How does `Manipulator3` compare with `Manipulator2<T extends HasF>`?
+    code: |
+      //: generics/Manipulator3.java
+
+      class Manipulator3 {
+        private HasF obj;
+        public Manipulator3(HasF x) { obj = x; }
+        public void manipulate() { obj.f(); }
+      }
+    language: java
+    options:
+      - text: "Same behavior without generics — when you only call `HasF` methods, plain polymorphism is enough"
+        correct: true
+      - text: "It can't call `f()`"
+        feedback: "It holds a `HasF`."
+      - text: "It's less type-safe"
+        feedback: "It's equally checked."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-returngenerictype
+    prompt: |
+      When does `<T extends HasF>` give something that a plain `HasF` field can't?
+    code: |
+      //: generics/ReturnGenericType.java
+
+      class ReturnGenericType<T extends HasF> {
+        private T obj;
+        public ReturnGenericType(T x) { obj = x; }
+        public T get() { return obj; }
+      }
+    language: java
+    options:
+      - text: "When you return `T`: callers get back the exact subtype, not just `HasF`"
+        correct: true
+      - text: "Never"
+        feedback: "Returning `T` preserves the precise type for the caller."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-arraymaker
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/ArrayMaker.java
+      import java.lang.reflect.*;
+      import java.util.*;
+
+      public class ArrayMaker<T> {
+        private Class<T> kind;
+        public ArrayMaker(Class<T> kind) { this.kind = kind; }
+        @SuppressWarnings("unchecked")
+        T[] create(int size) {
+          return (T[])Array.newInstance(kind, size);
+        }
+        public static void main(String[] args) {
+          ArrayMaker<String> stringMaker =
+            new ArrayMaker<String>(String.class);
+          String[] stringArray = stringMaker.create(9);
+          System.out.println(Arrays.toString(stringArray));
+        }
+      }
+    language: java
+    options:
+      - text: "[null, null, null, null, null, null, null, null, null]"
+        correct: true
+      - text: "[, , , , , , , , ]"
+        feedback: "A new `String[]` holds null references."
+      - text: "It throws `ClassCastException`"
+        feedback: "`Array.newInstance(kind, size)` creates a real `String[]`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-listmaker
+    prompt: |
+      At run time, what does `new ArrayList<T>()` inside `create()` know about `T`?
+    code: |
+      //: generics/ListMaker.java
+      import java.util.*;
+
+      public class ListMaker<T> {
+        List<T> create() { return new ArrayList<T>(); }
+        public static void main(String[] args) {
+          ListMaker<String> stringMaker= new ListMaker<String>();
+          List<String> stringList = stringMaker.create();
+        }
+      }
+    language: java
+    options:
+      - text: "Nothing — it's just an `ArrayList`; the type only matters at compile time"
+        correct: true
+      - text: "That `T` is `String`"
+        feedback: "`T` is erased."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-filledlistmaker
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/FilledListMaker.java
+      import java.util.*;
+
+      public class FilledListMaker<T> {
+        List<T> create(T t, int n) {
+          List<T> result = new ArrayList<T>();
+          for(int i = 0; i < n; i++)
+            result.add(t);
+          return result;
+        }
+        public static void main(String[] args) {
+          FilledListMaker<String> stringMaker =
+            new FilledListMaker<String>();
+          List<String> list = stringMaker.create("Hello", 4);
+          System.out.println(list);
+        }
+      }
+    language: java
+    options:
+      - text: "[Hello, Hello, Hello, Hello]"
+        correct: true
+      - text: "[Hello]"
+        feedback: "It adds `t` `n` times."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-erased
+    prompt: |
+      Which of these is allowed for a type parameter `T`?
+    code: |
+      //: generics/Erased.java
+
+      public class Erased<T> {
+        private final int SIZE = 100;
+        public static void f(Object arg) {
+          if(arg instanceof T) {}          // Error
+          T var = new T();                 // Error
+          T[] array = new T[SIZE];         // Error
+          T[] array = (T)new Object[SIZE]; // Unchecked warning
+        }
+      }
+    language: java
+    options:
+      - text: "Casting to `T[]` (with an unchecked warning)"
+        correct: true
+      - text: "`arg instanceof T`"
+        feedback: "The type isn't known at run time."
+      - text: "`new T()`"
+        feedback: "There's no way to know which constructor to call."
+    explanation: |
+      Here javac also complains that `T` is used in a static method — a static method can't see the class's type parameter.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-erasureandinheritance
+    prompt: |
+      `Derived2 extends GenericBase` (raw). What do you get?
+    code: |
+      //: generics/ErasureAndInheritance.java
+
+      class GenericBase<T> {
+        private T element;
+        public void set(T arg) { arg = element; }
+        public T get() { return element; }
+      }
+
+      class Derived1<T> extends GenericBase<T> {}
+
+      class Derived2 extends GenericBase {} // No warning
+
+      // class Derived3 extends GenericBase<?> {}
+      // Strange error:
+      //   unexpected type found : ?
+      //   required: class or interface without bounds
+
+      public class ErasureAndInheritance {
+        @SuppressWarnings("unchecked")
+        public static void main(String[] args) {
+          Derived2 d2 = new Derived2();
+          Object obj = d2.get();
+          d2.set(obj); // Warning here!
+        }
+      }
+    language: java
+    options:
+      - text: "`get()` returns `Object`, and `set` gives an unchecked warning"
+        correct: true
+      - text: "A compile error"
+        feedback: "Extending a raw type is allowed — for compatibility."
+      - text: "`T` defaults to `String`"
+        feedback: "A raw type means no type argument at all."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-classtypecapture
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/ClassTypeCapture.java
+
+      class Building {}
+      class House extends Building {}
+
+      public class ClassTypeCapture<T> {
+        Class<T> kind;
+        public ClassTypeCapture(Class<T> kind) {
+          this.kind = kind;
+        }
+        public boolean f(Object arg) {
+          return kind.isInstance(arg);
+        }
+        public static void main(String[] args) {
+          ClassTypeCapture<Building> ctt1 =
+            new ClassTypeCapture<Building>(Building.class);
+          System.out.println(ctt1.f(new Building()));
+          System.out.println(ctt1.f(new House()));
+          ClassTypeCapture<House> ctt2 =
+            new ClassTypeCapture<House>(House.class);
+          System.out.println(ctt2.f(new Building()));
+          System.out.println(ctt2.f(new House()));
+        }
+      }
+    language: java
+    options:
+      - text: "true\ntrue\nfalse\ntrue"
+        correct: true
+      - text: "true\nfalse\nfalse\ntrue"
+        feedback: "A `House` is a `Building`, so `isInstance` is true."
+      - text: "true\ntrue\ntrue\ntrue"
+        feedback: "A plain `Building` isn't a `House`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-instantiategenerictype
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: generics/InstantiateGenericType.java
+      import static net.mindview.util.Print.*;
+
+      class ClassAsFactory<T> {
+        T x;
+        public ClassAsFactory(Class<T> kind) {
+          try {
+            x = kind.newInstance();
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+
+      class Employee {}
+
+      public class InstantiateGenericType {
+        public static void main(String[] args) {
+          ClassAsFactory<Employee> fe =
+            new ClassAsFactory<Employee>(Employee.class);
+          print("ClassAsFactory<Employee> succeeded");
+          try {
+            ClassAsFactory<Integer> fi =
+              new ClassAsFactory<Integer>(Integer.class);
+          } catch(Exception e) {
+            print("ClassAsFactory<Integer> failed");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "ClassAsFactory<Employee> succeeded\nClassAsFactory<Integer> failed"
+        correct: true
+      - text: "ClassAsFactory<Employee> succeeded"
+        feedback: "`Integer` has no no-arg constructor, so `newInstance` throws."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-factoryconstraint
+    prompt: |
+      Why use a factory object instead of `Class<T>.newInstance()`?
+    code: |
+      //: generics/FactoryConstraint.java
+
+      interface FactoryI<T> {
+        T create();
+      }
+
+      class Foo2<T> {
+        private T x;
+        public <F extends FactoryI<T>> Foo2(F factory) {
+          x = factory.create();
+        }
+        // ...
+      }
+
+      class IntegerFactory implements FactoryI<Integer> {
+        public Integer create() {
+          return new Integer(0);
+        }
+      }
+
+      class Widget {
+        public static class Factory implements FactoryI<Widget> {
+          public Widget create() {
+            return new Widget();
+          }
+        }
+      }
+
+      public class FactoryConstraint {
+        public static void main(String[] args) {
+          new Foo2<Integer>(new IntegerFactory());
+          new Foo2<Widget>(new Widget.Factory());
+        }
+      }
+    language: java
+    options:
+      - text: "The compiler checks the factory, and it works for types like `Integer` with no no-arg constructor"
+        correct: true
+      - text: "It's faster"
+        feedback: "The main gain is compile-time checking."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-creatorgeneric
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/CreatorGeneric.java
+
+      abstract class GenericWithCreate<T> {
+        final T element;
+        GenericWithCreate() { element = create(); }
+        abstract T create();
+      }
+
+      class X {}
+
+      class Creator extends GenericWithCreate<X> {
+        X create() { return new X(); }
+        void f() {
+          System.out.println(element.getClass().getSimpleName());
+        }
+      }
+
+      public class CreatorGeneric {
+        public static void main(String[] args) {
+          Creator c = new Creator();
+          c.f();
+        }
+      }
+    language: java
+    options:
+      - text: "X"
+        correct: true
+      - text: "T"
+        feedback: "`element` is an `X`, created by `Creator.create()`."
+      - text: "null"
+        feedback: "The base constructor calls `create()`, which the subclass implements."
+    explanation: |
+      That's the Template Method pattern: the base class decides when, the subclass decides what.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

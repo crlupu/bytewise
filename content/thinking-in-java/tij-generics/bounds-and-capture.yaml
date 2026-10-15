@@ -1,0 +1,644 @@
+title: "Bounds, unbounded wildcards and capture"
+summary: "Multiple bounds, what raw types and <?> really mean, capture conversion, and the limits erasure puts on overloading and interfaces."
+duration: 8
+tags: [java, generics, bounds, wildcards, capture conversion, raw types]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Bounds; Unbounded wildcards; Capture conversion; Issues" }
+steps:
+  - type: explanation
+    title: "Bounds"
+    body: |
+      `<T extends Dimension & HasColor & Weight>` — at most one class, written first, then any number of interfaces.
+      The bound lets you call those types' methods on `T`.
+      Bounds are inherited: a subclass can narrow them further.
+
+  - type: explanation
+    title: "Raw types, <?> and capture"
+    body: |
+      A raw `Holder` turns off checking (with warnings); `Holder<?>` means "a Holder of some specific type I don't know" — you can read `Object`s but not set anything.
+      Passing a `Holder<?>` to a generic method `f1(Holder<T>)` captures the unknown type as `T`.
+      After erasure, `f(List<T>)` and `f(List<W>)` are the same method, so they can't both exist.
+
+  - type: choice
+    id: tij-generics-basicbounds
+    prompt: |
+      Why doesn't `ColoredDimension<T extends HasColor & Dimension>` compile?
+    code: |
+      //: generics/BasicBounds.java
+
+      interface HasColor { java.awt.Color getColor(); }
+
+      class Colored<T extends HasColor> {
+        T item;
+        Colored(T item) { this.item = item; }
+        T getItem() { return item; }
+        // The bound allows you to call a method:
+        java.awt.Color color() { return item.getColor(); }
+      }
+
+      class Dimension { public int x, y, z; }
+
+      // This won't work -- class must be first, then interfaces:
+      // class ColoredDimension<T extends HasColor & Dimension> {
+
+      // Multiple bounds:
+      class ColoredDimension<T extends Dimension & HasColor> {
+        T item;
+        ColoredDimension(T item) { this.item = item; }
+        T getItem() { return item; }
+        java.awt.Color color() { return item.getColor(); }
+        int getX() { return item.x; }
+        int getY() { return item.y; }
+        int getZ() { return item.z; }
+      }
+
+      interface Weight { int weight(); }
+
+      // As with inheritance, you can have only one
+      // concrete class but multiple interfaces:
+      class Solid<T extends Dimension & HasColor & Weight> {
+        T item;
+        Solid(T item) { this.item = item; }
+        T getItem() { return item; }
+        java.awt.Color color() { return item.getColor(); }
+        int getX() { return item.x; }
+        int getY() { return item.y; }
+        int getZ() { return item.z; }
+        int weight() { return item.weight(); }
+      }
+
+      class Bounded
+      extends Dimension implements HasColor, Weight {
+        public java.awt.Color getColor() { return null; }
+        public int weight() { return 0; }
+      }
+
+      public class BasicBounds {
+        public static void main(String[] args) {
+          Solid<Bounded> solid =
+            new Solid<Bounded>(new Bounded());
+          solid.color();
+          solid.getY();
+          solid.weight();
+        }
+      }
+    language: java
+    options:
+      - text: "The class (`Dimension`) must come first in a bound list, then the interfaces"
+        correct: true
+      - text: "You can't have two bounds"
+        feedback: "`Dimension & HasColor` is fine."
+      - text: "`HasColor` isn't an interface"
+        feedback: "It is; the order is the problem."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-inheritbounds
+    prompt: |
+      `Solid2<T extends Dimension & HasColor & Weight>` extends `ColoredDimension2<T>`. What does it inherit?
+    code: |
+      //: generics/InheritBounds.java
+
+      class HoldItem<T> {
+        T item;
+        HoldItem(T item) { this.item = item; }
+        T getItem() { return item; }
+      }
+
+      class Colored2<T extends HasColor> extends HoldItem<T> {
+        Colored2(T item) { super(item); }
+        java.awt.Color color() { return item.getColor(); }
+      }
+
+      class ColoredDimension2<T extends Dimension & HasColor>
+      extends Colored2<T> {
+        ColoredDimension2(T item) {  super(item); }
+        int getX() { return item.x; }
+        int getY() { return item.y; }
+        int getZ() { return item.z; }
+      }
+
+      class Solid2<T extends Dimension & HasColor & Weight>
+      extends ColoredDimension2<T> {
+        Solid2(T item) {  super(item); }
+        int weight() { return item.weight(); }
+      }
+
+      public class InheritBounds {
+        public static void main(String[] args) {
+          Solid2<Bounded> solid2 =
+            new Solid2<Bounded>(new Bounded());
+          solid2.color();
+          solid2.getY();
+          solid2.weight();
+        }
+      }
+    language: java
+    options:
+      - text: "`color()`, `getX/Y/Z()` from the bases, and it adds `weight()` — each level adds a bound"
+        correct: true
+      - text: "Nothing — bounds aren't inherited"
+        feedback: "Each subclass passes `T` up and adds requirements."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-epicbattle
+    prompt: |
+      Which declaration isn't allowed?
+    code: |
+      //: generics/EpicBattle.java
+      // Demonstrating bounds in Java generics.
+      import java.util.*;
+
+      interface SuperPower {}
+      interface XRayVision extends SuperPower {
+        void seeThroughWalls();
+      }
+      interface SuperHearing extends SuperPower {
+        void hearSubtleNoises();
+      }
+      interface SuperSmell extends SuperPower {
+        void trackBySmell();
+      }
+
+      class SuperHero<POWER extends SuperPower> {
+        POWER power;
+        SuperHero(POWER power) { this.power = power; }
+        POWER getPower() { return power; }
+      }
+
+      class SuperSleuth<POWER extends XRayVision>
+      extends SuperHero<POWER> {
+        SuperSleuth(POWER power) { super(power); }
+        void see() { power.seeThroughWalls(); }
+      }
+
+      class CanineHero<POWER extends SuperHearing & SuperSmell>
+      extends SuperHero<POWER> {
+        CanineHero(POWER power) { super(power); }
+        void hear() { power.hearSubtleNoises(); }
+        void smell() { power.trackBySmell(); }
+      }
+
+      class SuperHearSmell implements SuperHearing, SuperSmell {
+        public void hearSubtleNoises() {}
+        public void trackBySmell() {}
+      }
+
+      class DogBoy extends CanineHero<SuperHearSmell> {
+        DogBoy() { super(new SuperHearSmell()); }
+      }
+
+      public class EpicBattle {
+        // Bounds in generic methods:
+        static <POWER extends SuperHearing>
+        void useSuperHearing(SuperHero<POWER> hero) {
+          hero.getPower().hearSubtleNoises();
+        }
+        static <POWER extends SuperHearing & SuperSmell>
+        void superFind(SuperHero<POWER> hero) {
+          hero.getPower().hearSubtleNoises();
+          hero.getPower().trackBySmell();
+        }
+        public static void main(String[] args) {
+          DogBoy dogBoy = new DogBoy();
+          useSuperHearing(dogBoy);
+          superFind(dogBoy);
+          // You can do this:
+          List<? extends SuperHearing> audioBoys;
+          // But you can't do this:
+          // List<? extends SuperHearing & SuperSmell> dogBoys;
+        }
+      }
+    language: java
+    options:
+      - text: "`List<? extends SuperHearing & SuperSmell> dogBoys;`"
+        correct: true
+      - text: "`List<? extends SuperHearing> audioBoys;`"
+        feedback: "A wildcard can have one bound."
+      - text: "`static <POWER extends SuperHearing & SuperSmell> void superFind(…)`"
+        feedback: "Type parameters may have multiple bounds."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-unboundedwildcards1
+    prompt: |
+      Which assignment gives an unchecked warning?
+    code: |
+      //: generics/UnboundedWildcards1.java
+      import java.util.*;
+
+      public class UnboundedWildcards1 {
+        static List list1;
+        static List<?> list2;
+        static List<? extends Object> list3;
+        static void assign1(List list) {
+          list1 = list;
+          list2 = list;
+          // list3 = list; // Warning: unchecked conversion
+          // Found: List, Required: List<? extends Object>
+        }
+        static void assign2(List<?> list) {
+          list1 = list;
+          list2 = list;
+          list3 = list;
+        }
+        static void assign3(List<? extends Object> list) {
+          list1 = list;
+          list2 = list;
+          list3 = list;
+        }
+        public static void main(String[] args) {
+          assign1(new ArrayList());
+          assign2(new ArrayList());
+          // assign3(new ArrayList()); // Warning:
+          // Unchecked conversion. Found: ArrayList
+          // Required: List<? extends Object>
+          assign1(new ArrayList<String>());
+          assign2(new ArrayList<String>());
+          assign3(new ArrayList<String>());
+          // Both forms are acceptable as List<?>:
+          List<?> wildList = new ArrayList();
+          wildList = new ArrayList<String>();
+          assign1(wildList);
+          assign2(wildList);
+          assign3(wildList);
+        }
+      }
+    language: java
+    options:
+      - text: "A raw `List` to a `List<? extends Object>`"
+        correct: true
+      - text: "A raw `List` to a `List<?>`"
+        feedback: "Raw to `<?>` is allowed without warning."
+      - text: "A `List<String>` to a `List<?>`"
+        feedback: "Any parameterized list is a `List<?>`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-unboundedwildcards2
+    prompt: |
+      `Map<String,?>` vs a raw `Map` — what's the difference?
+    code: |
+      //: generics/UnboundedWildcards2.java
+      import java.util.*;
+
+      public class UnboundedWildcards2 {
+        static Map map1;
+        static Map<?,?> map2;
+        static Map<String,?> map3;
+        static void assign1(Map map) { map1 = map; }
+        static void assign2(Map<?,?> map) { map2 = map; }
+        static void assign3(Map<String,?> map) { map3 = map; }
+        public static void main(String[] args) {
+          assign1(new HashMap());
+          assign2(new HashMap());
+          // assign3(new HashMap()); // Warning:
+          // Unchecked conversion. Found: HashMap
+          // Required: Map<String,?>
+          assign1(new HashMap<String,Integer>());
+          assign2(new HashMap<String,Integer>());
+          assign3(new HashMap<String,Integer>());
+        }
+      }
+    language: java
+    options:
+      - text: "`Map<String,?>` promises `String` keys; passing a raw `HashMap` gives an unchecked warning"
+        correct: true
+      - text: "None"
+        feedback: "Partly specifying the types carries information the raw type doesn't."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-wildcards
+    prompt: |
+      Inside `unboundedArg(Holder<?> holder, Object arg)`, what can you do?
+    code: |
+      //: generics/Wildcards.java
+      // Exploring the meaning of wildcards.
+
+      public class Wildcards {
+         // Raw argument:
+        static void rawArgs(Holder holder, Object arg) {
+          // holder.set(arg); // Warning:
+          //   Unchecked call to set(T) as a
+          //   member of the raw type Holder
+          // holder.set(new Wildcards()); // Same warning
+
+          // Can't do this; don't have any 'T':
+          // T t = holder.get();
+
+          // OK, but type information has been lost:
+          Object obj = holder.get();
+        }
+        // Similar to rawArgs(), but errors instead of warnings:
+        static void unboundedArg(Holder<?> holder, Object arg) {
+          // holder.set(arg); // Error:
+          //   set(capture of ?) in Holder<capture of ?>
+          //   cannot be applied to (Object)
+          // holder.set(new Wildcards()); // Same error
+
+          // Can't do this; don't have any 'T':
+          // T t = holder.get();
+
+          // OK, but type information has been lost:
+          Object obj = holder.get();
+        }
+        static <T> T exact1(Holder<T> holder) {
+          T t = holder.get();
+          return t;
+        }
+        static <T> T exact2(Holder<T> holder, T arg) {
+          holder.set(arg);
+          T t = holder.get();
+          return t;
+        }
+        static <T>
+        T wildSubtype(Holder<? extends T> holder, T arg) {
+          // holder.set(arg); // Error:
+          //   set(capture of ? extends T) in
+          //   Holder<capture of ? extends T>
+          //   cannot be applied to (T)
+          T t = holder.get();
+          return t;
+        }
+        static <T>
+        void wildSupertype(Holder<? super T> holder, T arg) {
+          holder.set(arg);
+          // T t = holder.get();  // Error:
+          //   Incompatible types: found Object, required T
+
+          // OK, but type information has been lost:
+          Object obj = holder.get();
+        }
+        public static void main(String[] args) {
+          Holder raw = new Holder<Long>();
+          // Or:
+          raw = new Holder();
+          Holder<Long> qualified = new Holder<Long>();
+          Holder<?> unbounded = new Holder<Long>();
+          Holder<? extends Long> bounded = new Holder<Long>();
+          Long lng = 1L;
+
+          rawArgs(raw, lng);
+          rawArgs(qualified, lng);
+          rawArgs(unbounded, lng);
+          rawArgs(bounded, lng);
+
+          unboundedArg(raw, lng);
+          unboundedArg(qualified, lng);
+          unboundedArg(unbounded, lng);
+          unboundedArg(bounded, lng);
+
+          // Object r1 = exact1(raw); // Warnings:
+          //   Unchecked conversion from Holder to Holder<T>
+          //   Unchecked method invocation: exact1(Holder<T>)
+          //   is applied to (Holder)
+          Long r2 = exact1(qualified);
+          Object r3 = exact1(unbounded); // Must return Object
+          Long r4 = exact1(bounded);
+
+          // Long r5 = exact2(raw, lng); // Warnings:
+          //   Unchecked conversion from Holder to Holder<Long>
+          //   Unchecked method invocation: exact2(Holder<T>,T)
+          //   is applied to (Holder,Long)
+          Long r6 = exact2(qualified, lng);
+          // Long r7 = exact2(unbounded, lng); // Error:
+          //   exact2(Holder<T>,T) cannot be applied to
+          //   (Holder<capture of ?>,Long)
+          // Long r8 = exact2(bounded, lng); // Error:
+          //   exact2(Holder<T>,T) cannot be applied
+          //   to (Holder<capture of ? extends Long>,Long)
+
+          // Long r9 = wildSubtype(raw, lng); // Warnings:
+          //   Unchecked conversion from Holder
+          //   to Holder<? extends Long>
+          //   Unchecked method invocation:
+          //   wildSubtype(Holder<? extends T>,T) is
+          //   applied to (Holder,Long)
+          Long r10 = wildSubtype(qualified, lng);
+          // OK, but can only return Object:
+          Object r11 = wildSubtype(unbounded, lng);
+          Long r12 = wildSubtype(bounded, lng);
+
+          // wildSupertype(raw, lng); // Warnings:
+          //   Unchecked conversion from Holder
+          //   to Holder<? super Long>
+          //   Unchecked method invocation:
+          //   wildSupertype(Holder<? super T>,T)
+          //   is applied to (Holder,Long)
+          wildSupertype(qualified, lng);
+          // wildSupertype(unbounded, lng); // Error:
+          //   wildSupertype(Holder<? super T>,T) cannot be
+          //   applied to (Holder<capture of ?>,Long)
+          // wildSupertype(bounded, lng); // Error:
+          //   wildSupertype(Holder<? super T>,T) cannot be
+          //  applied to (Holder<capture of ? extends Long>,Long)
+        }
+      }
+    language: java
+    options:
+      - text: "`Object obj = holder.get()` — but not `holder.set(arg)`"
+        correct: true
+      - text: "Both get and set"
+        feedback: "With `?`, the compiler doesn't know what type `set` accepts."
+      - text: "Neither"
+        feedback: "Reading as `Object` is always allowed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-captureconversion
+    prompt: |
+      `f2(Holder<?>)` calls `f1(Holder<T>)`, which prints the class of `holder.get()`. What does this print?
+    code: |
+      //: generics/CaptureConversion.java
+
+      public class CaptureConversion {
+        static <T> void f1(Holder<T> holder) {
+          T t = holder.get();
+          System.out.println(t.getClass().getSimpleName());
+        }
+        static void f2(Holder<?> holder) {
+          f1(holder); // Call with captured type
+        }
+        @SuppressWarnings("unchecked")
+        public static void main(String[] args) {
+          Holder raw = new Holder<Integer>(1);
+          // f1(raw); // Produces warnings
+          f2(raw); // No warnings
+          Holder rawBasic = new Holder();
+          rawBasic.set(new Object()); // Warning
+          f2(rawBasic); // No warnings
+          // Upcast to Holder<?>, still figures it out:
+          Holder<?> wildcarded = new Holder<Double>(1.0);
+          f2(wildcarded);
+        }
+      }
+    language: java
+    options:
+      - text: "Integer\nObject\nDouble"
+        correct: true
+      - text: "Object\nObject\nObject"
+        feedback: "`getClass()` gives the stored object's actual class."
+      - text: "It doesn't compile — `f1` can't take a `Holder<?>`"
+        feedback: "Capture conversion gives the unknown type a name `T` for the call."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-uselist
+    prompt: |
+      Why can't `UseList` have both `f(List<T>)` and `f(List<W>)`?
+    code: |
+      //: generics/UseList.java
+      import java.util.*;
+
+      public class UseList<W,T> {
+        void f(List<T> v) {}
+        void f(List<W> v) {}
+      }
+    language: java
+    options:
+      - text: "After erasure both are `f(List)` — a name clash"
+        correct: true
+      - text: "Because `T` and `W` might be the same type"
+        feedback: "It's the erased signatures that clash."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-uselist2
+    prompt: |
+      What's the fix for overloads that clash after erasure?
+    code: |
+      //: generics/UseList2.java
+      import java.util.*;
+
+      public class UseList2<W,T> {
+        void f1(List<T> v) {}
+        void f2(List<W> v) {}
+      }
+    language: java
+    options:
+      - text: "Give the methods different names: `f1` and `f2`"
+        correct: true
+      - text: "Add `@SafeVarargs`"
+        feedback: "That's unrelated."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-multipleinterfacevariants
+    prompt: |
+      Why won't `Hourly extends Employee implements Payable<Hourly>` compile, given `Employee implements Payable<Employee>`?
+    code: |
+      //: generics/MultipleInterfaceVariants.java
+
+      interface Payable<T> {}
+
+      class Employee implements Payable<Employee> {}
+      class Hourly extends Employee
+        implements Payable<Hourly> {}
+    language: java
+    options:
+      - text: "A class can't implement two variants of the same generic interface — they'd be the same after erasure"
+        correct: true
+      - text: "Subclasses can't implement interfaces"
+        feedback: "They can — just not a different parameterization of one already implemented."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-throwgenericexception
+    prompt: |
+      `Processor1.count` starts at 3; each call adds `"Hep!"` while `count-- > 1`, else `"Ho!"`, and throws `Failure1` once count < 0. `Processor2` adds 11 or 47 and throws once its count (from 2) < 0. What does this print?
+    code: |
+      //: generics/ThrowGenericException.java
+      import java.util.*;
+
+      interface Processor<T,E extends Exception> {
+        void process(List<T> resultCollector) throws E;
+      }
+
+      class ProcessRunner<T,E extends Exception>
+      extends ArrayList<Processor<T,E>> {
+        List<T> processAll() throws E {
+          List<T> resultCollector = new ArrayList<T>();
+          for(Processor<T,E> processor : this)
+            processor.process(resultCollector);
+          return resultCollector;
+        }
+      }
+
+      class Failure1 extends Exception {}
+
+      class Processor1 implements Processor<String,Failure1> {
+        static int count = 3;
+        public void
+        process(List<String> resultCollector) throws Failure1 {
+          if(count-- > 1)
+            resultCollector.add("Hep!");
+          else
+            resultCollector.add("Ho!");
+          if(count < 0)
+             throw new Failure1();
+        }
+      }
+
+      class Failure2 extends Exception {}
+
+      class Processor2 implements Processor<Integer,Failure2> {
+        static int count = 2;
+        public void
+        process(List<Integer> resultCollector) throws Failure2 {
+          if(count-- == 0)
+            resultCollector.add(47);
+          else {
+            resultCollector.add(11);
+          }
+          if(count < 0)
+             throw new Failure2();
+        }
+      }
+
+      public class ThrowGenericException {
+        public static void main(String[] args) {
+          ProcessRunner<String,Failure1> runner =
+            new ProcessRunner<String,Failure1>();
+          for(int i = 0; i < 3; i++)
+            runner.add(new Processor1());
+          try {
+            System.out.println(runner.processAll());
+          } catch(Failure1 e) {
+            System.out.println(e);
+          }
+
+          ProcessRunner<Integer,Failure2> runner2 =
+            new ProcessRunner<Integer,Failure2>();
+          for(int i = 0; i < 3; i++)
+            runner2.add(new Processor2());
+          try {
+            System.out.println(runner2.processAll());
+          } catch(Failure2 e) {
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "[Hep!, Hep!, Ho!]\nFailure2"
+        correct: true
+      - text: "Failure1\nFailure2"
+        feedback: "After three calls `count` is 0, not below — no exception for the first runner."
+      - text: "[Hep!, Hep!, Ho!]\n[11, 11, 47]"
+        feedback: "The third `Processor2` call makes its count −1, so it throws `Failure2`."
+    explanation: |
+      A type parameter can stand for the exception a method throws.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

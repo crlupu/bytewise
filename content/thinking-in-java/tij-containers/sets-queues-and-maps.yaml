@@ -1,0 +1,525 @@
+title: "Sets, queues and maps in detail"
+summary: "What your class needs for each kind of Set, sorted sets and maps, deques, priority queues, and the map implementations."
+duration: 8
+tags: [java, containers, Set, SortedSet, Deque, PriorityQueue, Map, TreeMap, LinkedHashMap]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 17, Sets and storage order; Queues; Understanding Maps" }
+steps:
+  - type: explanation
+    title: "Requirements"
+    body: |
+      Any `Set` needs `equals`; a `HashSet`/`LinkedHashSet` also needs a matching `hashCode`; a `TreeSet` needs `Comparable` (or a `Comparator`).
+      Break those rules and you get duplicates, or a `ClassCastException`.
+
+  - type: explanation
+    title: "Sorted and ordered"
+    body: |
+      `TreeSet`/`TreeMap` keep keys sorted and offer `first`/`last`, `subSet`/`subMap`, `headSet`/`headMap` and `tailSet`/`tailMap` — `head` excludes its bound, `tail` includes it.
+      `LinkedHashMap` keeps insertion order — or, with `accessOrder` true, least-recently-used order.
+
+  - type: choice
+    id: tij-containers-typesforsets
+    prompt: |
+      `SetType` overrides `equals` but not `hashCode`. What happens when 0–9 are added three times to a `HashSet<SetType>`?
+    code: |
+      //: containers/TypesForSets.java
+      // Methods necessary to put your own type in a Set.
+      import java.util.*;
+
+      class SetType {
+        int i;
+        public SetType(int n) { i = n; }
+        public boolean equals(Object o) {
+          return o instanceof SetType && (i == ((SetType)o).i);
+        }
+        public String toString() { return Integer.toString(i); }
+      }
+
+      class HashType extends SetType {
+        public HashType(int n) { super(n); }
+        public int hashCode() { return i; }
+      }
+
+      class TreeType extends SetType
+      implements Comparable<TreeType> {
+        public TreeType(int n) { super(n); }
+        public int compareTo(TreeType arg) {
+          return (arg.i < i ? -1 : (arg.i == i ? 0 : 1));
+        }
+      }
+
+      public class TypesForSets {
+        static <T> Set<T> fill(Set<T> set, Class<T> type) {
+          try {
+            for(int i = 0; i < 10; i++)
+                set.add(
+                  type.getConstructor(int.class).newInstance(i));
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+          return set;
+        }
+        static <T> void test(Set<T> set, Class<T> type) {
+          fill(set, type);
+          fill(set, type); // Try to add duplicates
+          fill(set, type);
+          System.out.println(set);
+        }
+        public static void main(String[] args) {
+          test(new HashSet<HashType>(), HashType.class);
+          test(new LinkedHashSet<HashType>(), HashType.class);
+          test(new TreeSet<TreeType>(), TreeType.class);
+          // Things that don't work:
+          test(new HashSet<SetType>(), SetType.class);
+          test(new HashSet<TreeType>(), TreeType.class);
+          test(new LinkedHashSet<SetType>(), SetType.class);
+          test(new LinkedHashSet<TreeType>(), TreeType.class);
+          try {
+            test(new TreeSet<SetType>(), SetType.class);
+          } catch(Exception e) {
+            System.out.println(e.getMessage());
+          }
+          try {
+            test(new TreeSet<HashType>(), HashType.class);
+          } catch(Exception e) {
+            System.out.println(e.getMessage());
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "30 elements — equal objects land in different buckets, so duplicates aren't found"
+        correct: true
+      - text: "10 elements"
+        feedback: "Without a matching `hashCode`, `equals` is never consulted."
+      - text: "`ClassCastException`"
+        feedback: "That's for a `TreeSet` without `Comparable`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-sortedsetdemo
+    prompt: |
+      The sorted set is `[eight, five, four, one, seven, six, three, two]`; `low` = `one`, `high` = `two`. What do `subSet(low, high)` and `headSet(high)` print? (`print` is `println`.)
+    code: |
+      //: containers/SortedSetDemo.java
+      // What you can do with a TreeSet.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class SortedSetDemo {
+        public static void main(String[] args) {
+          SortedSet<String> sortedSet = new TreeSet<String>();
+          Collections.addAll(sortedSet,
+            "one two three four five six seven eight"
+              .split(" "));
+          print(sortedSet);
+          String low = sortedSet.first();
+          String high = sortedSet.last();
+          print(low);
+          print(high);
+          Iterator<String> it = sortedSet.iterator();
+          for(int i = 0; i <= 6; i++) {
+            if(i == 3) low = it.next();
+            if(i == 6) high = it.next();
+            else it.next();
+          }
+          print(low);
+          print(high);
+          print(sortedSet.subSet(low, high));
+          print(sortedSet.headSet(high));
+          print(sortedSet.tailSet(low));
+        }
+      }
+    language: java
+    options:
+      - text: "[one, seven, six, three]\n[eight, five, four, one, seven, six, three]"
+        correct: true
+      - text: "[one, seven, six, three, two]\n[eight, five, four, one, seven, six, three, two]"
+        feedback: "The upper bound is exclusive."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-queuebehavior
+    prompt: |
+      `one` … `ten` are offered in order. What does the `PriorityQueue` print?
+    code: |
+      //: containers/QueueBehavior.java
+      // Compares the behavior of some of the queues
+      import java.util.concurrent.*;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class QueueBehavior {
+        private static int count = 10;
+        static <T> void test(Queue<T> queue, Generator<T> gen) {
+          for(int i = 0; i < count; i++)
+            queue.offer(gen.next());
+          while(queue.peek() != null)
+            System.out.print(queue.remove() + " ");
+          System.out.println();
+        }
+        static class Gen implements Generator<String> {
+          String[] s = ("one two three four five six seven " +
+            "eight nine ten").split(" ");
+          int i;
+          public String next() { return s[i++]; }
+        }
+        public static void main(String[] args) {
+          test(new LinkedList<String>(), new Gen());
+          test(new PriorityQueue<String>(), new Gen());
+          test(new ArrayBlockingQueue<String>(count), new Gen());
+          test(new ConcurrentLinkedQueue<String>(), new Gen());
+          test(new LinkedBlockingQueue<String>(), new Gen());
+          test(new PriorityBlockingQueue<String>(), new Gen());
+        }
+      }
+    language: java
+    options:
+      - text: "eight five four nine one seven six ten three two "
+        correct: true
+      - text: "one two three four five six seven eight nine ten "
+        feedback: "A priority queue removes the smallest first — alphabetically for strings."
+      - text: "ten nine eight seven six five four three two one "
+        feedback: "Smallest first, not reverse insertion."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-dequetest
+    prompt: |
+      20–26 are added with `addFirst`, then 50–54 with `addLast`. What does `print(di)` show? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: containers/DequeTest.java
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class DequeTest {
+        static void fillTest(Deque<Integer> deque) {
+          for(int i = 20; i < 27; i++)
+            deque.addFirst(i);
+          for(int i = 50; i < 55; i++)
+            deque.addLast(i);
+        }
+        public static void main(String[] args) {
+          Deque<Integer> di = new Deque<Integer>();
+          fillTest(di);
+          print(di);
+          while(di.size() != 0)
+            printnb(di.removeFirst() + " ");
+          print();
+          fillTest(di);
+          while(di.size() != 0)
+            printnb(di.removeLast() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "[26, 25, 24, 23, 22, 21, 20, 50, 51, 52, 53, 54]"
+        correct: true
+      - text: "[20, 21, 22, 23, 24, 25, 26, 50, 51, 52, 53, 54]"
+        feedback: "Each `addFirst` puts the new number in front."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-todolist
+    prompt: |
+      Items compare by priority letter, then number. What are the first two removed?
+    code: |
+      //: containers/ToDoList.java
+      // A more complex use of PriorityQueue.
+      import java.util.*;
+
+      class ToDoList extends PriorityQueue<ToDoList.ToDoItem> {
+        static class ToDoItem implements Comparable<ToDoItem> {
+          private char primary;
+          private int secondary;
+          private String item;
+          public ToDoItem(String td, char pri, int sec) {
+            primary = pri;
+            secondary = sec;
+            item = td;
+          }
+          public int compareTo(ToDoItem arg) {
+            if(primary > arg.primary)
+              return +1;
+            if(primary == arg.primary)
+              if(secondary > arg.secondary)
+                return +1;
+              else if(secondary == arg.secondary)
+                return 0;
+            return -1;
+          }
+          public String toString() {
+            return Character.toString(primary) +
+              secondary + ": " + item;
+          }
+        }
+        public void add(String td, char pri, int sec) {
+          super.add(new ToDoItem(td, pri, sec));
+        }
+        public static void main(String[] args) {
+          ToDoList toDoList = new ToDoList();
+          toDoList.add("Empty trash", 'C', 4);
+          toDoList.add("Feed dog", 'A', 2);
+          toDoList.add("Feed bird", 'B', 7);
+          toDoList.add("Mow lawn", 'C', 3);
+          toDoList.add("Water lawn", 'A', 1);
+          toDoList.add("Feed cat", 'B', 1);
+          while(!toDoList.isEmpty())
+            System.out.println(toDoList.remove());
+        }
+      }
+    language: java
+    options:
+      - text: "A1: Water lawn\nA2: Feed dog"
+        correct: true
+      - text: "C4: Empty trash\nA2: Feed dog"
+        feedback: "A priority queue hands out the smallest first, not insertion order."
+      - text: "A2: Feed dog\nA1: Water lawn"
+        feedback: "Within A, 1 comes before 2."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-associativearray
+    prompt: |
+      The array holds 6 pairs; a 7th `put` throws. What are the first two lines printed? (`print` is `println`.)
+    code: |
+      //: containers/AssociativeArray.java
+      // Associates keys with values.
+      import static net.mindview.util.Print.*;
+
+      public class AssociativeArray<K,V> {
+        private Object[][] pairs;
+        private int index;
+        public AssociativeArray(int length) {
+          pairs = new Object[length][2];
+        }
+        public void put(K key, V value) {
+          if(index >= pairs.length)
+            throw new ArrayIndexOutOfBoundsException();
+          pairs[index++] = new Object[]{ key, value };
+        }
+        @SuppressWarnings("unchecked")
+        public V get(K key) {
+          for(int i = 0; i < index; i++)
+            if(key.equals(pairs[i][0]))
+              return (V)pairs[i][1];
+          return null; // Did not find key
+        }
+        public String toString() {
+          StringBuilder result = new StringBuilder();
+          for(int i = 0; i < index; i++) {
+            result.append(pairs[i][0].toString());
+            result.append(" : ");
+            result.append(pairs[i][1].toString());
+            if(i < index - 1)
+              result.append("\n");
+          }
+          return result.toString();
+        }
+        public static void main(String[] args) {
+          AssociativeArray<String,String> map =
+            new AssociativeArray<String,String>(6);
+          map.put("sky", "blue");
+          map.put("grass", "green");
+          map.put("ocean", "dancing");
+          map.put("tree", "tall");
+          map.put("earth", "brown");
+          map.put("sun", "warm");
+          try {
+            map.put("extra", "object"); // Past the end
+          } catch(ArrayIndexOutOfBoundsException e) {
+            print("Too many objects!");
+          }
+          print(map);
+          print(map.get("ocean"));
+        }
+      }
+    language: java
+    options:
+      - text: "Too many objects!\nsky : blue"
+        correct: true
+      - text: "sky : blue\ngrass : green"
+        feedback: "The failed `put` is caught first, printing `Too many objects!`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-maps
+    prompt: |
+      `map.keySet().removeAll(map.keySet())` — what happens to the map? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: containers/Maps.java
+      // Things you can do with Maps.
+      import java.util.concurrent.*;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Maps {
+        public static void printKeys(Map<Integer,String> map) {
+          printnb("Size = " + map.size() + ", ");
+          printnb("Keys: ");
+          print(map.keySet()); // Produce a Set of the keys
+        }
+        public static void test(Map<Integer,String> map) {
+          print(map.getClass().getSimpleName());
+          map.putAll(new CountingMapData(25));
+          // Map has 'Set' behavior for keys:
+          map.putAll(new CountingMapData(25));
+          printKeys(map);
+          // Producing a Collection of the values:
+          printnb("Values: ");
+          print(map.values());
+          print(map);
+          print("map.containsKey(11): " + map.containsKey(11));
+          print("map.get(11): " + map.get(11));
+          print("map.containsValue(\"F0\"): "
+            + map.containsValue("F0"));
+          Integer key = map.keySet().iterator().next();
+          print("First key in map: " + key);
+          map.remove(key);
+          printKeys(map);
+          map.clear();
+          print("map.isEmpty(): " + map.isEmpty());
+          map.putAll(new CountingMapData(25));
+          // Operations on the Set change the Map:
+          map.keySet().removeAll(map.keySet());
+          print("map.isEmpty(): " + map.isEmpty());
+        }
+        public static void main(String[] args) {
+          test(new HashMap<Integer,String>());
+          test(new TreeMap<Integer,String>());
+          test(new LinkedHashMap<Integer,String>());
+          test(new IdentityHashMap<Integer,String>());
+          test(new ConcurrentHashMap<Integer,String>());
+          test(new WeakHashMap<Integer,String>());
+        }
+      }
+    language: java
+    options:
+      - text: "It's emptied: the key set is a view, so removing keys removes their entries"
+        correct: true
+      - text: "Nothing — `keySet()` is a copy"
+        feedback: "It's a live view."
+      - text: "`ConcurrentModificationException`"
+        feedback: "The output shows `map.isEmpty(): true`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-sortedmapdemo
+    prompt: |
+      Keys are 0–9; `low` = 3 and `high` = 7. What does `subMap(low, high)` print? (`print` is `println`.)
+    code: |
+      //: containers/SortedMapDemo.java
+      // What you can do with a TreeMap.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class SortedMapDemo {
+        public static void main(String[] args) {
+          TreeMap<Integer,String> sortedMap =
+            new TreeMap<Integer,String>(new CountingMapData(10));
+          print(sortedMap);
+          Integer low = sortedMap.firstKey();
+          Integer high = sortedMap.lastKey();
+          print(low);
+          print(high);
+          Iterator<Integer> it = sortedMap.keySet().iterator();
+          for(int i = 0; i <= 6; i++) {
+            if(i == 3) low = it.next();
+            if(i == 6) high = it.next();
+            else it.next();
+          }
+          print(low);
+          print(high);
+          print(sortedMap.subMap(low, high));
+          print(sortedMap.headMap(high));
+          print(sortedMap.tailMap(low));
+        }
+      }
+    language: java
+    options:
+      - text: "{3=D0, 4=E0, 5=F0, 6=G0}"
+        correct: true
+      - text: "{3=D0, 4=E0, 5=F0, 6=G0, 7=H0}"
+        feedback: "The upper bound is exclusive."
+      - text: "{4=E0, 5=F0, 6=G0}"
+        feedback: "The lower bound is inclusive."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-linkedhashmapdemo
+    prompt: |
+      The access-ordered map holds keys 0–8. After `get(0)` … `get(5)`, what does it print? (`print` is `println`.)
+    code: |
+      //: containers/LinkedHashMapDemo.java
+      // What you can do with a LinkedHashMap.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class LinkedHashMapDemo {
+        public static void main(String[] args) {
+          LinkedHashMap<Integer,String> linkedMap =
+            new LinkedHashMap<Integer,String>(
+              new CountingMapData(9));
+          print(linkedMap);
+          // Least-recently-used order:
+          linkedMap =
+            new LinkedHashMap<Integer,String>(16, 0.75f, true);
+          linkedMap.putAll(new CountingMapData(9));
+          print(linkedMap);
+          for(int i = 0; i < 6; i++) // Cause accesses:
+            linkedMap.get(i);
+          print(linkedMap);
+          linkedMap.get(0);
+          print(linkedMap);
+        }
+      }
+    language: java
+    options:
+      - text: "{6=G0, 7=H0, 8=I0, 0=A0, 1=B0, 2=C0, 3=D0, 4=E0, 5=F0}"
+        correct: true
+      - text: "{0=A0, 1=B0, 2=C0, 3=D0, 4=E0, 5=F0, 6=G0, 7=H0, 8=I0}"
+        feedback: "With access order, accessed entries move to the end."
+      - text: "{5=F0, 4=E0, 3=D0, 2=C0, 1=B0, 0=A0, 6=G0, 7=H0, 8=I0}"
+        feedback: "Least recently used come first; the accessed ones follow in access order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-individualtest
+    prompt: |
+      `Individual.compareTo` orders by class name, then by name. How are the pets printed?
+    code: |
+      //: containers/IndividualTest.java
+      import holding.MapOfList;
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      public class IndividualTest {
+        public static void main(String[] args) {
+          Set<Individual> pets = new TreeSet<Individual>();
+          for(List<? extends Pet> lp :
+              MapOfList.petPeople.values())
+            for(Pet p : lp)
+              pets.add(p);
+          System.out.println(pets);
+        }
+      }
+    language: java
+    options:
+      - text: "Grouped by type, alphabetically, then by name: `Cat Elsie May, Cat Pinkola, …, Rat Fuzzy`"
+        correct: true
+      - text: "In the order they were put in the map"
+        feedback: "A `TreeSet` sorts them."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

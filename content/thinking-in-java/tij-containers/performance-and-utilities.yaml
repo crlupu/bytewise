@@ -1,0 +1,800 @@
+title: "Performance and the Collections utilities"
+summary: "Timing containers, choosing between implementations, and the static helpers in Collections — sorting, searching, read-only and synchronized wrappers."
+duration: 8
+tags: [java, containers, performance, Collections, unmodifiable, synchronized, fail-fast]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 17, Choosing an implementation; Utilities" }
+steps:
+  - type: explanation
+    title: "Choosing an implementation"
+    body: |
+      `ArrayList` is fast for random access, slow to insert in the middle; `LinkedList` the reverse.
+      `HashMap`/`HashSet` are the fast general choice; `TreeMap`/`TreeSet` keep order at some cost; `LinkedHash…` keep insertion order cheaply.
+
+  - type: explanation
+    title: "Collections utilities"
+    body: |
+      `Collections` has `sort`, `binarySearch`, `max`, `min`, `reverse`, `rotate`, `shuffle`, `swap`, `fill`, `frequency` and more.
+      `unmodifiable…` wrappers make read-only views; `synchronized…` wrappers lock every call.
+      Iterators are fail-fast: changing a collection outside its iterator causes `ConcurrentModificationException`.
+
+  - type: choice
+    id: tij-containers-test
+    prompt: |
+      What does a `Test<C>` subclass implement?
+    code: |
+      //: containers/Test.java
+      // Framework for performing timed tests of containers.
+
+      public abstract class Test<C> {
+        String name;
+        public Test(String name) { this.name = name; }
+        // Override this method for different tests.
+        // Returns actual number of repetitions of test.
+        abstract int test(C container, TestParam tp);
+      }
+    language: java
+    options:
+      - text: "`test(container, tp)`, which runs the operation and returns how many repetitions it did"
+        correct: true
+      - text: "The timing"
+        feedback: "`Tester` does the timing around `test`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-testparam
+    prompt: |
+      What does `TestParam.array(10, 5000, 100, 5000)` return?
+    code: |
+      //: containers/TestParam.java
+      // A "data transfer object."
+
+      public class TestParam {
+        public final int size;
+        public final int loops;
+        public TestParam(int size, int loops) {
+          this.size = size;
+          this.loops = loops;
+        }
+        // Create an array of TestParam from a varargs sequence:
+        public static TestParam[] array(int... values) {
+          int size = values.length/2;
+          TestParam[] result = new TestParam[size];
+          int n = 0;
+          for(int i = 0; i < size; i++)
+            result[i] = new TestParam(values[n++], values[n++]);
+          return result;
+        }
+        // Convert a String array to a TestParam array:
+        public static TestParam[] array(String[] values) {
+          int[] vals = new int[values.length];
+          for(int i = 0; i < vals.length; i++)
+            vals[i] = Integer.decode(values[i]);
+          return array(vals);
+        }
+      }
+    language: java
+    options:
+      - text: "Two params: size 10 with 5000 loops, and size 100 with 5000 loops"
+        correct: true
+      - text: "Four params"
+        feedback: "Values are taken in pairs."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-tester
+    prompt: |
+      What number does `timedTest` print for each test?
+    code: |
+      //: containers/Tester.java
+      // Applies Test objects to lists of different containers.
+      import java.util.*;
+
+      public class Tester<C> {
+        public static int fieldWidth = 8;
+        public static TestParam[] defaultParams= TestParam.array(
+          10, 5000, 100, 5000, 1000, 5000, 10000, 500);
+        // Override this to modify pre-test initialization:
+        protected C initialize(int size) { return container; }
+        protected C container;
+        private String headline = "";
+        private List<Test<C>> tests;
+        private static String stringField() {
+          return "%" + fieldWidth + "s";
+        }
+        private static String numberField() {
+          return "%" + fieldWidth + "d";
+        }
+        private static int sizeWidth = 5;
+        private static String sizeField = "%" + sizeWidth + "s";
+        private TestParam[] paramList = defaultParams;
+        public Tester(C container, List<Test<C>> tests) {
+          this.container = container;
+          this.tests = tests;
+          if(container != null)
+            headline = container.getClass().getSimpleName();
+        }
+        public Tester(C container, List<Test<C>> tests,
+            TestParam[] paramList) {
+          this(container, tests);
+          this.paramList = paramList;
+        }
+        public void setHeadline(String newHeadline) {
+          headline = newHeadline;
+        }
+        // Generic methods for convenience :
+        public static <C> void run(C cntnr, List<Test<C>> tests){
+          new Tester<C>(cntnr, tests).timedTest();
+        }
+        public static <C> void run(C cntnr,
+            List<Test<C>> tests, TestParam[] paramList) {
+          new Tester<C>(cntnr, tests, paramList).timedTest();
+        }
+        private void displayHeader() {
+          // Calculate width and pad with '-':
+          int width = fieldWidth * tests.size() + sizeWidth;
+          int dashLength = width - headline.length() - 1;
+          StringBuilder head = new StringBuilder(width);
+          for(int i = 0; i < dashLength/2; i++)
+            head.append('-');
+          head.append(' ');
+          head.append(headline);
+          head.append(' ');
+          for(int i = 0; i < dashLength/2; i++)
+            head.append('-');
+          System.out.println(head);
+          // Print column headers:
+          System.out.format(sizeField, "size");
+          for(Test test : tests)
+            System.out.format(stringField(), test.name);
+          System.out.println();
+        }
+        // Run the tests for this container:
+        public void timedTest() {
+          displayHeader();
+          for(TestParam param : paramList) {
+            System.out.format(sizeField, param.size);
+            for(Test<C> test : tests) {
+              C kontainer = initialize(param.size);
+              long start = System.nanoTime();
+              // Call the overriden method:
+              int reps = test.test(kontainer, param);
+              long duration = System.nanoTime() - start;
+              long timePerRep = duration / reps; // Nanoseconds
+              System.out.format(numberField(), timePerRep);
+            }
+            System.out.println();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Nanoseconds per repetition: the elapsed time divided by the count `test` returned"
+        correct: true
+      - text: "Total milliseconds"
+        feedback: "It divides by the repetitions."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-listperformance
+    prompt: |
+      Which list does `insert` (adding at index 5) favor, and why?
+    code: |
+      //: containers/ListPerformance.java
+      // Demonstrates performance differences in Lists.
+      // {Args: 100 500} Small to keep build testing short
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class ListPerformance {
+        static Random rand = new Random();
+        static int reps = 1000;
+        static List<Test<List<Integer>>> tests =
+          new ArrayList<Test<List<Integer>>>();
+        static List<Test<LinkedList<Integer>>> qTests =
+          new ArrayList<Test<LinkedList<Integer>>>();
+        static {
+          tests.add(new Test<List<Integer>>("add") {
+            int test(List<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              int listSize = tp.size;
+              for(int i = 0; i < loops; i++) {
+                list.clear();
+                for(int j = 0; j < listSize; j++)
+                  list.add(j);
+              }
+              return loops * listSize;
+            }
+          });
+          tests.add(new Test<List<Integer>>("get") {
+            int test(List<Integer> list, TestParam tp) {
+              int loops = tp.loops * reps;
+              int listSize = list.size();
+              for(int i = 0; i < loops; i++)
+                list.get(rand.nextInt(listSize));
+              return loops;
+            }
+          });
+          tests.add(new Test<List<Integer>>("set") {
+            int test(List<Integer> list, TestParam tp) {
+              int loops = tp.loops * reps;
+              int listSize = list.size();
+              for(int i = 0; i < loops; i++)
+                list.set(rand.nextInt(listSize), 47);
+              return loops;
+            }
+          });
+          tests.add(new Test<List<Integer>>("iteradd") {
+            int test(List<Integer> list, TestParam tp) {
+              final int LOOPS = 1000000;
+              int half = list.size() / 2;
+              ListIterator<Integer> it = list.listIterator(half);
+              for(int i = 0; i < LOOPS; i++)
+                it.add(47);
+              return LOOPS;
+            }
+          });
+          tests.add(new Test<List<Integer>>("insert") {
+            int test(List<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              for(int i = 0; i < loops; i++)
+                list.add(5, 47); // Minimize random-access cost
+              return loops;
+            }
+          });
+          tests.add(new Test<List<Integer>>("remove") {
+            int test(List<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                list.clear();
+                list.addAll(new CountingIntegerList(size));
+                while(list.size() > 5)
+                  list.remove(5); // Minimize random-access cost
+              }
+              return loops * size;
+            }
+          });
+          // Tests for queue behavior:
+          qTests.add(new Test<LinkedList<Integer>>("addFirst") {
+            int test(LinkedList<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                list.clear();
+                for(int j = 0; j < size; j++)
+                  list.addFirst(47);
+              }
+              return loops * size;
+            }
+          });
+          qTests.add(new Test<LinkedList<Integer>>("addLast") {
+            int test(LinkedList<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                list.clear();
+                for(int j = 0; j < size; j++)
+                  list.addLast(47);
+              }
+              return loops * size;
+            }
+          });
+          qTests.add(
+            new Test<LinkedList<Integer>>("rmFirst") {
+              int test(LinkedList<Integer> list, TestParam tp) {
+                int loops = tp.loops;
+                int size = tp.size;
+                for(int i = 0; i < loops; i++) {
+                  list.clear();
+                  list.addAll(new CountingIntegerList(size));
+                  while(list.size() > 0)
+                    list.removeFirst();
+                }
+                return loops * size;
+              }
+            });
+          qTests.add(new Test<LinkedList<Integer>>("rmLast") {
+            int test(LinkedList<Integer> list, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                list.clear();
+                list.addAll(new CountingIntegerList(size));
+                while(list.size() > 0)
+                  list.removeLast();
+              }
+              return loops * size;
+            }
+          });
+        }
+        static class ListTester extends Tester<List<Integer>> {
+          public ListTester(List<Integer> container,
+              List<Test<List<Integer>>> tests) {
+            super(container, tests);
+          }
+          // Fill to the appropriate size before each test:
+          @Override protected List<Integer> initialize(int size){
+            container.clear();
+            container.addAll(new CountingIntegerList(size));
+            return container;
+          }
+          // Convenience method:
+          public static void run(List<Integer> list,
+              List<Test<List<Integer>>> tests) {
+            new ListTester(list, tests).timedTest();
+          }
+        }
+        public static void main(String[] args) {
+          if(args.length > 0)
+            Tester.defaultParams = TestParam.array(args);
+          // Can only do these two tests on an array:
+          Tester<List<Integer>> arrayTest =
+            new Tester<List<Integer>>(null, tests.subList(1, 3)){
+              // This will be called before each test. It
+              // produces a non-resizeable array-backed list:
+              @Override protected
+              List<Integer> initialize(int size) {
+                Integer[] ia = Generated.array(Integer.class,
+                  new CountingGenerator.Integer(), size);
+                return Arrays.asList(ia);
+              }
+            };
+          arrayTest.setHeadline("Array as List");
+          arrayTest.timedTest();
+          Tester.defaultParams= TestParam.array(
+            10, 5000, 100, 5000, 1000, 1000, 10000, 200);
+          if(args.length > 0)
+            Tester.defaultParams = TestParam.array(args);
+          ListTester.run(new ArrayList<Integer>(), tests);
+          ListTester.run(new LinkedList<Integer>(), tests);
+          ListTester.run(new Vector<Integer>(), tests);
+          Tester.fieldWidth = 12;
+          Tester<LinkedList<Integer>> qTest =
+            new Tester<LinkedList<Integer>>(
+              new LinkedList<Integer>(), qTests);
+          qTest.setHeadline("Queue tests");
+          qTest.timedTest();
+        }
+      }
+    language: java
+    options:
+      - text: "`LinkedList` — no elements to shift; `ArrayList` must move everything after the index"
+        correct: true
+      - text: "`ArrayList` — arrays are always faster"
+        feedback: "Not for inserting in the middle of a large list."
+    explanation: |
+      Timings vary by machine — and today `ArrayList` wins most other operations.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-setperformance
+    prompt: |
+      Which set is typically fastest for `add` and `contains`?
+    code: |
+      //: containers/SetPerformance.java
+      // Demonstrates performance differences in Sets.
+      // {Args: 100 5000} Small to keep build testing short
+      import java.util.*;
+
+      public class SetPerformance {
+        static List<Test<Set<Integer>>> tests =
+          new ArrayList<Test<Set<Integer>>>();
+        static {
+          tests.add(new Test<Set<Integer>>("add") {
+            int test(Set<Integer> set, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                set.clear();
+                for(int j = 0; j < size; j++)
+                  set.add(j);
+              }
+              return loops * size;
+            }
+          });
+          tests.add(new Test<Set<Integer>>("contains") {
+            int test(Set<Integer> set, TestParam tp) {
+              int loops = tp.loops;
+              int span = tp.size * 2;
+              for(int i = 0; i < loops; i++)
+                for(int j = 0; j < span; j++)
+                  set.contains(j);
+              return loops * span;
+            }
+          });
+          tests.add(new Test<Set<Integer>>("iterate") {
+            int test(Set<Integer> set, TestParam tp) {
+              int loops = tp.loops * 10;
+              for(int i = 0; i < loops; i++) {
+                Iterator<Integer> it = set.iterator();
+                while(it.hasNext())
+                  it.next();
+              }
+              return loops * set.size();
+            }
+          });
+        }
+        public static void main(String[] args) {
+          if(args.length > 0)
+            Tester.defaultParams = TestParam.array(args);
+          Tester.fieldWidth = 10;
+          Tester.run(new TreeSet<Integer>(), tests);
+          Tester.run(new HashSet<Integer>(), tests);
+          Tester.run(new LinkedHashSet<Integer>(), tests);
+        }
+      }
+    language: java
+    options:
+      - text: "`HashSet`"
+        correct: true
+      - text: "`TreeSet`"
+        feedback: "It keeps order at the cost of O(log n) comparisons."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-mapperformance
+    prompt: |
+      `Hashtable` performs about like `HashMap`. Why prefer `HashMap`?
+    code: |
+      //: containers/MapPerformance.java
+      // Demonstrates performance differences in Maps.
+      // {Args: 100 5000} Small to keep build testing short
+      import java.util.*;
+
+      public class MapPerformance {
+        static List<Test<Map<Integer,Integer>>> tests =
+          new ArrayList<Test<Map<Integer,Integer>>>();
+        static {
+          tests.add(new Test<Map<Integer,Integer>>("put") {
+            int test(Map<Integer,Integer> map, TestParam tp) {
+              int loops = tp.loops;
+              int size = tp.size;
+              for(int i = 0; i < loops; i++) {
+                map.clear();
+                for(int j = 0; j < size; j++)
+                  map.put(j, j);
+              }
+              return loops * size;
+            }
+          });
+          tests.add(new Test<Map<Integer,Integer>>("get") {
+            int test(Map<Integer,Integer> map, TestParam tp) {
+              int loops = tp.loops;
+              int span = tp.size * 2;
+              for(int i = 0; i < loops; i++)
+                for(int j = 0; j < span; j++)
+                  map.get(j);
+              return loops * span;
+            }
+          });
+          tests.add(new Test<Map<Integer,Integer>>("iterate") {
+            int test(Map<Integer,Integer> map, TestParam tp) {
+              int loops = tp.loops * 10;
+              for(int i = 0; i < loops; i ++) {
+                Iterator it = map.entrySet().iterator();
+                while(it.hasNext())
+                  it.next();
+              }
+              return loops * map.size();
+            }
+          });
+        }
+        public static void main(String[] args) {
+          if(args.length > 0)
+            Tester.defaultParams = TestParam.array(args);
+          Tester.run(new TreeMap<Integer,Integer>(), tests);
+          Tester.run(new HashMap<Integer,Integer>(), tests);
+          Tester.run(new LinkedHashMap<Integer,Integer>(),tests);
+          Tester.run(
+            new IdentityHashMap<Integer,Integer>(), tests);
+          Tester.run(new WeakHashMap<Integer,Integer>(), tests);
+          Tester.run(new Hashtable<Integer,Integer>(), tests);
+        }
+      }
+    language: java
+    options:
+      - text: "`Hashtable` is a legacy class with synchronized methods; use `HashMap`, or `ConcurrentHashMap` for concurrency"
+        correct: true
+      - text: "`Hashtable` doesn't work"
+        feedback: "It works; it's just obsolete."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-utilities
+    prompt: |
+      `list` is `[one, Two, three, Four, five, six, one]`. What are `max` and `min` (natural order), then with `CASE_INSENSITIVE_ORDER`? (`print` is `println`.)
+    code: |
+      //: containers/Utilities.java
+      // Simple demonstrations of the Collections utilities.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Utilities {
+        static List<String> list = Arrays.asList(
+          "one Two three Four five six one".split(" "));
+        public static void main(String[] args) {
+          print(list);
+          print("'list' disjoint (Four)?: " +
+            Collections.disjoint(list,
+              Collections.singletonList("Four")));
+          print("max: " + Collections.max(list));
+          print("min: " + Collections.min(list));
+          print("max w/ comparator: " + Collections.max(list,
+            String.CASE_INSENSITIVE_ORDER));
+          print("min w/ comparator: " + Collections.min(list,
+            String.CASE_INSENSITIVE_ORDER));
+          List<String> sublist =
+            Arrays.asList("Four five six".split(" "));
+          print("indexOfSubList: " +
+            Collections.indexOfSubList(list, sublist));
+          print("lastIndexOfSubList: " +
+            Collections.lastIndexOfSubList(list, sublist));
+          Collections.replaceAll(list, "one", "Yo");
+          print("replaceAll: " + list);
+          Collections.reverse(list);
+          print("reverse: " + list);
+          Collections.rotate(list, 3);
+          print("rotate: " + list);
+          List<String> source =
+            Arrays.asList("in the matrix".split(" "));
+          Collections.copy(list, source);
+          print("copy: " + list);
+          Collections.swap(list, 0, list.size() - 1);
+          print("swap: " + list);
+          Collections.shuffle(list, new Random(47));
+          print("shuffled: " + list);
+          Collections.fill(list, "pop");
+          print("fill: " + list);
+          print("frequency of 'pop': " +
+            Collections.frequency(list, "pop"));
+          List<String> dups = Collections.nCopies(3, "snap");
+          print("dups: " + dups);
+          print("'list' disjoint 'dups'?: " +
+            Collections.disjoint(list, dups));
+          // Getting an old-style Enumeration:
+          Enumeration<String> e = Collections.enumeration(dups);
+          Vector<String> v = new Vector<String>();
+          while(e.hasMoreElements())
+            v.addElement(e.nextElement());
+          // Converting an old-style Vector
+          // to a List via an Enumeration:
+          ArrayList<String> arrayList =
+            Collections.list(v.elements());
+          print("arrayList: " + arrayList);
+        }
+      }
+    language: java
+    options:
+      - text: "max: three\nmin: Four\nmax w/ comparator: Two\nmin w/ comparator: five"
+        correct: true
+      - text: "max: Two\nmin: five\nmax w/ comparator: three\nmin w/ comparator: Four"
+        feedback: "Natural order puts uppercase first, so `Four` is the min and `three` the max."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-listsortsearch
+    prompt: |
+      The trimmed list is `[Four, five, one, one, Two, six, six, three, three, five]`. What does `Collections.sort` give? (`print` is `println`.)
+    code: |
+      //: containers/ListSortSearch.java
+      // Sorting and searching Lists with Collections utilities.
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ListSortSearch {
+        public static void main(String[] args) {
+          List<String> list =
+            new ArrayList<String>(Utilities.list);
+          list.addAll(Utilities.list);
+          print(list);
+          Collections.shuffle(list, new Random(47));
+          print("Shuffled: " + list);
+          // Use a ListIterator to trim off the last elements:
+          ListIterator<String> it = list.listIterator(10);
+          while(it.hasNext()) {
+            it.next();
+            it.remove();
+          }
+          print("Trimmed: " + list);
+          Collections.sort(list);
+          print("Sorted: " + list);
+          String key = list.get(7);
+          int index = Collections.binarySearch(list, key);
+          print("Location of " + key + " is " + index +
+            ", list.get(" + index + ") = " + list.get(index));
+          Collections.sort(list, String.CASE_INSENSITIVE_ORDER);
+          print("Case-insensitive sorted: " + list);
+          key = list.get(7);
+          index = Collections.binarySearch(list, key,
+            String.CASE_INSENSITIVE_ORDER);
+          print("Location of " + key + " is " + index +
+            ", list.get(" + index + ") = " + list.get(index));
+        }
+      }
+    language: java
+    options:
+      - text: "Sorted: [Four, Two, five, five, one, one, six, six, three, three]"
+        correct: true
+      - text: "Sorted: [five, five, Four, one, one, six, six, three, three, Two]"
+        feedback: "That's case-insensitive; natural order puts capitals first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-readonly
+    prompt: |
+      What happens with `c.add("one")` on an unmodifiable collection? (`print` is `println`.)
+    code: |
+      //: containers/ReadOnly.java
+      // Using the Collections.unmodifiable methods.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ReadOnly {
+        static Collection<String> data =
+          new ArrayList<String>(Countries.names(6));
+        public static void main(String[] args) {
+          Collection<String> c =
+            Collections.unmodifiableCollection(
+              new ArrayList<String>(data));
+          print(c); // Reading is OK
+          //! c.add("one"); // Can't change it
+
+          List<String> a = Collections.unmodifiableList(
+              new ArrayList<String>(data));
+          ListIterator<String> lit = a.listIterator();
+          print(lit.next()); // Reading is OK
+          //! lit.add("one"); // Can't change it
+
+          Set<String> s = Collections.unmodifiableSet(
+            new HashSet<String>(data));
+          print(s); // Reading is OK
+          //! s.add("one"); // Can't change it
+
+          // For a SortedSet:
+          Set<String> ss = Collections.unmodifiableSortedSet(
+            new TreeSet<String>(data));
+
+          Map<String,String> m = Collections.unmodifiableMap(
+            new HashMap<String,String>(Countries.capitals(6)));
+          print(m); // Reading is OK
+          //! m.put("Ralph", "Howdy!");
+
+          // For a SortedMap:
+          Map<String,String> sm =
+            Collections.unmodifiableSortedMap(
+              new TreeMap<String,String>(Countries.capitals(6)));
+        }
+      }
+    language: java
+    options:
+      - text: "It compiles, but throws `UnsupportedOperationException` at run time"
+        correct: true
+      - text: "Compile error"
+        feedback: "The interface still has `add`."
+      - text: "It's ignored"
+        feedback: "It throws."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-synchronization
+    prompt: |
+      What does `Collections.synchronizedList(list)` give you?
+    code: |
+      //: containers/Synchronization.java
+      // Using the Collections.synchronized methods.
+      import java.util.*;
+
+      public class Synchronization {
+        public static void main(String[] args) {
+          Collection<String> c =
+            Collections.synchronizedCollection(
+              new ArrayList<String>());
+          List<String> list = Collections.synchronizedList(
+            new ArrayList<String>());
+          Set<String> s = Collections.synchronizedSet(
+            new HashSet<String>());
+          Set<String> ss = Collections.synchronizedSortedSet(
+            new TreeSet<String>());
+          Map<String,String> m = Collections.synchronizedMap(
+            new HashMap<String,String>());
+          Map<String,String> sm =
+            Collections.synchronizedSortedMap(
+              new TreeMap<String,String>());
+        }
+      }
+    language: java
+    options:
+      - text: "A wrapper that locks on every method call — iteration still needs manual locking"
+        correct: true
+      - text: "A thread-safe copy"
+        feedback: "It wraps the same list."
+      - text: "Lock-free concurrency"
+        feedback: "Every call takes the wrapper's lock."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-containers-failfast
+    prompt: |
+      What does this print?
+    code: |
+      //: containers/FailFast.java
+      // Demonstrates the "fail-fast" behavior.
+      import java.util.*;
+
+      public class FailFast {
+        public static void main(String[] args) {
+          Collection<String> c = new ArrayList<String>();
+          Iterator<String> it = c.iterator();
+          c.add("An object");
+          try {
+            String s = it.next();
+          } catch(ConcurrentModificationException e) {
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "java.util.ConcurrentModificationException"
+        correct: true
+      - text: "An object"
+        feedback: "The collection changed after the iterator was created."
+      - text: "Nothing"
+        feedback: "`it.next()` detects the modification."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-containers-randombounds
+    prompt: |
+      Run as `java RandomBounds upper` — what happens? (`print` is `println`.)
+    code: |
+      //: containers/RandomBounds.java
+      // Does Math.random() produce 0.0 and 1.0?
+      import static net.mindview.util.Print.*;
+
+      public class RandomBounds {
+        static void usage() {
+          print("Usage:");
+          print("\tRandomBounds lower");
+          print("\tRandomBounds upper");
+          System.exit(1);
+        }
+        public static void main(String[] args) {
+          if(args.length != 1) usage();
+          if(args[0].equals("lower")) {
+            while(Math.random() != 0.0)
+              ; // Keep trying
+            print("Produced 0.0!");
+          }
+          else if(args[0].equals("upper")) {
+            while(Math.random() != 1.0)
+              ; // Keep trying
+            print("Produced 1.0!");
+          }
+          else
+            usage();
+        }
+      }
+    language: java
+    options:
+      - text: "It loops forever: `Math.random()` returns values in [0, 1), never 1.0"
+        correct: true
+      - text: "It eventually prints `Produced 1.0!`"
+        feedback: "1.0 is excluded."
+    explanation: |
+      `lower` could in theory print `Produced 0.0!`, but in practice it would take astronomically long.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

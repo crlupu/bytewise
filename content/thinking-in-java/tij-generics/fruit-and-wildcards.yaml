@@ -112,3 +112,285 @@ steps:
         right: Add Apple or Jonathan; read only Object
       - left: "`List<Fruit>`"
         right: Read and add any Fruit
+
+  - type: predict
+    id: tij-generics-covariantarrays
+    prompt: |
+      `Apple` and `Orange` extend `Fruit`; `Jonathan` extends `Apple`. What does this print?
+    code: |
+      //: generics/CovariantArrays.java
+
+      class Fruit {}
+      class Apple extends Fruit {}
+      class Jonathan extends Apple {}
+      class Orange extends Fruit {}
+
+      public class CovariantArrays {
+        public static void main(String[] args) {
+          Fruit[] fruit = new Apple[10];
+          fruit[0] = new Apple(); // OK
+          fruit[1] = new Jonathan(); // OK
+          // Runtime type is Apple[], not Fruit[] or Orange[]:
+          try {
+            // Compiler allows you to add Fruit:
+            fruit[0] = new Fruit(); // ArrayStoreException
+          } catch(Exception e) { System.out.println(e); }
+          try {
+            // Compiler allows you to add Oranges:
+            fruit[0] = new Orange(); // ArrayStoreException
+          } catch(Exception e) { System.out.println(e); }
+        }
+      }
+    language: java
+    options:
+      - text: "java.lang.ArrayStoreException: Fruit\njava.lang.ArrayStoreException: Orange"
+        correct: true
+      - text: "Nothing — the array is a `Fruit[]`"
+        feedback: "Its runtime type is `Apple[]`, and the JVM checks every store."
+      - text: "It doesn't compile"
+        feedback: "The compiler allows storing a `Fruit` in a `Fruit[]` reference; the check is at run time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-noncovariantgenerics
+    prompt: |
+      `Apple extends Fruit`. Does `List<Fruit> flist = new ArrayList<Apple>()` compile?
+    code: |
+      //: generics/NonCovariantGenerics.java
+      import java.util.*;
+
+      public class NonCovariantGenerics {
+        List<Fruit> flist = new ArrayList<Apple>();
+      }
+    language: java
+    options:
+      - text: "No — a list of apples isn't a list of fruit (you could add an orange to a `List<Fruit>`)"
+        correct: true
+      - text: "Yes — like arrays, generic types are covariant"
+        feedback: "Generics are invariant; that's what wildcards are for."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericsandcovariance
+    prompt: |
+      `flist` is a `List<? extends Fruit>` holding an `ArrayList<Apple>`. What can you `add` to it?
+    code: |
+      //: generics/GenericsAndCovariance.java
+      import java.util.*;
+
+      public class GenericsAndCovariance {
+        public static void main(String[] args) {
+          // Wildcards allow covariance:
+          List<? extends Fruit> flist = new ArrayList<Apple>();
+          // Compile Error: can't add any type of object:
+          // flist.add(new Apple());
+          // flist.add(new Fruit());
+          // flist.add(new Object());
+          flist.add(null); // Legal but uninteresting
+          // We know that it returns at least Fruit:
+          Fruit f = flist.get(0);
+        }
+      }
+    language: java
+    options:
+      - text: "Only `null`"
+        correct: true
+      - text: "Any `Fruit`"
+        feedback: "The list might be a list of `Orange`s — the compiler can't allow any specific type."
+      - text: "`Apple`s"
+        feedback: "The compiler only knows \"some subtype of Fruit\"."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-compilerintelligence
+    prompt: |
+      `flist` is a `List<? extends Fruit>`. Why do `contains(new Apple())` and `indexOf(new Apple())` compile, while `add` wouldn't?
+    code: |
+      //: generics/CompilerIntelligence.java
+      import java.util.*;
+
+      public class CompilerIntelligence {
+        public static void main(String[] args) {
+          List<? extends Fruit> flist =
+            Arrays.asList(new Apple());
+          Apple a = (Apple)flist.get(0); // No warning
+          flist.contains(new Apple()); // Argument is 'Object'
+          flist.indexOf(new Apple()); // Argument is 'Object'
+        }
+      }
+    language: java
+    options:
+      - text: "`contains` and `indexOf` take `Object`; `add` takes `E`, which the wildcard makes unusable"
+        correct: true
+      - text: "The compiler knows it's a list of apples"
+        feedback: "It only knows `? extends Fruit`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-holder
+    prompt: |
+      `fruit` is a `Holder<? extends Fruit>` holding an `Apple`. What does this print?
+    code: |
+      //: generics/Holder.java
+
+      public class Holder<T> {
+        private T value;
+        public Holder() {}
+        public Holder(T val) { value = val; }
+        public void set(T val) { value = val; }
+        public T get() { return value; }
+        public boolean equals(Object obj) {
+          return value.equals(obj);
+        }
+        public static void main(String[] args) {
+          Holder<Apple> Apple = new Holder<Apple>(new Apple());
+          Apple d = Apple.get();
+          Apple.set(d);
+          // Holder<Fruit> Fruit = Apple; // Cannot upcast
+          Holder<? extends Fruit> fruit = Apple; // OK
+          Fruit p = fruit.get();
+          d = (Apple)fruit.get(); // Returns 'Object'
+          try {
+            Orange c = (Orange)fruit.get(); // No warning
+          } catch(Exception e) { System.out.println(e); }
+          // fruit.set(new Apple()); // Cannot call set()
+          // fruit.set(new Fruit()); // Cannot call set()
+          System.out.println(fruit.equals(d)); // OK
+        }
+      }
+    language: java
+    options:
+      - text: "java.lang.ClassCastException: class Apple cannot be cast to class Orange (Apple and Orange are in unnamed module of loader 'app')\ntrue"
+        correct: true
+      - text: "true"
+        feedback: "The cast to `Orange` compiles (`get()` returns a `Fruit`) but fails at run time."
+      - text: "It doesn't compile — `fruit.set(new Apple())`"
+        feedback: "Those lines are commented out."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-supertypewildcards
+    prompt: |
+      `apples` is a `List<? super Apple>`. Which can you add?
+    code: |
+      //: generics/SuperTypeWildcards.java
+      import java.util.*;
+
+      public class SuperTypeWildcards {
+        static void writeTo(List<? super Apple> apples) {
+          apples.add(new Apple());
+          apples.add(new Jonathan());
+          // apples.add(new Fruit()); // Error
+        }
+      }
+    language: java
+    options:
+      - text: "`Apple` and `Jonathan` — any `Apple` or subtype"
+        correct: true
+      - text: "Any `Fruit`"
+        feedback: "The list might be a `List<Apple>`, which can't take a plain `Fruit`."
+      - text: "Nothing"
+        feedback: "A supertype wildcard is for writing."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericwriting
+    prompt: |
+      Why can `writeWithWildcard(fruit, new Apple())` work with `List<? super T>`?
+    code: |
+      //: generics/GenericWriting.java
+      import java.util.*;
+
+      public class GenericWriting {
+        static <T> void writeExact(List<T> list, T item) {
+          list.add(item);
+        }
+        static List<Apple> apples = new ArrayList<Apple>();
+        static List<Fruit> fruit = new ArrayList<Fruit>();
+        static void f1() {
+          writeExact(apples, new Apple());
+          // writeExact(fruit, new Apple()); // Error:
+          // Incompatible types: found Fruit, required Apple
+        }
+        static <T> void
+        writeWithWildcard(List<? super T> list, T item) {
+          list.add(item);
+        }
+        static void f2() {
+          writeWithWildcard(apples, new Apple());
+          writeWithWildcard(fruit, new Apple());
+        }
+        public static void main(String[] args) { f1(); f2(); }
+      }
+    language: java
+    options:
+      - text: "`T` is inferred as `Apple`, and a `List<Fruit>` is a list of some supertype of `Apple`"
+        correct: true
+      - text: "Because `fruit` is raw"
+        feedback: "It's a `List<Fruit>`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericreading
+    prompt: |
+      `Reader<Fruit>.readExact(List<Fruit>)` rejects a `List<Apple>`. What fixes it?
+    code: |
+      //: generics/GenericReading.java
+      import java.util.*;
+
+      public class GenericReading {
+        static <T> T readExact(List<T> list) {
+          return list.get(0);
+        }
+        static List<Apple> apples = Arrays.asList(new Apple());
+        static List<Fruit> fruit = Arrays.asList(new Fruit());
+        // A static method adapts to each call:
+        static void f1() {
+          Apple a = readExact(apples);
+          Fruit f = readExact(fruit);
+          f = readExact(apples);
+        }
+        // If, however, you have a class, then its type is
+        // established when the class is instantiated:
+        static class Reader<T> {
+          T readExact(List<T> list) { return list.get(0); }
+        }
+        static void f2() {
+          Reader<Fruit> fruitReader = new Reader<Fruit>();
+          Fruit f = fruitReader.readExact(fruit);
+          // Fruit a = fruitReader.readExact(apples); // Error:
+          // readExact(List<Fruit>) cannot be
+          // applied to (List<Apple>).
+        }
+        static class CovariantReader<T> {
+          T readCovariant(List<? extends T> list) {
+            return list.get(0);
+          }
+        }
+        static void f3() {
+          CovariantReader<Fruit> fruitReader =
+            new CovariantReader<Fruit>();
+          Fruit f = fruitReader.readCovariant(fruit);
+          Fruit a = fruitReader.readCovariant(apples);
+        }
+        public static void main(String[] args) {
+          f1(); f2(); f3();
+        }
+      }
+    language: java
+    options:
+      - text: "Declaring the parameter `List<? extends T>`, as in `readCovariant`"
+        correct: true
+      - text: "`List<? super T>`"
+        feedback: "That's for writing; for reading, use `extends`."
+    explanation: |
+      Producer `extends`, consumer `super` (PECS).
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

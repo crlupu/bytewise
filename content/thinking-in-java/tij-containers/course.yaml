@@ -1,0 +1,7 @@
+title: "Containers in depth"
+summary: "Chapter 17 — filling containers, Collection and List operations, sets, queues and maps in detail, hashing, performance, the Collections utilities and references, through the book's examples."
+lessons:
+  - collections-and-lists
+  - sets-queues-and-maps
+  - hashing
+  - performance-and-utilities

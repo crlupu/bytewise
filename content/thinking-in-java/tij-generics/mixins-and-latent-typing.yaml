@@ -1,0 +1,801 @@
+title: "Mixins and latent typing"
+summary: "Combining capabilities with interfaces, decorators and dynamic proxies — and the duck typing Java lacks, simulated with reflection and adapters."
+duration: 8
+tags: [java, generics, mixins, decorator, latent typing, reflection, function objects]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Mixins; Latent typing; Compensating for the lack of latent typing" }
+steps:
+  - type: explanation
+    title: "Mixins"
+    body: |
+      A mixin combines several classes' capabilities in one object.
+      In Java: implement each interface and delegate to an implementation object, or wrap objects in decorators, or build a dynamic proxy that delegates per interface.
+
+  - type: explanation
+    title: "Latent typing"
+    body: |
+      Python or C++ templates accept anything that has the methods you call — latent (duck) typing.
+      Java generics need an interface or bound instead.
+      You can simulate it with reflection (call by name), or with adapters to an interface like `Addable`.
+
+  - type: choice
+    id: tij-generics-mixins
+    prompt: |
+      How does `Mixin` get time stamps and serial numbers?
+    code: |
+      //: generics/Mixins.java
+      import java.util.*;
+
+      interface TimeStamped { long getStamp(); }
+
+      class TimeStampedImp implements TimeStamped {
+        private final long timeStamp;
+        public TimeStampedImp() {
+          timeStamp = new Date().getTime();
+        }
+        public long getStamp() { return timeStamp; }
+      }
+
+      interface SerialNumbered { long getSerialNumber(); }
+
+      class SerialNumberedImp implements SerialNumbered {
+        private static long counter = 1;
+        private final long serialNumber = counter++;
+        public long getSerialNumber() { return serialNumber; }
+      }
+
+      interface Basic {
+        public void set(String val);
+        public String get();
+      }
+
+      class BasicImp implements Basic {
+        private String value;
+        public void set(String val) { value = val; }
+        public String get() { return value; }
+      }
+
+      class Mixin extends BasicImp
+      implements TimeStamped, SerialNumbered {
+        private TimeStamped timeStamp = new TimeStampedImp();
+        private SerialNumbered serialNumber =
+          new SerialNumberedImp();
+        public long getStamp() { return timeStamp.getStamp(); }
+        public long getSerialNumber() {
+          return serialNumber.getSerialNumber();
+        }
+      }
+
+      public class Mixins {
+        public static void main(String[] args) {
+          Mixin mixin1 = new Mixin(), mixin2 = new Mixin();
+          mixin1.set("test string 1");
+          mixin2.set("test string 2");
+          System.out.println(mixin1.get() + " " +
+            mixin1.getStamp() +  " " + mixin1.getSerialNumber());
+          System.out.println(mixin2.get() + " " +
+            mixin2.getStamp() +  " " + mixin2.getSerialNumber());
+        }
+      }
+    language: java
+    options:
+      - text: "It implements both interfaces and delegates each to a held implementation object"
+        correct: true
+      - text: "Multiple inheritance from three classes"
+        feedback: "Java allows one superclass; the rest is delegation."
+      - text: "Generics"
+        feedback: "Java generics can't express mixins directly."
+    explanation: |
+      Each line prints the string, a timestamp and the serial number: `test string 1 <time> 1`, then `… 2`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-decorator-decoration
+    prompt: |
+      Why isn't `t2.getSerialNumber()` available, though `t2` wraps a `SerialNumbered`?
+    code: |
+      //: generics/decorator/Decoration.java
+      package generics.decorator;
+      import java.util.*;
+
+      class Basic {
+        private String value;
+        public void set(String val) { value = val; }
+        public String get() { return value; }
+      }
+
+      class Decorator extends Basic {
+        protected Basic basic;
+        public Decorator(Basic basic) { this.basic = basic; }
+        public void set(String val) { basic.set(val); }
+        public String get() { return basic.get(); }
+      }
+
+      class TimeStamped extends Decorator {
+        private final long timeStamp;
+        public TimeStamped(Basic basic) {
+          super(basic);
+          timeStamp = new Date().getTime();
+        }
+        public long getStamp() { return timeStamp; }
+      }
+
+      class SerialNumbered extends Decorator {
+        private static long counter = 1;
+        private final long serialNumber = counter++;
+        public SerialNumbered(Basic basic) { super(basic); }
+        public long getSerialNumber() { return serialNumber; }
+      }
+
+      public class Decoration {
+        public static void main(String[] args) {
+          TimeStamped t = new TimeStamped(new Basic());
+          TimeStamped t2 = new TimeStamped(
+            new SerialNumbered(new Basic()));
+          //! t2.getSerialNumber(); // Not available
+          SerialNumbered s = new SerialNumbered(new Basic());
+          SerialNumbered s2 = new SerialNumbered(
+            new TimeStamped(new Basic()));
+          //! s2.getStamp(); // Not available
+        }
+      }
+    language: java
+    options:
+      - text: "`t2` is a `TimeStamped`; only the outermost decorator's added methods are visible"
+        correct: true
+      - text: "The serial number was lost"
+        feedback: "It's still inside, just not reachable through `t2`'s type."
+    explanation: |
+      That's the limit of decorators as mixins.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-dynamicproxymixin
+    prompt: |
+      The proxy maps each method name to the object that implements it. After `b.set("Hello")`, what do `b.get()` and `s.getSerialNumber()` return?
+    code: |
+      //: generics/DynamicProxyMixin.java
+      import java.lang.reflect.*;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Tuple.*;
+
+      class MixinProxy implements InvocationHandler {
+        Map<String,Object> delegatesByMethod;
+        public MixinProxy(TwoTuple<Object,Class<?>>... pairs) {
+          delegatesByMethod = new HashMap<String,Object>();
+          for(TwoTuple<Object,Class<?>> pair : pairs) {
+            for(Method method : pair.second.getMethods()) {
+              String methodName = method.getName();
+              // The first interface in the map
+              // implements the method.
+              if (!delegatesByMethod.containsKey(methodName))
+                delegatesByMethod.put(methodName, pair.first);
+            }
+          }
+        }
+        public Object invoke(Object proxy, Method method,
+          Object[] args) throws Throwable {
+          String methodName = method.getName();
+          Object delegate = delegatesByMethod.get(methodName);
+          return method.invoke(delegate, args);
+        }
+        @SuppressWarnings("unchecked")
+        public static Object newInstance(TwoTuple... pairs) {
+          Class[] interfaces = new Class[pairs.length];
+          for(int i = 0; i < pairs.length; i++) {
+            interfaces[i] = (Class)pairs[i].second;
+          }
+          ClassLoader cl =
+            pairs[0].first.getClass().getClassLoader();
+          return Proxy.newProxyInstance(
+            cl, interfaces, new MixinProxy(pairs));
+        }
+      }
+
+      public class DynamicProxyMixin {
+        public static void main(String[] args) {
+          Object mixin = MixinProxy.newInstance(
+            tuple(new BasicImp(), Basic.class),
+            tuple(new TimeStampedImp(), TimeStamped.class),
+            tuple(new SerialNumberedImp(),SerialNumbered.class));
+          Basic b = (Basic)mixin;
+          TimeStamped t = (TimeStamped)mixin;
+          SerialNumbered s = (SerialNumbered)mixin;
+          b.set("Hello");
+          System.out.println(b.get());
+          System.out.println(t.getStamp());
+          System.out.println(s.getSerialNumber());
+        }
+      }
+    language: java
+    options:
+      - text: "`Hello` and `1`"
+        correct: true
+      - text: "`null` and `1` — each call creates a fresh object"
+        feedback: "The proxy delegates to the same `BasicImp` both times."
+      - text: "A `ClassCastException` — the proxy isn't a `Basic`"
+        feedback: "It implements all three interfaces."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-performs
+    prompt: |
+      Why must `PerformingDog` and `Robot` both implement `Performs` for `Communicate.perform`?
+    code: |
+      //: generics/Performs.java
+
+      public interface Performs {
+        void speak();
+        void sit();
+      }
+    language: java
+    options:
+      - text: "Java has no latent typing: `<T extends Performs>` is how the method knows `speak()` and `sit()` exist"
+        correct: true
+      - text: "It's optional"
+        feedback: "Without the interface, `performer.speak()` doesn't compile."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-dogsandrobots
+    prompt: |
+      What does this print? (`print` is `println`.)
+    code: |
+      //: generics/DogsAndRobots.java
+      // No latent typing in Java
+      import typeinfo.pets.*;
+      import static net.mindview.util.Print.*;
+
+      class PerformingDog extends Dog implements Performs {
+        public void speak() { print("Woof!"); }
+        public void sit() { print("Sitting"); }
+        public void reproduce() {}
+      }
+
+      class Robot implements Performs {
+        public void speak() { print("Click!"); }
+        public void sit() { print("Clank!"); }
+        public void oilChange() {}
+      }
+
+      class Communicate {
+        public static <T extends Performs>
+        void perform(T performer) {
+          performer.speak();
+          performer.sit();
+        }
+      }
+
+      public class DogsAndRobots {
+        public static void main(String[] args) {
+          PerformingDog d = new PerformingDog();
+          Robot r = new Robot();
+          Communicate.perform(d);
+          Communicate.perform(r);
+        }
+      }
+    language: java
+    options:
+      - text: "Woof!\nSitting\nClick!\nClank!"
+        correct: true
+      - text: "Woof!\nClick!\nSitting\nClank!"
+        feedback: "`perform` calls `speak` then `sit` on each performer in turn."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-simpledogsandrobots
+    prompt: |
+      This version takes a plain `Performs` instead of `<T extends Performs> T`. What changes?
+    code: |
+      //: generics/SimpleDogsAndRobots.java
+      // Removing the generic; code still works.
+
+      class CommunicateSimply {
+        static void perform(Performs performer) {
+          performer.speak();
+          performer.sit();
+        }
+      }
+
+      public class SimpleDogsAndRobots {
+        public static void main(String[] args) {
+          CommunicateSimply.perform(new PerformingDog());
+          CommunicateSimply.perform(new Robot());
+        }
+      }
+    language: java
+    options:
+      - text: "Nothing — the generic version gained nothing here"
+        correct: true
+      - text: "It no longer compiles"
+        feedback: "It prints the same four lines."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-latentreflection
+    prompt: |
+      `Mime` has `sit()` but no `speak()`. What are the last two lines printed? (`print` is `println`.)
+    code: |
+      //: generics/LatentReflection.java
+      // Using Reflection to produce latent typing.
+      import java.lang.reflect.*;
+      import static net.mindview.util.Print.*;
+
+      // Does not implement Performs:
+      class Mime {
+        public void walkAgainstTheWind() {}
+        public void sit() { print("Pretending to sit"); }
+        public void pushInvisibleWalls() {}
+        public String toString() { return "Mime"; }
+      }
+
+      // Does not implement Performs:
+      class SmartDog {
+        public void speak() { print("Woof!"); }
+        public void sit() { print("Sitting"); }
+        public void reproduce() {}
+      }
+
+      class CommunicateReflectively {
+        public static void perform(Object speaker) {
+          Class<?> spkr = speaker.getClass();
+          try {
+            try {
+              Method speak = spkr.getMethod("speak");
+              speak.invoke(speaker);
+            } catch(NoSuchMethodException e) {
+              print(speaker + " cannot speak");
+            }
+            try {
+              Method sit = spkr.getMethod("sit");
+              sit.invoke(speaker);
+            } catch(NoSuchMethodException e) {
+              print(speaker + " cannot sit");
+            }
+          } catch(Exception e) {
+            throw new RuntimeException(speaker.toString(), e);
+          }
+        }
+      }
+
+      public class LatentReflection {
+        public static void main(String[] args) {
+          CommunicateReflectively.perform(new SmartDog());
+          CommunicateReflectively.perform(new Robot());
+          CommunicateReflectively.perform(new Mime());
+        }
+      }
+    language: java
+    options:
+      - text: "Mime cannot speak\nPretending to sit"
+        correct: true
+      - text: "It throws `NoSuchMethodException`"
+        feedback: "It's caught and reported."
+      - text: "Pretending to sit\nMime cannot speak"
+        feedback: "It tries `speak` first."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-apply
+    prompt: |
+      Run with `java ApplyTest`. `Apply.apply(seq, method, args)` calls `method` on every element of any `Iterable` by reflection. What happens with `Apply.apply(squares, Shape.class.getMethod("rotate"))`? (`print` is `println`.)
+    code: |
+      //: generics/Apply.java
+      import java.lang.reflect.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Apply {
+        public static <T, S extends Iterable<? extends T>>
+        void apply(S seq, Method f, Object... args) {
+          try {
+            for(T t: seq)
+              f.invoke(t, args);
+          } catch(Exception e) {
+            // Failures are programmer errors
+            throw new RuntimeException(e);
+          }
+        }
+      }
+
+      class Shape {
+        public void rotate() { print(this + " rotate"); }
+        public void resize(int newSize) {
+          print(this + " resize " + newSize);
+        }
+      }
+
+      class Square extends Shape {}
+
+      class FilledList<T> extends ArrayList<T> {
+        public FilledList(Class<? extends T> type, int size) {
+          try {
+            for(int i = 0; i < size; i++)
+              // Assumes default constructor:
+              add(type.newInstance());
+          } catch(Exception e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+
+      class ApplyTest {
+        public static void main(String[] args) throws Exception {
+          List<Shape> shapes = new ArrayList<Shape>();
+          for(int i = 0; i < 10; i++)
+            shapes.add(new Shape());
+          Apply.apply(shapes, Shape.class.getMethod("rotate"));
+          Apply.apply(shapes,
+            Shape.class.getMethod("resize", int.class), 5);
+          List<Square> squares = new ArrayList<Square>();
+          for(int i = 0; i < 10; i++)
+            squares.add(new Square());
+          Apply.apply(squares, Shape.class.getMethod("rotate"));
+          Apply.apply(squares,
+            Shape.class.getMethod("resize", int.class), 5);
+
+          Apply.apply(new FilledList<Shape>(Shape.class, 10),
+            Shape.class.getMethod("rotate"));
+          Apply.apply(new FilledList<Shape>(Square.class, 10),
+            Shape.class.getMethod("rotate"));
+
+          SimpleQueue<Shape> shapeQ = new SimpleQueue<Shape>();
+          for(int i = 0; i < 5; i++) {
+            shapeQ.add(new Shape());
+            shapeQ.add(new Square());
+          }
+          Apply.apply(shapeQ, Shape.class.getMethod("rotate"));
+        }
+      }
+    language: java
+    options:
+      - text: "Each `Square` runs the inherited `rotate`, printing like `Square@… rotate`"
+        correct: true
+      - text: "It fails — the method came from `Shape.class`"
+        feedback: "A `Shape` method can be invoked on any subclass object."
+      - text: "It doesn't compile — `List<Square>` isn't `Iterable<Shape>`"
+        feedback: "The signature uses `S extends Iterable<? extends T>`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-fill
+    prompt: |
+      Run with `java FillTest`. `Contract`s print as `<class name> <id>`, ids from 0. What does it print?
+    code: |
+      //: generics/Fill.java
+      // Generalizing the FilledList idea
+      import java.util.*;
+
+      // Doesn't work with "anything that has an add()." There is
+      // no "Addable" interface so we are narrowed to using a
+      // Collection. We cannot generalize using generics in
+      // this case.
+      public class Fill {
+        public static <T> void fill(Collection<T> collection,
+        Class<? extends T> classToken, int size) {
+          for(int i = 0; i < size; i++)
+            // Assumes default constructor:
+            try {
+              collection.add(classToken.newInstance());
+            } catch(Exception e) {
+              throw new RuntimeException(e);
+            }
+        }
+      }
+
+      class Contract {
+        private static long counter = 0;
+        private final long id = counter++;
+        public String toString() {
+          return getClass().getName() + " " + id;
+        }
+      }
+
+      class TitleTransfer extends Contract {}
+
+      class FillTest {
+        public static void main(String[] args) {
+          List<Contract> contracts = new ArrayList<Contract>();
+          Fill.fill(contracts, Contract.class, 3);
+          Fill.fill(contracts, TitleTransfer.class, 2);
+          for(Contract c: contracts)
+            System.out.println(c);
+          SimpleQueue<Contract> contractQueue =
+            new SimpleQueue<Contract>();
+          // Won't work. fill() is not generic enough:
+          // Fill.fill(contractQueue, Contract.class, 3);
+        }
+      }
+    language: java
+    options:
+      - text: "Contract 0\nContract 1\nContract 2\nTitleTransfer 3\nTitleTransfer 4"
+        correct: true
+      - text: "Contract 0\nContract 1\nContract 2\nTitleTransfer 0\nTitleTransfer 1"
+        feedback: "The counter is shared by all `Contract`s."
+    explanation: |
+      `fill` needs a `Collection`, so it can't fill a `SimpleQueue`, even though it has an `add` — no latent typing.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-fill2
+    prompt: |
+      Run with `java Fill2Test`. How does `Fill2` fill both a `List` and a `SimpleQueue`? (`print` is `println`.)
+    code: |
+      //: generics/Fill2.java
+      // Using adapters to simulate latent typing.
+      import generics.coffee.*;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      interface Addable<T> { void add(T t); }
+
+      public class Fill2 {
+        // Classtoken version:
+        public static <T> void fill(Addable<T> addable,
+        Class<? extends T> classToken, int size) {
+          for(int i = 0; i < size; i++)
+            try {
+              addable.add(classToken.newInstance());
+            } catch(Exception e) {
+              throw new RuntimeException(e);
+            }
+        }
+        // Generator version:
+        public static <T> void fill(Addable<T> addable,
+        Generator<T> generator, int size) {
+          for(int i = 0; i < size; i++)
+            addable.add(generator.next());
+        }
+      }
+
+      // To adapt a base type, you must use composition.
+      // Make any Collection Addable using composition:
+      class AddableCollectionAdapter<T> implements Addable<T> {
+        private Collection<T> c;
+        public AddableCollectionAdapter(Collection<T> c) {
+          this.c = c;
+        }
+        public void add(T item) { c.add(item); }
+      }
+
+      // A Helper to capture the type automatically:
+      class Adapter {
+        public static <T>
+        Addable<T> collectionAdapter(Collection<T> c) {
+          return new AddableCollectionAdapter<T>(c);
+        }
+      }
+
+      // To adapt a specific type, you can use inheritance.
+      // Make a SimpleQueue Addable using inheritance:
+      class AddableSimpleQueue<T>
+      extends SimpleQueue<T> implements Addable<T> {
+        public void add(T item) { super.add(item); }
+      }
+
+      class Fill2Test {
+        public static void main(String[] args) {
+          // Adapt a Collection:
+          List<Coffee> carrier = new ArrayList<Coffee>();
+          Fill2.fill(
+            new AddableCollectionAdapter<Coffee>(carrier),
+            Coffee.class, 3);
+          // Helper method captures the type:
+          Fill2.fill(Adapter.collectionAdapter(carrier),
+            Latte.class, 2);
+          for(Coffee c: carrier)
+            print(c);
+          print("----------------------");
+          // Use an adapted class:
+          AddableSimpleQueue<Coffee> coffeeQueue =
+            new AddableSimpleQueue<Coffee>();
+          Fill2.fill(coffeeQueue, Mocha.class, 4);
+          Fill2.fill(coffeeQueue, Latte.class, 1);
+          for(Coffee c: coffeeQueue)
+            print(c);
+        }
+      }
+    language: java
+    options:
+      - text: "Both are adapted to an `Addable<T>` interface — the list by composition, the queue by inheritance"
+        correct: true
+      - text: "By reflection"
+        feedback: "It uses adapters to a common interface."
+      - text: "`SimpleQueue` implements `Collection`"
+        feedback: "It doesn't; that's why an adapter is needed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-functional
+    prompt: |
+      `li` is `[1, 2, 3, 4, 5, 6, 7]`. `reduce` combines left to right. What are the first three lines printed? (`print` is `println`.)
+    code: |
+      //: generics/Functional.java
+      import java.math.*;
+      import java.util.concurrent.atomic.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      // Different types of function objects:
+      interface Combiner<T> { T combine(T x, T y); }
+      interface UnaryFunction<R,T> { R function(T x); }
+      interface Collector<T> extends UnaryFunction<T,T> {
+        T result(); // Extract result of collecting parameter
+      }
+      interface UnaryPredicate<T> { boolean test(T x); }
+
+      public class Functional {
+        // Calls the Combiner object on each element to combine
+        // it with a running result, which is finally returned:
+        public static <T> T
+        reduce(Iterable<T> seq, Combiner<T> combiner) {
+          Iterator<T> it = seq.iterator();
+          if(it.hasNext()) {
+            T result = it.next();
+            while(it.hasNext())
+              result = combiner.combine(result, it.next());
+            return result;
+          }
+          // If seq is the empty list:
+          return null; // Or throw exception
+        }
+        // Take a function object and call it on each object in
+        // the list, ignoring the return value. The function
+        // object may act as a collecting parameter, so it is
+        // returned at the end.
+        public static <T> Collector<T>
+        forEach(Iterable<T> seq, Collector<T> func) {
+          for(T t : seq)
+            func.function(t);
+          return func;
+        }
+        // Creates a list of results by calling a
+        // function object for each object in the list:
+        public static <R,T> List<R>
+        transform(Iterable<T> seq, UnaryFunction<R,T> func) {
+          List<R> result = new ArrayList<R>();
+          for(T t : seq)
+            result.add(func.function(t));
+          return result;
+        }
+        // Applies a unary predicate to each item in a sequence,
+        // and returns a list of items that produced "true":
+        public static <T> List<T>
+        filter(Iterable<T> seq, UnaryPredicate<T> pred) {
+          List<T> result = new ArrayList<T>();
+          for(T t : seq)
+            if(pred.test(t))
+              result.add(t);
+          return result;
+        }
+        // To use the above generic methods, we need to create
+        // function objects to adapt to our particular needs:
+        static class IntegerAdder implements Combiner<Integer> {
+          public Integer combine(Integer x, Integer y) {
+            return x + y;
+          }
+        }
+        static class
+        IntegerSubtracter implements Combiner<Integer> {
+          public Integer combine(Integer x, Integer y) {
+            return x - y;
+          }
+        }
+        static class
+        BigDecimalAdder implements Combiner<BigDecimal> {
+          public BigDecimal combine(BigDecimal x, BigDecimal y) {
+            return x.add(y);
+          }
+        }
+        static class
+        BigIntegerAdder implements Combiner<BigInteger> {
+          public BigInteger combine(BigInteger x, BigInteger y) {
+            return x.add(y);
+          }
+        }
+        static class
+        AtomicLongAdder implements Combiner<AtomicLong> {
+          public AtomicLong combine(AtomicLong x, AtomicLong y) {
+            // Not clear whether this is meaningful:
+            return new AtomicLong(x.addAndGet(y.get()));
+          }
+        }
+        // We can even make a UnaryFunction with an "ulp"
+        // (Units in the last place):
+        static class BigDecimalUlp
+        implements UnaryFunction<BigDecimal,BigDecimal> {
+          public BigDecimal function(BigDecimal x) {
+            return x.ulp();
+          }
+        }
+        static class GreaterThan<T extends Comparable<T>>
+        implements UnaryPredicate<T> {
+          private T bound;
+          public GreaterThan(T bound) { this.bound = bound; }
+          public boolean test(T x) {
+            return x.compareTo(bound) > 0;
+          }
+        }
+        static class MultiplyingIntegerCollector
+        implements Collector<Integer> {
+          private Integer val = 1;
+          public Integer function(Integer x) {
+            val *= x;
+            return val;
+          }
+          public Integer result() { return val; }
+        }
+        public static void main(String[] args) {
+          // Generics, varargs & boxing working together:
+          List<Integer> li = Arrays.asList(1, 2, 3, 4, 5, 6, 7);
+          Integer result = reduce(li, new IntegerAdder());
+          print(result);
+
+          result = reduce(li, new IntegerSubtracter());
+          print(result);
+
+          print(filter(li, new GreaterThan<Integer>(4)));
+
+          print(forEach(li,
+            new MultiplyingIntegerCollector()).result());
+
+          print(forEach(filter(li, new GreaterThan<Integer>(4)),
+            new MultiplyingIntegerCollector()).result());
+
+          MathContext mc = new MathContext(7);
+          List<BigDecimal> lbd = Arrays.asList(
+            new BigDecimal(1.1, mc), new BigDecimal(2.2, mc),
+            new BigDecimal(3.3, mc), new BigDecimal(4.4, mc));
+          BigDecimal rbd = reduce(lbd, new BigDecimalAdder());
+          print(rbd);
+
+          print(filter(lbd,
+            new GreaterThan<BigDecimal>(new BigDecimal(3))));
+
+          // Use the prime-generation facility of BigInteger:
+          List<BigInteger> lbi = new ArrayList<BigInteger>();
+          BigInteger bi = BigInteger.valueOf(11);
+          for(int i = 0; i < 11; i++) {
+            lbi.add(bi);
+            bi = bi.nextProbablePrime();
+          }
+          print(lbi);
+
+          BigInteger rbi = reduce(lbi, new BigIntegerAdder());
+          print(rbi);
+          // The sum of this list of primes is also prime:
+          print(rbi.isProbablePrime(5));
+
+          List<AtomicLong> lal = Arrays.asList(
+            new AtomicLong(11), new AtomicLong(47),
+            new AtomicLong(74), new AtomicLong(133));
+          AtomicLong ral = reduce(lal, new AtomicLongAdder());
+          print(ral);
+
+          print(transform(lbd,new BigDecimalUlp()));
+        }
+      }
+    language: java
+    options:
+      - text: "28\n-26\n[5, 6, 7]"
+        correct: true
+      - text: "28\n-28\n[5, 6, 7]"
+        feedback: "Subtracting left to right: 1 − 2 − 3 − 4 − 5 − 6 − 7 = −26."
+      - text: "28\n-26\n[4, 5, 6, 7]"
+        feedback: "`GreaterThan(4)` is strictly greater."
+    explanation: |
+      These function objects are what Java 8's lambdas and `Stream.reduce`/`filter` replaced.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

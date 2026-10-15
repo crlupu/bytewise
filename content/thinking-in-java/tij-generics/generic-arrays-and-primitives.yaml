@@ -1,0 +1,430 @@
+title: "Generic arrays, primitives and casts"
+summary: "Why generic arrays are awkward, what you can do instead, and the cost of no primitive type arguments."
+duration: 8
+tags: [java, generics, arrays, primitives, autoboxing, casts]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Arrays of generics; Issues" }
+steps:
+  - type: explanation
+    title: "Generic arrays"
+    body: |
+      You can declare `T[]`, but not create one: `new T[n]` won't compile.
+      `(T[])new Object[n]` compiles with a warning, but the real array is an `Object[]` — returning it as `Integer[]` throws.
+      Passing a `Class<T>` to `Array.newInstance` creates a true `T[]`.
+
+  - type: explanation
+    title: "Primitives and casts"
+    body: |
+      Type arguments can't be primitives: use `List<Integer>`, and autoboxing converts.
+      But there's no autoboxing of arrays: an `int[]` is not a `T[]`.
+      Casting to a generic type, like `(List<Widget>)obj`, is unchecked — erasure means the cast can't verify the element type.
+
+  - type: choice
+    id: tij-generics-arrayofgenericreference
+    prompt: |
+      Can you declare `static Generic<Integer>[] gia;`?
+    code: |
+      //: generics/ArrayOfGenericReference.java
+
+      class Generic<T> {}
+
+      public class ArrayOfGenericReference {
+        static Generic<Integer>[] gia;
+      }
+    language: java
+    options:
+      - text: "Yes — declaring the reference is fine; creating such an array is the problem"
+        correct: true
+      - text: "No"
+        feedback: "It compiles."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-arrayofgeneric
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/ArrayOfGeneric.java
+
+      public class ArrayOfGeneric {
+        static final int SIZE = 100;
+        static Generic<Integer>[] gia;
+        @SuppressWarnings("unchecked")
+        public static void main(String[] args) {
+          // Compiles; produces ClassCastException:
+          //! gia = (Generic<Integer>[])new Object[SIZE];
+          // Runtime type is the raw (erased) type:
+          gia = (Generic<Integer>[])new Generic[SIZE];
+          System.out.println(gia.getClass().getSimpleName());
+          gia[0] = new Generic<Integer>();
+          //! gia[1] = new Object(); // Compile-time error
+          // Discovers type mismatch at compile time:
+          //! gia[2] = new Generic<Double>();
+        }
+      }
+    language: java
+    options:
+      - text: "Generic[]"
+        correct: true
+      - text: "Generic<Integer>[]"
+        feedback: "The runtime type is the erased one."
+      - text: "Object[]"
+        feedback: "It was created as `new Generic[SIZE]`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericarray
+    prompt: |
+      Why would `Integer[] ia = gai.rep()` throw?
+    code: |
+      //: generics/GenericArray.java
+
+      public class GenericArray<T> {
+        private T[] array;
+        @SuppressWarnings("unchecked")
+        public GenericArray(int sz) {
+          array = (T[])new Object[sz];
+        }
+        public void put(int index, T item) {
+          array[index] = item;
+        }
+        public T get(int index) { return array[index]; }
+        // Method that exposes the underlying representation:
+        public T[] rep() { return array; }
+        public static void main(String[] args) {
+          GenericArray<Integer> gai =
+            new GenericArray<Integer>(10);
+          // This causes a ClassCastException:
+          //! Integer[] ia = gai.rep();
+          // This is OK:
+          Object[] oa = gai.rep();
+        }
+      }
+    language: java
+    options:
+      - text: "The array was really created as `Object[]`; the cast to `T[]` was a lie that erasure hid"
+        correct: true
+      - text: "`rep()` returns null"
+        feedback: "It returns the array."
+      - text: "It wouldn't"
+        feedback: "That's the `//!` line: `ClassCastException`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericarray2
+    prompt: |
+      What is the last line printed?
+    code: |
+      //: generics/GenericArray2.java
+
+      public class GenericArray2<T> {
+        private Object[] array;
+        public GenericArray2(int sz) {
+          array = new Object[sz];
+        }
+        public void put(int index, T item) {
+          array[index] = item;
+        }
+        @SuppressWarnings("unchecked")
+        public T get(int index) { return (T)array[index]; }
+        @SuppressWarnings("unchecked")
+        public T[] rep() {
+          return (T[])array; // Warning: unchecked cast
+        }
+        public static void main(String[] args) {
+          GenericArray2<Integer> gai =
+            new GenericArray2<Integer>(10);
+          for(int i = 0; i < 10; i ++)
+            gai.put(i, i);
+          for(int i = 0; i < 10; i ++)
+            System.out.print(gai.get(i) + " ");
+          System.out.println();
+          try {
+            Integer[] ia = gai.rep();
+          } catch(Exception e) { System.out.println(e); }
+        }
+      }
+    language: java
+    options:
+      - text: "A `ClassCastException`: `[Ljava.lang.Object;` cannot be cast to `[Ljava.lang.Integer;`"
+        correct: true
+      - text: "0 1 2 3 4 5 6 7 8 9 "
+        feedback: "That's the first line; then `gai.rep()` fails."
+      - text: "Nothing more"
+        feedback: "The cast to `Integer[]` throws and is printed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericarraywithtypetoken
+    prompt: |
+      Why does `Integer[] ia = gai.rep()` work here?
+    code: |
+      //: generics/GenericArrayWithTypeToken.java
+      import java.lang.reflect.*;
+
+      public class GenericArrayWithTypeToken<T> {
+        private T[] array;
+        @SuppressWarnings("unchecked")
+        public GenericArrayWithTypeToken(Class<T> type, int sz) {
+          array = (T[])Array.newInstance(type, sz);
+        }
+        public void put(int index, T item) {
+          array[index] = item;
+        }
+        public T get(int index) { return array[index]; }
+        // Expose the underlying representation:
+        public T[] rep() { return array; }
+        public static void main(String[] args) {
+          GenericArrayWithTypeToken<Integer> gai =
+            new GenericArrayWithTypeToken<Integer>(
+              Integer.class, 10);
+          // This now works:
+          Integer[] ia = gai.rep();
+        }
+      }
+    language: java
+    options:
+      - text: "The type token lets `Array.newInstance` create a real `Integer[]`"
+        correct: true
+      - text: "Because of autoboxing"
+        feedback: "It's about the array's runtime type."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-genericcast
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/GenericCast.java
+
+      class FixedSizeStack<T> {
+        private int index = 0;
+        private Object[] storage;
+        public FixedSizeStack(int size) {
+          storage = new Object[size];
+        }
+        public void push(T item) { storage[index++] = item; }
+        @SuppressWarnings("unchecked")
+        public T pop() { return (T)storage[--index]; }
+      }
+
+      public class GenericCast {
+        public static final int SIZE = 10;
+        public static void main(String[] args) {
+          FixedSizeStack<String> strings =
+            new FixedSizeStack<String>(SIZE);
+          for(String s : "A B C D E F G H I J".split(" "))
+            strings.push(s);
+          for(int i = 0; i < SIZE; i++) {
+            String s = strings.pop();
+            System.out.print(s + " ");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "J I H G F E D C B A "
+        correct: true
+      - text: "A B C D E F G H I J "
+        feedback: "It's a stack: last in, first out."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-listofint
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/ListOfInt.java
+      // Autoboxing compensates for the inability to use
+      // primitives in generics.
+      import java.util.*;
+
+      public class ListOfInt {
+        public static void main(String[] args) {
+          List<Integer> li = new ArrayList<Integer>();
+          for(int i = 0; i < 5; i++)
+            li.add(i);
+          for(int i : li)
+            System.out.print(i + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "0 1 2 3 4 "
+        correct: true
+      - text: "It doesn't compile — `li.add(i)` with an `int`"
+        feedback: "Autoboxing converts `int` to `Integer`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-byteset
+    prompt: |
+      Why couldn't you write `Arrays.<Byte>asList(1,2,3,…)`?
+    code: |
+      //: generics/ByteSet.java
+      import java.util.*;
+
+      public class ByteSet {
+        Byte[] possibles = { 1,2,3,4,5,6,7,8,9 };
+        Set<Byte> mySet =
+          new HashSet<Byte>(Arrays.asList(possibles));
+        // But you can't do this:
+        // Set<Byte> mySet2 = new HashSet<Byte>(
+        //   Arrays.<Byte>asList(1,2,3,4,5,6,7,8,9));
+      }
+    language: java
+    options:
+      - text: "`1` is an `int`; it autoboxes to `Integer`, not `Byte`"
+        correct: true
+      - text: "`asList` doesn't accept numbers"
+        feedback: "It accepts any objects."
+    explanation: |
+      In the array initializer `Byte[] possibles = { 1, 2, … }`, the constants are narrowed to `byte` first, then boxed.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-primitivegenerictest
+    prompt: |
+      Why won't `FArray.fill(new int[7], …)` compile?
+    code: |
+      //: generics/PrimitiveGenericTest.java
+      import net.mindview.util.*;
+
+      // Fill an array using a generator:
+      class FArray {
+        public static <T> T[] fill(T[] a, Generator<T> gen) {
+          for(int i = 0; i < a.length; i++)
+            a[i] = gen.next();
+          return a;
+        }
+      }
+
+      public class PrimitiveGenericTest {
+        public static void main(String[] args) {
+          String[] strings = FArray.fill(
+            new String[7], new RandomGenerator.String(10));
+          for(String s : strings)
+            System.out.println(s);
+          Integer[] integers = FArray.fill(
+            new Integer[7], new RandomGenerator.Integer());
+          for(int i: integers)
+            System.out.println(i);
+          // Autoboxing won't save you here. This won't compile:
+          // int[] b =
+          //   FArray.fill(new int[7], new RandIntGenerator());
+        }
+      }
+    language: java
+    options:
+      - text: "`int[]` isn't a `T[]` for any `T` — type parameters can't be primitive, and arrays don't autobox"
+        correct: true
+      - text: "`fill` only works with strings"
+        feedback: "It's generic; it fills `Integer[]` too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-needcasting
+    prompt: |
+      Why does the cast `(List<Widget>)in.readObject()` produce an unchecked warning?
+    code: |
+      //: generics/NeedCasting.java
+      import java.io.*;
+      import java.util.*;
+
+      public class NeedCasting {
+        @SuppressWarnings("unchecked")
+        public void f(String[] args) throws Exception {
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream(args[0]));
+          List<Widget> shapes = (List<Widget>)in.readObject();
+        }
+      }
+    language: java
+    options:
+      - text: "At run time it can only check `List`; whether the elements are `Widget`s can't be verified"
+        correct: true
+      - text: "Because `readObject` returns a `String`"
+        feedback: "It returns an `Object`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-classcasting
+    prompt: |
+      Why won't `List<Widget>.class.cast(…)` compile?
+    code: |
+      //: generics/ClassCasting.java
+      import java.io.*;
+      import java.util.*;
+
+      public class ClassCasting {
+        @SuppressWarnings("unchecked")
+        public void f(String[] args) throws Exception {
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream(args[0]));
+            // Won't Compile:
+      //    List<Widget> lw1 =
+      //    List<Widget>.class.cast(in.readObject());
+          List<Widget> lw2 = List.class.cast(in.readObject());
+        }
+      }
+    language: java
+    options:
+      - text: "There's no class literal for a parameterized type — only `List.class`"
+        correct: true
+      - text: "Because `cast` doesn't exist"
+        feedback: "`Class.cast` exists; `List<Widget>.class` doesn't."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-checkedlist
+    prompt: |
+      `oldStyleMethod` takes a raw `List` and adds a `Cat`. What does this print?
+    code: |
+      //: generics/CheckedList.java
+      // Using Collection.checkedList().
+      import typeinfo.pets.*;
+      import java.util.*;
+
+      public class CheckedList {
+        @SuppressWarnings("unchecked")
+        static void oldStyleMethod(List probablyDogs) {
+          probablyDogs.add(new Cat());
+        }
+        public static void main(String[] args) {
+          List<Dog> dogs1 = new ArrayList<Dog>();
+          oldStyleMethod(dogs1); // Quietly accepts a Cat
+          List<Dog> dogs2 = Collections.checkedList(
+            new ArrayList<Dog>(), Dog.class);
+          try {
+            oldStyleMethod(dogs2); // Throws an exception
+          } catch(Exception e) {
+            System.out.println(e);
+          }
+          // Derived types work fine:
+          List<Pet> pets = Collections.checkedList(
+            new ArrayList<Pet>(), Pet.class);
+          pets.add(new Dog());
+          pets.add(new Cat());
+        }
+      }
+    language: java
+    options:
+      - text: "java.lang.ClassCastException: Attempt to insert class typeinfo.pets.Cat element into collection with element type class typeinfo.pets.Dog"
+        correct: true
+      - text: "Nothing — both lists accept the `Cat`"
+        feedback: "`Collections.checkedList` checks each insertion at run time."
+    explanation: |
+      `dogs1` quietly accepts the `Cat`, to fail later; the checked list fails right at the insertion.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -1,0 +1,514 @@
+title: "Generic classes, tuples and stacks"
+summary: "From holding an Object to holding a T — and tuples, a linked stack and a random list built with type parameters."
+duration: 8
+tags: [java, generics, type parameters, tuples, stack]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Simple generics; A tuple library; A stack class" }
+steps:
+  - type: explanation
+    title: "From Object to T"
+    body: |
+      A holder of `Object` accepts anything, and every `get()` needs a cast that can fail at run time.
+      A `Holder<T>` fixes the type when you create it: the compiler rejects the wrong type, and `get()` needs no cast.
+
+  - type: explanation
+    title: "Tuples and containers"
+    body: |
+      A tuple groups several objects of different types: `TwoTuple<A,B>` with `final` public fields `first` and `second`.
+      A generic class can wrap any storage — a linked list of nodes, an `ArrayList` — and expose a typed interface.
+
+  - type: choice
+    id: tij-generics-holder1
+    prompt: |
+      What's the limitation of `Holder1`?
+    code: |
+      //: generics/Holder1.java
+
+      class Automobile {}
+
+      public class Holder1 {
+        private Automobile a;
+        public Holder1(Automobile a) { this.a = a; }
+        Automobile get() { return a; }
+      }
+    language: java
+    options:
+      - text: "It can hold only an `Automobile` — a new class is needed for each type"
+        correct: true
+      - text: "It can't hold anything"
+        feedback: "It holds one `Automobile`."
+      - text: "It needs a cast on `get()`"
+        feedback: "`get()` returns an `Automobile`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-holder2
+    prompt: |
+      `Holder2` holds an `Object`. What's the cost of that flexibility?
+    code: |
+      //: generics/Holder2.java
+
+      public class Holder2 {
+        private Object a;
+        public Holder2(Object a) { this.a = a; }
+        public void set(Object a) { this.a = a; }
+        public Object get() { return a; }
+        public static void main(String[] args) {
+          Holder2 h2 = new Holder2(new Automobile());
+          Automobile a = (Automobile)h2.get();
+          h2.set("Not an Automobile");
+          String s = (String)h2.get();
+          h2.set(1); // Autoboxes to Integer
+          Integer x = (Integer)h2.get();
+        }
+      }
+    language: java
+    options:
+      - text: "Every `get()` needs a cast, and putting in the wrong type is only caught when the cast fails at run time"
+        correct: true
+      - text: "It can't hold primitives at all"
+        feedback: "`h2.set(1)` autoboxes to an `Integer`."
+      - text: "None"
+        feedback: "The casts are unchecked until run time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-holder3
+    prompt: |
+      What happens with `h3.set("Not an Automobile")`?
+    code: |
+      //: generics/Holder3.java
+
+      public class Holder3<T> {
+        private T a;
+        public Holder3(T a) { this.a = a; }
+        public void set(T a) { this.a = a; }
+        public T get() { return a; }
+        public static void main(String[] args) {
+          Holder3<Automobile> h3 =
+            new Holder3<Automobile>(new Automobile());
+          Automobile a = h3.get(); // No cast needed
+          // h3.set("Not an Automobile"); // Error
+          // h3.set(1); // Error
+        }
+      }
+    language: java
+    options:
+      - text: "Compile error — `h3` is a `Holder3<Automobile>`"
+        correct: true
+      - text: "`ClassCastException` at run time"
+        feedback: "Generics catch it at compile time."
+      - text: "It works, storing a `String`"
+        feedback: "`set` takes a `T`, which is `Automobile`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-simpleholder
+    prompt: |
+      Why does `main` cast `holder.get()` to `String`?
+    code: |
+      //: generics/SimpleHolder.java
+
+      public class SimpleHolder {
+        private Object obj;
+        public void set(Object obj) { this.obj = obj; }
+        public Object get() { return obj; }
+        public static void main(String[] args) {
+          SimpleHolder holder = new SimpleHolder();
+          holder.set("Item");
+          String s = (String)holder.get();
+        }
+      }
+    language: java
+    options:
+      - text: "`get()` returns `Object`; the compiler doesn't know it's a `String`"
+        correct: true
+      - text: "It's optional"
+        feedback: "Without the cast, assigning to `String s` won't compile."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-genericholder
+    prompt: |
+      After erasure, how does the bytecode of `GenericHolder<String>` compare with `SimpleHolder` (which holds an `Object`)?
+    code: |
+      //: generics/GenericHolder.java
+
+      public class GenericHolder<T> {
+        private T obj;
+        public void set(T obj) { this.obj = obj; }
+        public T get() { return obj; }
+        public static void main(String[] args) {
+          GenericHolder<String> holder =
+            new GenericHolder<String>();
+          holder.set("Item");
+          String s = holder.get();
+        }
+      }
+    language: java
+    options:
+      - text: "Nearly identical — the compiler inserts the cast on `get()` for you"
+        correct: true
+      - text: "`GenericHolder` stores a `String` field"
+        feedback: "`T` erases to `Object`."
+      - text: "`GenericHolder` checks the type on `set()` at run time"
+        feedback: "The check happens at compile time; at run time there's just the inserted cast on the way out."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-tupletest
+    prompt: |
+      Tuples print as `(a, b, …)` using each element's `toString`. What does `System.out.println(f())` print?
+    code: |
+      //: generics/TupleTest.java
+      import net.mindview.util.*;
+
+      class Amphibian {}
+      class Vehicle {}
+
+      public class TupleTest {
+        static TwoTuple<String,Integer> f() {
+          // Autoboxing converts the int to Integer:
+          return new TwoTuple<String,Integer>("hi", 47);
+        }
+        static ThreeTuple<Amphibian,String,Integer> g() {
+          return new ThreeTuple<Amphibian, String, Integer>(
+            new Amphibian(), "hi", 47);
+        }
+        static
+        FourTuple<Vehicle,Amphibian,String,Integer> h() {
+          return
+            new FourTuple<Vehicle,Amphibian,String,Integer>(
+              new Vehicle(), new Amphibian(), "hi", 47);
+        }
+        static
+        FiveTuple<Vehicle,Amphibian,String,Integer,Double> k() {
+          return new
+            FiveTuple<Vehicle,Amphibian,String,Integer,Double>(
+              new Vehicle(), new Amphibian(), "hi", 47, 11.1);
+        }
+        public static void main(String[] args) {
+          TwoTuple<String,Integer> ttsi = f();
+          System.out.println(ttsi);
+          // ttsi.first = "there"; // Compile error: final
+          System.out.println(g());
+          System.out.println(h());
+          System.out.println(k());
+        }
+      }
+    language: java
+    options:
+      - text: "(hi, 47)"
+        correct: true
+      - text: "(String, Integer)"
+        feedback: "It prints the values."
+      - text: "TwoTuple@1b6d3586"
+        feedback: "The tuple classes override `toString`."
+    explanation: |
+      `ttsi.first = "there"` would fail: the fields are `public final`, so readable but not writable.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-tupletest2
+    prompt: |
+      How does `tuple("hi", 47)` build a `TwoTuple<String,Integer>` without spelling out the types?
+    code: |
+      //: generics/TupleTest2.java
+      import net.mindview.util.*;
+      import static net.mindview.util.Tuple.*;
+
+      public class TupleTest2 {
+        static TwoTuple<String,Integer> f() {
+          return tuple("hi", 47);
+        }
+        static TwoTuple f2() { return tuple("hi", 47); }
+        static ThreeTuple<Amphibian,String,Integer> g() {
+          return tuple(new Amphibian(), "hi", 47);
+        }
+        static
+        FourTuple<Vehicle,Amphibian,String,Integer> h() {
+          return tuple(new Vehicle(), new Amphibian(), "hi", 47);
+        }
+        static
+        FiveTuple<Vehicle,Amphibian,String,Integer,Double> k() {
+          return tuple(new Vehicle(), new Amphibian(),
+            "hi", 47, 11.1);
+        }
+        public static void main(String[] args) {
+          TwoTuple<String,Integer> ttsi = f();
+          System.out.println(ttsi);
+          System.out.println(f2());
+          System.out.println(g());
+          System.out.println(h());
+          System.out.println(k());
+        }
+      }
+    language: java
+    options:
+      - text: "`tuple` is an overloaded generic method; the compiler infers `A` and `B` from the arguments"
+        correct: true
+      - text: "It returns a raw `TwoTuple`"
+        feedback: "`f()` returns a typed `TwoTuple<String,Integer>`; only `f2` uses the raw type."
+      - text: "Reflection"
+        feedback: "It's ordinary type inference."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-tuplelist
+    prompt: |
+      `TupleList<A,B,C,D>` extends `ArrayList<FourTuple<A,B,C,D>>`. What does each printed line look like?
+    code: |
+      //: generics/TupleList.java
+      // Combining generic types to make complex generic types.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      public class TupleList<A,B,C,D>
+      extends ArrayList<FourTuple<A,B,C,D>> {
+        public static void main(String[] args) {
+          TupleList<Vehicle, Amphibian, String, Integer> tl =
+            new TupleList<Vehicle, Amphibian, String, Integer>();
+          tl.add(TupleTest.h());
+          tl.add(TupleTest.h());
+          for(FourTuple<Vehicle,Amphibian,String,Integer> i: tl)
+            System.out.println(i);
+        }
+      }
+    language: java
+    options:
+      - text: "`(Vehicle@…, Amphibian@…, hi, 47)` — the classes don't override `toString`, so hash codes appear"
+        correct: true
+      - text: "`(Vehicle, Amphibian, hi, 47)`"
+        feedback: "`Vehicle` and `Amphibian` use `Object.toString`."
+      - text: "`[Vehicle, Amphibian, String, Integer]`"
+        feedback: "It prints the stored values."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-generics-linkedstack
+    prompt: |
+      What does this print?
+    code: |
+      //: generics/LinkedStack.java
+      // A stack implemented with an internal linked structure.
+
+      public class LinkedStack<T> {
+        private static class Node<U> {
+          U item;
+          Node<U> next;
+          Node() { item = null; next = null; }
+          Node(U item, Node<U> next) {
+            this.item = item;
+            this.next = next;
+          }
+          boolean end() { return item == null && next == null; }
+        }
+        private Node<T> top = new Node<T>(); // End sentinel
+        public void push(T item) {
+          top = new Node<T>(item, top);
+        }
+        public T pop() {
+          T result = top.item;
+          if(!top.end())
+            top = top.next;
+          return result;
+        }
+        public static void main(String[] args) {
+          LinkedStack<String> lss = new LinkedStack<String>();
+          for(String s : "Phasers on stun!".split(" "))
+            lss.push(s);
+          String s;
+          while((s = lss.pop()) != null)
+            System.out.println(s);
+        }
+      }
+    language: java
+    options:
+      - text: "stun!\non\nPhasers"
+        correct: true
+      - text: "Phasers\non\nstun!"
+        feedback: "A stack pops the last pushed item first."
+      - text: "stun!\non\nPhasers\nnull"
+        feedback: "The loop stops when `pop()` returns `null` at the sentinel; it doesn't print it."
+    explanation: |
+      The end sentinel node has `item == null`, so `pop()` returns `null` when the stack is empty.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-randomlist
+    prompt: |
+      What does `select()` return?
+    code: |
+      //: generics/RandomList.java
+      import java.util.*;
+
+      public class RandomList<T> {
+        private ArrayList<T> storage = new ArrayList<T>();
+        private Random rand = new Random(47);
+        public void add(T item) { storage.add(item); }
+        public T select() {
+          return storage.get(rand.nextInt(storage.size()));
+        }
+        public static void main(String[] args) {
+          RandomList<String> rs = new RandomList<String>();
+          for(String s: ("The quick brown fox jumped over " +
+              "the lazy brown dog").split(" "))
+            rs.add(s);
+          for(int i = 0; i < 11; i++)
+            System.out.print(rs.select() + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "A random element of the stored list, typed as `T`"
+        correct: true
+      - text: "The elements in order"
+        feedback: "It uses `rand.nextInt(storage.size())`."
+      - text: "And removes a random element"
+        feedback: "`select` doesn't remove anything."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-simplequeue
+    prompt: |
+      `SimpleQueue<T>` implements `Iterable<T>`. What does that allow?
+    code: |
+      //: generics/SimpleQueue.java
+      // A different kind of container that is Iterable
+      import java.util.*;
+
+      public class SimpleQueue<T> implements Iterable<T> {
+        private LinkedList<T> storage = new LinkedList<T>();
+        public void add(T t) { storage.offer(t); }
+        public T get() { return storage.poll(); }
+        public Iterator<T> iterator() {
+          return storage.iterator();
+        }
+      }
+    language: java
+    options:
+      - text: "Using it in a foreach loop"
+        correct: true
+      - text: "Adding elements with `add`"
+        feedback: "That's its own method; `Iterable` is about iteration."
+      - text: "Treating it as a `Collection`"
+        feedback: "It isn't a `Collection` — it only provides `iterator()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-listofgenerics
+    prompt: |
+      Why use a `List<T>` here instead of a `T[]`?
+    code: |
+      //: generics/ListOfGenerics.java
+      import java.util.*;
+
+      public class ListOfGenerics<T> {
+        private List<T> array = new ArrayList<T>();
+        public void add(T item) { array.add(item); }
+        public T get(int index) { return array.get(index); }
+      }
+    language: java
+    options:
+      - text: "You can't create a `T[]`; an `ArrayList<T>` gives the same flexibility without that problem"
+        correct: true
+      - text: "Lists are faster"
+        feedback: "The point is that generic arrays can't be created."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-store
+    prompt: |
+      `Store` is an `ArrayList<Aisle>`, each `Aisle` an `ArrayList<Shelf>`, each `Shelf` an `ArrayList<Product>`. How many products does `new Store(14, 5, 10)` hold?
+    code: |
+      //: generics/Store.java
+      // Building up a complex model using generic containers.
+      import java.util.*;
+      import net.mindview.util.*;
+
+      class Product {
+        private final int id;
+        private String description;
+        private double price;
+        public Product(int IDnumber, String descr, double price){
+          id = IDnumber;
+          description = descr;
+          this.price = price;
+          System.out.println(toString());
+        }
+        public String toString() {
+          return id + ": " + description + ", price: $" + price;
+        }
+        public void priceChange(double change) {
+          price += change;
+        }
+        public static Generator<Product> generator =
+          new Generator<Product>() {
+            private Random rand = new Random(47);
+            public Product next() {
+              return new Product(rand.nextInt(1000), "Test",
+                Math.round(rand.nextDouble() * 1000.0) + 0.99);
+            }
+          };
+      }
+
+      class Shelf extends ArrayList<Product> {
+        public Shelf(int nProducts) {
+          Generators.fill(this, Product.generator, nProducts);
+        }
+      }
+
+      class Aisle extends ArrayList<Shelf> {
+        public Aisle(int nShelves, int nProducts) {
+          for(int i = 0; i < nShelves; i++)
+            add(new Shelf(nProducts));
+        }
+      }
+
+      class CheckoutStand {}
+      class Office {}
+
+      public class Store extends ArrayList<Aisle> {
+        private ArrayList<CheckoutStand> checkouts =
+          new ArrayList<CheckoutStand>();
+        private Office office = new Office();
+        public Store(int nAisles, int nShelves, int nProducts) {
+          for(int i = 0; i < nAisles; i++)
+            add(new Aisle(nShelves, nProducts));
+        }
+        public String toString() {
+          StringBuilder result = new StringBuilder();
+          for(Aisle a : this)
+            for(Shelf s : a)
+              for(Product p : s) {
+                result.append(p);
+                result.append("\n");
+              }
+          return result.toString();
+        }
+        public static void main(String[] args) {
+          System.out.println(new Store(14, 5, 10));
+        }
+      }
+    language: java
+    options:
+      - text: "700"
+        correct: true
+      - text: "29"
+        feedback: "Multiply: 14 aisles × 5 shelves × 10 products."
+      - text: "140"
+        feedback: "Each of the 70 shelves has 10 products."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
