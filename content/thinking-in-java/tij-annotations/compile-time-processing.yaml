@@ -1,0 +1,296 @@
+title: "Processing annotations at compile time"
+summary: "SOURCE-retention annotations and processors that generate code — the Java 5 apt tool, and what replaced it."
+duration: 8
+tags: [java, annotations, annotation processing, apt, code generation]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 20, Using apt to process annotations; Using the Visitor pattern with apt" }
+steps:
+  - type: explanation
+    title: "Source annotations"
+    body: |
+      With `RetentionPolicy.SOURCE`, an annotation is dropped by the compiler — only a tool reading the source sees it.
+      A processor can read such annotations and generate new source files, like an interface extracted from a class.
+
+  - type: explanation
+    title: "apt then, javax.annotation.processing now"
+    body: |
+      Java 5 used a separate `apt` tool and the `com.sun.mirror` API.
+      Java 6 built processing into `javac` (JSR 269), and `apt` was removed in Java 8 — so these processors no longer compile.
+
+  - type: choice
+    id: tij-annotations-extractinterface
+    prompt: |
+      Why `@Retention(RetentionPolicy.SOURCE)`?
+    code: |
+      //: annotations/ExtractInterface.java
+      // APT-based annotation processing.
+      package annotations;
+      import java.lang.annotation.*;
+
+      @Target(ElementType.TYPE)
+      @Retention(RetentionPolicy.SOURCE)
+      public @interface ExtractInterface {
+        public String value();
+      }
+    language: java
+    options:
+      - text: "It's only for a compile-time processor; it doesn't need to be in the class file"
+        correct: true
+      - text: "So reflection can read it"
+        feedback: "That needs `RUNTIME`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-annotations-multiplier
+    prompt: |
+      What does this print?
+    code: |
+      //: annotations/Multiplier.java
+      // APT-based annotation processing.
+      package annotations;
+
+      @ExtractInterface("IMultiplier")
+      public class Multiplier {
+        public int multiply(int x, int y) {
+          int total = 0;
+          for(int i = 0; i < x; i++)
+            total = add(total, y);
+          return total;
+        }
+        private int add(int x, int y) { return x + y; }
+        public static void main(String[] args) {
+          Multiplier m = new Multiplier();
+          System.out.println("11*16 = " + m.multiply(11, 16));
+        }
+      }
+    language: java
+    options:
+      - text: "11*16 = 176"
+        correct: true
+      - text: "11*16 = 27"
+        feedback: "`multiply` adds `y` to the total `x` times."
+    explanation: |
+      `@ExtractInterface("IMultiplier")` asks a processor to generate an `IMultiplier` interface with the public method `multiply`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-interfaceextractorprocessor
+    prompt: |
+      Why won't this compile on Java 21?
+    code: |
+      //: annotations/InterfaceExtractorProcessor.java
+      // APT-based annotation processing.
+      package annotations;
+      import com.sun.mirror.apt.*;
+      import com.sun.mirror.declaration.*;
+      import java.io.*;
+      import java.util.*;
+
+      public class InterfaceExtractorProcessor
+        implements AnnotationProcessor {
+        private final AnnotationProcessorEnvironment env;
+        private ArrayList<MethodDeclaration> interfaceMethods =
+          new ArrayList<MethodDeclaration>();
+        public InterfaceExtractorProcessor(
+          AnnotationProcessorEnvironment env) { this.env = env; }
+        public void process() {
+          for(TypeDeclaration typeDecl :
+            env.getSpecifiedTypeDeclarations()) {
+            ExtractInterface annot =
+              typeDecl.getAnnotation(ExtractInterface.class);
+            if(annot == null)
+              break;
+            for(MethodDeclaration m : typeDecl.getMethods())
+              if(m.getModifiers().contains(Modifier.PUBLIC) &&
+                 !(m.getModifiers().contains(Modifier.STATIC)))
+                interfaceMethods.add(m);
+            if(interfaceMethods.size() > 0) {
+              try {
+                PrintWriter writer =
+                  env.getFiler().createSourceFile(annot.value());
+                writer.println("package " +
+                  typeDecl.getPackage().getQualifiedName() +";");
+                writer.println("public interface " +
+                  annot.value() + " {");
+                for(MethodDeclaration m : interfaceMethods) {
+                  writer.print("  public ");
+                  writer.print(m.getReturnType() + " ");
+                  writer.print(m.getSimpleName() + " (");
+                  int i = 0;
+                  for(ParameterDeclaration parm :
+                    m.getParameters()) {
+                    writer.print(parm.getType() + " " +
+                      parm.getSimpleName());
+                    if(++i < m.getParameters().size())
+                      writer.print(", ");
+                  }
+                  writer.println(");");
+                }
+                writer.println("}");
+                writer.close();
+              } catch(IOException ioe) {
+                throw new RuntimeException(ioe);
+              }
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It uses the `com.sun.mirror` API of the `apt` tool, removed in Java 8"
+        correct: true
+      - text: "Annotations can't generate code"
+        feedback: "Processors can; this one uses an obsolete API."
+    explanation: |
+      Today you'd extend `javax.annotation.processing.AbstractProcessor` and run it from `javac`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-interfaceextractorprocessorfactory
+    prompt: |
+      What did the factory tell `apt`?
+    code: |
+      //: annotations/InterfaceExtractorProcessorFactory.java
+      // APT-based annotation processing.
+      package annotations;
+      import com.sun.mirror.apt.*;
+      import com.sun.mirror.declaration.*;
+      import java.util.*;
+
+      public class InterfaceExtractorProcessorFactory
+        implements AnnotationProcessorFactory {
+        public AnnotationProcessor getProcessorFor(
+          Set<AnnotationTypeDeclaration> atds,
+          AnnotationProcessorEnvironment env) {
+          return new InterfaceExtractorProcessor(env);
+        }
+        public Collection<String> supportedAnnotationTypes() {
+          return
+           Collections.singleton("annotations.ExtractInterface");
+        }
+        public Collection<String> supportedOptions() {
+          return Collections.emptySet();
+        }
+      }
+    language: java
+    options:
+      - text: "Which annotation types it handles, and how to create the processor for them"
+        correct: true
+      - text: "Where to write the generated files"
+        feedback: "That came from the environment's `Filer`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-tablecreationprocessorfactory
+    prompt: |
+      This processor walks the declarations with a visitor. What's the advantage over reflection-based `TableCreator`?
+    code: |
+      //: annotations/database/TableCreationProcessorFactory.java
+      // The database example using Visitor.
+      package annotations.database;
+      import com.sun.mirror.apt.*;
+      import com.sun.mirror.declaration.*;
+      import com.sun.mirror.util.*;
+      import java.util.*;
+      import static com.sun.mirror.util.DeclarationVisitors.*;
+
+      public class TableCreationProcessorFactory
+        implements AnnotationProcessorFactory {
+        public AnnotationProcessor getProcessorFor(
+          Set<AnnotationTypeDeclaration> atds,
+          AnnotationProcessorEnvironment env) {
+          return new TableCreationProcessor(env);
+        }
+        public Collection<String> supportedAnnotationTypes() {
+          return Arrays.asList(
+            "annotations.database.DBTable",
+            "annotations.database.Constraints",
+            "annotations.database.SQLString",
+            "annotations.database.SQLInteger");
+        }
+        public Collection<String> supportedOptions() {
+          return Collections.emptySet();
+        }
+        private static class TableCreationProcessor
+          implements AnnotationProcessor {
+          private final AnnotationProcessorEnvironment env;
+          private String sql = "";
+          public TableCreationProcessor(
+            AnnotationProcessorEnvironment env) {
+            this.env = env;
+          }
+          public void process() {
+            for(TypeDeclaration typeDecl :
+              env.getSpecifiedTypeDeclarations()) {
+              typeDecl.accept(getDeclarationScanner(
+                new TableCreationVisitor(), NO_OP));
+              sql = sql.substring(0, sql.length() - 1) + ");";
+              System.out.println("creation SQL is :\n" + sql);
+              sql = "";
+            }
+          }
+          private class TableCreationVisitor
+            extends SimpleDeclarationVisitor {
+            public void visitClassDeclaration(
+              ClassDeclaration d) {
+              DBTable dbTable = d.getAnnotation(DBTable.class);
+              if(dbTable != null) {
+                sql += "CREATE TABLE ";
+                sql += (dbTable.name().length() < 1)
+                  ? d.getSimpleName().toUpperCase()
+                  : dbTable.name();
+                sql += " (";
+              }
+            }
+            public void visitFieldDeclaration(
+              FieldDeclaration d) {
+              String columnName = "";
+              if(d.getAnnotation(SQLInteger.class) != null) {
+                SQLInteger sInt = d.getAnnotation(
+                    SQLInteger.class);
+                // Use field name if name not specified
+                if(sInt.name().length() < 1)
+                  columnName = d.getSimpleName().toUpperCase();
+                else
+                  columnName = sInt.name();
+                sql += "\n    " + columnName + " INT" +
+                  getConstraints(sInt.constraints()) + ",";
+              }
+              if(d.getAnnotation(SQLString.class) != null) {
+                SQLString sString = d.getAnnotation(
+                    SQLString.class);
+                // Use field name if name not specified.
+                if(sString.name().length() < 1)
+                  columnName = d.getSimpleName().toUpperCase();
+                else
+                  columnName = sString.name();
+                sql += "\n    " + columnName + " VARCHAR(" +
+                  sString.value() + ")" +
+                  getConstraints(sString.constraints()) + ",";
+              }
+            }
+            private String getConstraints(Constraints con) {
+              String constraints = "";
+              if(!con.allowNull())
+                constraints += " NOT NULL";
+              if(con.primaryKey())
+                constraints += " PRIMARY KEY";
+              if(con.unique())
+                constraints += " UNIQUE";
+              return constraints;
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It works on source at compile time, without loading the class — and could generate files"
+        correct: true
+      - text: "It runs faster at run time"
+        feedback: "It doesn't run at run time at all."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

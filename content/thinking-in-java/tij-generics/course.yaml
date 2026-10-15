@@ -1,11 +1,14 @@
 title: Generics
-summary: Chapter 15 — why a List of Apple isn't a List of Fruit, and how wildcards fix it.
+summary: Chapter 15 — generic classes and methods, erasure, wildcards and bounds, self-bounding and mixins.
 lessons:
-  - fruit-and-wildcards
   - generic-classes
   - generic-methods
+  - generic-methods-code
   - erasure
+  - erasure-code
   - generic-arrays-and-primitives
+  - fruit-and-wildcards
   - bounds-and-capture
   - self-bounded-types
+  - self-bounded-types-code
   - mixins-and-latent-typing

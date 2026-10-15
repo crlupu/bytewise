@@ -1,0 +1,147 @@
+title: "New I/O — channels and buffers: in code"
+summary: "More examples for new i/o — channels and buffers, one question each."
+duration: 3
+tags: [java, nio, FileChannel, ByteBuffer, memory-mapped, FileLock, charset]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 18, New I/O" }
+steps:
+  - type: explanation
+    title: "Recap: Channels and buffers"
+    body: |
+      A `FileChannel` moves bytes between a file and a `ByteBuffer`.
+      Before reading the bytes you've put in a buffer, call `flip()`; to fill it again, `clear()`.
+      A buffer can be viewed as chars, ints or doubles — in big-endian order unless you change it.
+
+  - type: explanation
+    title: "Recap: Mapping and locking"
+    body: |
+      `channel.map(…)` maps a file into memory, so you can treat a huge file like an array.
+      `channel.lock()`/`tryLock()` lock a file or a region of it against other processes.
+
+  - type: choice
+    id: tij-io-largemappedfiles
+    prompt: |
+      How can this write a 128 MB file without a 128 MB array? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: io/LargeMappedFiles.java
+      // Creating a very large file using mapping.
+      import java.nio.*;
+      import java.nio.channels.*;
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      public class LargeMappedFiles {
+        static int length = 0x8FFFFFF; // 128 MB
+        public static void main(String[] args) throws Exception {
+          MappedByteBuffer out =
+            new RandomAccessFile("test.dat", "rw").getChannel()
+            .map(FileChannel.MapMode.READ_WRITE, 0, length);
+          for(int i = 0; i < length; i++)
+            out.put((byte)'x');
+          print("Finished writing");
+          for(int i = length/2; i < length/2 + 6; i++)
+            printnb((char)out.get(i));
+        }
+      }
+    language: java
+    options:
+      - text: "The file is mapped into virtual memory; the OS pages parts in and out as they're touched"
+        correct: true
+      - text: "It compresses the data"
+        feedback: "Mapping, not compression."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-io-filelocking
+    prompt: |
+      No other process holds the file. What does this print?
+    code: |
+      //: io/FileLocking.java
+      import java.nio.channels.*;
+      import java.util.concurrent.*;
+      import java.io.*;
+
+      public class FileLocking {
+        public static void main(String[] args) throws Exception {
+          FileOutputStream fos= new FileOutputStream("file.txt");
+          FileLock fl = fos.getChannel().tryLock();
+          if(fl != null) {
+            System.out.println("Locked File");
+            TimeUnit.MILLISECONDS.sleep(100);
+            fl.release();
+            System.out.println("Released Lock");
+          }
+          fos.close();
+        }
+      }
+    language: java
+    options:
+      - text: "Locked File\nReleased Lock"
+        correct: true
+      - text: "Nothing — `tryLock` blocks"
+        feedback: "`tryLock` returns at once: a lock or `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-lockingmappedfiles
+    prompt: |
+      Two threads lock different regions of one mapped file. Can they both hold their locks at once?
+    code: |
+      //: io/LockingMappedFiles.java
+      // Locking portions of a mapped file.
+      import java.nio.*;
+      import java.nio.channels.*;
+      import java.io.*;
+
+      public class LockingMappedFiles {
+        static final int LENGTH = 0x8FFFFFF; // 128 MB
+        static FileChannel fc;
+        public static void main(String[] args) throws Exception {
+          fc =
+            new RandomAccessFile("test.dat", "rw").getChannel();
+          MappedByteBuffer out =
+            fc.map(FileChannel.MapMode.READ_WRITE, 0, LENGTH);
+          for(int i = 0; i < LENGTH; i++)
+            out.put((byte)'x');
+          new LockAndModify(out, 0, 0 + LENGTH/3);
+          new LockAndModify(out, LENGTH/2, LENGTH/2 + LENGTH/4);
+        }
+        private static class LockAndModify extends Thread {
+          private ByteBuffer buff;
+          private int start, end;
+          LockAndModify(ByteBuffer mbb, int start, int end) {
+            this.start = start;
+            this.end = end;
+            mbb.limit(end);
+            mbb.position(start);
+            buff = mbb.slice();
+            start();
+          }
+          public void run() {
+            try {
+              // Exclusive lock with no overlap:
+              FileLock fl = fc.lock(start, end, false);
+              System.out.println("Locked: "+ start +" to "+ end);
+              // Perform modification:
+              while(buff.position() < buff.limit() - 1)
+                buff.put((byte)(buff.get() + 1));
+              fl.release();
+              System.out.println("Released: "+start+" to "+ end);
+            } catch(IOException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — the regions don't overlap, so both are granted"
+        correct: true
+      - text: "No — a file has one lock"
+        feedback: "Locks can cover regions."
+    explanation: |
+      File locks are mainly for coordinating with other processes; within one JVM, threads should coordinate themselves.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

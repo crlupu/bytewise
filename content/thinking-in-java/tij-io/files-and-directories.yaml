@@ -1,0 +1,268 @@
+title: "Files and directories"
+summary: "The File class names files and directories — listing with filters, walking trees, and creating, renaming and deleting."
+duration: 8
+tags: [java, io, File, FilenameFilter, directories]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 18, The File class" }
+steps:
+  - type: explanation
+    title: "File is a path"
+    body: |
+      A `File` represents a name — a file or a directory — that may or may not exist.
+      `list()` returns a directory's names; pass a `FilenameFilter` to choose which.
+      `mkdirs()`, `renameTo()` and `delete()` change the file system; `exists()`, `isFile()`, `isDirectory()` and `length()` ask about it.
+
+  - type: explanation
+    title: "Filters are strategies"
+    body: |
+      `list(filter)` calls `filter.accept(dir, name)` for each entry: a callback.
+      The filter can be a named class, an anonymous class returned from a method, or an anonymous class written in place.
+
+  - type: choice
+    id: tij-io-dirlist
+    prompt: |
+      Run with `"D.*\.java"` as the argument. Which names does it print?
+    code: |
+      //: io/DirList.java
+      // Display a directory listing using regular expressions.
+      import java.util.regex.*;
+      import java.io.*;
+      import java.util.*;
+
+      public class DirList {
+        public static void main(String[] args) {
+          File path = new File(".");
+          String[] list;
+          if(args.length == 0)
+            list = path.list();
+          else
+            list = path.list(new DirFilter(args[0]));
+          Arrays.sort(list, String.CASE_INSENSITIVE_ORDER);
+          for(String dirItem : list)
+            System.out.println(dirItem);
+        }
+      }
+
+      class DirFilter implements FilenameFilter {
+        private Pattern pattern;
+        public DirFilter(String regex) {
+          pattern = Pattern.compile(regex);
+        }
+        public boolean accept(File dir, String name) {
+          return pattern.matcher(name).matches();
+        }
+      }
+    language: java
+    options:
+      - text: "Names in the current directory matching the regex — those starting with `D` and ending in `.java` — sorted ignoring case"
+        correct: true
+      - text: "Every file in the directory"
+        feedback: "That's when no argument is given."
+      - text: "Matching names in all subdirectories too"
+        feedback: "`list` only looks at one directory."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-dirlist2
+    prompt: |
+      Why must `regex` be `final` in `filter(final String regex)`?
+    code: |
+      //: io/DirList2.java
+      // Uses anonymous inner classes.
+      // {Args: "D.*\.java"}
+      import java.util.regex.*;
+      import java.io.*;
+      import java.util.*;
+
+      public class DirList2 {
+        public static FilenameFilter filter(final String regex) {
+          // Creation of anonymous inner class:
+          return new FilenameFilter() {
+            private Pattern pattern = Pattern.compile(regex);
+            public boolean accept(File dir, String name) {
+              return pattern.matcher(name).matches();
+            }
+          }; // End of anonymous inner class
+        }
+        public static void main(String[] args) {
+          File path = new File(".");
+          String[] list;
+          if(args.length == 0)
+            list = path.list();
+          else
+            list = path.list(filter(args[0]));
+          Arrays.sort(list, String.CASE_INSENSITIVE_ORDER);
+          for(String dirItem : list)
+            System.out.println(dirItem);
+        }
+      }
+    language: java
+    options:
+      - text: "The anonymous inner class uses it (Java 8+ accepts it effectively final)"
+        correct: true
+      - text: "Because patterns are immutable"
+        feedback: "It's about capturing the parameter."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-dirlist3
+    prompt: |
+      What's the trade-off of defining the anonymous `FilenameFilter` right inside `list(…)`?
+    code: |
+      //: io/DirList3.java
+      // Building the anonymous inner class "in-place."
+      // {Args: "D.*\.java"}
+      import java.util.regex.*;
+      import java.io.*;
+      import java.util.*;
+
+      public class DirList3 {
+        public static void main(final String[] args) {
+          File path = new File(".");
+          String[] list;
+          if(args.length == 0)
+            list = path.list();
+          else
+            list = path.list(new FilenameFilter() {
+              private Pattern pattern = Pattern.compile(args[0]);
+              public boolean accept(File dir, String name) {
+                return pattern.matcher(name).matches();
+              }
+            });
+          Arrays.sort(list, String.CASE_INSENSITIVE_ORDER);
+          for(String dirItem : list)
+            System.out.println(dirItem);
+        }
+      }
+    language: java
+    options:
+      - text: "The code is compact and local, but harder to read and can't be reused"
+        correct: true
+      - text: "It runs faster"
+        feedback: "It's the same class either way."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-directorydemo
+    prompt: |
+      How does `Directory.walk(".", "T.*\\.java")` differ from `Directory.local(".", "T.*")`? (`print` is `println`.)
+    code: |
+      //: io/DirectoryDemo.java
+      // Sample use of Directory utilities.
+      import java.io.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class DirectoryDemo {
+        public static void main(String[] args) {
+          // All directories:
+          PPrint.pprint(Directory.walk(".").dirs);
+          // All files beginning with 'T'
+          for(File file : Directory.local(".", "T.*"))
+            print(file);
+          print("----------------------");
+          // All Java files beginning with 'T':
+          for(File file : Directory.walk(".", "T.*\\.java"))
+            print(file);
+          print("======================");
+          // Class files containing "Z" or "z":
+          for(File file : Directory.walk(".",".*[Zz].*\\.class"))
+            print(file);
+        }
+      }
+    language: java
+    options:
+      - text: "`walk` searches subdirectories too; `local` only the given directory"
+        correct: true
+      - text: "They're the same"
+        feedback: "The output shows `./xfiles/ThawAlien.java` only from `walk`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-makedirectories
+    prompt: |
+      Run as `MakeDirectories MakeDirectoriesTest` when that path doesn't exist. What happens?
+    code: |
+      //: io/MakeDirectories.java
+      // Demonstrates the use of the File class to
+      // create directories and manipulate files.
+      import java.io.*;
+
+      public class MakeDirectories {
+        private static void usage() {
+          System.err.println(
+            "Usage:MakeDirectories path1 ...\n" +
+            "Creates each path\n" +
+            "Usage:MakeDirectories -d path1 ...\n" +
+            "Deletes each path\n" +
+            "Usage:MakeDirectories -r path1 path2\n" +
+            "Renames from path1 to path2");
+          System.exit(1);
+        }
+        private static void fileData(File f) {
+          System.out.println(
+            "Absolute path: " + f.getAbsolutePath() +
+            "\n Can read: " + f.canRead() +
+            "\n Can write: " + f.canWrite() +
+            "\n getName: " + f.getName() +
+            "\n getParent: " + f.getParent() +
+            "\n getPath: " + f.getPath() +
+            "\n length: " + f.length() +
+            "\n lastModified: " + f.lastModified());
+          if(f.isFile())
+            System.out.println("It's a file");
+          else if(f.isDirectory())
+            System.out.println("It's a directory");
+        }
+        public static void main(String[] args) {
+          if(args.length < 1) usage();
+          if(args[0].equals("-r")) {
+            if(args.length != 3) usage();
+            File
+              old = new File(args[1]),
+              rname = new File(args[2]);
+            old.renameTo(rname);
+            fileData(old);
+            fileData(rname);
+            return; // Exit main
+          }
+          int count = 0;
+          boolean del = false;
+          if(args[0].equals("-d")) {
+            count++;
+            del = true;
+          }
+          count--;
+          while(++count < args.length) {
+            File f = new File(args[count]);
+            if(f.exists()) {
+              System.out.println(f + " exists");
+              if(del) {
+                System.out.println("deleting..." + f);
+                f.delete();
+              }
+            }
+            else { // Doesn't exist
+              if(!del) {
+                f.mkdirs();
+                System.out.println("created " + f);
+              }
+            }
+            fileData(f);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "It creates the directory, prints `created MakeDirectoriesTest`, then its data ending in `It's a directory`"
+        correct: true
+      - text: "It prints the usage message"
+        feedback: "That's when no arguments are given."
+      - text: "It deletes it"
+        feedback: "Deleting needs `-d`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

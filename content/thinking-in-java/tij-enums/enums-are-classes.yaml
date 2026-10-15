@@ -80,3 +80,205 @@ steps:
         feedback: Ordinals start at 0, so RED, the third constant, is 2.
       - text: "`2 1`"
         feedback: "`valueOf` returns the constant, which prints as its name."
+
+  - type: predict
+    id: tij-enumerated-enumclass
+    prompt: |
+      `Shrubbery` is `{ GROUND, CRAWLING, HANGING }`. For `GROUND`, what are the first two lines printed? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: enumerated/EnumClass.java
+      // Capabilities of the Enum class
+      import static net.mindview.util.Print.*;
+
+      enum Shrubbery { GROUND, CRAWLING, HANGING }
+
+      public class EnumClass {
+        public static void main(String[] args) {
+          for(Shrubbery s : Shrubbery.values()) {
+            print(s + " ordinal: " + s.ordinal());
+            printnb(s.compareTo(Shrubbery.CRAWLING) + " ");
+            printnb(s.equals(Shrubbery.CRAWLING) + " ");
+            print(s == Shrubbery.CRAWLING);
+            print(s.getDeclaringClass());
+            print(s.name());
+            print("----------------------");
+          }
+          // Produce an enum value from a string name:
+          for(String s : "HANGING CRAWLING GROUND".split(" ")) {
+            Shrubbery shrub = Enum.valueOf(Shrubbery.class, s);
+            print(shrub);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "GROUND ordinal: 0\n-1 false false"
+        correct: true
+      - text: "GROUND ordinal: 0\n0 false false"
+        feedback: "`compareTo` compares ordinals: 0 vs 1 gives −1."
+      - text: "GROUND ordinal: 1\n-1 false false"
+        feedback: "Ordinals start at 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-burrito
+    prompt: |
+      With `import static enumerated.Spiciness.*`, what does this print?
+    code: |
+      //: enumerated/Burrito.java
+      package enumerated;
+      import static enumerated.Spiciness.*;
+
+      public class Burrito {
+        Spiciness degree;
+        public Burrito(Spiciness degree) { this.degree = degree;}
+        public String toString() { return "Burrito is "+ degree;}
+        public static void main(String[] args) {
+          System.out.println(new Burrito(NOT));
+          System.out.println(new Burrito(MEDIUM));
+          System.out.println(new Burrito(HOT));
+        }
+      }
+    language: java
+    options:
+      - text: "Burrito is NOT\nBurrito is MEDIUM\nBurrito is HOT"
+        correct: true
+      - text: "It doesn't compile — `NOT` needs `Spiciness.`"
+        feedback: "The static import lets you use the constants unqualified."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-spiciness
+    prompt: |
+      What is `Spiciness.valueOf("HOT")`?
+    code: |
+      //: enumerated/Spiciness.java
+      package enumerated;
+
+      public enum Spiciness {
+        NOT, MILD, MEDIUM, HOT, FLAMING
+      }
+    language: java
+    options:
+      - text: "The constant `HOT`"
+        correct: true
+      - text: "3"
+        feedback: "That's `HOT.ordinal()`."
+      - text: "It throws — no such method"
+        feedback: "Every enum gets a static `valueOf(String)`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-ozwitch
+    prompt: |
+      Why is the constructor private? (`print` is `println`.)
+    code: |
+      //: enumerated/OzWitch.java
+      // The witches in the land of Oz.
+      import static net.mindview.util.Print.*;
+
+      public enum OzWitch {
+        // Instances must be defined first, before methods:
+        WEST("Miss Gulch, aka the Wicked Witch of the West"),
+        NORTH("Glinda, the Good Witch of the North"),
+        EAST("Wicked Witch of the East, wearer of the Ruby " +
+          "Slippers, crushed by Dorothy's house"),
+        SOUTH("Good by inference, but missing");
+        private String description;
+        // Constructor must be package or private access:
+        private OzWitch(String description) {
+          this.description = description;
+        }
+        public String getDescription() { return description; }
+        public static void main(String[] args) {
+          for(OzWitch witch : OzWitch.values())
+            print(witch + ": " + witch.getDescription());
+        }
+      }
+    language: java
+    options:
+      - text: "Enum constants can only be created inside the enum; the constructor can't be public"
+        correct: true
+      - text: "To make `description` immutable"
+        feedback: "It's because only the enum may create its instances."
+    explanation: |
+      It prints each witch with its description, like `NORTH: Glinda, the Good Witch of the North`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-spaceship
+    prompt: |
+      What are the first two lines printed?
+    code: |
+      //: enumerated/SpaceShip.java
+      public enum SpaceShip {
+        SCOUT, CARGO, TRANSPORT, CRUISER, BATTLESHIP, MOTHERSHIP;
+        public String toString() {
+          String id = name();
+          String lower = id.substring(1).toLowerCase();
+          return id.charAt(0) + lower;
+        }
+        public static void main(String[] args) {
+          for(SpaceShip s : values()) {
+            System.out.println(s);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Scout\nCargo"
+        correct: true
+      - text: "SCOUT\nCARGO"
+        feedback: "`toString` is overridden to capitalize only the first letter."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-trafficlight
+    prompt: |
+      What are the first four lines printed? (`print` is `println`.)
+    code: |
+      //: enumerated/TrafficLight.java
+      // Enums in switch statements.
+      import static net.mindview.util.Print.*;
+
+      // Define an enum type:
+      enum Signal { GREEN, YELLOW, RED, }
+
+      public class TrafficLight {
+        Signal color = Signal.RED;
+        public void change() {
+          switch(color) {
+            // Note that you don't have to say Signal.RED
+            // in the case statement:
+            case RED:    color = Signal.GREEN;
+                         break;
+            case GREEN:  color = Signal.YELLOW;
+                         break;
+            case YELLOW: color = Signal.RED;
+                         break;
+          }
+        }
+        public String toString() {
+          return "The traffic light is " + color;
+        }
+        public static void main(String[] args) {
+          TrafficLight t = new TrafficLight();
+          for(int i = 0; i < 7; i++) {
+            print(t);
+            t.change();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "The traffic light is RED\nThe traffic light is GREEN\nThe traffic light is YELLOW\nThe traffic light is RED"
+        correct: true
+      - text: "The traffic light is RED\nThe traffic light is YELLOW\nThe traffic light is GREEN\nThe traffic light is RED"
+        feedback: "From RED, `change()` goes to GREEN."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

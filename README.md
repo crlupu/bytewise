@@ -64,7 +64,19 @@ wrong, or what it prints. The listings come from the book's companion code at jc
 its authors released into the public domain; Javadoc and fragment listings were written out
 from the book, and a few known slips in the online copies are corrected. When a lesson would
 pass 15 steps, its extra listings move to a follow-on "…: in code" lesson that opens with a
-recap of the lesson's ideas (`splitlong` in the authoring scripts does this).
+recap of the lesson's ideas.
+
+**Thinking in Java** has an exercise for the book's code examples too, one per source file
+(step ids `tij-<chapter>-<file>`), across courses for every chapter apart from the GUI ones:
+operators, strings, arrays, containers in depth, annotations and concurrency were added for
+them. Every program was compiled and run on Java 21, and each "what does this print?" answer
+is checked against that run (not the book's 2006 output). Where Java 21 behaves differently —
+`List.reversed()` breaking an adapter method, `invokedynamic` breaking AtUnit's class-file
+reader — the question says so. The code is shown as published, minus the trailing
+`/* Output: */` comment that would give the answer away. It is © Bruce Eckel, from
+[tij4-code](https://github.com/BruceEckel/tij4-code), used under
+[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/); each of those
+exercises carries that credit.
 
 | Topic | Books |
 |---|---|

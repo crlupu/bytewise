@@ -1,0 +1,377 @@
+title: "Multiple dispatch with enums"
+summary: "Choosing behavior from the types of two objects — double dispatch with classes, then with enums, constant-specific methods, EnumMaps and a 2-D array."
+duration: 8
+tags: [java, enum, multiple dispatch, double dispatch, EnumMap]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 19, Multiple dispatching" }
+steps:
+  - type: explanation
+    title: "Double dispatch"
+    body: |
+      Java picks a method by the runtime type of one object only.
+      To decide by two, make one virtual call that calls back a method overloaded on the first object's type: `a.compete(b)` calls `b.eval(a)`.
+
+  - type: explanation
+    title: "Enums make it a table"
+    body: |
+      With enums, the outcome for every pair can live in a switch, in constant-specific methods, in an `EnumMap` of `EnumMap`s, or in a 2-D array indexed by `ordinal()`.
+
+  - type: choice
+    id: tij-enumerated-outcome
+    prompt: |
+      In RoShamBo, `a.compete(b)` returns an `Outcome`. Whose outcome is it?
+    code: |
+      //: enumerated/Outcome.java
+      package enumerated;
+      public enum Outcome { WIN, LOSE, DRAW }
+    language: java
+    options:
+      - text: "`a`'s — `WIN` means `a` beats `b`"
+        correct: true
+      - text: "`b`'s"
+        feedback: "Read it as \"a vs. b: result for a\" — in RoShamBo2–6 at least."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-competitor
+    prompt: |
+      Why is it `Competitor<T extends Competitor<T>>`?
+    code: |
+      //: enumerated/Competitor.java
+      // Switching one enum on another.
+      package enumerated;
+
+      public interface Competitor<T extends Competitor<T>> {
+        Outcome compete(T competitor);
+      }
+    language: java
+    options:
+      - text: "So `compete(T)` takes the same type: paper competes with paper/scissors/rock, not with anything"
+        correct: true
+      - text: "Enums require it"
+        feedback: "It's a self-bound for type safety."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo
+    prompt: |
+      `play(Class<T> rsbClass, int size)` requires `T extends Enum<T> & Competitor<T>`. Why both bounds?
+    code: |
+      //: enumerated/RoShamBo.java
+      // Common tools for RoShamBo examples.
+      package enumerated;
+      import net.mindview.util.*;
+
+      public class RoShamBo {
+        public static <T extends Competitor<T>>
+        void match(T a, T b) {
+          System.out.println(
+            a + " vs. " + b + ": " +  a.compete(b));
+        }
+        public static <T extends Enum<T> & Competitor<T>>
+        void play(Class<T> rsbClass, int size) {
+          for(int i = 0; i < size; i++)
+            match(
+              Enums.random(rsbClass),Enums.random(rsbClass));
+        }
+      }
+    language: java
+    options:
+      - text: "`Enum` so it can pick random constants; `Competitor` so it can call `compete`"
+        correct: true
+      - text: "Just to restrict callers"
+        feedback: "Both capabilities are used."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo1
+    prompt: |
+      `a.compete(b)` calls `b.eval(a)`. How many virtual calls decide the result?
+    code: |
+      //: enumerated/RoShamBo1.java
+      // Demonstration of multiple dispatching.
+      package enumerated;
+      import java.util.*;
+      import static enumerated.Outcome.*;
+
+      interface Item {
+        Outcome compete(Item it);
+        Outcome eval(Paper p);
+        Outcome eval(Scissors s);
+        Outcome eval(Rock r);
+      }
+
+      class Paper implements Item {
+        public Outcome compete(Item it) { return it.eval(this); }
+        public Outcome eval(Paper p) { return DRAW; }
+        public Outcome eval(Scissors s) { return WIN; }
+        public Outcome eval(Rock r) { return LOSE; }
+        public String toString() { return "Paper"; }
+      }
+
+      class Scissors implements Item {
+        public Outcome compete(Item it) { return it.eval(this); }
+        public Outcome eval(Paper p) { return LOSE; }
+        public Outcome eval(Scissors s) { return DRAW; }
+        public Outcome eval(Rock r) { return WIN; }
+        public String toString() { return "Scissors"; }
+      }
+
+      class Rock implements Item {
+        public Outcome compete(Item it) { return it.eval(this); }
+        public Outcome eval(Paper p) { return WIN; }
+        public Outcome eval(Scissors s) { return LOSE; }
+        public Outcome eval(Rock r) { return DRAW; }
+        public String toString() { return "Rock"; }
+      }
+
+      public class RoShamBo1 {
+        static final int SIZE = 20;
+        private static Random rand = new Random(47);
+        public static Item newItem() {
+          switch(rand.nextInt(3)) {
+            default:
+            case 0: return new Scissors();
+            case 1: return new Paper();
+            case 2: return new Rock();
+          }
+        }
+        public static void match(Item a, Item b) {
+          System.out.println(
+            a + " vs. " + b + ": " +  a.compete(b));
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < SIZE; i++)
+            match(newItem(), newItem());
+        }
+      }
+    language: java
+    options:
+      - text: "Two — the first picks `a`'s class, the second picks `b`'s, with overloading on `a`'s type"
+        correct: true
+      - text: "One"
+        feedback: "One call can only dispatch on one object's type."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-roshambo2
+    prompt: |
+      `PAPER(DRAW, LOSE, WIN)` holds the results against PAPER, SCISSORS and ROCK. What's `SCISSORS vs. ROCK`?
+    code: |
+      //: enumerated/RoShamBo2.java
+      // Switching one enum on another.
+      package enumerated;
+      import static enumerated.Outcome.*;
+
+      public enum RoShamBo2 implements Competitor<RoShamBo2> {
+        PAPER(DRAW, LOSE, WIN),
+        SCISSORS(WIN, DRAW, LOSE),
+        ROCK(LOSE, WIN, DRAW);
+        private Outcome vPAPER, vSCISSORS, vROCK;
+        RoShamBo2(Outcome paper,Outcome scissors,Outcome rock) {
+          this.vPAPER = paper;
+          this.vSCISSORS = scissors;
+          this.vROCK = rock;
+        }
+        public Outcome compete(RoShamBo2 it) {
+          switch(it) {
+            default:
+            case PAPER: return vPAPER;
+            case SCISSORS: return vSCISSORS;
+            case ROCK: return vROCK;
+          }
+        }
+        public static void main(String[] args) {
+          RoShamBo.play(RoShamBo2.class, 20);
+        }
+      }
+    language: java
+    options:
+      - text: "SCISSORS vs. ROCK: LOSE"
+        correct: true
+      - text: "SCISSORS vs. ROCK: WIN"
+        feedback: "`SCISSORS(WIN, DRAW, LOSE)`: against ROCK it's LOSE."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo3
+    prompt: |
+      What replaces the constructor table in this version?
+    code: |
+      //: enumerated/RoShamBo3.java
+      // Using constant-specific methods.
+      package enumerated;
+      import static enumerated.Outcome.*;
+
+      public enum RoShamBo3 implements Competitor<RoShamBo3> {
+        PAPER {
+          public Outcome compete(RoShamBo3 it) {
+            switch(it) {
+              default: // To placate the compiler
+              case PAPER: return DRAW;
+              case SCISSORS: return LOSE;
+              case ROCK: return WIN;
+            }
+          }
+        },
+        SCISSORS {
+          public Outcome compete(RoShamBo3 it) {
+            switch(it) {
+              default:
+              case PAPER: return WIN;
+              case SCISSORS: return DRAW;
+              case ROCK: return LOSE;
+            }
+          }
+        },
+        ROCK {
+          public Outcome compete(RoShamBo3 it) {
+            switch(it) {
+              default:
+              case PAPER: return LOSE;
+              case SCISSORS: return WIN;
+              case ROCK: return DRAW;
+            }
+          }
+        };
+        public abstract Outcome compete(RoShamBo3 it);
+        public static void main(String[] args) {
+          RoShamBo.play(RoShamBo3.class, 20);
+        }
+      }
+    language: java
+    options:
+      - text: "A constant-specific `compete` method with a switch in each constant"
+        correct: true
+      - text: "An `EnumMap`"
+        feedback: "That's RoShamBo5."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo4
+    prompt: |
+      `ROCK.compete(opp)` calls `compete(SCISSORS, opp)`. What does the two-argument `compete` decide?
+    code: |
+      //: enumerated/RoShamBo4.java
+      package enumerated;
+
+      public enum RoShamBo4 implements Competitor<RoShamBo4> {
+        ROCK {
+          public Outcome compete(RoShamBo4 opponent) {
+            return compete(SCISSORS, opponent);
+          }
+        },
+        SCISSORS {
+          public Outcome compete(RoShamBo4 opponent) {
+            return compete(PAPER, opponent);
+          }
+        },
+        PAPER {
+          public Outcome compete(RoShamBo4 opponent) {
+            return compete(ROCK, opponent);
+          }
+        };
+        Outcome compete(RoShamBo4 loser, RoShamBo4 opponent) {
+          return ((opponent == this) ? Outcome.DRAW
+              : ((opponent == loser) ? Outcome.WIN
+                                     : Outcome.LOSE));
+        }
+        public static void main(String[] args) {
+          RoShamBo.play(RoShamBo4.class, 20);
+        }
+      }
+    language: java
+    options:
+      - text: "DRAW if `opp` is ROCK, WIN if `opp` is the one ROCK beats (SCISSORS), otherwise LOSE"
+        correct: true
+      - text: "Whether SCISSORS wins"
+        feedback: "The first argument names the loser to ROCK."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo5
+    prompt: |
+      How does `compete` find the result here?
+    code: |
+      //: enumerated/RoShamBo5.java
+      // Multiple dispatching using an EnumMap of EnumMaps.
+      package enumerated;
+      import java.util.*;
+      import static enumerated.Outcome.*;
+
+      enum RoShamBo5 implements Competitor<RoShamBo5> {
+        PAPER, SCISSORS, ROCK;
+        static EnumMap<RoShamBo5,EnumMap<RoShamBo5,Outcome>>
+          table = new EnumMap<RoShamBo5,
+            EnumMap<RoShamBo5,Outcome>>(RoShamBo5.class);
+        static {
+          for(RoShamBo5 it : RoShamBo5.values())
+            table.put(it,
+              new EnumMap<RoShamBo5,Outcome>(RoShamBo5.class));
+          initRow(PAPER, DRAW, LOSE, WIN);
+          initRow(SCISSORS, WIN, DRAW, LOSE);
+          initRow(ROCK, LOSE, WIN, DRAW);
+        }
+        static void initRow(RoShamBo5 it,
+          Outcome vPAPER, Outcome vSCISSORS, Outcome vROCK) {
+          EnumMap<RoShamBo5,Outcome> row =
+            RoShamBo5.table.get(it);
+          row.put(RoShamBo5.PAPER, vPAPER);
+          row.put(RoShamBo5.SCISSORS, vSCISSORS);
+          row.put(RoShamBo5.ROCK, vROCK);
+        }
+        public Outcome compete(RoShamBo5 it) {
+          return table.get(this).get(it);
+        }
+        public static void main(String[] args) {
+          RoShamBo.play(RoShamBo5.class, 20);
+        }
+      }
+    language: java
+    options:
+      - text: "`table.get(this).get(it)` — an `EnumMap` row per competitor"
+        correct: true
+      - text: "A switch"
+        feedback: "The table lookup replaces it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-roshambo6
+    prompt: |
+      What's the risk of `table[this.ordinal()][other.ordinal()]`?
+    code: |
+      //: enumerated/RoShamBo6.java
+      // Enums using "tables" instead of multiple dispatch.
+      package enumerated;
+      import static enumerated.Outcome.*;
+
+      enum RoShamBo6 implements Competitor<RoShamBo6> {
+        PAPER, SCISSORS, ROCK;
+        private static Outcome[][] table = {
+          { DRAW, LOSE, WIN }, // PAPER
+          { WIN, DRAW, LOSE }, // SCISSORS
+          { LOSE, WIN, DRAW }, // ROCK
+        };
+        public Outcome compete(RoShamBo6 other) {
+          return table[this.ordinal()][other.ordinal()];
+        }
+        public static void main(String[] args) {
+          RoShamBo.play(RoShamBo6.class, 20);
+        }
+      }
+    language: java
+    options:
+      - text: "It depends on declaration order: reorder the constants and the table silently gives wrong answers"
+        correct: true
+      - text: "It's slow"
+        feedback: "It's the fastest version."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

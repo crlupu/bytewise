@@ -1,0 +1,660 @@
+title: "Object serialization"
+summary: "Turning objects into bytes and back — webs of objects, Externalizable, transient, writeObject/readObject, and what isn't saved."
+duration: 8
+tags: [java, io, serialization, Serializable, Externalizable, transient]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 18, Object serialization; Preferences" }
+steps:
+  - type: explanation
+    title: "Serializable"
+    body: |
+      Implementing `Serializable` lets `ObjectOutputStream` write an object — and everything it refers to.
+      Reading it back doesn't call the class's constructor, but the class must be available.
+      `transient` fields aren't saved, and static fields belong to the class, not the object.
+
+  - type: explanation
+    title: "Taking control"
+    body: |
+      `Externalizable` makes you write and read every field yourself, and calls the public no-arg constructor on reading.
+      Or keep `Serializable` and add private `writeObject`/`readObject` methods that call `defaultWriteObject`/`defaultReadObject`.
+
+  - type: choice
+    id: tij-io-worm
+    prompt: |
+      Deserializing `w2` — is any `Worm` constructor called? (`print` is `println`.)
+    code: |
+      //: io/Worm.java
+      // Demonstrates object serialization.
+      import java.io.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Data implements Serializable {
+        private int n;
+        public Data(int n) { this.n = n; }
+        public String toString() { return Integer.toString(n); }
+      }
+
+      public class Worm implements Serializable {
+        private static Random rand = new Random(47);
+        private Data[] d = {
+          new Data(rand.nextInt(10)),
+          new Data(rand.nextInt(10)),
+          new Data(rand.nextInt(10))
+        };
+        private Worm next;
+        private char c;
+        // Value of i == number of segments
+        public Worm(int i, char x) {
+          print("Worm constructor: " + i);
+          c = x;
+          if(--i > 0)
+            next = new Worm(i, (char)(x + 1));
+        }
+        public Worm() {
+          print("Default constructor");
+        }
+        public String toString() {
+          StringBuilder result = new StringBuilder(":");
+          result.append(c);
+          result.append("(");
+          for(Data dat : d)
+            result.append(dat);
+          result.append(")");
+          if(next != null)
+            result.append(next);
+          return result.toString();
+        }
+        public static void main(String[] args)
+        throws ClassNotFoundException, IOException {
+          Worm w = new Worm(6, 'a');
+          print("w = " + w);
+          ObjectOutputStream out = new ObjectOutputStream(
+            new FileOutputStream("worm.out"));
+          out.writeObject("Worm storage\n");
+          out.writeObject(w);
+          out.close(); // Also flushes output
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream("worm.out"));
+          String s = (String)in.readObject();
+          Worm w2 = (Worm)in.readObject();
+          print(s + "w2 = " + w2);
+          ByteArrayOutputStream bout =
+            new ByteArrayOutputStream();
+          ObjectOutputStream out2 = new ObjectOutputStream(bout);
+          out2.writeObject("Worm storage\n");
+          out2.writeObject(w);
+          out2.flush();
+          ObjectInputStream in2 = new ObjectInputStream(
+            new ByteArrayInputStream(bout.toByteArray()));
+          s = (String)in2.readObject();
+          Worm w3 = (Worm)in2.readObject();
+          print(s + "w3 = " + w3);
+        }
+      }
+    language: java
+    options:
+      - text: "No — the objects are rebuilt from the bytes; only the original `new Worm(6, 'a')` printed constructor lines"
+        correct: true
+      - text: "Yes, the default constructor for each segment"
+        feedback: "`Serializable` objects aren't constructed when read."
+    explanation: |
+      `w2` and `w3` print the same chain as `w`: `:a(853):b(119)…`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-alien
+    prompt: |
+      `Alien` has no methods. What does `implements Serializable` do?
+    code: |
+      //: io/Alien.java
+      // A serializable class.
+      import java.io.*;
+      public class Alien implements Serializable {}
+    language: java
+    options:
+      - text: "Marks the class as allowed to be serialized — the interface has no methods"
+        correct: true
+      - text: "Nothing; every object can be serialized"
+        feedback: "Without it, `writeObject` throws `NotSerializableException`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-freezealien
+    prompt: |
+      What does `X.file` contain afterwards?
+    code: |
+      //: io/FreezeAlien.java
+      // Create a serialized output file.
+      import java.io.*;
+
+      public class FreezeAlien {
+        public static void main(String[] args) throws Exception {
+          ObjectOutput out = new ObjectOutputStream(
+            new FileOutputStream("X.file"));
+          Alien quellek = new Alien();
+          out.writeObject(quellek);
+        }
+      }
+    language: java
+    options:
+      - text: "The serialized `Alien` object — its class name and state"
+        correct: true
+      - text: "The `Alien.class` bytecode"
+        feedback: "Only data and the class name, not the code."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-xfiles-thawalien
+    prompt: |
+      Run from a directory where `Alien.class` isn't on the classpath. What happens?
+    code: |
+      //: io/xfiles/ThawAlien.java
+      // Try to recover a serialized file without the
+      // class of object that's stored in that file.
+      import java.io.*;
+
+      public class ThawAlien {
+        public static void main(String[] args) throws Exception {
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream(new File("..", "X.file")));
+          Object mystery = in.readObject();
+          System.out.println(mystery.getClass());
+        }
+      }
+    language: java
+    options:
+      - text: "`ClassNotFoundException: Alien` — the class must be available to deserialize"
+        correct: true
+      - text: "It prints `class Alien`"
+        feedback: "The JVM can't recreate an object of a class it can't load."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-blips
+    prompt: |
+      Why would recovering `b2` throw? (`print` is `println`.)
+    code: |
+      //: io/Blips.java
+      // Simple use of Externalizable & a pitfall.
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      class Blip1 implements Externalizable {
+        public Blip1() {
+          print("Blip1 Constructor");
+        }
+        public void writeExternal(ObjectOutput out)
+            throws IOException {
+          print("Blip1.writeExternal");
+        }
+        public void readExternal(ObjectInput in)
+           throws IOException, ClassNotFoundException {
+          print("Blip1.readExternal");
+        }
+      }
+
+      class Blip2 implements Externalizable {
+        Blip2() {
+          print("Blip2 Constructor");
+        }
+        public void writeExternal(ObjectOutput out)
+            throws IOException {
+          print("Blip2.writeExternal");
+        }
+        public void readExternal(ObjectInput in)
+           throws IOException, ClassNotFoundException {
+          print("Blip2.readExternal");
+        }
+      }
+
+      public class Blips {
+        public static void main(String[] args)
+        throws IOException, ClassNotFoundException {
+          print("Constructing objects:");
+          Blip1 b1 = new Blip1();
+          Blip2 b2 = new Blip2();
+          ObjectOutputStream o = new ObjectOutputStream(
+            new FileOutputStream("Blips.out"));
+          print("Saving objects:");
+          o.writeObject(b1);
+          o.writeObject(b2);
+          o.close();
+          // Now get them back:
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream("Blips.out"));
+          print("Recovering b1:");
+          b1 = (Blip1)in.readObject();
+          // OOPS! Throws an exception:
+      //! print("Recovering b2:");
+      //! b2 = (Blip2)in.readObject();
+        }
+      }
+    language: java
+    options:
+      - text: "`Externalizable` objects are rebuilt with their public no-arg constructor, and `Blip2`'s isn't public"
+        correct: true
+      - text: "`Blip2` wasn't saved"
+        feedback: "It was written."
+      - text: "`readExternal` is empty"
+        feedback: "`Blip1`'s is empty too, and it works."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-io-blip3
+    prompt: |
+      What are the last three lines printed? (`print` is `println`.)
+    code: |
+      //: io/Blip3.java
+      // Reconstructing an externalizable object.
+      import java.io.*;
+      import static net.mindview.util.Print.*;
+
+      public class Blip3 implements Externalizable {
+        private int i;
+        private String s; // No initialization
+        public Blip3() {
+          print("Blip3 Constructor");
+          // s, i not initialized
+        }
+        public Blip3(String x, int a) {
+          print("Blip3(String x, int a)");
+          s = x;
+          i = a;
+          // s & i initialized only in non-default constructor.
+        }
+        public String toString() { return s + i; }
+        public void writeExternal(ObjectOutput out)
+        throws IOException {
+          print("Blip3.writeExternal");
+          // You must do this:
+          out.writeObject(s);
+          out.writeInt(i);
+        }
+        public void readExternal(ObjectInput in)
+        throws IOException, ClassNotFoundException {
+          print("Blip3.readExternal");
+          // You must do this:
+          s = (String)in.readObject();
+          i = in.readInt();
+        }
+        public static void main(String[] args)
+        throws IOException, ClassNotFoundException {
+          print("Constructing objects:");
+          Blip3 b3 = new Blip3("A String ", 47);
+          print(b3);
+          ObjectOutputStream o = new ObjectOutputStream(
+            new FileOutputStream("Blip3.out"));
+          print("Saving object:");
+          o.writeObject(b3);
+          o.close();
+          // Now get it back:
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream("Blip3.out"));
+          print("Recovering b3:");
+          b3 = (Blip3)in.readObject();
+          print(b3);
+        }
+      }
+    language: java
+    options:
+      - text: "Blip3 Constructor\nBlip3.readExternal\nA String 47"
+        correct: true
+      - text: "Blip3.readExternal\nA String 47"
+        feedback: "For `Externalizable`, the no-arg constructor runs first."
+      - text: "Blip3 Constructor\nBlip3.readExternal\nnull0"
+        feedback: "`readExternal` restores `s` and `i`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-logon
+    prompt: |
+      After recovering, what's the `password`? (`print` is `println`.)
+    code: |
+      //: io/Logon.java
+      // Demonstrates the "transient" keyword.
+      import java.util.concurrent.*;
+      import java.io.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class Logon implements Serializable {
+        private Date date = new Date();
+        private String username;
+        private transient String password;
+        public Logon(String name, String pwd) {
+          username = name;
+          password = pwd;
+        }
+        public String toString() {
+          return "logon info: \n   username: " + username +
+            "\n   date: " + date + "\n   password: " + password;
+        }
+        public static void main(String[] args) throws Exception {
+          Logon a = new Logon("Hulk", "myLittlePony");
+          print("logon a = " + a);
+          ObjectOutputStream o = new ObjectOutputStream(
+            new FileOutputStream("Logon.out"));
+          o.writeObject(a);
+          o.close();
+          TimeUnit.SECONDS.sleep(1); // Delay
+          // Now get them back:
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream("Logon.out"));
+          print("Recovering object at " + new Date());
+          a = (Logon)in.readObject();
+          print("logon a = " + a);
+        }
+      }
+    language: java
+    options:
+      - text: "null — it's `transient`, so it wasn't saved"
+        correct: true
+      - text: "myLittlePony"
+        feedback: "Transient fields are skipped."
+      - text: "An empty string"
+        feedback: "Object fields default to `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-io-serialctl
+    prompt: |
+      `b` is `transient`, but the private `writeObject`/`readObject` save and restore it explicitly. What are the last two lines?
+    code: |
+      //: io/SerialCtl.java
+      // Controlling serialization by adding your own
+      // writeObject() and readObject() methods.
+      import java.io.*;
+
+      public class SerialCtl implements Serializable {
+        private String a;
+        private transient String b;
+        public SerialCtl(String aa, String bb) {
+          a = "Not Transient: " + aa;
+          b = "Transient: " + bb;
+        }
+        public String toString() { return a + "\n" + b; }
+        private void writeObject(ObjectOutputStream stream)
+        throws IOException {
+          stream.defaultWriteObject();
+          stream.writeObject(b);
+        }
+        private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+          stream.defaultReadObject();
+          b = (String)stream.readObject();
+        }
+        public static void main(String[] args)
+        throws IOException, ClassNotFoundException {
+          SerialCtl sc = new SerialCtl("Test1", "Test2");
+          System.out.println("Before:\n" + sc);
+          ByteArrayOutputStream buf= new ByteArrayOutputStream();
+          ObjectOutputStream o = new ObjectOutputStream(buf);
+          o.writeObject(sc);
+          // Now get it back:
+          ObjectInputStream in = new ObjectInputStream(
+            new ByteArrayInputStream(buf.toByteArray()));
+          SerialCtl sc2 = (SerialCtl)in.readObject();
+          System.out.println("After:\n" + sc2);
+        }
+      }
+    language: java
+    options:
+      - text: "Not Transient: Test1\nTransient: Test2"
+        correct: true
+      - text: "Not Transient: Test1\nnull"
+        feedback: "The custom methods write and read `b` themselves."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-myworld
+    prompt: |
+      Do `animals1` and `animals2` (two writes to the same stream) share objects? (`print` is `println`.)
+    code: |
+      //: io/MyWorld.java
+      import java.io.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      class House implements Serializable {}
+
+      class Animal implements Serializable {
+        private String name;
+        private House preferredHouse;
+        Animal(String nm, House h) {
+          name = nm;
+          preferredHouse = h;
+        }
+        public String toString() {
+          return name + "[" + super.toString() +
+            "], " + preferredHouse + "\n";
+        }
+      }
+
+      public class MyWorld {
+        public static void main(String[] args)
+        throws IOException, ClassNotFoundException {
+          House house = new House();
+          List<Animal> animals = new ArrayList<Animal>();
+          animals.add(new Animal("Bosco the dog", house));
+          animals.add(new Animal("Ralph the hamster", house));
+          animals.add(new Animal("Molly the cat", house));
+          print("animals: " + animals);
+          ByteArrayOutputStream buf1 =
+            new ByteArrayOutputStream();
+          ObjectOutputStream o1 = new ObjectOutputStream(buf1);
+          o1.writeObject(animals);
+          o1.writeObject(animals); // Write a 2nd set
+          // Write to a different stream:
+          ByteArrayOutputStream buf2 =
+            new ByteArrayOutputStream();
+          ObjectOutputStream o2 = new ObjectOutputStream(buf2);
+          o2.writeObject(animals);
+          // Now get them back:
+          ObjectInputStream in1 = new ObjectInputStream(
+            new ByteArrayInputStream(buf1.toByteArray()));
+          ObjectInputStream in2 = new ObjectInputStream(
+            new ByteArrayInputStream(buf2.toByteArray()));
+          List
+            animals1 = (List)in1.readObject(),
+            animals2 = (List)in1.readObject(),
+            animals3 = (List)in2.readObject();
+          print("animals1: " + animals1);
+          print("animals2: " + animals2);
+          print("animals3: " + animals3);
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — within one stream each object is written once; later writes are references (same hashes)"
+        correct: true
+      - text: "No — every write makes new copies"
+        feedback: "Only a different stream (`animals3`) gets separate copies."
+    explanation: |
+      All three animals in each list point to one `House`, too.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-storecadstate
+    prompt: |
+      Why must `Line` write its `color` with `serializeStaticState`?
+    code: |
+      //: io/StoreCADState.java
+      // Saving the state of a pretend CAD system.
+      import java.io.*;
+      import java.util.*;
+
+      abstract class Shape implements Serializable {
+        public static final int RED = 1, BLUE = 2, GREEN = 3;
+        private int xPos, yPos, dimension;
+        private static Random rand = new Random(47);
+        private static int counter = 0;
+        public abstract void setColor(int newColor);
+        public abstract int getColor();
+        public Shape(int xVal, int yVal, int dim) {
+          xPos = xVal;
+          yPos = yVal;
+          dimension = dim;
+        }
+        public String toString() {
+          return getClass() +
+            "color[" + getColor() + "] xPos[" + xPos +
+            "] yPos[" + yPos + "] dim[" + dimension + "]\n";
+        }
+        public static Shape randomFactory() {
+          int xVal = rand.nextInt(100);
+          int yVal = rand.nextInt(100);
+          int dim = rand.nextInt(100);
+          switch(counter++ % 3) {
+            default:
+            case 0: return new Circle(xVal, yVal, dim);
+            case 1: return new Square(xVal, yVal, dim);
+            case 2: return new Line(xVal, yVal, dim);
+          }
+        }
+      }
+
+      class Circle extends Shape {
+        private static int color = RED;
+        public Circle(int xVal, int yVal, int dim) {
+          super(xVal, yVal, dim);
+        }
+        public void setColor(int newColor) { color = newColor; }
+        public int getColor() { return color; }
+      }
+
+      class Square extends Shape {
+        private static int color;
+        public Square(int xVal, int yVal, int dim) {
+          super(xVal, yVal, dim);
+          color = RED;
+        }
+        public void setColor(int newColor) { color = newColor; }
+        public int getColor() { return color; }
+      }
+
+      class Line extends Shape {
+        private static int color = RED;
+        public static void
+        serializeStaticState(ObjectOutputStream os)
+        throws IOException { os.writeInt(color); }
+        public static void
+        deserializeStaticState(ObjectInputStream os)
+        throws IOException { color = os.readInt(); }
+        public Line(int xVal, int yVal, int dim) {
+          super(xVal, yVal, dim);
+        }
+        public void setColor(int newColor) { color = newColor; }
+        public int getColor() { return color; }
+      }
+
+      public class StoreCADState {
+        public static void main(String[] args) throws Exception {
+          List<Class<? extends Shape>> shapeTypes =
+            new ArrayList<Class<? extends Shape>>();
+          // Add references to the class objects:
+          shapeTypes.add(Circle.class);
+          shapeTypes.add(Square.class);
+          shapeTypes.add(Line.class);
+          List<Shape> shapes = new ArrayList<Shape>();
+          // Make some shapes:
+          for(int i = 0; i < 10; i++)
+            shapes.add(Shape.randomFactory());
+          // Set all the static colors to GREEN:
+          for(int i = 0; i < 10; i++)
+            ((Shape)shapes.get(i)).setColor(Shape.GREEN);
+          // Save the state vector:
+          ObjectOutputStream out = new ObjectOutputStream(
+            new FileOutputStream("CADState.out"));
+          out.writeObject(shapeTypes);
+          Line.serializeStaticState(out);
+          out.writeObject(shapes);
+          // Display the shapes:
+          System.out.println(shapes);
+        }
+      }
+    language: java
+    options:
+      - text: "Static fields belong to the class and aren't serialized with objects"
+        correct: true
+      - text: "Because `color` is private"
+        feedback: "Private fields are serialized; static ones aren't."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-recovercadstate
+    prompt: |
+      All shapes were set to color 3 before saving. After recovering, Circles show 1 and Squares 0. Why?
+    code: |
+      //: io/RecoverCADState.java
+      // Restoring the state of the pretend CAD system.
+      import java.io.*;
+      import java.util.*;
+
+      public class RecoverCADState {
+        @SuppressWarnings("unchecked")
+        public static void main(String[] args) throws Exception {
+          ObjectInputStream in = new ObjectInputStream(
+            new FileInputStream("CADState.out"));
+          // Read in the same order they were written:
+          List<Class<? extends Shape>> shapeTypes =
+            (List<Class<? extends Shape>>)in.readObject();
+          Line.deserializeStaticState(in);
+          List<Shape> shapes = (List<Shape>)in.readObject();
+          System.out.println(shapes);
+        }
+      }
+    language: java
+    options:
+      - text: "Their static `color` fields weren't saved; they show the values from class initialization"
+        correct: true
+      - text: "The objects were corrupted"
+        feedback: "Only `Line` saved its static state — and Lines show 3."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-preferencesdemo
+    prompt: |
+      Run the program twice. What happens to `UsageCount`? (`print` is `println`.)
+    code: |
+      //: io/PreferencesDemo.java
+      import java.util.prefs.*;
+      import static net.mindview.util.Print.*;
+
+      public class PreferencesDemo {
+        public static void main(String[] args) throws Exception {
+          Preferences prefs = Preferences
+            .userNodeForPackage(PreferencesDemo.class);
+          prefs.put("Location", "Oz");
+          prefs.put("Footwear", "Ruby Slippers");
+          prefs.putInt("Companions", 4);
+          prefs.putBoolean("Are there witches?", true);
+          int usageCount = prefs.getInt("UsageCount", 0);
+          usageCount++;
+          prefs.putInt("UsageCount", usageCount);
+          for(String key : prefs.keys())
+            print(key + ": "+ prefs.get(key, null));
+          // You must always provide a default value:
+          print("How many companions does Dorothy have? " +
+            prefs.getInt("Companions", 0));
+        }
+      }
+    language: java
+    options:
+      - text: "It increases each run — preferences persist (on Linux, in the user's home directory)"
+        correct: true
+      - text: "It's always 1"
+        feedback: "The stored value is read back next time."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

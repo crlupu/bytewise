@@ -79,3 +79,122 @@ steps:
         correct: true
       - text: Decorators are faster
         feedback: The benefit is flexibility; each layer adds a small call overhead if anything.
+
+  - type: choice
+    id: tij-io-echo
+    prompt: |
+      What wraps `System.in` so you can read lines?
+    code: |
+      //: io/Echo.java
+      // How to read from standard input.
+      import java.io.*;
+
+      public class Echo {
+        public static void main(String[] args)
+        throws IOException {
+          BufferedReader stdin = new BufferedReader(
+            new InputStreamReader(System.in));
+          String s;
+          while((s = stdin.readLine()) != null && s.length()!= 0)
+            System.out.println(s);
+          // An empty line or Ctrl-Z terminates the program
+        }
+      }
+    language: java
+    options:
+      - text: "An `InputStreamReader` (bytes to characters) inside a `BufferedReader` (for `readLine`)"
+        correct: true
+      - text: "Nothing — `System.in` has `readLine`"
+        feedback: "`System.in` is a raw `InputStream`."
+    explanation: |
+      It echoes each line until an empty one.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-changesystemout
+    prompt: |
+      What does the `true` in `new PrintWriter(System.out, true)` do?
+    code: |
+      //: io/ChangeSystemOut.java
+      // Turn System.out into a PrintWriter.
+      import java.io.*;
+
+      public class ChangeSystemOut {
+        public static void main(String[] args) {
+          PrintWriter out = new PrintWriter(System.out, true);
+          out.println("Hello, world");
+        }
+      }
+    language: java
+    options:
+      - text: "Turns on auto-flush, so each `println` appears immediately"
+        correct: true
+      - text: "Appends instead of overwriting"
+        feedback: "That's for files."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-redirecting
+    prompt: |
+      After `System.setOut(out)`, where does `System.out.println` write?
+    code: |
+      //: io/Redirecting.java
+      // Demonstrates standard I/O redirection.
+      import java.io.*;
+
+      public class Redirecting {
+        public static void main(String[] args)
+        throws IOException {
+          PrintStream console = System.out;
+          BufferedInputStream in = new BufferedInputStream(
+            new FileInputStream("Redirecting.java"));
+          PrintStream out = new PrintStream(
+            new BufferedOutputStream(
+              new FileOutputStream("test.out")));
+          System.setIn(in);
+          System.setOut(out);
+          System.setErr(out);
+          BufferedReader br = new BufferedReader(
+            new InputStreamReader(System.in));
+          String s;
+          while((s = br.readLine()) != null)
+            System.out.println(s);
+          out.close(); // Remember this!
+          System.setOut(console);
+        }
+      }
+    language: java
+    options:
+      - text: "To `test.out`, until `setOut(console)` restores the console"
+        correct: true
+      - text: "Still to the console"
+        feedback: "`setOut` replaces the standard output stream."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-osexecutedemo
+    prompt: |
+      `OSExecute.command` runs a program and copies its output. What does `javap OSExecuteDemo` show?
+    code: |
+      //: io/OSExecuteDemo.java
+      // Demonstrates standard I/O redirection.
+      import net.mindview.util.*;
+
+      public class OSExecuteDemo {
+        public static void main(String[] args) {
+          OSExecute.command("javap OSExecuteDemo");
+        }
+      }
+    language: java
+    options:
+      - text: "The class's declarations — its public members — disassembled from the compiled class file"
+        correct: true
+      - text: "The source code"
+        feedback: "`javap` reads class files."
+    explanation: |
+      `javap` must find the class on its classpath; here it couldn't, so the demo threw.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

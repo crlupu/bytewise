@@ -1,0 +1,413 @@
+title: "Defining and reading annotations"
+summary: "@interface, @Target and @Retention, elements and defaults, and reading annotations with reflection — up to generating SQL."
+duration: 8
+tags: [java, annotations, "@interface", "@Retention", "@Target", reflection]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 20, Basic syntax; Writing annotation processors" }
+steps:
+  - type: explanation
+    title: "Defining annotations"
+    body: |
+      `@interface UseCase { int id(); String description() default "no description"; }` declares an annotation with two elements.
+      `@Target` says where it may appear (methods, fields, types…); `@Retention(RUNTIME)` keeps it in the class file for reflection.
+      An element named `value` can be set without its name: `@SQLString(30)`.
+
+  - type: explanation
+    title: "Reading them"
+    body: |
+      With `RUNTIME` retention, `method.getAnnotation(UseCase.class)` returns the annotation (or `null`), and you call its elements like methods.
+      Elements can't be `null`: defaults like `""` or `-1` stand for "not set".
+      Annotations can nest: `constraints = @Constraints(primaryKey = true)`.
+
+  - type: choice
+    id: tij-annotations-usecase
+    prompt: |
+      `@UseCase(id = 48)` leaves out `description`. What does `uc.description()` return?
+    code: |
+      //: annotations/UseCase.java
+      import java.lang.annotation.*;
+
+      @Target(ElementType.METHOD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface UseCase {
+        public int id();
+        public String description() default "no description";
+      }
+    language: java
+    options:
+      - text: "\"no description\" — the default"
+        correct: true
+      - text: "null"
+        feedback: "Elements with defaults return the default."
+      - text: "It doesn't compile — every element must be given"
+        feedback: "Only elements without defaults are required."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-passwordutils
+    prompt: |
+      Do the `@UseCase` annotations change what these methods do?
+    code: |
+      //: annotations/PasswordUtils.java
+      import java.util.*;
+
+      public class PasswordUtils {
+        @UseCase(id = 47, description =
+        "Passwords must contain at least one numeric")
+        public boolean validatePassword(String password) {
+          return (password.matches("\\w*\\d\\w*"));
+        }
+        @UseCase(id = 48)
+        public String encryptPassword(String password) {
+         return new StringBuilder(password).reverse().toString();
+        }
+        @UseCase(id = 49, description =
+        "New passwords can't equal previously used ones")
+        public boolean checkForNewPassword(
+          List<String> prevPasswords, String password) {
+          return !prevPasswords.contains(password);
+        }
+      }
+    language: java
+    options:
+      - text: "No — annotations are data about the code; a tool must read them to have any effect"
+        correct: true
+      - text: "Yes — they validate the methods"
+        feedback: "Nothing happens unless something processes them."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-annotations-usecasetracker
+    prompt: |
+      `PasswordUtils` has methods annotated with use cases 47 (with a description), 48 (no description) and 49 (with a description). What does this print?
+    code: |
+      //: annotations/UseCaseTracker.java
+      import java.lang.reflect.*;
+      import java.util.*;
+
+      public class UseCaseTracker {
+        public static void
+        trackUseCases(List<Integer> useCases, Class<?> cl) {
+          for(Method m : cl.getDeclaredMethods()) {
+            UseCase uc = m.getAnnotation(UseCase.class);
+            if(uc != null) {
+              System.out.println("Found Use Case:" + uc.id() +
+                " " + uc.description());
+              useCases.remove(new Integer(uc.id()));
+            }
+          }
+          for(int i : useCases) {
+            System.out.println("Warning: Missing use case-" + i);
+          }
+        }
+        public static void main(String[] args) {
+          List<Integer> useCases = new ArrayList<Integer>();
+          Collections.addAll(useCases, 47, 48, 49, 50);
+          trackUseCases(useCases, PasswordUtils.class);
+        }
+      }
+    language: java
+    options:
+      - text: "Found Use Case:47 Passwords must contain at least one numeric\nFound Use Case:48 no description\nFound Use Case:49 New passwords can't equal previously used ones\nWarning: Missing use case-50"
+        correct: true
+      - text: "Found Use Case:47 Passwords must contain at least one numeric\nFound Use Case:48 null\nFound Use Case:49 New passwords can't equal previously used ones\nWarning: Missing use case-50"
+        feedback: "Use case 48 gets the default description."
+      - text: "Found Use Case:47 Passwords must contain at least one numeric\nFound Use Case:48 no description\nFound Use Case:49 New passwords can't equal previously used ones"
+        feedback: "Use case 50 is in the list but no method has it."
+    explanation: |
+      `getDeclaredMethods()` doesn't promise any order, so the found lines can come out in a different order on other JVMs.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-simulatingnull
+    prompt: |
+      Why give `id` a default of −1 rather than leaving it null?
+    code: |
+      //: annotations/SimulatingNull.java
+      import java.lang.annotation.*;
+
+      @Target(ElementType.METHOD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface SimulatingNull {
+        public int id() default -1;
+        public String description() default "";
+      }
+    language: java
+    options:
+      - text: "Annotation elements can never be `null`; a sentinel like −1 stands for \"absent\""
+        correct: true
+      - text: "For speed"
+        feedback: "It's a language restriction."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-testable
+    prompt: |
+      `@Test` here is AtUnit's annotation. What does marking `testExecute()` with it do on its own?
+    code: |
+      //: annotations/Testable.java
+      package annotations;
+      import net.mindview.atunit.*;
+
+      public class Testable {
+        public void execute() {
+          System.out.println("Executing..");
+        }
+        @Test void testExecute() { execute(); }
+      }
+    language: java
+    options:
+      - text: "Nothing at run time until a tool like AtUnit finds and runs it"
+        correct: true
+      - text: "It runs the method when the class loads"
+        feedback: "Annotations don't execute anything."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-dbtable
+    prompt: |
+      Where can `@DBTable` be used?
+    code: |
+      //: annotations/database/DBTable.java
+      package annotations.database;
+      import java.lang.annotation.*;
+
+      @Target(ElementType.TYPE) // Applies to classes only
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface DBTable {
+        public String name() default "";
+      }
+    language: java
+    options:
+      - text: "On classes (and interfaces/enums) — `@Target(ElementType.TYPE)`"
+        correct: true
+      - text: "On fields"
+        feedback: "That would need `ElementType.FIELD`."
+      - text: "Anywhere"
+        feedback: "`@Target` restricts it."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-constraints
+    prompt: |
+      What does `@Constraints` with no elements mean?
+    code: |
+      //: annotations/database/Constraints.java
+      package annotations.database;
+      import java.lang.annotation.*;
+
+      @Target(ElementType.FIELD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface Constraints {
+        boolean primaryKey() default false;
+        boolean allowNull() default true;
+        boolean unique() default false;
+      }
+    language: java
+    options:
+      - text: "Not a primary key, nulls allowed, not unique — all the defaults"
+        correct: true
+      - text: "It doesn't compile"
+        feedback: "Every element has a default, so `@Constraints` alone is fine."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-sqlstring
+    prompt: |
+      Why can `Member` write `@SQLString(30)` instead of `@SQLString(value = 30)`?
+    code: |
+      //: annotations/database/SQLString.java
+      package annotations.database;
+      import java.lang.annotation.*;
+
+      @Target(ElementType.FIELD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface SQLString {
+        int value() default 0;
+        String name() default "";
+        Constraints constraints() default @Constraints;
+      }
+    language: java
+    options:
+      - text: "An element named `value` can be given positionally when it's the only one set"
+        correct: true
+      - text: "The first element is always positional"
+        feedback: "Only an element named `value` gets the shortcut."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-sqlinteger
+    prompt: |
+      What's the default for `constraints()`?
+    code: |
+      //: annotations/database/SQLInteger.java
+      package annotations.database;
+      import java.lang.annotation.*;
+
+      @Target(ElementType.FIELD)
+      @Retention(RetentionPolicy.RUNTIME)
+      public @interface SQLInteger {
+        String name() default "";
+        Constraints constraints() default @Constraints;
+      }
+    language: java
+    options:
+      - text: "`@Constraints` with its own defaults — an annotation can be an element's type and default"
+        correct: true
+      - text: "null"
+        feedback: "Elements can't be null."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-uniqueness
+    prompt: |
+      What does `@Uniqueness` mean when used with no arguments?
+    code: |
+      //: annotations/database/Uniqueness.java
+      // Sample of nested annotations
+      package annotations.database;
+
+      public @interface Uniqueness {
+        Constraints constraints()
+          default @Constraints(unique=true);
+      }
+    language: java
+    options:
+      - text: "Its `constraints` is `@Constraints(unique=true)` — a nested annotation with one element changed"
+        correct: true
+      - text: "Nothing — it has no elements"
+        feedback: "It has a `constraints` element with a nested default."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-member
+    prompt: |
+      Why isn't `memberCount` a column?
+    code: |
+      //: annotations/database/Member.java
+      package annotations.database;
+
+      @DBTable(name = "MEMBER")
+      public class Member {
+        @SQLString(30) String firstName;
+        @SQLString(50) String lastName;
+        @SQLInteger Integer age;
+        @SQLString(value = 30,
+        constraints = @Constraints(primaryKey = true))
+        String handle;
+        static int memberCount;
+        public String getHandle() { return handle; }
+        public String getFirstName() { return firstName; }
+        public String getLastName() { return lastName; }
+        public String toString() { return handle; }
+        public Integer getAge() { return age; }
+      }
+    language: java
+    options:
+      - text: "It has no SQL annotation, so the table creator skips it"
+        correct: true
+      - text: "Because it's static"
+        feedback: "The tool checks annotations, not modifiers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-database-tablecreator
+    prompt: |
+      Run with `annotations.database.Member`. What's odd about the output?
+    code: |
+      //: annotations/database/TableCreator.java
+      // Reflection-based annotation processor.
+      package annotations.database;
+      import java.lang.annotation.*;
+      import java.lang.reflect.*;
+      import java.util.*;
+
+      public class TableCreator {
+        public static void main(String[] args) throws Exception {
+          if(args.length < 1) {
+            System.out.println("arguments: annotated classes");
+            System.exit(0);
+          }
+          for(String className : args) {
+            Class<?> cl = Class.forName(className);
+            DBTable dbTable = cl.getAnnotation(DBTable.class);
+            if(dbTable == null) {
+              System.out.println(
+                "No DBTable annotations in class " + className);
+              continue;
+            }
+            String tableName = dbTable.name();
+            // If the name is empty, use the Class name:
+            if(tableName.length() < 1)
+              tableName = cl.getName().toUpperCase();
+            List<String> columnDefs = new ArrayList<String>();
+            for(Field field : cl.getDeclaredFields()) {
+              String columnName = null;
+              Annotation[] anns = field.getDeclaredAnnotations();
+              if(anns.length < 1)
+                continue; // Not a db table column
+              if(anns[0] instanceof SQLInteger) {
+                SQLInteger sInt = (SQLInteger) anns[0];
+                // Use field name if name not specified
+                if(sInt.name().length() < 1)
+                  columnName = field.getName().toUpperCase();
+                else
+                  columnName = sInt.name();
+                columnDefs.add(columnName + " INT" +
+                  getConstraints(sInt.constraints()));
+              }
+              if(anns[0] instanceof SQLString) {
+                SQLString sString = (SQLString) anns[0];
+                // Use field name if name not specified.
+                if(sString.name().length() < 1)
+                  columnName = field.getName().toUpperCase();
+                else
+                  columnName = sString.name();
+                columnDefs.add(columnName + " VARCHAR(" +
+                  sString.value() + ")" +
+                  getConstraints(sString.constraints()));
+              }
+              StringBuilder createCommand = new StringBuilder(
+                "CREATE TABLE " + tableName + "(");
+              for(String columnDef : columnDefs)
+                createCommand.append("\n    " + columnDef + ",");
+              // Remove trailing comma
+              String tableCreate = createCommand.substring(
+                0, createCommand.length() - 1) + ");";
+              System.out.println("Table Creation SQL for " +
+                className + " is :\n" + tableCreate);
+            }
+          }
+        }
+        private static String getConstraints(Constraints con) {
+          String constraints = "";
+          if(!con.allowNull())
+            constraints += " NOT NULL";
+          if(con.primaryKey())
+            constraints += " PRIMARY KEY";
+          if(con.unique())
+            constraints += " UNIQUE";
+          return constraints;
+        }
+      }
+    language: java
+    options:
+      - text: "It prints a growing `CREATE TABLE MEMBER(…)` after every annotated field — the print is inside the field loop"
+        correct: true
+      - text: "It prints nothing"
+        feedback: "`Member` has `@DBTable` and annotated fields."
+      - text: "It prints the SQL once"
+        feedback: "The `StringBuilder` and `println` are inside the `for` loop over fields — a slip in the book."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -1,0 +1,423 @@
+title: "Reading and writing files"
+summary: "Typical I/O recipes — buffered line input, in-memory input, formatted data, random access, and compression."
+duration: 8
+tags: [java, io, BufferedReader, PrintWriter, DataOutputStream, RandomAccessFile, GZIP, ZIP]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 18, Typical uses of I/O streams; Compression" }
+steps:
+  - type: explanation
+    title: "Text and data"
+    body: |
+      Read text by lines with `BufferedReader(new FileReader(name))`; write with `PrintWriter`.
+      `DataOutputStream` writes primitives and strings in a portable binary form; `DataInputStream` reads them back in the same order.
+      `RandomAccessFile` can `seek` anywhere and overwrite in place.
+
+  - type: explanation
+    title: "Compression"
+    body: |
+      `GZIPOutputStream`/`GZIPInputStream` wrap a stream to compress a single file.
+      `ZipOutputStream` writes several entries, each started with `putNextEntry`; a `CheckedOutputStream` computes a checksum on the way.
+
+  - type: choice
+    id: tij-io-bufferedinputfile
+    prompt: |
+      Why does `read` append `"\n"` to each line?
+    code: |
+      //: io/BufferedInputFile.java
+      import java.io.*;
+
+      public class BufferedInputFile {
+        // Throw exceptions to console:
+        public static String
+        read(String filename) throws IOException {
+          // Reading input by lines:
+          BufferedReader in = new BufferedReader(
+            new FileReader(filename));
+          String s;
+          StringBuilder sb = new StringBuilder();
+          while((s = in.readLine())!= null)
+            sb.append(s + "\n");
+          in.close();
+          return sb.toString();
+        }
+        public static void main(String[] args)
+        throws IOException {
+          System.out.print(read("BufferedInputFile.java"));
+        }
+      }
+    language: java
+    options:
+      - text: "`readLine()` strips the line terminator"
+        correct: true
+      - text: "To double-space the output"
+        feedback: "It restores the newline that was removed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-memoryinput
+    prompt: |
+      Why cast `in.read()` to `char` before printing?
+    code: |
+      //: io/MemoryInput.java
+      import java.io.*;
+
+      public class MemoryInput {
+        public static void main(String[] args)
+        throws IOException {
+          StringReader in = new StringReader(
+            BufferedInputFile.read("MemoryInput.java"));
+          int c;
+          while((c = in.read()) != -1)
+            System.out.print((char)c);
+        }
+      }
+    language: java
+    options:
+      - text: "`read()` returns an `int` (−1 at the end), so it must be cast to print as a character"
+        correct: true
+      - text: "To skip non-ASCII characters"
+        feedback: "It's about the return type."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-formattedmemoryinput
+    prompt: |
+      How does this loop detect the end of the data?
+    code: |
+      //: io/FormattedMemoryInput.java
+      import java.io.*;
+
+      public class FormattedMemoryInput {
+        public static void main(String[] args)
+        throws IOException {
+          try {
+            DataInputStream in = new DataInputStream(
+              new ByteArrayInputStream(
+               BufferedInputFile.read(
+                "FormattedMemoryInput.java").getBytes()));
+            while(true)
+              System.out.print((char)in.readByte());
+          } catch(EOFException e) {
+            System.err.println("End of stream");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`readByte()` throws `EOFException`, which is caught"
+        correct: true
+      - text: "`readByte()` returns −1"
+        feedback: "Any byte value is valid data, so it can't signal the end that way."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-testeof
+    prompt: |
+      What does `in.available()` tell you?
+    code: |
+      //: io/TestEOF.java
+      // Testing for end of file while reading a byte at a time.
+      import java.io.*;
+
+      public class TestEOF {
+        public static void main(String[] args)
+        throws IOException {
+          DataInputStream in = new DataInputStream(
+            new BufferedInputStream(
+              new FileInputStream("TestEOF.java")));
+          while(in.available() != 0)
+            System.out.print((char)in.readByte());
+        }
+      }
+    language: java
+    options:
+      - text: "How many bytes can be read without blocking — for a local file, what remains"
+        correct: true
+      - text: "The file's total size"
+        feedback: "It's what remains, and for network streams it may be 0 while data is coming."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-io-basicfileoutput
+    prompt: |
+      The program numbers each line of its own source, `BasicFileOutput.java`, writes them to a file, then prints the file. What is the first line printed?
+    code: |
+      //: io/BasicFileOutput.java
+      import java.io.*;
+
+      public class BasicFileOutput {
+        static String file = "BasicFileOutput.out";
+        public static void main(String[] args)
+        throws IOException {
+          BufferedReader in = new BufferedReader(
+            new StringReader(
+              BufferedInputFile.read("BasicFileOutput.java")));
+          PrintWriter out = new PrintWriter(
+            new BufferedWriter(new FileWriter(file)));
+          int lineCount = 1;
+          String s;
+          while((s = in.readLine()) != null )
+            out.println(lineCount++ + ": " + s);
+          out.close();
+          // Show the stored file:
+          System.out.println(BufferedInputFile.read(file));
+        }
+      }
+    language: java
+    options:
+      - text: "1: //: io/BasicFileOutput.java"
+        correct: true
+      - text: "//: io/BasicFileOutput.java"
+        feedback: "Each line is written as `lineCount++ + \": \" + s`."
+      - text: "0: //: io/BasicFileOutput.java"
+        feedback: "`lineCount` starts at 1."
+    explanation: |
+      `out.close()` matters: without it, the buffered output may never reach the file.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-fileoutputshortcut
+    prompt: |
+      What does `new PrintWriter(file)` (with a file name) do for you?
+    code: |
+      //: io/FileOutputShortcut.java
+      import java.io.*;
+
+      public class FileOutputShortcut {
+        static String file = "FileOutputShortcut.out";
+        public static void main(String[] args)
+        throws IOException {
+          BufferedReader in = new BufferedReader(
+            new StringReader(
+             BufferedInputFile.read("FileOutputShortcut.java")));
+          // Here's the shortcut:
+          PrintWriter out = new PrintWriter(file);
+          int lineCount = 1;
+          String s;
+          while((s = in.readLine()) != null )
+            out.println(lineCount++ + ": " + s);
+          out.close();
+          // Show the stored file:
+          System.out.println(BufferedInputFile.read(file));
+        }
+      }
+    language: java
+    options:
+      - text: "Creates the `FileWriter` and the `BufferedWriter` layers itself"
+        correct: true
+      - text: "Writes without buffering"
+        feedback: "It still buffers."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-io-storingandrecoveringdata
+    prompt: |
+      What does this print?
+    code: |
+      //: io/StoringAndRecoveringData.java
+      import java.io.*;
+
+      public class StoringAndRecoveringData {
+        public static void main(String[] args)
+        throws IOException {
+          DataOutputStream out = new DataOutputStream(
+            new BufferedOutputStream(
+              new FileOutputStream("Data.txt")));
+          out.writeDouble(3.14159);
+          out.writeUTF("That was pi");
+          out.writeDouble(1.41413);
+          out.writeUTF("Square root of 2");
+          out.close();
+          DataInputStream in = new DataInputStream(
+            new BufferedInputStream(
+              new FileInputStream("Data.txt")));
+          System.out.println(in.readDouble());
+          // Only readUTF() will recover the
+          // Java-UTF String properly:
+          System.out.println(in.readUTF());
+          System.out.println(in.readDouble());
+          System.out.println(in.readUTF());
+        }
+      }
+    language: java
+    options:
+      - text: "3.14159\nThat was pi\n1.41413\nSquare root of 2"
+        correct: true
+      - text: "3.14159\n1.41413\nThat was pi\nSquare root of 2"
+        feedback: "Data must be read in the order it was written."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-usingrandomaccessfile
+    prompt: |
+      `rf.seek(5*8)` then `writeDouble(47.0001)`. Which value changes?
+    code: |
+      //: io/UsingRandomAccessFile.java
+      import java.io.*;
+
+      public class UsingRandomAccessFile {
+        static String file = "rtest.dat";
+        static void display() throws IOException {
+          RandomAccessFile rf = new RandomAccessFile(file, "r");
+          for(int i = 0; i < 7; i++)
+            System.out.println(
+              "Value " + i + ": " + rf.readDouble());
+          System.out.println(rf.readUTF());
+          rf.close();
+        }
+        public static void main(String[] args)
+        throws IOException {
+          RandomAccessFile rf = new RandomAccessFile(file, "rw");
+          for(int i = 0; i < 7; i++)
+            rf.writeDouble(i*1.414);
+          rf.writeUTF("The end of the file");
+          rf.close();
+          display();
+          rf = new RandomAccessFile(file, "rw");
+          rf.seek(5*8);
+          rf.writeDouble(47.0001);
+          rf.close();
+          display();
+        }
+      }
+    language: java
+    options:
+      - text: "Value 5 — each double is 8 bytes, so byte 40 starts the sixth one"
+        correct: true
+      - text: "Value 40"
+        feedback: "`seek` takes a byte offset."
+      - text: "None — it appends"
+        feedback: "It overwrites in place."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-gzipcompress
+    prompt: |
+      Run with `GZIPcompress.java` as the argument. What does it print?
+    code: |
+      //: io/GZIPcompress.java
+      import java.util.zip.*;
+      import java.io.*;
+
+      public class GZIPcompress {
+        public static void main(String[] args)
+        throws IOException {
+          if(args.length == 0) {
+            System.out.println(
+              "Usage: \nGZIPcompress file\n" +
+              "\tUses GZIP compression to compress " +
+              "the file to test.gz");
+            System.exit(1);
+          }
+          BufferedReader in = new BufferedReader(
+            new FileReader(args[0]));
+          BufferedOutputStream out = new BufferedOutputStream(
+            new GZIPOutputStream(
+              new FileOutputStream("test.gz")));
+          System.out.println("Writing file");
+          int c;
+          while((c = in.read()) != -1)
+            out.write(c);
+          in.close();
+          out.close();
+          System.out.println("Reading file");
+          BufferedReader in2 = new BufferedReader(
+            new InputStreamReader(new GZIPInputStream(
+              new FileInputStream("test.gz"))));
+          String s;
+          while((s = in2.readLine()) != null)
+            System.out.println(s);
+        }
+      }
+    language: java
+    options:
+      - text: "`Writing file`, `Reading file`, then the source file's text, decompressed"
+        correct: true
+      - text: "The compressed bytes"
+        feedback: "It reads `test.gz` back through a `GZIPInputStream`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-io-zipcompress
+    prompt: |
+      Why is the checksum read only after `out.close()`? (`print` is `println`.)
+    code: |
+      //: io/ZipCompress.java
+      // Uses Zip compression to compress any
+      // number of files given on the command line.
+      // {Args: ZipCompress.java}
+      import java.util.zip.*;
+      import java.io.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class ZipCompress {
+        public static void main(String[] args)
+        throws IOException {
+          FileOutputStream f = new FileOutputStream("test.zip");
+          CheckedOutputStream csum =
+            new CheckedOutputStream(f, new Adler32());
+           ZipOutputStream zos = new ZipOutputStream(csum);
+           BufferedOutputStream out =
+            new BufferedOutputStream(zos);
+          zos.setComment("A test of Java Zipping");
+          // No corresponding getComment(), though.
+          for(String arg : args) {
+            print("Writing file " + arg);
+            BufferedReader in =
+              new BufferedReader(new FileReader(arg));
+            zos.putNextEntry(new ZipEntry(arg));
+            int c;
+            while((c = in.read()) != -1)
+              out.write(c);
+            in.close();
+            out.flush();
+          }
+          out.close();
+          // Checksum valid only after the file has been closed!
+          print("Checksum: " + csum.getChecksum().getValue());
+          // Now extract the files:
+          print("Reading file");
+          FileInputStream fi = new FileInputStream("test.zip");
+          CheckedInputStream csumi =
+            new CheckedInputStream(fi, new Adler32());
+          ZipInputStream in2 = new ZipInputStream(csumi);
+          BufferedInputStream bis = new BufferedInputStream(in2);
+          ZipEntry ze;
+          while((ze = in2.getNextEntry()) != null) {
+            print("Reading file " + ze);
+            int x;
+            while((x = bis.read()) != -1)
+              System.out.write(x);
+          }
+          if(args.length == 1)
+          print("Checksum: " + csumi.getChecksum().getValue());
+          bis.close();
+          // Alternative way to open and read Zip files:
+          ZipFile zf = new ZipFile("test.zip");
+          Enumeration e = zf.entries();
+          while(e.hasMoreElements()) {
+            ZipEntry ze2 = (ZipEntry)e.nextElement();
+            print("File: " + ze2);
+            // ... and extract the data as before
+          }
+          /* if(args.length == 1) */
+        }
+      }
+    language: java
+    options:
+      - text: "The checksum covers all the data, which is only complete once the stream is flushed and closed"
+        correct: true
+      - text: "`getChecksum` closes the stream"
+        feedback: "It just reads the current value."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

@@ -1,0 +1,6 @@
+title: "Annotations"
+summary: "Chapter 20 — defining annotations, reading them by reflection, processing them at compile time, and an annotation-driven unit-test tool, through the book's examples."
+lessons:
+  - defining-annotations
+  - compile-time-processing
+  - atunit

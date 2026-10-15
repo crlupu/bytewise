@@ -1,0 +1,465 @@
+title: "Annotation-based unit testing"
+summary: "AtUnit: marking test methods with @Test, test objects created by @TestObjectCreate, and tests embedded in or kept apart from the class."
+duration: 8
+tags: [java, annotations, unit testing, "@Test", AtUnit]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 20, Annotation-based unit testing" }
+steps:
+  - type: explanation
+    title: "@Test methods"
+    body: |
+      AtUnit finds every method marked `@Test` by reflection and runs it, even private ones.
+      A `boolean` test passes when it returns `true`; a `void` test passes unless an assertion or exception fails it.
+      Each test gets a fresh object, made with the no-arg constructor or a `@TestObjectCreate` method.
+
+  - type: explanation
+    title: "Where tests live"
+    body: |
+      Tests can be embedded in the class itself, or kept outside: in a subclass (inheritance) or a class holding a test object (composition).
+      The idea grew into JUnit 4/5's `@Test`.
+
+  - type: choice
+    id: tij-annotations-atunitexample1
+    prompt: |
+      Run under AtUnit. What's the result?
+    code: |
+      //: annotations/AtUnitExample1.java
+      package annotations;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitExample1 {
+        public String methodOne() {
+          return "This is methodOne";
+        }
+        public int methodTwo() {
+          System.out.println("This is methodTwo");
+          return 2;
+        }
+        @Test boolean methodOneTest() {
+          return methodOne().equals("This is methodOne");
+        }
+        @Test boolean m2() { return methodTwo() == 2; }
+        @Test private boolean m3() { return true; }
+        // Shows output for failure:
+        @Test boolean failureTest() { return false; }
+        @Test boolean anotherDisappointment() { return false; }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit AtUnitExample1");
+        }
+      }
+    language: java
+    options:
+      - text: "5 tests; `failureTest` and `anotherDisappointment` fail"
+        correct: true
+      - text: "All pass"
+        feedback: "Two tests return `false`."
+      - text: "The private `m3` is skipped"
+        feedback: "AtUnit runs private `@Test` methods too."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitexample2
+    prompt: |
+      Run under AtUnit (with assertions enabled). Which tests fail?
+    code: |
+      //: annotations/AtUnitExample2.java
+      // Assertions and exceptions can be used in @Tests.
+      package annotations;
+      import java.io.*;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitExample2 {
+        public String methodOne() {
+          return "This is methodOne";
+        }
+        public int methodTwo() {
+          System.out.println("This is methodTwo");
+          return 2;
+        }
+        @Test void assertExample() {
+          assert methodOne().equals("This is methodOne");
+        }
+        @Test void assertFailureExample() {
+          assert 1 == 2: "What a surprise!";
+        }
+        @Test void exceptionExample() throws IOException {
+          new FileInputStream("nofile.txt"); // Throws
+        }
+        @Test boolean assertAndReturn() {
+          // Assertion with message:
+          assert methodTwo() == 2: "methodTwo must equal 2";
+          return methodOne().equals("This is methodOne");
+        }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit AtUnitExample2");
+        }
+      }
+    language: java
+    options:
+      - text: "`assertFailureExample` (assertion) and `exceptionExample` (exception)"
+        correct: true
+      - text: "Only `exceptionExample`"
+        feedback: "AtUnit enables assertions, so `assert 1 == 2` fails."
+      - text: "None"
+        feedback: "Two tests fail."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitexample3
+    prompt: |
+      How does AtUnit create test objects for a class with no no-arg constructor?
+    code: |
+      //: annotations/AtUnitExample3.java
+      package annotations;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitExample3 {
+        private int n;
+        public AtUnitExample3(int n) { this.n = n; }
+        public int getN() { return n; }
+        public String methodOne() {
+          return "This is methodOne";
+        }
+        public int methodTwo() {
+          System.out.println("This is methodTwo");
+          return 2;
+        }
+        @TestObjectCreate static AtUnitExample3 create() {
+          return new AtUnitExample3(47);
+        }
+        @Test boolean initialization() { return n == 47; }
+        @Test boolean methodOneTest() {
+          return methodOne().equals("This is methodOne");
+        }
+        @Test boolean m2() { return methodTwo() == 2; }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit AtUnitExample3");
+        }
+      }
+    language: java
+    options:
+      - text: "It calls the static `@TestObjectCreate` method, here returning `new AtUnitExample3(47)`"
+        correct: true
+      - text: "It can't"
+        feedback: "All 3 tests pass, including `initialization`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitexample4
+    prompt: |
+      On Java 21 this fails with `RuntimeException: Bad tag 18` inside AtUnit. Why? (`print` is `println`.)
+    code: |
+      //: annotations/AtUnitExample4.java
+      package annotations;
+      import java.util.*;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class AtUnitExample4 {
+        static String theory = "All brontosauruses " +
+          "are thin at one end, much MUCH thicker in the " +
+          "middle, and then thin again at the far end.";
+        private String word;
+        private Random rand = new Random(); // Time-based seed
+        public AtUnitExample4(String word) { this.word = word; }
+        public String getWord() { return word; }
+        public String scrambleWord() {
+          List<Character> chars = new ArrayList<Character>();
+          for(Character c : word.toCharArray())
+            chars.add(c);
+          Collections.shuffle(chars, rand);
+          StringBuilder result = new StringBuilder();
+          for(char ch : chars)
+            result.append(ch);
+          return result.toString();
+        }
+        @TestProperty static List<String> input =
+          Arrays.asList(theory.split(" "));
+        @TestProperty
+          static Iterator<String> words = input.iterator();
+        @TestObjectCreate static AtUnitExample4 create() {
+          if(words.hasNext())
+            return new AtUnitExample4(words.next());
+          else
+            return null;
+        }
+        @Test boolean words() {
+          print("'" + getWord() + "'");
+          return getWord().equals("are");
+        }
+        @Test boolean scramble1() {
+          // Change to a specific seed to get verifiable results:
+          rand = new Random(47);
+          print("'" + getWord() + "'");
+          String scrambled = scrambleWord();
+          print(scrambled);
+          return scrambled.equals("lAl");
+        }
+        @Test boolean scramble2() {
+          rand = new Random(74);
+          print("'" + getWord() + "'");
+          String scrambled = scrambleWord();
+          print(scrambled);
+          return scrambled.equals("tsaeborornussu");
+        }
+        public static void main(String[] args) throws Exception {
+          System.out.println("starting");
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit AtUnitExample4");
+        }
+      }
+    language: java
+    options:
+      - text: "AtUnit's 2006 class-file parser doesn't know constant-pool tag 18 (`invokedynamic`), which `javac` now emits for string concatenation"
+        correct: true
+      - text: "The tests fail"
+        feedback: "AtUnit fails before running any test, while reading the class file."
+      - text: "`@TestProperty` was removed from Java"
+        feedback: "It's AtUnit's own annotation."
+    explanation: |
+      Example 1 escapes because its strings are plain constants — no `+` concatenation. Modern tools use a maintained bytecode library or reflection.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitexample5
+    prompt: |
+      What is `@TestObjectCleanup` for?
+    code: |
+      //: annotations/AtUnitExample5.java
+      package annotations;
+      import java.io.*;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitExample5 {
+        private String text;
+        public AtUnitExample5(String text) { this.text = text; }
+        public String toString() { return text; }
+        @TestProperty static PrintWriter output;
+        @TestProperty static int counter;
+        @TestObjectCreate static AtUnitExample5 create() {
+          String id = Integer.toString(counter++);
+          try {
+            output = new PrintWriter("Test" + id + ".txt");
+          } catch(IOException e) {
+            throw new RuntimeException(e);
+          }
+          return new AtUnitExample5(id);
+        }
+        @TestObjectCleanup static void
+        cleanup(AtUnitExample5 tobj) {
+          System.out.println("Running cleanup");
+          output.close();
+        }
+        @Test boolean test1() {
+          output.print("test1");
+          return true;
+        }
+        @Test boolean test2() {
+          output.print("test2");
+          return true;
+        }
+        @Test boolean test3() {
+          output.print("test3");
+          return true;
+        }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit AtUnitExample5");
+        }
+      }
+    language: java
+    options:
+      - text: "AtUnit calls it after each test, passing the test object — here to close the output file"
+        correct: true
+      - text: "It deletes the test files"
+        feedback: "It closes the writer."
+    explanation: |
+      Like example 4, it fails on Java 21 with `Bad tag 18`: `"Test" + id + ".txt"` compiles to `invokedynamic`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitexternaltest
+    prompt: |
+      How does this keep tests out of `AtUnitExample1`?
+    code: |
+      //: annotations/AtUnitExternalTest.java
+      // Creating non-embedded tests.
+      package annotations;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitExternalTest extends AtUnitExample1 {
+        @Test boolean _methodOne() {
+          return methodOne().equals("This is methodOne");
+        }
+        @Test boolean _methodTwo() { return methodTwo() == 2; }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+           "java net.mindview.atunit.AtUnit AtUnitExternalTest");
+        }
+      }
+    language: java
+    options:
+      - text: "It extends the class and adds its own `@Test` methods (named with `_`)"
+        correct: true
+      - text: "It copies the code"
+        feedback: "It inherits it."
+    explanation: |
+      Under AtUnit: `OK (2 tests)` — the inherited tests aren't run, only those declared here.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-atunitcomposition
+    prompt: |
+      How does this test `AtUnitExample1` without inheriting from it?
+    code: |
+      //: annotations/AtUnitComposition.java
+      // Creating non-embedded tests.
+      package annotations;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class AtUnitComposition {
+        AtUnitExample1 testObject = new AtUnitExample1();
+        @Test boolean _methodOne() {
+          return
+            testObject.methodOne().equals("This is methodOne");
+        }
+        @Test boolean _methodTwo() {
+          return testObject.methodTwo() == 2;
+        }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+           "java net.mindview.atunit.AtUnit AtUnitComposition");
+        }
+      }
+    language: java
+    options:
+      - text: "It holds an `AtUnitExample1` as a field and calls its methods"
+        correct: true
+      - text: "Through reflection"
+        feedback: "It's plain composition."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-hashsettest
+    prompt: |
+      Why does `_remove` pass even though `_contains` added `"one"` first?
+    code: |
+      //: annotations/HashSetTest.java
+      package annotations;
+      import java.util.*;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class HashSetTest {
+        HashSet<String> testObject = new HashSet<String>();
+        @Test void initialization() {
+          assert testObject.isEmpty();
+        }
+        @Test void _contains() {
+          testObject.add("one");
+          assert testObject.contains("one");
+        }
+        @Test void _remove() {
+          testObject.add("one");
+          testObject.remove("one");
+          assert testObject.isEmpty();
+        }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit HashSetTest");
+        }
+      }
+    language: java
+    options:
+      - text: "Each test runs on a fresh test object, so state doesn't carry over"
+        correct: true
+      - text: "Tests run in parallel"
+        feedback: "They run one after another, each on its own object."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-stackl
+    prompt: |
+      After `push("A")`, `push("B")`, what does `top()` return?
+    code: |
+      //: annotations/StackL.java
+      // A stack built on a linkedList.
+      package annotations;
+      import java.util.*;
+
+      public class StackL<T> {
+        private LinkedList<T> list = new LinkedList<T>();
+        public void push(T v) { list.addFirst(v); }
+        public T top() { return list.getFirst(); }
+        public T pop() { return list.removeFirst(); }
+      }
+    language: java
+    options:
+      - text: "\"B\""
+        correct: true
+      - text: "\"A\""
+        feedback: "`push` adds to the front, and `top` reads the front."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-annotations-stacklstringtest
+    prompt: |
+      How does it test the generic `StackL<T>`?
+    code: |
+      //: annotations/StackLStringTest.java
+      // Applying @Unit to generics.
+      package annotations;
+      import net.mindview.atunit.*;
+      import net.mindview.util.*;
+
+      public class StackLStringTest extends StackL<String> {
+        @Test void _push() {
+          push("one");
+          assert top().equals("one");
+          push("two");
+          assert top().equals("two");
+        }
+        @Test void _pop() {
+          push("one");
+          push("two");
+          assert pop().equals("two");
+          assert pop().equals("one");
+        }
+        @Test void _top() {
+          push("A");
+          push("B");
+          assert top().equals("B");
+          assert top().equals("B");
+        }
+        public static void main(String[] args) throws Exception {
+          OSExecute.command(
+            "java net.mindview.atunit.AtUnit StackLStringTest");
+        }
+      }
+    language: java
+    options:
+      - text: "By extending one parameterized version, `StackL<String>`, and testing that"
+        correct: true
+      - text: "AtUnit can't test generic classes"
+        feedback: "All 3 tests pass."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

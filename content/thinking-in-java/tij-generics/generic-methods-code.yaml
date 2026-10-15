@@ -1,0 +1,114 @@
+title: "Generic methods and generators: in code"
+summary: "More examples for generic methods and generators, one question each."
+duration: 3
+tags: [java, generics, generic methods, type inference, generators]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 15, Generic methods; Generic interfaces" }
+steps:
+  - type: explanation
+    title: "Recap: Generic methods"
+    body: |
+      `public <T> void f(T x)` — the type parameter goes before the return type.
+      The compiler infers `T` from the arguments; you can also state it: `New.<Person, List<Pet>>map()`.
+      Prefer a generic method to making the whole class generic.
+
+  - type: explanation
+    title: "Recap: Generators"
+    body: |
+      A `Generator<T>` has one method, `T next()`, and makes objects without being told how.
+      Combine one with a generic `fill(Collection<T>, Generator<T>, n)` to populate any collection.
+
+  - type: choice
+    id: tij-generics-coffee-coffee
+    prompt: |
+      `Latte`, `Mocha`, `Cappuccino`, `Americano` and `Breve` all just extend `Coffee`. What does a new `Latte` print as, if it's the 4th coffee created?
+    code: |
+      //: generics/coffee/Coffee.java
+      package generics.coffee;
+
+      public class Coffee {
+        private static long counter = 0;
+        private final long id = counter++;
+        public String toString() {
+          return getClass().getSimpleName() + " " + id;
+        }
+      }
+    language: java
+    options:
+      - text: "Latte 3"
+        correct: true
+      - text: "Coffee 3"
+        feedback: "`getClass().getSimpleName()` is the actual class."
+      - text: "Latte 4"
+        feedback: "Ids start at 0."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-watercolorsets
+    prompt: |
+      `Sets.union`, `intersection`, `difference` and `complement` are generic methods like `<T> Set<T> union(Set<T> a, Set<T> b)`. What does `intersection(set1, set2)` contain? (`print` is `println`.)
+    code: |
+      //: generics/WatercolorSets.java
+      import generics.watercolors.*;
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+      import static net.mindview.util.Sets.*;
+      import static generics.watercolors.Watercolors.*;
+
+      public class WatercolorSets {
+        public static void main(String[] args) {
+          Set<Watercolors> set1 =
+            EnumSet.range(BRILLIANT_RED, VIRIDIAN_HUE);
+          Set<Watercolors> set2 =
+            EnumSet.range(CERULEAN_BLUE_HUE, BURNT_UMBER);
+          print("set1: " + set1);
+          print("set2: " + set2);
+          print("union(set1, set2): " + union(set1, set2));
+          Set<Watercolors> subset = intersection(set1, set2);
+          print("intersection(set1, set2): " + subset);
+          print("difference(set1, subset): " +
+            difference(set1, subset));
+          print("difference(set2, subset): " +
+            difference(set2, subset));
+          print("complement(set1, set2): " +
+            complement(set1, set2));
+        }
+      }
+    language: java
+    options:
+      - text: "The colors in both ranges: CERULEAN_BLUE_HUE through VIRIDIAN_HUE"
+        correct: true
+      - text: "Every color in either range"
+        feedback: "That's `union`."
+      - text: "The colors in exactly one of them"
+        feedback: "That's `complement` (the symmetric difference)."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-generics-watercolors-watercolors
+    prompt: |
+      What does `EnumSet.range(BRILLIANT_RED, VIRIDIAN_HUE)` contain?
+    code: |
+      //: generics/watercolors/Watercolors.java
+      package generics.watercolors;
+
+      public enum Watercolors {
+        ZINC, LEMON_YELLOW, MEDIUM_YELLOW, DEEP_YELLOW, ORANGE,
+        BRILLIANT_RED, CRIMSON, MAGENTA, ROSE_MADDER, VIOLET,
+        CERULEAN_BLUE_HUE, PHTHALO_BLUE, ULTRAMARINE,
+        COBALT_BLUE_HUE, PERMANENT_GREEN, VIRIDIAN_HUE,
+        SAP_GREEN, YELLOW_OCHRE, BURNT_SIENNA, RAW_UMBER,
+        BURNT_UMBER, PAYNES_GRAY, IVORY_BLACK
+      }
+    language: java
+    options:
+      - text: "Every constant from BRILLIANT_RED to VIRIDIAN_HUE, inclusive, in declaration order"
+        correct: true
+      - text: "Just the two constants"
+        feedback: "`range` includes everything between."
+      - text: "The constants between them, excluding both ends"
+        feedback: "Both ends are included."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

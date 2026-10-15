@@ -1,0 +1,410 @@
+title: "values(), interfaces and grouping enums"
+summary: "Where values() comes from, enums that implement interfaces, random selection, and organizing enums of enums."
+duration: 8
+tags: [java, enum, values, reflection, interfaces, getEnumConstants]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 19, The mystery of values(); Implements, not inherits; Random selection; Using interfaces for organization" }
+steps:
+  - type: explanation
+    title: "values() and Enum"
+    body: |
+      The compiler adds the static `values()` and `valueOf(String)` to each enum; they aren't in `Enum`.
+      Upcast to `Enum` and `values()` is gone — but `getClass().getEnumConstants()` still works.
+      An enum already extends `Enum`, so it can't extend anything else — but it can implement interfaces.
+
+  - type: explanation
+    title: "Grouping enums"
+    body: |
+      Nest several enums inside an interface, each implementing it, to group related constants under one type.
+      An enum of those enums (`Course`) can hold each group's `getEnumConstants()` and pick from it.
+
+  - type: predict
+    id: tij-enumerated-upcastenum
+    prompt: |
+      What does this print?
+    code: |
+      //: enumerated/UpcastEnum.java
+      // No values() method if you upcast an enum
+
+      enum Search { HITHER, YON }
+
+      public class UpcastEnum {
+        public static void main(String[] args) {
+          Search[] vals = Search.values();
+          Enum e = Search.HITHER; // Upcast
+          // e.values(); // No values() in Enum
+          for(Enum en : e.getClass().getEnumConstants())
+            System.out.println(en);
+        }
+      }
+    language: java
+    options:
+      - text: "HITHER\nYON"
+        correct: true
+      - text: "It doesn't compile — `Enum` has no `values()`"
+        feedback: "That line is commented out; `getEnumConstants()` is used instead."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-reflection
+    prompt: |
+      Which methods does `Explore` have that `Enum` doesn't? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: enumerated/Reflection.java
+      // Analyzing enums using reflection.
+      import java.lang.reflect.*;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      enum Explore { HERE, THERE }
+
+      public class Reflection {
+        public static Set<String> analyze(Class<?> enumClass) {
+          print("----- Analyzing " + enumClass + " -----");
+          print("Interfaces:");
+          for(Type t : enumClass.getGenericInterfaces())
+            print(t);
+          print("Base: " + enumClass.getSuperclass());
+          print("Methods: ");
+          Set<String> methods = new TreeSet<String>();
+          for(Method m : enumClass.getMethods())
+            methods.add(m.getName());
+          print(methods);
+          return methods;
+        }
+        public static void main(String[] args) {
+          Set<String> exploreMethods = analyze(Explore.class);
+          Set<String> enumMethods = analyze(Enum.class);
+          print("Explore.containsAll(Enum)? " +
+            exploreMethods.containsAll(enumMethods));
+          printnb("Explore.removeAll(Enum): ");
+          exploreMethods.removeAll(enumMethods);
+          print(exploreMethods);
+          // Decompile the code for the enum:
+          OSExecute.command("javap Explore");
+        }
+      }
+    language: java
+    options:
+      - text: "`values` (and the one-argument `valueOf`) — added by the compiler"
+        correct: true
+      - text: "`ordinal` and `name`"
+        feedback: "Those come from `Enum`."
+      - text: "None"
+        feedback: "`values()` exists only in the generated enum class."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-nonenum
+    prompt: |
+      What does `Integer.class.getEnumConstants()` return?
+    code: |
+      //: enumerated/NonEnum.java
+
+      public class NonEnum {
+        public static void main(String[] args) {
+          Class<Integer> intClass = Integer.class;
+          try {
+            for(Object en : intClass.getEnumConstants())
+              System.out.println(en);
+          } catch(Exception e) {
+            System.out.println(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "null — `Integer` isn't an enum, so the foreach throws `NullPointerException`"
+        correct: true
+      - text: "An empty array"
+        feedback: "It returns `null` for non-enum classes."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-randomtest
+    prompt: |
+      `Enums.random(Activity.class)` returns a random constant. How can it work for any enum?
+    code: |
+      //: enumerated/RandomTest.java
+      import net.mindview.util.*;
+
+      enum Activity { SITTING, LYING, STANDING, HOPPING,
+        RUNNING, DODGING, JUMPING, FALLING, FLYING }
+
+      public class RandomTest {
+        public static void main(String[] args) {
+          for(int i = 0; i < 20; i++)
+            System.out.print(Enums.random(Activity.class) + " ");
+        }
+      }
+    language: java
+    options:
+      - text: "It takes a `Class<T extends Enum<T>>` and picks from `getEnumConstants()`"
+        correct: true
+      - text: "It calls `values()` on the class"
+        feedback: "`values()` isn't available generically; `getEnumConstants()` is."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-cartoons-enumimplementation
+    prompt: |
+      `CartoonCharacter` implements `Generator<CartoonCharacter>`. What's odd about using it?
+    code: |
+      //: enumerated/cartoons/EnumImplementation.java
+      // An enum can implement an interface
+      package enumerated.cartoons;
+      import java.util.*;
+      import net.mindview.util.*;
+
+      enum CartoonCharacter
+      implements Generator<CartoonCharacter> {
+        SLAPPY, SPANKY, PUNCHY, SILLY, BOUNCY, NUTTY, BOB;
+        private Random rand = new Random(47);
+        public CartoonCharacter next() {
+          return values()[rand.nextInt(values().length)];
+        }
+      }
+
+      public class EnumImplementation {
+        public static <T> void printNext(Generator<T> rg) {
+          System.out.print(rg.next() + ", ");
+        }
+        public static void main(String[] args) {
+          // Choose any instance:
+          CartoonCharacter cc = CartoonCharacter.BOB;
+          for(int i = 0; i < 10; i++)
+            printNext(cc);
+        }
+      }
+    language: java
+    options:
+      - text: "You need a constant (like `BOB`) to call `next()` on, even though the result is any constant"
+        correct: true
+      - text: "It can't — enums can't implement interfaces"
+        feedback: "They can; they just can't extend classes."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-menu-food
+    prompt: |
+      Why nest `Appetizer`, `MainCourse` and the rest inside the `Food` interface, each implementing it?
+    code: |
+      //: enumerated/menu/Food.java
+      // Subcategorization of enums within interfaces.
+      package enumerated.menu;
+
+      public interface Food {
+        enum Appetizer implements Food {
+          SALAD, SOUP, SPRING_ROLLS;
+        }
+        enum MainCourse implements Food {
+          LASAGNE, BURRITO, PAD_THAI,
+          LENTILS, HUMMOUS, VINDALOO;
+        }
+        enum Dessert implements Food {
+          TIRAMISU, GELATO, BLACK_FOREST_CAKE,
+          FRUIT, CREME_CARAMEL;
+        }
+        enum Coffee implements Food {
+          BLACK_COFFEE, DECAF_COFFEE, ESPRESSO,
+          LATTE, CAPPUCCINO, TEA, HERB_TEA;
+        }
+      }
+    language: java
+    options:
+      - text: "To group them: each is its own enum, yet all are `Food`"
+        correct: true
+      - text: "Enums must be nested in interfaces"
+        feedback: "It's an organizing choice."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-menu-typeoffood
+    prompt: |
+      Why can `food` hold `Appetizer.SALAD` and then `Coffee.CAPPUCCINO`?
+    code: |
+      //: enumerated/menu/TypeOfFood.java
+      package enumerated.menu;
+      import static enumerated.menu.Food.*;
+
+      public class TypeOfFood {
+        public static void main(String[] args) {
+          Food food = Appetizer.SALAD;
+          food = MainCourse.LASAGNE;
+          food = Dessert.GELATO;
+          food = Coffee.CAPPUCCINO;
+        }
+      }
+    language: java
+    options:
+      - text: "Both enums implement `Food`, so every constant is a `Food`"
+        correct: true
+      - text: "They don't — it doesn't compile"
+        feedback: "It compiles; the variable is typed `Food`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-menu-course
+    prompt: |
+      What does each `Course` constant store?
+    code: |
+      //: enumerated/menu/Course.java
+      package enumerated.menu;
+      import net.mindview.util.*;
+
+      public enum Course {
+        APPETIZER(Food.Appetizer.class),
+        MAINCOURSE(Food.MainCourse.class),
+        DESSERT(Food.Dessert.class),
+        COFFEE(Food.Coffee.class);
+        private Food[] values;
+        private Course(Class<? extends Food> kind) {
+          values = kind.getEnumConstants();
+        }
+        public Food randomSelection() {
+          return Enums.random(values);
+        }
+      }
+    language: java
+    options:
+      - text: "The constants of its `Food` enum, from `getEnumConstants()`, to pick from at random"
+        correct: true
+      - text: "A single food"
+        feedback: "It stores all of them for that course."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-menu-meal
+    prompt: |
+      Each meal prints four foods then `---`. What order are the courses in?
+    code: |
+      //: enumerated/menu/Meal.java
+      package enumerated.menu;
+
+      public class Meal {
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++) {
+            for(Course course : Course.values()) {
+              Food food = course.randomSelection();
+              System.out.println(food);
+            }
+            System.out.println("---");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Appetizer, main course, dessert, coffee — `Course.values()` order"
+        correct: true
+      - text: "Random"
+        feedback: "The food within each course is random; the course order is fixed."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-menu-meal2
+    prompt: |
+      How does `Meal2` differ from `Food` + `Course`?
+    code: |
+      //: enumerated/menu/Meal2.java
+      package enumerated.menu;
+      import net.mindview.util.*;
+
+      public enum Meal2 {
+        APPETIZER(Food.Appetizer.class),
+        MAINCOURSE(Food.MainCourse.class),
+        DESSERT(Food.Dessert.class),
+        COFFEE(Food.Coffee.class);
+        private Food[] values;
+        private Meal2(Class<? extends Food> kind) {
+          values = kind.getEnumConstants();
+        }
+        public interface Food {
+          enum Appetizer implements Food {
+            SALAD, SOUP, SPRING_ROLLS;
+          }
+          enum MainCourse implements Food {
+            LASAGNE, BURRITO, PAD_THAI,
+            LENTILS, HUMMOUS, VINDALOO;
+          }
+          enum Dessert implements Food {
+            TIRAMISU, GELATO, BLACK_FOREST_CAKE,
+            FRUIT, CREME_CARAMEL;
+          }
+          enum Coffee implements Food {
+            BLACK_COFFEE, DECAF_COFFEE, ESPRESSO,
+            LATTE, CAPPUCCINO, TEA, HERB_TEA;
+          }
+        }
+        public Food randomSelection() {
+          return Enums.random(values);
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < 5; i++) {
+            for(Meal2 meal : Meal2.values()) {
+              Food food = meal.randomSelection();
+              System.out.println(food);
+            }
+            System.out.println("---");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "Same behavior, but the `Food` interface is nested inside the enum, keeping everything in one place"
+        correct: true
+      - text: "It produces different meals"
+        feedback: "The same seed gives the same output."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-securitycategory
+    prompt: |
+      `STOCK` holds `{SHORT, LONG, MARGIN}` and `BOND` holds `{MUNICIPAL, JUNK}`. Which output line is impossible?
+    code: |
+      //: enumerated/SecurityCategory.java
+      // More succinct subcategorization of enums.
+      import net.mindview.util.*;
+
+      enum SecurityCategory {
+        STOCK(Security.Stock.class), BOND(Security.Bond.class);
+        Security[] values;
+        SecurityCategory(Class<? extends Security> kind) {
+          values = kind.getEnumConstants();
+        }
+        interface Security {
+          enum Stock implements Security { SHORT, LONG, MARGIN }
+          enum Bond implements Security { MUNICIPAL, JUNK }
+        }
+        public Security randomSelection() {
+          return Enums.random(values);
+        }
+        public static void main(String[] args) {
+          for(int i = 0; i < 10; i++) {
+            SecurityCategory category =
+              Enums.random(SecurityCategory.class);
+            System.out.println(category + ": " +
+              category.randomSelection());
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`STOCK: JUNK`"
+        correct: true
+      - text: "`BOND: MUNICIPAL`"
+        feedback: "That's a bond."
+      - text: "`STOCK: MARGIN`"
+        feedback: "That's a stock."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).

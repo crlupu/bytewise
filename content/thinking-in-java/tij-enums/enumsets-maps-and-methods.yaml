@@ -1,0 +1,645 @@
+title: "EnumSet, EnumMap and constant-specific methods"
+summary: "Fast sets and maps keyed by enums, methods that differ per constant, and enums as state machines and chains of responsibility."
+duration: 8
+tags: [java, enum, EnumSet, EnumMap, constant-specific methods, state machine]
+sources:
+  - { book: thinking-in-java, ref: "Chapter 19, Using EnumSet instead of flags; Using EnumMap; Constant-specific methods" }
+steps:
+  - type: explanation
+    title: "EnumSet and EnumMap"
+    body: |
+      An `EnumSet` is a compact bit vector of enum constants, always iterated in declaration order.
+      `EnumSet.of`, `range`, `allOf`, `noneOf` and `complementOf` build them.
+      An `EnumMap` is a map keyed by enum constants, backed by an array, also in declaration order.
+
+  - type: explanation
+    title: "Constant-specific methods"
+    body: |
+      Each constant can have its own body overriding an (often abstract) method of the enum.
+      That gives polymorphic behavior per constant — good for chains of responsibility and state machines.
+      The constants aren't separate classes you can name, though.
+
+  - type: choice
+    id: tij-enumerated-alarmpoints
+    prompt: |
+      What is `EnumSet.range(OFFICE1, OFFICE4)`?
+    code: |
+      //: enumerated/AlarmPoints.java
+      package enumerated;
+      public enum AlarmPoints {
+        STAIR1, STAIR2, LOBBY, OFFICE1, OFFICE2, OFFICE3,
+        OFFICE4, BATHROOM, UTILITY, KITCHEN
+      }
+    language: java
+    options:
+      - text: "OFFICE1, OFFICE2, OFFICE3 and OFFICE4 — inclusive"
+        correct: true
+      - text: "OFFICE1 to OFFICE3"
+        feedback: "`EnumSet.range` includes both ends."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-enumsets
+    prompt: |
+      `AlarmPoints` is `STAIR1, STAIR2, LOBBY, OFFICE1 … OFFICE4, BATHROOM, UTILITY, KITCHEN`. After adding BATHROOM, then `addAll(EnumSet.of(STAIR1, STAIR2, KITCHEN))`, what's printed? (`print` is `println`.)
+    code: |
+      //: enumerated/EnumSets.java
+      // Operations on EnumSets
+      package enumerated;
+      import java.util.*;
+      import static enumerated.AlarmPoints.*;
+      import static net.mindview.util.Print.*;
+
+      public class EnumSets {
+        public static void main(String[] args) {
+          EnumSet<AlarmPoints> points =
+            EnumSet.noneOf(AlarmPoints.class); // Empty set
+          points.add(BATHROOM);
+          print(points);
+          points.addAll(EnumSet.of(STAIR1, STAIR2, KITCHEN));
+          print(points);
+          points = EnumSet.allOf(AlarmPoints.class);
+          points.removeAll(EnumSet.of(STAIR1, STAIR2, KITCHEN));
+          print(points);
+          points.removeAll(EnumSet.range(OFFICE1, OFFICE4));
+          print(points);
+          points = EnumSet.complementOf(points);
+          print(points);
+        }
+      }
+    language: java
+    options:
+      - text: "[STAIR1, STAIR2, BATHROOM, KITCHEN]"
+        correct: true
+      - text: "[BATHROOM, STAIR1, STAIR2, KITCHEN]"
+        feedback: "An `EnumSet` iterates in declaration order, not insertion order."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-bigenumset
+    prompt: |
+      `Big` has 76 constants — more than the 64 bits in a `long`. Does `EnumSet.allOf` work?
+    code: |
+      //: enumerated/BigEnumSet.java
+      import java.util.*;
+
+      public class BigEnumSet {
+        enum Big { A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10,
+          A11, A12, A13, A14, A15, A16, A17, A18, A19, A20, A21,
+          A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32,
+          A33, A34, A35, A36, A37, A38, A39, A40, A41, A42, A43,
+          A44, A45, A46, A47, A48, A49, A50, A51, A52, A53, A54,
+          A55, A56, A57, A58, A59, A60, A61, A62, A63, A64, A65,
+          A66, A67, A68, A69, A70, A71, A72, A73, A74, A75 }
+        public static void main(String[] args) {
+          EnumSet<Big> bigEnumSet = EnumSet.allOf(Big.class);
+          System.out.println(bigEnumSet);
+        }
+      }
+    language: java
+    options:
+      - text: "Yes — `EnumSet` switches to a larger bit vector (`JumboEnumSet`) as needed"
+        correct: true
+      - text: "No — `EnumSet` is limited to 64 constants"
+        feedback: "It prints all 76."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-enummaps
+    prompt: |
+      KITCHEN and BATHROOM were put in that order. In what order does the loop print them, and what happens at `em.get(UTILITY).action()`? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: enumerated/EnumMaps.java
+      // Basics of EnumMaps.
+      package enumerated;
+      import java.util.*;
+      import static enumerated.AlarmPoints.*;
+      import static net.mindview.util.Print.*;
+
+      interface Command { void action(); }
+
+      public class EnumMaps {
+        public static void main(String[] args) {
+          EnumMap<AlarmPoints,Command> em =
+            new EnumMap<AlarmPoints,Command>(AlarmPoints.class);
+          em.put(KITCHEN, new Command() {
+            public void action() { print("Kitchen fire!"); }
+          });
+          em.put(BATHROOM, new Command() {
+            public void action() { print("Bathroom alert!"); }
+          });
+          for(Map.Entry<AlarmPoints,Command> e : em.entrySet()) {
+            printnb(e.getKey() + ": ");
+            e.getValue().action();
+          }
+          try { // If there's no value for a particular key:
+            em.get(UTILITY).action();
+          } catch(Exception e) {
+            print(e);
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "BATHROOM first (declaration order); then a `NullPointerException`, since UTILITY has no value"
+        correct: true
+      - text: "KITCHEN first; then it prints nothing"
+        feedback: "`EnumMap` follows declaration order, and a missing key gives `null`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-constantspecificmethod
+    prompt: |
+      What does the second line print when `CLASSPATH` isn't set?
+    code: |
+      //: enumerated/ConstantSpecificMethod.java
+      import java.util.*;
+      import java.text.*;
+
+      public enum ConstantSpecificMethod {
+        DATE_TIME {
+          String getInfo() {
+            return
+              DateFormat.getDateInstance().format(new Date());
+          }
+        },
+        CLASSPATH {
+          String getInfo() {
+            return System.getenv("CLASSPATH");
+          }
+        },
+        VERSION {
+          String getInfo() {
+            return System.getProperty("java.version");
+          }
+        };
+        abstract String getInfo();
+        public static void main(String[] args) {
+          for(ConstantSpecificMethod csm : values())
+            System.out.println(csm.getInfo());
+        }
+      }
+    language: java
+    options:
+      - text: "null"
+        correct: true
+      - text: "An empty line"
+        feedback: "`getenv` returns `null` for a missing variable, and `println` prints `null`."
+      - text: "It throws"
+        feedback: "No exception; just `null`."
+    explanation: |
+      The first line is today's date, the third the Java version, like `21.0.11`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-notclasses
+    prompt: |
+      Why can't you write `void f1(LikeClasses.WINKEN instance)`? (`print` is `println`.)
+    code: |
+      //: enumerated/NotClasses.java
+      import static net.mindview.util.Print.*;
+
+      enum LikeClasses {
+        WINKEN { void behavior() { print("Behavior1"); } },
+        BLINKEN { void behavior() { print("Behavior2"); } },
+        NOD { void behavior() { print("Behavior3"); } };
+        abstract void behavior();
+      }
+
+      public class NotClasses {
+        // void f1(LikeClasses.WINKEN instance) {} // Nope
+      }
+    language: java
+    options:
+      - text: "Constants with bodies are instances of anonymous subclasses, not types you can name"
+        correct: true
+      - text: "`WINKEN` is private"
+        feedback: "Enum constants are public."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-carwash
+    prompt: |
+      `cycles` starts as {BASIC, RINSE}; BLOWDRY (twice), RINSE and HOTWAX are added. What is the second `print(wash)`? (`print` is `println`.)
+    code: |
+      //: enumerated/CarWash.java
+      import java.util.*;
+      import static net.mindview.util.Print.*;
+
+      public class CarWash {
+        public enum Cycle {
+          UNDERBODY {
+            void action() { print("Spraying the underbody"); }
+          },
+          WHEELWASH {
+            void action() { print("Washing the wheels"); }
+          },
+          PREWASH {
+            void action() { print("Loosening the dirt"); }
+          },
+          BASIC {
+            void action() { print("The basic wash"); }
+          },
+          HOTWAX {
+            void action() { print("Applying hot wax"); }
+          },
+          RINSE {
+            void action() { print("Rinsing"); }
+          },
+          BLOWDRY {
+            void action() { print("Blowing dry"); }
+          };
+          abstract void action();
+        }
+        EnumSet<Cycle> cycles =
+          EnumSet.of(Cycle.BASIC, Cycle.RINSE);
+        public void add(Cycle cycle) { cycles.add(cycle); }
+        public void washCar() {
+          for(Cycle c : cycles)
+            c.action();
+        }
+        public String toString() { return cycles.toString(); }
+        public static void main(String[] args) {
+          CarWash wash = new CarWash();
+          print(wash);
+          wash.washCar();
+          // Order of addition is unimportant:
+          wash.add(Cycle.BLOWDRY);
+          wash.add(Cycle.BLOWDRY); // Duplicates ignored
+          wash.add(Cycle.RINSE);
+          wash.add(Cycle.HOTWAX);
+          print(wash);
+          wash.washCar();
+        }
+      }
+    language: java
+    options:
+      - text: "[BASIC, HOTWAX, RINSE, BLOWDRY]"
+        correct: true
+      - text: "[BASIC, RINSE, BLOWDRY, BLOWDRY, RINSE, HOTWAX]"
+        feedback: "A set ignores duplicates."
+      - text: "[BASIC, RINSE, BLOWDRY, HOTWAX]"
+        feedback: "An `EnumSet` follows declaration order: HOTWAX is declared before RINSE."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: predict
+    id: tij-enumerated-overrideconstantspecific
+    prompt: |
+      What does this print? (`print` is `println`, `printnb` is `print`.)
+    code: |
+      //: enumerated/OverrideConstantSpecific.java
+      import static net.mindview.util.Print.*;
+
+      public enum OverrideConstantSpecific {
+        NUT, BOLT,
+        WASHER {
+          void f() { print("Overridden method"); }
+        };
+        void f() { print("default behavior"); }
+        public static void main(String[] args) {
+          for(OverrideConstantSpecific ocs : values()) {
+            printnb(ocs + ": ");
+            ocs.f();
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "NUT: default behavior\nBOLT: default behavior\nWASHER: Overridden method"
+        correct: true
+      - text: "NUT: default behavior\nBOLT: default behavior\nWASHER: default behavior"
+        feedback: "`WASHER` overrides `f()`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-postoffice
+    prompt: |
+      `handle(m)` tries each `MailHandler` in order. Mail 0 is not general delivery, is unscannable, readable with a good address. What happens? (`print` is `println`.)
+    code: |
+      //: enumerated/PostOffice.java
+      // Modeling a post office.
+      import java.util.*;
+      import net.mindview.util.*;
+      import static net.mindview.util.Print.*;
+
+      class Mail {
+        // The NO's lower the probability of random selection:
+        enum GeneralDelivery {YES,NO1,NO2,NO3,NO4,NO5}
+        enum Scannability {UNSCANNABLE,YES1,YES2,YES3,YES4}
+        enum Readability {ILLEGIBLE,YES1,YES2,YES3,YES4}
+        enum Address {INCORRECT,OK1,OK2,OK3,OK4,OK5,OK6}
+        enum ReturnAddress {MISSING,OK1,OK2,OK3,OK4,OK5}
+        GeneralDelivery generalDelivery;
+        Scannability scannability;
+        Readability readability;
+        Address address;
+        ReturnAddress returnAddress;
+        static long counter = 0;
+        long id = counter++;
+        public String toString() { return "Mail " + id; }
+        public String details() {
+          return toString() +
+            ", General Delivery: " + generalDelivery +
+            ", Address Scanability: " + scannability +
+            ", Address Readability: " + readability +
+            ", Address Address: " + address +
+            ", Return address: " + returnAddress;
+        }
+        // Generate test Mail:
+        public static Mail randomMail() {
+          Mail m = new Mail();
+          m.generalDelivery= Enums.random(GeneralDelivery.class);
+          m.scannability = Enums.random(Scannability.class);
+          m.readability = Enums.random(Readability.class);
+          m.address = Enums.random(Address.class);
+          m.returnAddress = Enums.random(ReturnAddress.class);
+          return m;
+        }
+        public static Iterable<Mail> generator(final int count) {
+          return new Iterable<Mail>() {
+            int n = count;
+            public Iterator<Mail> iterator() {
+              return new Iterator<Mail>() {
+                public boolean hasNext() { return n-- > 0; }
+                public Mail next() { return randomMail(); }
+                public void remove() { // Not implemented
+                  throw new UnsupportedOperationException();
+                }
+              };
+            }
+          };
+        }
+      }
+
+      public class PostOffice {
+        enum MailHandler {
+          GENERAL_DELIVERY {
+            boolean handle(Mail m) {
+              switch(m.generalDelivery) {
+                case YES:
+                  print("Using general delivery for " + m);
+                  return true;
+                default: return false;
+              }
+            }
+          },
+          MACHINE_SCAN {
+            boolean handle(Mail m) {
+              switch(m.scannability) {
+                case UNSCANNABLE: return false;
+                default:
+                  switch(m.address) {
+                    case INCORRECT: return false;
+                    default:
+                      print("Delivering "+ m + " automatically");
+                      return true;
+                  }
+              }
+            }
+          },
+          VISUAL_INSPECTION {
+            boolean handle(Mail m) {
+              switch(m.readability) {
+                case ILLEGIBLE: return false;
+                default:
+                  switch(m.address) {
+                    case INCORRECT: return false;
+                    default:
+                      print("Delivering " + m + " normally");
+                      return true;
+                  }
+              }
+            }
+          },
+          RETURN_TO_SENDER {
+            boolean handle(Mail m) {
+              switch(m.returnAddress) {
+                case MISSING: return false;
+                default:
+                  print("Returning " + m + " to sender");
+                  return true;
+              }
+            }
+          };
+          abstract boolean handle(Mail m);
+        }
+        static void handle(Mail m) {
+          for(MailHandler handler : MailHandler.values())
+            if(handler.handle(m))
+              return;
+          print(m + " is a dead letter");
+        }
+        public static void main(String[] args) {
+          for(Mail mail : Mail.generator(10)) {
+            print(mail.details());
+            handle(mail);
+            print("*****");
+          }
+        }
+      }
+    language: java
+    options:
+      - text: "`Delivering Mail 0 normally` — VISUAL_INSPECTION is the first handler that accepts it"
+        correct: true
+      - text: "`Delivering Mail 0 automatically`"
+        feedback: "MACHINE_SCAN rejects unscannable mail."
+      - text: "`Mail 0 is a dead letter`"
+        feedback: "Visual inspection succeeds."
+    explanation: |
+      A Chain of Responsibility built from constant-specific methods.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-input
+    prompt: |
+      Why does `randomSelection()` use `values().length - 1`?
+    code: |
+      //: enumerated/Input.java
+      package enumerated;
+      import java.util.*;
+
+      public enum Input {
+        NICKEL(5), DIME(10), QUARTER(25), DOLLAR(100),
+        TOOTHPASTE(200), CHIPS(75), SODA(100), SOAP(50),
+        ABORT_TRANSACTION {
+          public int amount() { // Disallow
+            throw new RuntimeException("ABORT.amount()");
+          }
+        },
+        STOP { // This must be the last instance.
+          public int amount() { // Disallow
+            throw new RuntimeException("SHUT_DOWN.amount()");
+          }
+        };
+        int value; // In cents
+        Input(int value) { this.value = value; }
+        Input() {}
+        int amount() { return value; }; // In cents
+        static Random rand = new Random(47);
+        public static Input randomSelection() {
+          // Don't include STOP:
+          return values()[rand.nextInt(values().length - 1)];
+        }
+      }
+    language: java
+    options:
+      - text: "To exclude `STOP`, the last constant"
+        correct: true
+      - text: "Because arrays are 1-based"
+        feedback: "They're 0-based; it's to leave out `STOP`."
+    explanation: |
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
+
+  - type: choice
+    id: tij-enumerated-vendingmachine
+    prompt: |
+      Run with no file argument, inputs are random and never `STOP`. When does it halt? (`print` is `println`.)
+    code: |
+      //: enumerated/VendingMachine.java
+      package enumerated;
+      import java.util.*;
+      import net.mindview.util.*;
+      import static enumerated.Input.*;
+      import static net.mindview.util.Print.*;
+
+      enum Category {
+        MONEY(NICKEL, DIME, QUARTER, DOLLAR),
+        ITEM_SELECTION(TOOTHPASTE, CHIPS, SODA, SOAP),
+        QUIT_TRANSACTION(ABORT_TRANSACTION),
+        SHUT_DOWN(STOP);
+        private Input[] values;
+        Category(Input... types) { values = types; }
+        private static EnumMap<Input,Category> categories =
+          new EnumMap<Input,Category>(Input.class);
+        static {
+          for(Category c : Category.class.getEnumConstants())
+            for(Input type : c.values)
+              categories.put(type, c);
+        }
+        public static Category categorize(Input input) {
+          return categories.get(input);
+        }
+      }
+
+      public class VendingMachine {
+        private static State state = State.RESTING;
+        private static int amount = 0;
+        private static Input selection = null;
+        enum StateDuration { TRANSIENT } // Tagging enum
+        enum State {
+          RESTING {
+            void next(Input input) {
+              switch(Category.categorize(input)) {
+                case MONEY:
+                  amount += input.amount();
+                  state = ADDING_MONEY;
+                  break;
+                case SHUT_DOWN:
+                  state = TERMINAL;
+                default:
+              }
+            }
+          },
+          ADDING_MONEY {
+            void next(Input input) {
+              switch(Category.categorize(input)) {
+                case MONEY:
+                  amount += input.amount();
+                  break;
+                case ITEM_SELECTION:
+                  selection = input;
+                  if(amount < selection.amount())
+                    print("Insufficient money for " + selection);
+                  else state = DISPENSING;
+                  break;
+                case QUIT_TRANSACTION:
+                  state = GIVING_CHANGE;
+                  break;
+                case SHUT_DOWN:
+                  state = TERMINAL;
+                default:
+              }
+            }
+          },
+          DISPENSING(StateDuration.TRANSIENT) {
+            void next() {
+              print("here is your " + selection);
+              amount -= selection.amount();
+              state = GIVING_CHANGE;
+            }
+          },
+          GIVING_CHANGE(StateDuration.TRANSIENT) {
+            void next() {
+              if(amount > 0) {
+                print("Your change: " + amount);
+                amount = 0;
+              }
+              state = RESTING;
+            }
+          },
+          TERMINAL { void output() { print("Halted"); } };
+          private boolean isTransient = false;
+          State() {}
+          State(StateDuration trans) { isTransient = true; }
+          void next(Input input) {
+            throw new RuntimeException("Only call " +
+              "next(Input input) for non-transient states");
+          }
+          void next() {
+            throw new RuntimeException("Only call next() for " +
+              "StateDuration.TRANSIENT states");
+          }
+          void output() { print(amount); }
+        }
+        static void run(Generator<Input> gen) {
+          while(state != State.TERMINAL) {
+            state.next(gen.next());
+            while(state.isTransient)
+              state.next();
+            state.output();
+          }
+        }
+        public static void main(String[] args) {
+          Generator<Input> gen = new RandomInputGenerator();
+          if(args.length == 1)
+            gen = new FileInputGenerator(args[0]);
+          run(gen);
+        }
+      }
+
+      // For a basic sanity check:
+      class RandomInputGenerator implements Generator<Input> {
+        public Input next() { return Input.randomSelection(); }
+      }
+
+      // Create Inputs from a file of ';'-separated strings:
+      class FileInputGenerator implements Generator<Input> {
+        private Iterator<String> input;
+        public FileInputGenerator(String fileName) {
+          input = new TextFile(fileName, ";").iterator();
+        }
+        public Input next() {
+          if(!input.hasNext())
+            return null;
+          return Enum.valueOf(Input.class, input.next().trim());
+        }
+      }
+    language: java
+    options:
+      - text: "Never — only `STOP` leads to `TERMINAL`, and the random generator excludes it"
+        correct: true
+      - text: "After one sale"
+        feedback: "The machine returns to RESTING and keeps going."
+    explanation: |
+      With the input file, the last input is `STOP`, and it prints `Halted`.
+
+      Code © Bruce Eckel, *Thinking in Java*, 4th ed. ([tij4-code](https://github.com/BruceEckel/tij4-code), [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)).
