@@ -1,0 +1,5 @@
+title: "Common exceptions"
+summary: "Chapter 5 — where NullPointerException, IndexOutOfBoundsException, ClassCastException and StackOverflowError come from."
+lessons:
+  - null-pointers
+  - other-exceptions

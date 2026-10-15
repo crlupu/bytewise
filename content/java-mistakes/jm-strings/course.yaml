@@ -1,0 +1,5 @@
+title: "Strings"
+summary: "Chapter 6 — surrogate pairs, locale-sensitive case and formatting, format strings, regex special characters and indexOf."
+lessons:
+  - characters-and-locales
+  - formats-and-regex

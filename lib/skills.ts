@@ -40,7 +40,7 @@ export const SKILLS: SkillDef[] = [
     id: "java",
     title: "Java",
     branch: "code",
-    topics: ["java", "thinking-in-java", "java-puzzlers", "modern-java", "well-grounded"],
+    topics: ["java", "thinking-in-java", "java-puzzlers", "java-mistakes", "modern-java", "well-grounded"],
     boss: { name: "The Puzzler", blurb: "Code that compiles, runs, and does something other than what it says." },
   },
   {
@@ -151,7 +151,7 @@ function facetsOf(l: Lesson, widget: string | undefined): FacetId[] {
     out.push("tradeoffs");
   if (
     (widget && ["locks", "threads"].includes(widget)) ||
-    ["troubleshooting-java", "java-puzzlers"].includes(l.topicId) ||
+    ["troubleshooting-java", "java-puzzlers", "java-mistakes"].includes(l.topicId) ||
     has(t, "deadlock", "memory leak", "liveness", "profiling", "debugging")
   )
     out.push("debugging");

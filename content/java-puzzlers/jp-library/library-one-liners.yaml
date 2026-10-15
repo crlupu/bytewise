@@ -1,0 +1,93 @@
+title: "Immutable values and one-liners"
+summary: "Immutable classes like BigInteger return new objects; and a few library one-liners that do more than they seem."
+duration: 5
+tags: [java, puzzlers, BigInteger, immutability, library]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 56, Big Problem" }
+  - { book: java-puzzlers, ref: "Puzzle 60, One-Liners" }
+  - { book: java-puzzlers, ref: "Puzzle 64, The Mod Squad" }
+steps:
+  - type: explanation
+    title: "Immutable means a new object"
+    body: |
+      `BigInteger`, `BigDecimal` and `String` never change: `add`, `subtract` and friends return a new object.
+      Calling them without using the result does nothing.
+
+  - type: explanation
+    title: "Know the library"
+    body: |
+      Many common tasks are one line with the right method: `new LinkedHashSet<>(list)` removes duplicates and keeps order, `String.split` takes a regex, `Arrays.deepToString` prints nested arrays.
+      Reading the method's documentation once saves debugging later.
+
+  - type: predict
+    id: jpz-56
+    prompt: |
+      What does this print?
+    code: |
+      import java.math.BigInteger;
+
+      public class Totals {
+          public static void main(String[] args) {
+              BigInteger total = BigInteger.ZERO;
+              for (int i = 1; i <= 3; i++)
+                  total.add(BigInteger.valueOf(i * 1000));
+              System.out.println(total);
+          }
+      }
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "6000"
+        feedback: "`add` returns a new `BigInteger`; `total` itself never changes."
+    explanation: |
+      Write `total = total.add(...)`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 56, Big Problem in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-60
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class OneLiners {
+          public static void main(String[] args) {
+              List<String> names = List.of("ann", "bob", "ann", "cy", "bob");
+              System.out.println(new ArrayList<>(new LinkedHashSet<>(names)));
+              System.out.println(Arrays.toString("a, b,c ,  d".split(",\\s*")));
+              System.out.println(Arrays.deepToString(new int[][] {{1, 2}, {3}}));
+              System.out.println(Integer.bitCount(255));
+          }
+      }
+    language: java
+    options:
+      - text: "[ann, bob, cy]\n[a, b, c , d]\n[[1, 2], [3]]\n8"
+        correct: true
+      - text: "[ann, bob, cy]\n[a, b, c, d]\n[[1, 2], [3]]\n8"
+        feedback: "The regex removes spaces only after commas: the space before the second comma stays, so the third element is `\"c \"`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 60, One-Liners in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-64
+    prompt: |
+      Strings are spread over 3 buckets by `Math.abs(hashCode()) % 3`. What does this print?
+    code: |
+      public class Buckets {
+          public static void main(String[] args) {
+              for (String s : new String[] {"apple", "polygenelubricants"})
+                  System.out.println(s + " -> " + Math.abs(s.hashCode()) % 3);
+          }
+      }
+    language: java
+    options:
+      - text: "apple -> 2\npolygenelubricants -> -2"
+        correct: true
+      - text: "apple -> 1\npolygenelubricants -> 2"
+        feedback: "`\"polygenelubricants\".hashCode()` is `Integer.MIN_VALUE`, and `Math.abs` of that is still negative."
+    explanation: |
+      Use `Math.floorMod(s.hashCode(), 3)`, which is never negative.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 64, The Mod Squad in *Java Puzzlers* (Bloch & Gafter).

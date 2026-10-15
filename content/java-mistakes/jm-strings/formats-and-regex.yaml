@@ -1,0 +1,203 @@
+title: "Format strings, regexes and searches"
+summary: "Format arguments that don't match, split and replaceAll treating text as a regex, backslashes in literals, case-mismatched comparisons and indexOf results."
+duration: 7
+tags: [java, mistakes, regex, String.format, indexOf]
+sources:
+  - { book: java-mistakes, ref: "Chapter 6, Strings" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — mismatched format arguments" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — unquoted regex special characters" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — accidental use of replaceAll" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — accidental escape sequences" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — comparing strings in different case" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — not checking the result of indexOf" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — swapped arguments" }
+steps:
+  - type: explanation
+    title: "Text that isn't plain text"
+    body: |
+      `split`, `replaceAll` and `matches` take regexes: `.` and `|` are special. `replaceAll`'s replacement treats `$` and `\` specially too.
+      Use `Pattern.quote`, `Matcher.quoteReplacement`, or `replace` for literal text.
+      In a string literal, `\t` and `\n` are escapes — a Windows path like `"C:\temp"` contains a tab.
+
+  - type: explanation
+    title: "Check what you get back"
+    body: |
+      `String.format` throws on missing or mismatched arguments but silently ignores extra ones.
+      `indexOf` returns −1 when nothing is found; `substring(indexOf(x) + 1)` then returns the whole string.
+      `indexOf(int ch, int from)` happily accepts its arguments swapped, because a `char` is an `int`.
+
+  - type: predict
+    id: jm-050
+    prompt: |
+      What does this print?
+    code: |
+      public class Formats {
+          public static void main(String[] args) {
+              System.out.println(String.format("%s scored %s", "Ann", 92, "points"));
+              try {
+                  System.out.println(String.format("%s scored %d%%", "Bob"));
+              } catch (RuntimeException e) {
+                  System.out.println(e.getClass().getSimpleName());
+              }
+              try {
+                  System.out.println(String.format("%d items", "7"));
+              } catch (RuntimeException e) {
+                  System.out.println(e.getClass().getSimpleName());
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Ann scored 92\nMissingFormatArgumentException\nIllegalFormatConversionException"
+        correct: true
+      - text: "Ann scored 92 points\nMissingFormatArgumentException\nIllegalFormatConversionException"
+        feedback: "Extra arguments are silently ignored: `points` is never printed."
+      - text: "Ann scored 92\nBob scored 0%\n7 items"
+        feedback: "A missing argument and a `String` for `%d` both throw."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — mismatched format arguments.
+
+  - type: predict
+    id: jm-051
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.Arrays;
+
+      public class Split {
+          public static void main(String[] args) {
+              System.out.println("1.2.3".split(".").length);
+              System.out.println(Arrays.toString("a|b".split("|")));
+              System.out.println(Arrays.toString("1.2.3".split("\\.")));
+          }
+      }
+    language: java
+    options:
+      - text: "0\n[a, |, b]\n[1, 2, 3]"
+        correct: true
+      - text: "3\n[a, b]\n[1, 2, 3]"
+        feedback: "`.` matches any character, so every piece is empty (and trailing empty strings are dropped); `|` is an empty alternation that matches between every character."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — unquoted regex special characters.
+
+  - type: choice
+    id: jm-052
+    prompt: |
+      Fill a price into a template. What happens?
+    code: |
+      public class Template {
+          public static void main(String[] args) {
+              String template = "Total: AMOUNT";
+              String price = "$5.00";
+              System.out.println(template.replaceAll("AMOUNT", price));
+          }
+      }
+    language: java
+    options:
+      - text: "It throws `IndexOutOfBoundsException: No group 5`: in a replacement, `$5` refers to capture group 5"
+        correct: true
+      - text: "It prints `Total: $5.00`"
+        feedback: "`replaceAll`'s replacement string isn't literal."
+    explanation: |
+      Use `template.replace("AMOUNT", price)` — `replace` replaces all occurrences too, and treats both strings literally.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — accidental use of replaceAll.
+
+  - type: predict
+    id: jm-053
+    prompt: |
+      What does this print?
+    code: |
+      public class WinPath {
+          public static void main(String[] args) {
+              String path = "C:\temp\new";
+              System.out.println(path.length());
+              System.out.println(path.contains("new"));
+          }
+      }
+    language: java
+    options:
+      - text: "9\nfalse"
+        correct: true
+      - text: "11\ntrue"
+        feedback: "`\\t` is a tab and `\\n` a newline: the string is `C:`, tab, `emp`, newline, `ew` — 9 characters, without `new`."
+    explanation: |
+      Write `"C:\\temp\\new"`, or use `Path.of("C:", "temp", "new")`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — accidental escape sequences.
+
+  - type: predict
+    id: jm-054
+    prompt: |
+      The user types `QUIT`. What does this print?
+    code: |
+      public class Commands {
+          public static void main(String[] args) {
+              String input = "QUIT";
+              if (input.toLowerCase().equals("Quit"))
+                  System.out.println("bye");
+              else
+                  System.out.println("unknown command");
+          }
+      }
+    language: java
+    options:
+      - text: "unknown command"
+        correct: true
+      - text: "bye"
+        feedback: "`input.toLowerCase()` is `quit`, which never equals `Quit` with a capital Q."
+    explanation: |
+      Use `input.equalsIgnoreCase("quit")`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — comparing strings in different case.
+
+  - type: predict
+    id: jm-055
+    prompt: |
+      Extract the domain from each address. What does this print?
+    code: |
+      public class Domains {
+          static String domain(String email) {
+              return email.substring(email.indexOf('@') + 1);
+          }
+
+          public static void main(String[] args) {
+              System.out.println(domain("ann@example.com"));
+              System.out.println(domain("not-an-email"));
+          }
+      }
+    language: java
+    options:
+      - text: "example.com\nnot-an-email"
+        correct: true
+      - text: "example.com\n"
+        feedback: "`indexOf` returns −1 when there's no `@`, so `substring(0)` returns the whole string."
+      - text: "example.com\nan exception"
+        feedback: "No exception: `-1 + 1` is a valid index."
+    explanation: |
+      Check for −1 explicitly, and decide what an invalid input should do.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — not checking the result of indexOf.
+
+  - type: predict
+    id: jm-056
+    prompt: |
+      Find the first comma at or after index 5. What does this print?
+    code: |
+      public class Search {
+          public static void main(String[] args) {
+              String csv = "a,b,c,d,e,f";
+              System.out.println(csv.indexOf(5, ','));
+              System.out.println(csv.indexOf(',', 5));
+          }
+      }
+    language: java
+    options:
+      - text: "-1\n5"
+        correct: true
+      - text: "5\n5"
+        feedback: "`indexOf(int ch, int fromIndex)`: the first call searches for character 5 starting at index 44 (`','`)."
+    explanation: |
+      Both arguments are `int`s, so the compiler can't catch the swap.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — swapped arguments.

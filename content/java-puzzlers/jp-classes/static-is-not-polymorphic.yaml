@@ -5,6 +5,7 @@ tags: [java, puzzlers, static, hiding, overriding]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 48, All I Get Is Static" }
   - { book: java-puzzlers, ref: "Puzzle 54, Null and Void" }
+  - { book: java-puzzlers, ref: "Puzzle 47, Well, Dog My Cats!" }
 steps:
   - type: explanation
     title: Static methods are hidden, not overridden
@@ -72,3 +73,85 @@ steps:
         right: The declared type at compile time
       - left: Overloaded method
         right: The arguments' declared types at compile time
+
+  - type: predict
+    id: jpz-47
+    prompt: |
+      Each subclass is meant to count its own instances. What does this print?
+    code: |
+      public class Census {
+          static class Animal {
+              static int count;
+              Animal() { count++; }
+          }
+          static class Dog extends Animal { }
+          static class Cat extends Animal { }
+
+          public static void main(String[] args) {
+              new Dog(); new Dog();
+              new Cat(); new Cat(); new Cat();
+              System.out.println(Dog.count + " dogs, " + Cat.count + " cats");
+          }
+      }
+    language: java
+    options:
+      - text: "5 dogs, 5 cats"
+        correct: true
+      - text: "2 dogs, 3 cats"
+        feedback: "There's one static `count` field, in `Animal`; `Dog.count` and `Cat.count` both name it."
+    explanation: |
+      Give each subclass its own static counter.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 47, Well, Dog My Cats! in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-48
+    prompt: |
+      What does this print?
+    code: |
+      public class Greetings {
+          static class Animal {
+              static String sound() { return "..."; }
+          }
+          static class Dog extends Animal {
+              static String sound() { return "Woof"; }
+          }
+
+          public static void main(String[] args) {
+              Animal a = new Dog();
+              System.out.println(a.sound());
+          }
+      }
+    language: java
+    options:
+      - text: "..."
+        correct: true
+      - text: "Woof"
+        feedback: "Static methods are chosen by the variable's declared type at compile time; `Dog.sound` hides `Animal.sound`, it doesn't override it."
+    explanation: |
+      Call static methods through the class name, never through an instance.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 48, All I Get Is Static in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-54
+    prompt: |
+      What does this print?
+    code: |
+      public class Nothing {
+          static void greet() {
+              System.out.println("Hello");
+          }
+
+          public static void main(String[] args) {
+              ((Nothing) null).greet();
+          }
+      }
+    language: java
+    options:
+      - text: "Hello"
+        correct: true
+      - text: "A `NullPointerException`"
+        feedback: "A static call through an expression only uses its type; the `null` value is never dereferenced."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 54, Null and Void in *Java Puzzlers* (Bloch & Gafter).

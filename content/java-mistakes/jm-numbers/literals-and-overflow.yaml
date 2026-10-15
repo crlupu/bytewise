@@ -1,0 +1,145 @@
+title: "Literals, overflow and division"
+summary: "Octal literals, int overflow, integer division, Math.abs of MIN_VALUE and odd-number checks."
+duration: 6
+tags: [java, mistakes, overflow, integer division, octal]
+sources:
+  - { book: java-mistakes, ref: "Chapter 4, Numbers" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — an accidental octal literal" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — numeric overflow" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — rounding during integer division" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — the absolute value of MIN_VALUE" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — oddness checks and negative numbers" }
+steps:
+  - type: explanation
+    title: "int arithmetic wraps"
+    body: |
+      `int` arithmetic overflows silently; so does `long`. Use `Math.addExact`/`multiplyExact` to get an exception instead.
+      `Math.abs(Integer.MIN_VALUE)` is negative, and `-x` overflows too.
+
+  - type: explanation
+    title: "Division and literals"
+    body: |
+      Integer division truncates toward zero: `1 / 2` is 0 even when you assign it to a `double`.
+      A leading `0` makes a literal octal: `010` is 8.
+      `x % 2 == 1` misses negative odd numbers; test `x % 2 != 0`.
+
+  - type: predict
+    id: jm-026
+    prompt: |
+      The codes are padded with zeros to line up. What does this print?
+    code: |
+      public class Codes {
+          public static void main(String[] args) {
+              int[] codes = {
+                  101,
+                  042,
+                  007,
+                  010
+              };
+              for (int c : codes) System.out.print(c + " ");
+              System.out.println();
+          }
+      }
+    language: java
+    options:
+      - text: "101 34 7 8 "
+        correct: true
+      - text: "101 42 7 10 "
+        feedback: "A leading `0` makes a literal octal: `042` is 34 and `010` is 8. (`007` is 7 either way, which hides the problem.)"
+    explanation: |
+      Never pad numeric literals with zeros. A literal like `09` doesn't even compile.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — an accidental octal literal.
+
+  - type: predict
+    id: jm-027
+    prompt: |
+      Compute the file size in bytes. What does this print?
+    code: |
+      public class Size {
+          public static void main(String[] args) {
+              int gigabytes = 3;
+              long bytes = gigabytes * 1024 * 1024 * 1024;
+              System.out.println(bytes);
+          }
+      }
+    language: java
+    options:
+      - text: "-1073741824"
+        correct: true
+      - text: "3221225472"
+        feedback: "The product is computed in `int` and overflows before it's widened to `long`."
+    explanation: |
+      Write `gigabytes * 1024L * 1024 * 1024`, or use `Math.multiplyExact` to fail loudly.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — numeric overflow.
+
+  - type: predict
+    id: jm-028
+    prompt: |
+      What does this print?
+    code: |
+      public class Ratio {
+          public static void main(String[] args) {
+              int done = 3, total = 4;
+              double ratio = done / total;
+              System.out.println(ratio * 100 + "%");
+          }
+      }
+    language: java
+    options:
+      - text: "0.0%"
+        correct: true
+      - text: "75.0%"
+        feedback: "`done / total` is integer division (0) before it's converted to `double`."
+    explanation: |
+      Write `(double) done / total`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — rounding during integer division.
+
+  - type: predict
+    id: jm-029
+    prompt: |
+      Choose one of 3 shards for each user id. What does this print?
+    code: |
+      public class Shards {
+          static int shard(int id) { return Math.abs(id) % 3; }
+
+          public static void main(String[] args) {
+              System.out.println(shard(-7) + " " + shard(Integer.MIN_VALUE));
+          }
+      }
+    language: java
+    options:
+      - text: "1 -2"
+        correct: true
+      - text: "1 2"
+        feedback: "`Math.abs(Integer.MIN_VALUE)` overflows back to `MIN_VALUE`, which is negative, so the remainder is negative too."
+    explanation: |
+      Use `Math.floorMod(id, 3)`, which is never negative.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — the absolute value of MIN_VALUE.
+
+  - type: predict
+    id: jm-030
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.stream.IntStream;
+
+      public class Odd {
+          public static void main(String[] args) {
+              long odd = IntStream.rangeClosed(-5, 5).filter(x -> x % 2 == 1).count();
+              System.out.println(odd);
+          }
+      }
+    language: java
+    options:
+      - text: "3"
+        correct: true
+      - text: "6"
+        feedback: "Negative odd numbers give `-1`, not `1`."
+    explanation: |
+      Test `x % 2 != 0`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — oddness checks and negative numbers.

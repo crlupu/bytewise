@@ -1,0 +1,94 @@
+title: "Characters, case and locales"
+summary: "A char isn't always a character, case conversion depends on the locale, and so does String.format."
+duration: 6
+tags: [java, mistakes, strings, unicode, locale, String.format]
+sources:
+  - { book: java-mistakes, ref: "Chapter 6, Strings" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — assuming a char is a character" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — unexpected case conversion" }
+  - { book: java-mistakes, ref: "Chapter 6, Strings — String.format with the default locale" }
+steps:
+  - type: explanation
+    title: "char is a UTF-16 unit"
+    body: |
+      Characters outside the Basic Multilingual Plane (most emoji) take two `char`s, a surrogate pair.
+      `length()` counts `char`s, not characters, and `substring` can split a pair.
+      Use `codePointCount`, `codePoints()` or a `BreakIterator` for real characters.
+
+  - type: explanation
+    title: "Locale-sensitive methods"
+    body: |
+      `toUpperCase()`, `toLowerCase()` and `String.format` use the default locale: in Turkish, `"TITLE".toLowerCase()` gives a dotless ı.
+      Pass `Locale.ROOT` for machine-readable text, and keep the default locale only for text shown to people.
+
+  - type: predict
+    id: jm-047
+    prompt: |
+      What does this print?
+    code: |
+      public class Emoji {
+          public static void main(String[] args) {
+              String s = "ok\uD83D\uDE00";   // "ok" followed by a smiley face
+              System.out.println(s.length());
+              System.out.println(s.codePointCount(0, s.length()));
+              System.out.println(Character.isSurrogate(s.charAt(2)));
+          }
+      }
+    language: java
+    options:
+      - text: "4\n3\ntrue"
+        correct: true
+      - text: "3\n3\nfalse"
+        feedback: "The smiley is outside the BMP, so it takes two `char`s (a surrogate pair): `length()` is 4."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — assuming a char is a character.
+
+  - type: predict
+    id: jm-048
+    prompt: |
+      The program runs on a machine whose default locale is Turkish. What does this print?
+    code: |
+      import java.util.Locale;
+
+      public class Turkish {
+          public static void main(String[] args) {
+              Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+              String header = "TITLE";
+              System.out.println(header.toLowerCase().equals("title"));
+              System.out.println(header.toLowerCase(Locale.ROOT).equals("title"));
+          }
+      }
+    language: java
+    options:
+      - text: "false\ntrue"
+        correct: true
+      - text: "true\ntrue"
+        feedback: "In Turkish, uppercase I lowercases to a dotless ı, so the default-locale result is `tıtle`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — unexpected case conversion.
+
+  - type: choice
+    id: jm-049
+    prompt: |
+      A config file is written with `String.format` and read back with `Double.parseDouble`. The default locale is German. What happens?
+    code: |
+      import java.util.Locale;
+
+      public class Config {
+          public static void main(String[] args) {
+              Locale.setDefault(Locale.GERMANY);
+              String line = String.format("%.2f", 1.5);
+              System.out.println(line);
+              System.out.println(Double.parseDouble(line));
+          }
+      }
+    language: java
+    options:
+      - text: "It writes `1,50` (German uses a decimal comma), then `parseDouble` throws `NumberFormatException`"
+        correct: true
+      - text: "It prints `1.50` and `1.5`"
+        feedback: "`String.format` without a locale uses the default one."
+    explanation: |
+      Use `String.format(Locale.ROOT, ...)` for machine-readable text.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 6, Strings — String.format with the default locale.

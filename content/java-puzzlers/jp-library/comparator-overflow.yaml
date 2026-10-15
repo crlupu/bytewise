@@ -58,3 +58,28 @@ steps:
     prompt: Compare two `int` fields safely.
     template: "return Integer.[[compare]](a.age, b.age);"
     code: true
+
+  - type: predict
+    id: jpz-65
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Sorting {
+          public static void main(String[] args) {
+              List<Integer> xs = new ArrayList<>(List.of(5, Integer.MIN_VALUE, -3, Integer.MAX_VALUE, 0));
+              xs.sort((a, b) -> a - b);
+              System.out.println(xs);
+          }
+      }
+    language: java
+    options:
+      - text: "[0, 5, 2147483647, -2147483648, -3]"
+        correct: true
+      - text: "[-2147483648, -3, 0, 5, 2147483647]"
+        feedback: "`a - b` overflows for values far apart, so the comparator says some smaller numbers are bigger."
+    explanation: |
+      Use `Integer.compare(a, b)` or `Comparator.naturalOrder()`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 65, A Strange Saga of a Suspicious Sort in *Java Puzzlers* (Bloch & Gafter).

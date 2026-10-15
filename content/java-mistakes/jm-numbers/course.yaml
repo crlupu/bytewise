@@ -1,0 +1,6 @@
+title: "Numbers"
+summary: "Chapter 4 — octal literals, overflow, integer division, lossy conversions, bit tricks, negative bytes and special floating-point values."
+lessons:
+  - literals-and-overflow
+  - conversions
+  - bits-and-floats

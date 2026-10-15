@@ -4,6 +4,12 @@ duration: 6
 tags: [java, puzzlers, loops, nan, infinity, boxing, min value]
 sources:
   - { book: java-puzzlers, ref: "Puzzles 28–33, Looper and friends" }
+  - { book: java-puzzlers, ref: "Puzzle 28, Looper" }
+  - { book: java-puzzlers, ref: "Puzzle 29, Bride of Looper" }
+  - { book: java-puzzlers, ref: "Puzzle 30, Son of Looper" }
+  - { book: java-puzzlers, ref: "Puzzle 31, Ghost of Looper" }
+  - { book: java-puzzlers, ref: "Puzzle 32, Curse of Looper" }
+  - { book: java-puzzlers, ref: "Puzzle 33, Looper Meets the Wolfman" }
 steps:
   - type: explanation
     title: Floating point has odd values
@@ -80,3 +86,138 @@ steps:
       - text: "false false"
         feedback: Small values come from the cache, so `a` and `b` are the same object.
     explanation: Compare boxed numbers with `equals`, or unbox them first.
+
+  - type: choice
+    id: jpz-28
+    prompt: |
+      Can `x == x + 1` ever be true? What does this print?
+    code: |
+      public class Looper1 {
+          public static void main(String[] args) {
+              double x = 1e17;
+              System.out.println(x == x + 1);
+          }
+      }
+    language: java
+    options:
+      - text: "`true` — at 10¹⁷, adjacent `double` values are 16 apart, so adding 1 rounds back to `x`"
+        correct: true
+      - text: "`false` — `x + 1` is always bigger"
+        feedback: "Floating-point numbers have gaps; 1 is smaller than half the gap here."
+    explanation: |
+      `Double.POSITIVE_INFINITY` works too: infinity plus one is infinity.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 28, Looper in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-29
+    prompt: |
+      What does this print?
+    code: |
+      public class Looper2 {
+          public static void main(String[] args) {
+              double x = 0.0 / 0.0;
+              System.out.println(x != x);
+              System.out.println(x == Double.NaN);
+              System.out.println(Double.isNaN(x));
+          }
+      }
+    language: java
+    options:
+      - text: "true\nfalse\ntrue"
+        correct: true
+      - text: "false\ntrue\ntrue"
+        feedback: "NaN isn't equal to anything, itself included."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 29, Bride of Looper in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-30
+    prompt: |
+      What does this print?
+    code: |
+      public class Looper3 {
+          public static void main(String[] args) {
+              String x = "7";
+              System.out.println(x != x + 0);
+              System.out.println(x + 0);
+          }
+      }
+    language: java
+    options:
+      - text: "true\n70"
+        correct: true
+      - text: "false\n7"
+        feedback: "With a `String`, `+ 0` concatenates: `\"70\"` is a new string."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 30, Son of Looper in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-31
+    prompt: |
+      What does this do?
+    code: |
+      public class Looper4 {
+          public static void main(String[] args) {
+              short x = -1;
+              int steps = 0;
+              while (x != 0) {
+                  x >>>= 1;
+                  steps++;
+              }
+              System.out.println(steps);
+          }
+      }
+    language: java
+    options:
+      - text: "It never ends: `x` is widened to `int`, shifted, then cast back to `short` — which gives `-1` again"
+        correct: true
+      - text: "Prints `16`"
+        feedback: "That's what you'd get with a 16-bit unsigned shift, but the shift happens on 32 bits and the cast keeps the low 16 bits, all ones."
+      - text: "Prints `32`"
+        feedback: "The cast back to `short` undoes each shift."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 31, Ghost of Looper in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-32
+    prompt: |
+      What does this print?
+    code: |
+      public class Looper5 {
+          public static void main(String[] args) {
+              Integer a = Integer.valueOf(1000);
+              Integer b = Integer.valueOf(1000);
+              System.out.println(a <= b && b <= a);
+              System.out.println(a == b);
+          }
+      }
+    language: java
+    options:
+      - text: "true\nfalse"
+        correct: true
+      - text: "true\ntrue"
+        feedback: "`<=` unboxes, but `==` on two `Integer`s compares references. 1000 is outside the cache (−128…127)."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 32, Curse of Looper in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-33
+    prompt: |
+      What does this print?
+    code: |
+      public class Looper6 {
+          public static void main(String[] args) {
+              int x = Integer.MIN_VALUE;
+              System.out.println(x != 0 && x == -x);
+              System.out.println(Math.abs(x));
+          }
+      }
+    language: java
+    options:
+      - text: "true\n-2147483648"
+        correct: true
+      - text: "false\n2147483648"
+        feedback: "`-Integer.MIN_VALUE` overflows back to `MIN_VALUE`, and `Math.abs` can't return 2147483648 as an `int`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 33, Looper Meets the Wolfman in *Java Puzzlers* (Bloch & Gafter).

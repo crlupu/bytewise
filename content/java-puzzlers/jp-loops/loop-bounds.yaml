@@ -86,3 +86,81 @@ steps:
     prompt: Compare the `byte` with a `byte` constant.
     template: "if (b == ([[byte]]) 0x90)"
     code: true
+
+  - type: choice
+    id: jpz-24
+    prompt: |
+      What does this print?
+    code: |
+      public class ByteScan {
+          public static void main(String[] args) {
+              int hits = 0;
+              for (byte b = Byte.MIN_VALUE; b < Byte.MAX_VALUE; b++)
+                  if (b == 0xA0)
+                      hits++;
+              System.out.println("hits = " + hits);
+          }
+      }
+    language: java
+    options:
+      - text: "`hits = 0` — `0xA0` is the `int` 160, which no `byte` can equal"
+        correct: true
+      - text: "`hits = 1`"
+        feedback: "`b` is promoted to `int` (−128…127) for the comparison; 160 is out of range. Compare with `(byte) 0xA0`."
+      - text: "It loops forever"
+        feedback: "The loop stops at 127; it just never counts."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 24, A Big Delight in Every Byte in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-26
+    prompt: |
+      What does this do?
+    code: |
+      public class Tail {
+          static final int END = Integer.MAX_VALUE;
+          static final int START = END - 10;
+
+          public static void main(String[] args) {
+              int count = 0;
+              for (int i = START; i <= END; i++)
+                  count++;
+              System.out.println(count);
+          }
+      }
+    language: java
+    options:
+      - text: "It never ends: every `int` is `<= Integer.MAX_VALUE`, and `i++` wraps to `MIN_VALUE`"
+        correct: true
+      - text: "Prints `11`"
+        feedback: "That needs `i` to exceed `END`, which an `int` can't."
+      - text: "Prints `10`"
+        feedback: "It never prints anything."
+    explanation: |
+      Use a `long` loop variable, or loop with `i < END` and handle the last value separately.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 26, In the Loop in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-27
+    prompt: |
+      What does this do?
+    code: |
+      public class Shifts {
+          public static void main(String[] args) {
+              int shifts = 0;
+              while ((-1 << shifts) != 0)
+                  shifts++;
+              System.out.println(shifts);
+          }
+      }
+    language: java
+    options:
+      - text: "It never ends: an `int` shift distance is taken mod 32, so `-1 << 32` is `-1`"
+        correct: true
+      - text: "Prints `32`"
+        feedback: "That would need `-1 << 32` to be 0; the distance 32 becomes 0."
+      - text: "Prints `31`"
+        feedback: "`-1 << 31` is `Integer.MIN_VALUE`, still not 0."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 27, Shifty i's in *Java Puzzlers* (Bloch & Gafter).

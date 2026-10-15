@@ -5,6 +5,9 @@ tags: [java, puzzlers, overriding, hiding, package private, fields]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 70, Package Deal" }
   - { book: java-puzzlers, ref: "Puzzle 66, A Private Matter" }
+  - { book: java-puzzlers, ref: "Puzzle 72, Final Jeopardy" }
+  - { book: java-puzzlers, ref: "Puzzle 73, Your Privates Are Showing" }
+  - { book: java-puzzlers, ref: "Puzzle 74, Identity Crisis" }
 steps:
   - type: explanation
     title: Package-private stays in the package
@@ -80,3 +83,152 @@ steps:
         right: Hides the field — chosen by declared type, too
       - left: Package-private method, subclass in another package
         right: Neither — they're unrelated
+
+  - type: choice
+    id: jpz-66
+    prompt: |
+      Does this compile?
+    code: |
+      public class Hiding {
+          static class Base {
+              public String name = "base";
+          }
+          static class Derived extends Base {
+              private String name = "derived";
+          }
+
+          public static void main(String[] args) {
+              System.out.println(new Derived().name);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes, and it prints `derived`: `main` is inside the same top-level class, so it may see the private field"
+        correct: true
+      - text: "No: `name` is private in `Derived`"
+        feedback: "Private access is per top-level class; nested classes share it."
+      - text: "Yes, and it prints `base`"
+        feedback: "`Derived.name` hides `Base.name`; the private one is accessible here."
+    explanation: |
+      From another top-level class, `new Derived().name` wouldn't compile — the hiding field is private — while `((Base) new Derived()).name` would print `base`. Fields are hidden, not overridden.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 66, A Private Matter in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-70
+    prompt: |
+      `Base.describe()` has no access modifier. What does this print?
+    code: |
+      // lib/Base.java
+      package lib;
+
+      public class Base {
+          public void show() { System.out.println(describe()); }
+          String describe() { return "lib.Base"; }
+      }
+
+      // app/Main.java
+      package app;
+
+      public class Main extends lib.Base {
+          String describe() { return "app.Main"; }
+
+          public static void main(String[] args) {
+              new Main().show();
+          }
+      }
+    language: java
+    options:
+      - text: "lib.Base"
+        correct: true
+      - text: "app.Main"
+        feedback: "A package-private method can't be overridden from another package; `Main.describe` is a new method."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 70, Package Deal in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-72
+    prompt: |
+      What does this print?
+    code: |
+      public class Prizes {
+          static class Game {
+              public static final String PRIZE = "a car";
+          }
+          static class SequelGame extends Game {
+              public static final String PRIZE = "a pen";
+          }
+
+          public static void main(String[] args) {
+              System.out.println(SequelGame.PRIZE);
+          }
+      }
+    language: java
+    options:
+      - text: "a pen"
+        correct: true
+      - text: "It doesn't compile: `PRIZE` is final"
+        feedback: "`final` stops reassignment and overriding, not hiding: a subclass may declare a field with the same name."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 72, Final Jeopardy in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-73
+    prompt: |
+      A library class later adds a private field with the same name as a public one in its superclass. Does the client still compile?
+    code: |
+      // lib/Api.java
+      package lib;
+
+      public class Api {
+          public static class Base {
+              public static String version = "1.0";
+          }
+          public static class Impl extends Base {
+              private static String version = "2.0-internal";
+          }
+      }
+
+      // client/Client.java
+      package client;
+
+      import lib.Api;
+
+      public class Client {
+          public static void main(String[] args) {
+              System.out.println(Api.Impl.version);
+          }
+      }
+    language: java
+    options:
+      - text: "No: the private field hides the public one, so `Api.Impl.version` is now inaccessible"
+        correct: true
+      - text: "Yes, it prints `1.0`"
+        feedback: "Hiding happens even though the new field is private."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 73, Your Privates Are Showing in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-74
+    prompt: |
+      What does this print?
+    code: |
+      public class Enigma {
+          public boolean equals(Enigma other) {
+              return false;
+          }
+
+          public static void main(String[] args) {
+              Enigma e = new Enigma();
+              Object o = e;
+              System.out.println(e.equals(e) + " " + o.equals(o) + " " + e.equals(o));
+          }
+      }
+    language: java
+    options:
+      - text: "false true true"
+        correct: true
+      - text: "false false false"
+        feedback: "The overload is chosen by the argument's static type: `Object` arguments use `Object.equals`, which is identity."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 74, Identity Crisis in *Java Puzzlers* (Bloch & Gafter).

@@ -67,3 +67,73 @@ steps:
       - Run the block
       - Close `out`
       - Close `in`
+
+  - type: choice
+    id: jpz-40
+    prompt: |
+      What happens?
+    code: |
+      public class Node {
+          private Node next = new Node();
+
+          public Node() throws Exception {
+              throw new Exception("never built");
+          }
+
+          public static void main(String[] args) {
+              try {
+                  new Node();
+                  System.out.println("Built");
+              } catch (Exception e) {
+                  System.out.println("Caught: " + e.getMessage());
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "`StackOverflowError`: field initializers run before the constructor body, and each `Node` makes another `Node`"
+        correct: true
+      - text: "`Caught: never built`"
+        feedback: "The constructor body is never reached."
+      - text: "It doesn't compile"
+        feedback: "It compiles: a field initializer may call a constructor that throws, since the constructor declares it."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 40, The Reluctant Constructor in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-41
+    prompt: |
+      `close()` on the first resource throws. What happens to the second one?
+    code: |
+      public class Closing {
+          static class Res implements AutoCloseable {
+              final String name;
+              final boolean fail;
+              Res(String name, boolean fail) { this.name = name; this.fail = fail; }
+              public void close() {
+                  System.out.println("closing " + name);
+                  if (fail) throw new IllegalStateException(name + " failed");
+              }
+          }
+
+          public static void main(String[] args) {
+              Res in = null, out = null;
+              try {
+                  in = new Res("in", true);
+                  out = new Res("out", false);
+              } finally {
+                  if (in != null) in.close();
+                  if (out != null) out.close();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It's never closed: the exception from `in.close()` leaves the `finally` before `out.close()` runs"
+        correct: true
+      - text: "It's closed after `in`"
+        feedback: "Only `closing in` is printed."
+    explanation: |
+      Use try-with-resources: it closes every resource, and adds later exceptions as suppressed ones.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 41, Field and Stream in *Java Puzzlers* (Bloch & Gafter).

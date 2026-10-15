@@ -1,0 +1,123 @@
+title: "Ignored results and method references"
+summary: "Calling methods on immutable objects without using the result, creating objects you never use, and method references that bind to the wrong method."
+duration: 6
+tags: [java, mistakes, immutability, method references, exceptions]
+sources:
+  - { book: java-mistakes, ref: "Chapter 2, Expressions" }
+  - { book: java-mistakes, ref: "Mistake 11 (ignoring the method result)" }
+  - { book: java-mistakes, ref: "Mistake 12 (not using a newly created object)" }
+  - { book: java-mistakes, ref: "Mistake 13 (binding a method reference to the wrong method)" }
+  - { book: java-mistakes, ref: "Mistake 14 (using the wrong method in a method reference)" }
+steps:
+  - type: explanation
+    title: "Use what you compute"
+    body: |
+      `String`, `BigDecimal` and `LocalDate` methods return new objects: `s.trim();` alone does nothing.
+      `new IllegalArgumentException(...)` without `throw` creates an exception and drops it.
+
+  - type: explanation
+    title: "Method references match by shape"
+    body: |
+      A method reference compiles if any method with a fitting signature exists: `Integer::max` fits `Comparator<Integer>`, and `Integer::getInteger` fits `Function<String, Integer>`.
+      Read what the method actually does, not just whether it compiles.
+
+  - type: predict
+    id: jm-011
+    prompt: |
+      What does this print?
+    code: |
+      public class Names {
+          public static void main(String[] args) {
+              String name = "  ada lovelace  ";
+              name.trim();
+              name.toUpperCase();
+              System.out.println("[" + name + "]");
+          }
+      }
+    language: java
+    options:
+      - text: "[  ada lovelace  ]"
+        correct: true
+      - text: "[ADA LOVELACE]"
+        feedback: "Strings are immutable: `trim()` and `toUpperCase()` return new strings, which are thrown away here."
+    explanation: |
+      Write `name = name.trim().toUpperCase();`. Static analysers flag ignored results of such methods.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 11 (ignoring the method result).
+
+  - type: predict
+    id: jm-012
+    prompt: |
+      What does this print?
+    code: |
+      public class Validate {
+          static int percent(int value) {
+              if (value < 0 || value > 100)
+                  new IllegalArgumentException("out of range: " + value);
+              return value;
+          }
+
+          public static void main(String[] args) {
+              System.out.println(percent(150));
+          }
+      }
+    language: java
+    options:
+      - text: "150"
+        correct: true
+      - text: "An `IllegalArgumentException: out of range: 150`"
+        feedback: "The exception is created but never thrown — the `throw` is missing."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 12 (not using a newly created object).
+
+  - type: predict
+    id: jm-013
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class SortMax {
+          public static void main(String[] args) {
+              List<Integer> xs = new ArrayList<>(List.of(5, 3, 9, 1, 7));
+              xs.sort(Integer::max);
+              System.out.println(xs);
+          }
+      }
+    language: java
+    options:
+      - text: "[5, 3, 9, 1, 7]"
+        correct: true
+      - text: "[1, 3, 5, 7, 9]"
+        feedback: "`Integer::max` fits `Comparator<Integer>` (two ints in, one int out), but it returns the larger value — always positive here — not a comparison."
+    explanation: |
+      Use `Integer::compare` (or `Comparator.naturalOrder()`).
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 13 (binding a method reference to the wrong method).
+
+  - type: predict
+    id: jm-014
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.List;
+      import java.util.stream.Collectors;
+
+      public class Parse {
+          public static void main(String[] args) {
+              List<Integer> xs = List.of("10", "20", "30").stream()
+                      .map(Integer::getInteger)
+                      .collect(Collectors.toList());
+              System.out.println(xs);
+          }
+      }
+    language: java
+    options:
+      - text: "[null, null, null]"
+        correct: true
+      - text: "[10, 20, 30]"
+        feedback: "`Integer.getInteger(\"10\")` reads the system property named `10` — which doesn't exist — not the number."
+    explanation: |
+      Use `Integer::valueOf` or `Integer::parseInt`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 14 (using the wrong method in a method reference).

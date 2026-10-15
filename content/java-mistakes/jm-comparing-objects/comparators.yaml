@@ -1,0 +1,223 @@
+title: "compareTo and comparators"
+summary: "Relying on -1 and 1, comparators that never return 0, casts that lose differences, -0.0 and NaN, and reversed() that reverses too much."
+duration: 7
+tags: [java, mistakes, Comparator, compareTo, sorting]
+sources:
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — relying on a particular compare result" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — not returning 0 for equal objects" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — comparing by subtraction" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — ignoring -0.0 and NaN" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — reversing a comparator chain" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — compareTo inconsistent with equals" }
+  - { book: java-mistakes, ref: "Chapter 7, Comparing objects — a comparator that isn't transitive" }
+steps:
+  - type: explanation
+    title: "What compare promises"
+    body: |
+      `compare` returns a negative number, zero or a positive number — not specifically −1 or 1.
+      It must return 0 for equal objects, or sorted sets and maps will lose or duplicate elements.
+      Use `Integer.compare`, `Double.compare` and the `Comparator.comparing` helpers instead of arithmetic.
+
+  - type: explanation
+    title: "Consistency"
+    body: |
+      A `TreeSet` uses `compareTo`, a `HashSet` uses `equals`: if they disagree (as with `BigDecimal`), the two sets hold different elements.
+      `comparing(a).thenComparing(b).reversed()` reverses the whole chain; to reverse only `b`, pass `Comparator.reverseOrder()` to `thenComparing`.
+
+  - type: predict
+    id: jm-064
+    prompt: |
+      What does this print?
+    code: |
+      public class Order {
+          public static void main(String[] args) {
+              String a = "apple", b = "cherry";
+              if (a.compareTo(b) == -1)
+                  System.out.println("apple first");
+              else
+                  System.out.println("cherry first?");
+              System.out.println(a.compareTo(b));
+          }
+      }
+    language: java
+    options:
+      - text: "cherry first?\n-2"
+        correct: true
+      - text: "apple first\n-1"
+        feedback: "`String.compareTo` returns the difference between the first differing characters: `'a' - 'c'` is −2."
+    explanation: |
+      Test the sign: `a.compareTo(b) < 0`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — relying on a particular compare result.
+
+  - type: predict
+    id: jm-065
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class ByLength {
+          public static void main(String[] args) {
+              Comparator<String> byLength = (a, b) -> a.length() < b.length() ? -1 : 1;
+              TreeSet<String> words = new TreeSet<>(byLength);
+              words.add("cat"); words.add("dog"); words.add("cat");
+              System.out.println(words);
+              System.out.println(words.contains("cat"));
+          }
+      }
+    language: java
+    options:
+      - text: "[cat, dog, cat]\nfalse"
+        correct: true
+      - text: "[cat]\ntrue"
+        feedback: "The comparator never returns 0, so the `TreeSet` never finds an existing element — not even the same string."
+      - text: "[cat, dog]\ntrue"
+        feedback: "`cat` is added twice, and `contains` can never find it."
+    explanation: |
+      Use `Comparator.comparingInt(String::length)` — and remember that a `TreeSet` with that comparator keeps only one word per length.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — not returning 0 for equal objects.
+
+  - type: predict
+    id: jm-066
+    prompt: |
+      Sort products by price. What does this print?
+    code: |
+      import java.util.*;
+
+      public class Prices {
+          record Product(String name, double price) { }
+
+          public static void main(String[] args) {
+              Comparator<Product> byPrice = (a, b) -> (int) (a.price() - b.price());
+              Set<Product> sorted = new TreeSet<>(byPrice);
+              sorted.add(new Product("pen", 1.20));
+              sorted.add(new Product("pencil", 0.80));
+              sorted.add(new Product("eraser", 0.50));
+              sorted.forEach(p -> System.out.println(p.name()));
+          }
+      }
+    language: java
+    options:
+      - text: "pen"
+        correct: true
+      - text: "eraser\npencil\npen"
+        feedback: "`(int) (a - b)` truncates every difference under 1.0 to 0, so the set treats all three as equal and keeps only the first."
+    explanation: |
+      Use `Comparator.comparingDouble(Product::price)`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — comparing by subtraction.
+
+  - type: predict
+    id: jm-067
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+      import java.util.stream.*;
+
+      public class Special {
+          public static void main(String[] args) {
+              System.out.println(0.0 == -0.0);
+              System.out.println(Stream.of(0.0, -0.0).distinct().count());
+              List<Double> xs = new ArrayList<>(List.of(3.0, Double.NaN, 1.0));
+              xs.sort(Comparator.naturalOrder());
+              System.out.println(xs);
+          }
+      }
+    language: java
+    options:
+      - text: "true\n2\n[1.0, 3.0, NaN]"
+        correct: true
+      - text: "true\n1\n[NaN, 1.0, 3.0]"
+        feedback: "`Double.equals` (used by `distinct`) tells 0.0 and −0.0 apart; and `Double.compareTo` puts NaN after every other value."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — ignoring -0.0 and NaN.
+
+  - type: predict
+    id: jm-068
+    prompt: |
+      Sort by age ascending, and within the same age by name descending. What does this print?
+    code: |
+      import java.util.*;
+
+      public class People {
+          record Person(String name, int age) { }
+
+          public static void main(String[] args) {
+              List<Person> ps = new ArrayList<>(List.of(
+                      new Person("ann", 30), new Person("bob", 25), new Person("cy", 30)));
+              ps.sort(Comparator.comparingInt(Person::age).thenComparing(Person::name).reversed());
+              ps.forEach(p -> System.out.print(p.name() + " "));
+              System.out.println();
+          }
+      }
+    language: java
+    options:
+      - text: "cy ann bob "
+        correct: true
+      - text: "bob cy ann "
+        feedback: "`reversed()` applies to the whole chain, so ages are descending too."
+    explanation: |
+      Write `.thenComparing(Person::name, Comparator.reverseOrder())`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — reversing a comparator chain.
+
+  - type: predict
+    id: jm-069
+    prompt: |
+      What does this print?
+    code: |
+      import java.math.BigDecimal;
+      import java.util.*;
+
+      public class Sets {
+          public static void main(String[] args) {
+              List<BigDecimal> xs = List.of(new BigDecimal("1.0"), new BigDecimal("1.00"));
+              System.out.println(new HashSet<>(xs).size());
+              System.out.println(new TreeSet<>(xs).size());
+          }
+      }
+    language: java
+    options:
+      - text: "2\n1"
+        correct: true
+      - text: "1\n1"
+        feedback: "`HashSet` uses `equals`, which compares scale, so both stay."
+      - text: "2\n2"
+        feedback: "`TreeSet` uses `compareTo`, which ignores scale, so it keeps one."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — compareTo inconsistent with equals.
+
+  - type: predict
+    id: jm-070
+    prompt: |
+      Versions are compared as numbers when both parse, and as text otherwise. What does this print?
+    code: |
+      import java.util.*;
+
+      public class Versions {
+          static int cmp(String a, String b) {
+              try {
+                  return Integer.compare(Integer.parseInt(a), Integer.parseInt(b));
+              } catch (NumberFormatException e) {
+                  return a.compareTo(b);
+              }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(cmp("10", "9") + " " + cmp("9", "9a") + " " + cmp("10", "9a"));
+          }
+      }
+    language: java
+    options:
+      - text: "1 -1 -8"
+        correct: true
+      - text: "1 -1 1"
+        feedback: "`\"10\"` vs `\"9a\"` falls back to text, where `\"1\"` sorts before `\"9\"`: 10 > 9 and 9 < 9a, yet 10 < 9a."
+    explanation: |
+      A comparator that isn't transitive can make `sort` throw `Comparison method violates its general contract!` on larger inputs. Pick one consistent ordering.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 7, Comparing objects — a comparator that isn't transitive.

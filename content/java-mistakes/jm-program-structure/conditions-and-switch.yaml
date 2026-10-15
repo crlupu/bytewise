@@ -1,0 +1,112 @@
+title: "If-else chains and switch"
+summary: "Branches that can never run, a dangling else, and switch cases that fall through."
+duration: 5
+tags: [java, mistakes, if-else, switch, control flow]
+sources:
+  - { book: java-mistakes, ref: "Chapter 3, Program structure" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — a condition dominated by an earlier one" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — a malformed if-else chain" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — accidental fall-through in switch" }
+steps:
+  - type: explanation
+    title: "Order your conditions"
+    body: |
+      In an `if`/`else if` chain, the first matching branch wins: a broad test placed early hides narrower ones below it.
+      An `else` belongs to the nearest `if`, whatever the indentation says — use braces.
+
+  - type: explanation
+    title: "Switch"
+    body: |
+      In an old-style `switch`, a case without `break` falls through into the next.
+      Arrow-form cases (`case X ->`) never fall through, and a `switch` expression must cover every value.
+
+  - type: predict
+    id: jm-015
+    prompt: |
+      What does this print?
+    code: |
+      public class Grades {
+          static String grade(int score) {
+              if (score >= 50) return "pass";
+              else if (score >= 90) return "distinction";
+              else return "fail";
+          }
+
+          public static void main(String[] args) {
+              System.out.println(grade(95) + " " + grade(60) + " " + grade(10));
+          }
+      }
+    language: java
+    options:
+      - text: "pass pass fail"
+        correct: true
+      - text: "distinction pass fail"
+        feedback: "`score >= 50` is checked first and is also true for 95, so the `>= 90` branch can never run."
+    explanation: |
+      Put the narrowest test first. IntelliJ and Error Prone report conditions that are always false.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — a condition dominated by an earlier one.
+
+  - type: predict
+    id: jm-016
+    prompt: |
+      What does this print?
+    code: |
+      public class Dangling {
+          public static void main(String[] args) {
+              int stock = 0;
+              boolean active = false;
+              if (active)
+                  if (stock > 0)
+                      System.out.println("in stock");
+              else
+                  System.out.println("inactive");
+              System.out.println("done");
+          }
+      }
+    language: java
+    options:
+      - text: "done"
+        correct: true
+      - text: "inactive\ndone"
+        feedback: "The `else` belongs to the nearest `if` (`stock > 0`), whatever the indentation says. `active` is false, so neither branch runs."
+    explanation: |
+      Always use braces in nested `if`s.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — a malformed if-else chain.
+
+  - type: predict
+    id: jm-017
+    prompt: |
+      What does this print?
+    code: |
+      public class Days {
+          static int hours(String day) {
+              int h = 0;
+              switch (day) {
+                  case "SAT":
+                  case "SUN":
+                      h = 0;
+                  case "FRI":
+                      h = 6;
+                      break;
+                  default:
+                      h = 8;
+              }
+              return h;
+          }
+
+          public static void main(String[] args) {
+              System.out.println(hours("SUN") + " " + hours("FRI") + " " + hours("MON"));
+          }
+      }
+    language: java
+    options:
+      - text: "6 6 8"
+        correct: true
+      - text: "0 6 8"
+        feedback: "The weekend case has no `break`, so it falls through into `FRI` and sets 6."
+    explanation: |
+      Use arrow cases: `case "SAT", "SUN" -> 0;` never fall through.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — accidental fall-through in switch.

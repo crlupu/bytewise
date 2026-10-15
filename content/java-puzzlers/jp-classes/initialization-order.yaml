@@ -5,6 +5,8 @@ tags: [java, puzzlers, initialization, static, constructors, overriding]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 49, Larger Than Life" }
   - { book: java-puzzlers, ref: "Puzzle 51, What's the Point?" }
+  - { book: java-puzzlers, ref: "Puzzle 52, Sum Fun" }
+  - { book: java-puzzlers, ref: "Puzzle 53, Do Your Thing" }
 steps:
   - type: explanation
     title: Static initializers run top to bottom
@@ -109,3 +111,128 @@ steps:
       - "`Point()` runs and calls `makeName()`"
       - "`ColorPoint.makeName()` reads `color`"
       - "`this.color = \"red\"` runs"
+
+  - type: predict
+    id: jpz-49
+    prompt: |
+      What does this print?
+    code: |
+      public class Tariff {
+          public static final Tariff INSTANCE = new Tariff();
+          private final int price;
+          private static final int BASE = Integer.parseInt("100");
+
+          private Tariff() {
+              price = BASE + 20;
+          }
+
+          public static void main(String[] args) {
+              System.out.println("Price: " + INSTANCE.price);
+          }
+      }
+    language: java
+    options:
+      - text: "Price: 20"
+        correct: true
+      - text: "Price: 120"
+        feedback: "Static fields initialize in order: `INSTANCE` is built while `BASE` is still 0."
+    explanation: |
+      `BASE` isn't a compile-time constant (it calls a method), so it still holds 0 when the constructor runs. Declare `INSTANCE` last.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 49, Larger Than Life in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-51
+    prompt: |
+      What does this print?
+    code: |
+      public class Labels {
+          static class Shape {
+              final String label;
+              Shape() { label = describe(); }
+              String describe() { return "shape"; }
+          }
+          static class Circle extends Shape {
+              final String color;
+              Circle(String color) { super(); this.color = color; }
+              @Override String describe() { return color + " circle"; }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(new Circle("red").label);
+          }
+      }
+    language: java
+    options:
+      - text: "null circle"
+        correct: true
+      - text: "red circle"
+        feedback: "`Shape`'s constructor calls the override before `Circle`'s constructor has set `color`."
+      - text: "shape"
+        feedback: "The call is virtual even inside a constructor, so `Circle.describe` runs."
+    explanation: |
+      Never call overridable methods from a constructor.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 51, What's the Point? in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-52
+    prompt: |
+      Two classes read each other's static fields while initializing. What does this print?
+    code: |
+      public class Cycle {
+          static class A {
+              static final int VALUE = B.VALUE + 1;
+          }
+          static class B {
+              static final int VALUE = A.VALUE + 10;
+          }
+
+          public static void main(String[] args) {
+              System.out.println(A.VALUE + " " + B.VALUE);
+          }
+      }
+    language: java
+    options:
+      - text: "11 10"
+        correct: true
+      - text: "11 21"
+        feedback: "`A` starts first and asks for `B.VALUE`; `B` then reads `A.VALUE` while `A` is still initializing, sees 0, and sets its own value to 10."
+      - text: "It doesn't compile: the definitions are circular"
+        feedback: "They aren't compile-time constants (each reads another class), so the compiler allows it."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 52, Sum Fun in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-53
+    prompt: |
+      `Widget` needs to pass a computed value to its superclass and also keep it. Does this compile on Java 21?
+    code: |
+      public class Widget extends Base {
+          private final int size;
+
+          public Widget() {
+              this.size = compute();
+              super(size);
+          }
+
+          static int compute() { return 42; }
+
+          public static void main(String[] args) {
+              System.out.println(new Widget().size);
+          }
+      }
+
+      class Base {
+          Base(int size) { }
+      }
+    language: java
+    options:
+      - text: "No: `super(...)` must be the first statement (Java 21 has no statements before it)"
+        correct: true
+      - text: "Yes, and it prints `42`"
+        feedback: "Statements before `super(...)` arrived only as a preview in later releases."
+    explanation: |
+      The fix is the private constructor capture idiom: `public Widget() { this(compute()); }` and `private Widget(int size) { super(size); this.size = size; }`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 53, Do Your Thing in *Java Puzzlers* (Bloch & Gafter).

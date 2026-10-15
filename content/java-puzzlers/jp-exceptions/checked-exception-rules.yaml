@@ -5,6 +5,8 @@ tags: [java, puzzlers, exceptions, checked exceptions, final, definite assignmen
 sources:
   - { book: java-puzzlers, ref: "Puzzle 37, Exceptionally Arcane" }
   - { book: java-puzzlers, ref: "Puzzle 38, The Unwelcome Guest" }
+  - { book: java-puzzlers, ref: "Puzzle 43, Exceptionally Unsafe" }
+  - { book: java-puzzlers, ref: "Puzzle 44, Cutting Class" }
 steps:
   - type: explanation
     title: Catch only what can be thrown
@@ -71,3 +73,207 @@ steps:
         correct: true
       - text: Both exceptions
         feedback: A caller through either interface must handle everything `f` throws, so it may only throw what both declare.
+
+  - type: choice
+    id: jpz-37a
+    prompt: |
+      Does this compile?
+    code: |
+      import java.io.IOException;
+
+      public class Arcane1 {
+          public static void main(String[] args) {
+              try {
+                  System.out.println("Hello");
+              } catch (IOException e) {
+                  System.out.println("println failed");
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "No: `IOException` is never thrown in the `try` body, and catching an unthrowable checked exception is an error"
+        correct: true
+      - text: "Yes"
+        feedback: "`println` doesn't declare `IOException`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 37, Exceptionally Arcane in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-37b
+    prompt: |
+      This catches `Exception` around an empty `try`. Does it compile?
+    code: |
+      public class Arcane2 {
+          public static void main(String[] args) {
+              try {
+                  // nothing here
+              } catch (Exception e) {
+                  System.out.println("Can't happen");
+              }
+              System.out.println("Done");
+          }
+      }
+    language: java
+    options:
+      - text: "Yes: `Exception` and `Throwable` can always be caught, because they include unchecked exceptions"
+        correct: true
+      - text: "No, for the same reason as catching `IOException`"
+        feedback: "The rule applies only to checked exception classes that aren't superclasses of `RuntimeException`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 37, Exceptionally Arcane in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-37c
+    prompt: |
+      `Both` inherits `f()` from two interfaces that declare different checked exceptions. Can `b.f()` be called without a `try`?
+    code: |
+      interface Loader { void f() throws CloneNotSupportedException; }
+      interface Waiter { void f() throws InterruptedException; }
+      interface Both extends Loader, Waiter { }
+
+      public class Arcane3 implements Both {
+          public void f() {
+              System.out.println("Hello");
+          }
+
+          public static void main(String[] args) {
+              Both b = new Arcane3();
+              b.f();
+          }
+      }
+    language: java
+    options:
+      - text: "Yes: the inherited method may throw only exceptions that both declarations allow — the intersection, which is empty"
+        correct: true
+      - text: "No: it must handle both exceptions (the union)"
+        feedback: "An implementation must satisfy both, so it can throw neither."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 37, Exceptionally Arcane in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-38
+    prompt: |
+      Does this compile?
+    code: |
+      public class Config {
+          private static final long TIMEOUT;
+          static {
+              try {
+                  TIMEOUT = readTimeout();
+              } catch (NumberFormatException e) {
+                  TIMEOUT = 30;
+              }
+          }
+
+          static long readTimeout() {
+              return Long.parseLong(System.getProperty("timeout", "10"));
+          }
+
+          public static void main(String[] args) {
+              System.out.println(TIMEOUT);
+          }
+      }
+    language: java
+    options:
+      - text: "No: the compiler can't prove `TIMEOUT` wasn't already assigned when the `catch` runs"
+        correct: true
+      - text: "Yes, and it prints `10`"
+        feedback: "The definite-assignment rules are conservative: the `try` might have assigned it before throwing."
+    explanation: |
+      Compute the value in a helper method that returns it, and assign the `final` field once.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 38, The Unwelcome Guest in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-43
+    prompt: |
+      `sneakyThrow` declares no checked exception. What happens?
+    code: |
+      public class Sneaky {
+          @SuppressWarnings("unchecked")
+          static <T extends Throwable> void throwAs(Throwable t) throws T {
+              throw (T) t;
+          }
+
+          static void sneakyThrow(Throwable t) {
+              Sneaky.<RuntimeException>throwAs(t);
+          }
+
+          public static void main(String[] args) {
+              sneakyThrow(new Exception("checked, but undeclared"));
+          }
+      }
+    language: java
+    options:
+      - text: "It throws the checked `Exception` from `main` anyway: the cast to `T` is erased, so nothing stops it at run time"
+        correct: true
+      - text: "A `ClassCastException`"
+        feedback: "The cast to a type variable is unchecked; it compiles to nothing."
+      - text: "It doesn't compile"
+        feedback: "It compiles with an unchecked warning (suppressed here)."
+    explanation: |
+      Checked exceptions are a compile-time rule only. Don't rely on this trick.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 43, Exceptionally Unsafe in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-44a
+    prompt: |
+      After compiling, `Missing.class` is deleted. What happens when `Strange1` runs?
+    code: |
+      // Missing.java
+      class Missing {
+          Missing() { }
+      }
+
+      // Strange1.java
+      public class Strange1 {
+          public static void main(String[] args) {
+              try {
+                  Missing m = new Missing();
+              } catch (NoClassDefFoundError e) {
+                  System.out.println("Got it!");
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `Got it!`"
+        correct: true
+      - text: "It throws `NoClassDefFoundError` before `main` runs"
+        feedback: "On Java 21 the class is resolved lazily, when `new Missing()` executes inside the `try`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 44, Cutting Class in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-44b
+    prompt: |
+      The same, but `m` is declared before the `try`. `Missing.class` is deleted after compiling. What happens on Java 21?
+    code: |
+      // Missing.java
+      class Missing {
+          Missing() { }
+      }
+
+      // Strange2.java
+      public class Strange2 {
+          public static void main(String[] args) {
+              Missing m;
+              try {
+                  m = new Missing();
+              } catch (NoClassDefFoundError e) {
+                  System.out.println("Got it!");
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `Got it!` too"
+        correct: true
+      - text: "`NoClassDefFoundError` escapes `main`"
+        feedback: "That's what the book's Java 5 verifier did: merging types at the handler loaded `Missing` early. Java 21's type-checking verifier uses the class file's stack maps and doesn't load it."
+    explanation: |
+      Don't rely on catching linkage errors: when classes load is up to the JVM.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 44, Cutting Class in *Java Puzzlers* (Bloch & Gafter).

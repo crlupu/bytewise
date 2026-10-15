@@ -78,3 +78,28 @@ steps:
         feedback: Rounding hides errors in one sum, but they can still accumulate across many.
       - text: "`float`, to save memory"
         feedback: "`float` has only about 7 significant digits — even worse than `double`."
+
+  - type: predict
+    id: jpz-02
+    prompt: |
+      A customer pays $5.00 for a $4.35 item. What does this print?
+    code: |
+      public class Till {
+          public static void main(String[] args) {
+              double paid = 5.00;
+              double price = 4.35;
+              System.out.println("Change: " + (paid - price));
+          }
+      }
+    language: java
+    options:
+      - text: "Change: 0.6500000000000004"
+        correct: true
+      - text: "Change: 0.65"
+        feedback: "4.35 has no exact binary representation, so the subtraction is slightly off."
+      - text: "Change: 0.650"
+        feedback: "`double` concatenation never pads with a trailing zero."
+    explanation: |
+      Use `BigDecimal` built from strings (`new BigDecimal("4.35")`), or count in cents with `int`/`long`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 2, Time for a Change in *Java Puzzlers* (Bloch & Gafter).

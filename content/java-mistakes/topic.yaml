@@ -1,0 +1,6 @@
+title: 100 Java Mistakes
+summary: Tagir Valeev's catalogue of everyday bugs — run each program, spot what goes wrong, and learn the habit that avoids it.
+mark: JMs
+order: 6
+courses: [jm-expressions, jm-program-structure, jm-numbers, jm-exceptions, jm-strings, jm-comparing-objects, jm-collections, jm-library-methods, jm-unit-testing]
+glossary: [effective-java]

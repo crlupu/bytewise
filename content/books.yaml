@@ -87,3 +87,7 @@ thinking-in-java:
   authors: Bruce Eckel
   edition: 4th ed.
   year: 2006
+java-mistakes:
+  title: 100 Java Mistakes and How to Avoid Them
+  authors: Tagir Valeev
+  year: 2024

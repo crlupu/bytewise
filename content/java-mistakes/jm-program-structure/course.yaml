@@ -1,0 +1,6 @@
+title: "Program structure"
+summary: "Chapter 3 — if-else chains, switch fall-through, loops that go wrong, and initialization order."
+lessons:
+  - conditions-and-switch
+  - loops
+  - initialization

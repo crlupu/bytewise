@@ -6,6 +6,8 @@ sources:
   - { book: java-puzzlers, ref: "Puzzle 76, Ping Pong" }
   - { book: java-puzzlers, ref: "Puzzle 84, Rudely Interrupted" }
   - { book: java-puzzlers, ref: "Puzzle 85, Lazy Initialization" }
+  - { book: java-puzzlers, ref: "Puzzle 77, The Lock Mess Monster" }
+  - { book: java-puzzlers, ref: "Puzzle 79, It's a Dog's Life" }
 steps:
   - type: explanation
     title: run() is just a method call
@@ -94,3 +96,149 @@ steps:
         right: Reads and clears the current thread's flag
       - left: "`t.isInterrupted()`"
         right: Reads `t`'s flag without clearing it
+
+  - type: predict
+    id: jpz-76
+    prompt: |
+      What does this print?
+    code: |
+      public class PingPong {
+          public static synchronized void main(String[] args) {
+              Thread t = new Thread(() -> pong());
+              t.run();
+              System.out.println("Ping");
+          }
+
+          static synchronized void pong() {
+              System.out.println("Pong");
+          }
+      }
+    language: java
+    options:
+      - text: "Pong\nPing"
+        correct: true
+      - text: "Ping\nPong"
+        feedback: "`t.run()` doesn't start a thread: `pong()` runs right away, on the main thread (which already holds the lock)."
+    explanation: |
+      Call `start()` to run a task on a new thread.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 76, Ping Pong in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-77
+    prompt: |
+      `main` locks a `Thread` object and waits on it, with no `notify` anywhere in the code. What happens?
+    code: |
+      public class LockMess {
+          public static void main(String[] args) throws InterruptedException {
+              Thread worker = new Thread(() -> System.out.println("working"));
+              synchronized (worker) {
+                  worker.start();
+                  worker.wait();
+                  System.out.println("woken up");
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `working`, then `woken up`: when a thread ends, the JVM calls `notifyAll()` on its `Thread` object (that's how `join()` works)"
+        correct: true
+      - text: "It hangs forever after `working`"
+        feedback: "The library itself notifies on the `Thread` object."
+    explanation: |
+      Never use a `Thread` object as a lock or condition: the library uses it for `join`. Lock a private `Object` instead.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 77, The Lock Mess Monster in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-79
+    prompt: |
+      Inside the anonymous `Thread`, `rest()` is meant to call `Pet.rest()`, and `sleep()` to call `Pet.sleep()`. Does this compile?
+    code: |
+      public class Pet {
+          final String name = "Rex";
+
+          void sleep() { System.out.println(name + ": Zzz"); }
+
+          void live() {
+              new Thread() {
+                  public void run() {
+                      sleep();
+                  }
+              }.start();
+          }
+
+          public static void main(String[] args) {
+              new Pet().live();
+          }
+      }
+    language: java
+    options:
+      - text: "No: inside the `Thread` subclass, `sleep` means the inherited `Thread.sleep(long)`, which shadows `Pet.sleep()` and needs an argument"
+        correct: true
+      - text: "Yes, and it prints `Rex: Zzz`"
+        feedback: "Inherited members take precedence over the enclosing class's."
+    explanation: |
+      Pass a `Runnable` (a lambda) to `new Thread(...)` instead of subclassing it, or write `Pet.this.sleep()`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 79, It's a Dog's Life in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-84
+    prompt: |
+      What does this print?
+    code: |
+      public class Interrupts {
+          public static void main(String[] args) {
+              Thread.currentThread().interrupt();
+              if (Thread.interrupted())
+                  System.out.println("Interrupted: " + Thread.interrupted());
+              else
+                  System.out.println("Not interrupted");
+          }
+      }
+    language: java
+    options:
+      - text: "Interrupted: false"
+        correct: true
+      - text: "Interrupted: true"
+        feedback: "`Thread.interrupted()` clears the flag as it reads it; the second call sees `false`."
+    explanation: |
+      Use `Thread.currentThread().isInterrupted()` to test without clearing.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 84, Rudely Interrupted in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-85
+    prompt: |
+      The static initializer starts a thread that reads a static field, and waits for it. What happens?
+    code: |
+      public class Lazy {
+          private static boolean ready = false;
+
+          static {
+              Thread t = new Thread(() -> ready = true);
+              t.start();
+              try {
+                  t.join();
+              } catch (InterruptedException e) {
+                  throw new AssertionError(e);
+              }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(ready);
+          }
+      }
+    language: java
+    options:
+      - text: "Deadlock: the new thread must wait for `Lazy`'s initialization to finish before touching `ready`, while the initializer waits for the thread"
+        correct: true
+      - text: "It prints `true`"
+        feedback: "The thread can't touch the class until its initialization is complete."
+      - text: "It prints `false`"
+        feedback: "It never gets to print."
+    explanation: |
+      Don't start threads from static initializers.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 85, Lazy Initialization in *Java Puzzlers* (Bloch & Gafter).

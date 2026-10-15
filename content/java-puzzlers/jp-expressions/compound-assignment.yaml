@@ -5,6 +5,7 @@ tags: [java, puzzlers, compound assignment, narrowing, evaluation order]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 9, Tweedledum" }
   - { book: java-puzzlers, ref: "Puzzle 7, Swap Meat" }
+  - { book: java-puzzlers, ref: "Puzzle 10, Tweedledee" }
 steps:
   - type: explanation
     title: "+= includes a cast"
@@ -82,3 +83,75 @@ steps:
       - Add `i`
       - Cast the sum to `short`
       - Store it in `x`
+
+  - type: predict
+    id: jpz-07
+    prompt: |
+      What does this print?
+    code: |
+      public class XorSwap {
+          public static void main(String[] args) {
+              int a = 6;
+              int b = 9;
+              a ^= b ^= a ^= b;
+              System.out.println("a = " + a + ", b = " + b);
+          }
+      }
+    language: java
+    options:
+      - text: "a = 0, b = 6"
+        correct: true
+      - text: "a = 9, b = 6"
+        feedback: "Java evaluates the leftmost `a` (6) before the inner assignments change it, so the outer XOR uses the old value."
+    explanation: |
+      Never assign the same variable twice in one expression. Use a temporary variable to swap.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 7, Swap Meat in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-09
+    prompt: |
+      Does this compile, and if so, what does it print?
+    code: |
+      public class Narrowing {
+          public static void main(String[] args) {
+              short total = 0;
+              int bonus = 40000;
+              total += bonus;
+              System.out.println(total);
+          }
+      }
+    language: java
+    options:
+      - text: "It compiles and prints `-25536`: `+=` casts the `int` result back to `short` silently"
+        correct: true
+      - text: "It doesn't compile: possible lossy conversion from `int` to `short`"
+        feedback: "That's what `total = total + bonus` would give; compound assignment includes a hidden cast."
+      - text: "It prints `40000`"
+        feedback: "40000 doesn't fit in a `short` (max 32767), so it wraps."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 9, Tweedledum in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-10
+    prompt: |
+      Does this compile on Java 21?
+    code: |
+      public class ObjectPlus {
+          public static void main(String[] args) {
+              Object label = "Total: ";
+              String amount = "42";
+              label += amount;
+              System.out.println(label);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes, and it prints `Total: 42`"
+        correct: true
+      - text: "No: `+=` isn't allowed on an `Object` variable"
+        feedback: "That was true in Java 5 and 6, as the book says; since Java 7, `+=` works when the right-hand side is a `String`."
+    explanation: |
+      This is one of the puzzles where modern Java behaves differently from the book.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 10, Tweedledee in *Java Puzzlers* (Bloch & Gafter).

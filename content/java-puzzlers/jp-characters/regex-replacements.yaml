@@ -71,3 +71,56 @@ steps:
         right: A regular expression
       - left: "`split`"
         right: A regular expression, too
+
+  - type: predict
+    id: jpz-20
+    prompt: |
+      What does this print?
+    code: |
+      // app/model/Order.java
+      package app.model;
+
+      public class Order {
+          public static void main(String[] args) {
+              System.out.println(Order.class.getName().replaceAll(".", "/") + ".class");
+          }
+      }
+    language: java
+    options:
+      - text: "///////////////.class"
+        correct: true
+      - text: "app/model/Order.class"
+        feedback: "`replaceAll` takes a regex, and `.` matches every character."
+    explanation: |
+      Use `replace('.', '/')`, which isn't a regex.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 20, What's My Class? in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-21
+    prompt: |
+      This uses `\\.` to match a literal dot, then replaces it with the platform's file separator. Where does it break?
+    code: |
+      // app/model/Order.java
+      package app.model;
+
+      import java.io.File;
+
+      public class Order {
+          public static void main(String[] args) {
+              String path = Order.class.getName().replaceAll("\\.", File.separator);
+              System.out.println(path + ".class");
+          }
+      }
+    language: java
+    options:
+      - text: "On Windows: the replacement `\\` is special in `replaceAll`'s replacement string, so it throws. On Linux it prints `app/model/Order.class`"
+        correct: true
+      - text: "Nowhere — `\\\\.` fixes the bug"
+        feedback: "The pattern is fixed, but the replacement string is interpreted too."
+      - text: "Everywhere: it prints slashes for every character"
+        feedback: "The dot is escaped now, so only dots match."
+    explanation: |
+      Wrap replacements in `Matcher.quoteReplacement(...)`, or use `replace` for literal text.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 21, What's My Class, Take 2 in *Java Puzzlers* (Bloch & Gafter).

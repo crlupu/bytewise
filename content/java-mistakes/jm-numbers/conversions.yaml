@@ -1,0 +1,163 @@
+title: "Conversions and compound assignment"
+summary: "Widening that loses precision, casts that cut, negative hex literals and the hidden cast in +=."
+duration: 6
+tags: [java, mistakes, conversions, casts, compound assignment]
+sources:
+  - { book: java-mistakes, ref: "Chapter 4, Numbers" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — widening with precision loss" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — unconditional narrowing" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — negative hexadecimal values" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — implicit conversion in compound assignment" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — division and compound assignment" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — using the short type" }
+steps:
+  - type: explanation
+    title: "Lossy conversions"
+    body: |
+      `long` → `float`/`double` is a widening conversion but can lose precision above 2⁵³.
+      A cast to `int` keeps only the low 32 bits.
+      Hex literals with the top bit set are negative `int`s.
+
+  - type: explanation
+    title: "Compound assignment casts"
+    body: |
+      `x += y` means `x = (T)(x + y)`: a `short`, `byte` or `char` target silently truncates, and `int x; x *= 0.5` truncates the `double` result.
+      `short` rarely saves anything and adds casts — use `int`.
+
+  - type: predict
+    id: jm-031
+    prompt: |
+      What does this print?
+    code: |
+      public class Ids {
+          public static void main(String[] args) {
+              long id = 9_007_199_254_740_993L;
+              double d = id;
+              System.out.println((long) d == id);
+              System.out.println((long) d);
+          }
+      }
+    language: java
+    options:
+      - text: "false\n9007199254740992"
+        correct: true
+      - text: "true\n9007199254740993"
+        feedback: "`double` has 53 bits of precision; 2⁵³ + 1 rounds to 2⁵³. The conversion is \"widening\" but lossy."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — widening with precision loss.
+
+  - type: predict
+    id: jm-032
+    prompt: |
+      What does this print?
+    code: |
+      public class Elapsed {
+          public static void main(String[] args) {
+              long millis = 3_000_000_000L;
+              int seconds = (int) millis / 1000;
+              System.out.println(seconds);
+          }
+      }
+    language: java
+    options:
+      - text: "-1294967"
+        correct: true
+      - text: "3000000"
+        feedback: "The cast applies to `millis` before the division, and 3 billion doesn't fit in an `int`."
+    explanation: |
+      Divide first: `(int) (millis / 1000)` — or `Math.toIntExact(millis / 1000)`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — unconditional narrowing.
+
+  - type: predict
+    id: jm-033
+    prompt: |
+      What does this print?
+    code: |
+      public class Mask {
+          public static void main(String[] args) {
+              long mask = 0xFFFF_FFFF;
+              System.out.println(mask);
+              System.out.println(Long.toHexString(mask));
+          }
+      }
+    language: java
+    options:
+      - text: "-1\nffffffffffffffff"
+        correct: true
+      - text: "4294967295\nffffffff"
+        feedback: "`0xFFFF_FFFF` is an `int` literal equal to −1, sign-extended to `long`."
+    explanation: |
+      Add `L`: `0xFFFF_FFFFL`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — negative hexadecimal values.
+
+  - type: predict
+    id: jm-034
+    prompt: |
+      What does this print?
+    code: |
+      public class Price {
+          public static void main(String[] args) {
+              int price = 99;
+              price *= 1.5;
+              System.out.println(price);
+              int total = 10;
+              total += 0.6;
+              System.out.println(total);
+          }
+      }
+    language: java
+    options:
+      - text: "148\n10"
+        correct: true
+      - text: "148.5\n10.6"
+        feedback: "The variables are `int`: `+=` and `*=` cast the `double` result back to `int`."
+      - text: "It doesn't compile: lossy conversion from double to int"
+        feedback: "Compound assignment includes a hidden cast; only `price = price * 1.5` fails to compile."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — implicit conversion in compound assignment.
+
+  - type: predict
+    id: jm-035
+    prompt: |
+      Scale the value by 3/4. What does this print?
+    code: |
+      public class Scale {
+          public static void main(String[] args) {
+              int width = 200;
+              width *= 3 / 4;
+              System.out.println(width);
+          }
+      }
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "150"
+        feedback: "The right side `3 / 4` is evaluated first, as integer division: 0."
+    explanation: |
+      Write `width = width * 3 / 4`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — division and compound assignment.
+
+  - type: predict
+    id: jm-036
+    prompt: |
+      What does this print?
+    code: |
+      public class Port {
+          public static void main(String[] args) {
+              short port = 8080;
+              port *= 5;
+              System.out.println(port);
+          }
+      }
+    language: java
+    options:
+      - text: "-25136"
+        correct: true
+      - text: "40400"
+        feedback: "`short` holds up to 32767; the compound assignment silently wraps."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — using the short type.

@@ -1,0 +1,109 @@
+title: "Index, cast and stack-overflow errors"
+summary: "substring bounds, heap pollution behind ClassCastException, and recursion through toString."
+duration: 5
+tags: [java, mistakes, IndexOutOfBoundsException, ClassCastException, StackOverflowError]
+sources:
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — IndexOutOfBoundsException" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — ClassCastException" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — StackOverflowError" }
+steps:
+  - type: explanation
+    title: "Bounds and casts"
+    body: |
+      `substring(begin, end)` takes an end index, not a length.
+      A `ClassCastException` can appear far from the bug when raw types or unchecked casts put the wrong object in a generic collection.
+
+  - type: explanation
+    title: "Accidental recursion"
+    body: |
+      Two objects whose `toString`, `equals` or `hashCode` call each other recurse until the stack overflows.
+      A collection that contains itself does the same.
+
+  - type: choice
+    id: jm-044
+    prompt: |
+      Take 3 characters starting at index 4. What happens?
+    code: |
+      public class Slice {
+          public static void main(String[] args) {
+              String s = "order-12345";
+              System.out.println(s.substring(6, 3));
+          }
+      }
+    language: java
+    options:
+      - text: "`StringIndexOutOfBoundsException`: the second argument is an end index, and 3 is before the start (6)"
+        correct: true
+      - text: "It prints `123`"
+        feedback: "That would be `substring(6, 6 + 3)`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — IndexOutOfBoundsException.
+
+  - type: choice
+    id: jm-045
+    prompt: |
+      Where does this fail?
+    code: |
+      import java.util.*;
+
+      public class Pollution {
+          @SuppressWarnings({"unchecked", "rawtypes"})
+          static void addDefaults(List list) {
+              list.add(42);
+          }
+
+          public static void main(String[] args) {
+              List<String> names = new ArrayList<>();
+              names.add("ann");
+              addDefaults(names);
+              System.out.println(names.size());
+              for (String n : names)
+                  System.out.println(n.toUpperCase());
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `2` and `ANN`, then throws `ClassCastException` in the loop — far from the raw-type call that caused it"
+        correct: true
+      - text: "`ClassCastException` inside `addDefaults`"
+        feedback: "The raw `List` accepts anything; nothing is checked until a `String` is read."
+      - text: "It doesn't compile"
+        feedback: "Raw types compile, with warnings (suppressed here)."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — ClassCastException.
+
+  - type: choice
+    id: jm-046
+    prompt: |
+      What happens?
+    code: |
+      import java.util.*;
+
+      public class Cycle {
+          static class Team {
+              String name; List<Person> members = new ArrayList<>();
+              public String toString() { return name + members; }
+          }
+          static class Person {
+              String name; Team team;
+              public String toString() { return name + "@" + team; }
+          }
+
+          public static void main(String[] args) {
+              Team t = new Team(); t.name = "core";
+              Person p = new Person(); p.name = "ann"; p.team = t;
+              t.members.add(p);
+              System.out.println(p);
+          }
+      }
+    language: java
+    options:
+      - text: "`StackOverflowError`: `Person.toString` prints the team, whose `toString` prints its members, and so on"
+        correct: true
+      - text: "It prints `ann@core[ann]`"
+        feedback: "Each `toString` calls the other without end."
+    explanation: |
+      In bidirectional relationships, let only one side print the other (e.g. the team prints member names).
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — StackOverflowError.

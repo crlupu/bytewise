@@ -1,0 +1,322 @@
+title: "Advanced puzzlers"
+summary: "Literal limits, == that isn't an equivalence, serialization order, private members in inner classes, inlined constants, biased shuffles and a few last desserts."
+duration: 8
+tags: [java, puzzlers, constants, serialization, inner classes, shuffle]
+sources:
+  - { book: java-puzzlers, ref: "Puzzles 86–95" }
+  - { book: java-puzzlers, ref: "Puzzle 86, Poison-Paren Litter" }
+  - { book: java-puzzlers, ref: "Puzzle 87, Strained Relations" }
+  - { book: java-puzzlers, ref: "Puzzle 91, Serial Killer" }
+  - { book: java-puzzlers, ref: "Puzzle 92, Twisted Pair" }
+  - { book: java-puzzlers, ref: "Puzzle 93, Class Warfare" }
+  - { book: java-puzzlers, ref: "Puzzle 94, Lost in the Shuffle" }
+  - { book: java-puzzlers, ref: "Puzzle 95, Just Desserts" }
+steps:
+  - type: explanation
+    title: "Rules at the edges"
+    body: |
+      `-2147483648` is a valid literal only without parentheses, because the minus sign and the digits are read together.
+      `==` on primitives isn't reflexive for NaN, and mixing `int`, `long` and `float` loses precision, so it isn't transitive either.
+      Private members are never inherited: an inner class calling a private method reaches the enclosing instance's copy.
+
+  - type: explanation
+    title: "Compilation and randomness"
+    body: |
+      `static final` constants with constant values are copied into the classes that use them; recompiling only the defining class leaves stale copies.
+      A shuffle that swaps each element with any random position is biased; swap with a random position from the part not yet shuffled (Fisher–Yates), or call `Collections.shuffle`.
+
+  - type: choice
+    id: jpz-86
+    prompt: |
+      Which line stops this from compiling?
+    code: |
+      public class Literals {
+          public static void main(String[] args) {
+              int a = -2147483648;
+              int b = -(2147483648);
+              System.out.println(a + b);
+          }
+      }
+    language: java
+    options:
+      - text: "`int b = -(2147483648);` — 2147483648 is only legal as the operand of a unary minus, and the parentheses separate them"
+        correct: true
+      - text: "`int a = -2147483648;` — the literal is too large"
+        feedback: "`-2147483648` is allowed: it's `Integer.MIN_VALUE`."
+      - text: "Neither: it prints `0`"
+        feedback: "The parenthesized form doesn't compile."
+    explanation: |
+      Parentheses around a literal can change whether it compiles. Prefer `Integer.MIN_VALUE`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 86, Poison-Paren Litter in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-87a
+    prompt: |
+      Is `==` reflexive? What does this print?
+    code: |
+      public class Reflexive {
+          public static void main(String[] args) {
+              double x = Double.NaN;
+              System.out.println(x == x);
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "NaN is the one value not equal to itself."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 87, Strained Relations in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-87b
+    prompt: |
+      Is `==` transitive across numeric types? What does this print?
+    code: |
+      public class Transitive {
+          public static void main(String[] args) {
+              long x = Long.MAX_VALUE;
+              double y = (double) Long.MAX_VALUE;
+              long z = Long.MAX_VALUE - 1;
+              System.out.println((x == y) + " " + (y == z) + " " + (x == z));
+          }
+      }
+    language: java
+    options:
+      - text: "true true false"
+        correct: true
+      - text: "true false false"
+        feedback: "Both `x` and `z` convert to the same `double` (2⁶³), so both compare equal to `y`."
+    explanation: |
+      Mixed-type comparisons widen to `double`, which loses precision for large `long` values.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 87, Strained Relations in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-87c
+    prompt: |
+      What does this print?
+    code: |
+      public class Boxed {
+          public static void main(String[] args) {
+              Integer a = 1000;
+              int b = 1000;
+              Integer c = 1000;
+              System.out.println((a == b) + " " + (b == c) + " " + (a == c));
+          }
+      }
+    language: java
+    options:
+      - text: "true true false"
+        correct: true
+      - text: "true true true"
+        feedback: "`a == c` compares two references to different `Integer` objects."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 87, Strained Relations in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-91
+    prompt: |
+      `Sub`'s constructor adds the object to its own set. After a serialization round trip, does the set still contain it?
+    code: |
+      import java.io.*;
+      import java.util.*;
+
+      public class SerialCopy {
+          static class Base implements Serializable {
+              final Set<Base> set = new HashSet<>();
+          }
+          static final class Sub extends Base {
+              private final int id;
+              Sub(int id) { this.id = id; set.add(this); }
+              @Override public int hashCode() { return id; }
+              @Override public boolean equals(Object o) { return o instanceof Sub s && s.id == id; }
+          }
+
+          public static void main(String[] args) throws Exception {
+              Sub original = new Sub(42);
+              ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+              new ObjectOutputStream(bytes).writeObject(original);
+              Sub copy = (Sub) new ObjectInputStream(
+                      new ByteArrayInputStream(bytes.toByteArray())).readObject();
+              System.out.println(original.set.contains(original) + " " + copy.set.contains(copy));
+          }
+      }
+    language: java
+    options:
+      - text: "No — it prints `true false`: `Base`'s set is rebuilt first, hashing `copy` while its `id` is still 0"
+        correct: true
+      - text: "Yes — `true true`"
+        feedback: "Superclass fields deserialize before subclass fields, so the hash was taken too early."
+    explanation: |
+      Don't let `hashCode` depend on subclass state in a class that serializes a hash set containing itself.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 91, Serial Killer in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-92
+    prompt: |
+      What does this print?
+    code: |
+      public class Twisted {
+          private final String name;
+          Twisted(String name) { this.name = name; }
+          private String name() { return name; }
+
+          void spawn() {
+              new Twisted("child") {
+                  void show() { System.out.println(name()); }
+              }.show();
+          }
+
+          public static void main(String[] args) {
+              new Twisted("parent").spawn();
+          }
+      }
+    language: java
+    options:
+      - text: "parent"
+        correct: true
+      - text: "child"
+        feedback: "Private methods aren't inherited, so the anonymous subclass has no `name()` of its own: the call goes to the enclosing instance."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 92, Twisted Pair in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-93
+    prompt: |
+      Both classes are compiled. Then `Words` is changed to `FIRST = "the"` and `SECOND = null`, and only `Words.java` is recompiled. What does `PrintWords` print?
+    code: |
+      // Words.java
+      public class Words {
+          public static final String FIRST = "the";
+          public static final String SECOND = "fat";
+          public static final String THIRD = "cat";
+          private Words() { }
+      }
+
+      // PrintWords.java
+      public class PrintWords {
+          public static void main(String[] args) {
+              System.out.println(Words.FIRST + " " + Words.SECOND + " " + Words.THIRD);
+          }
+      }
+    language: java
+    options:
+      - text: "the fat cat"
+        correct: true
+      - text: "the null set"
+        feedback: "Constant fields are copied into `PrintWords` when it's compiled; recompiling `Words` alone doesn't change those copies."
+    explanation: |
+      The new `Words` also changed `THIRD` to `"set"`, and that doesn't show either. Only real constants (primitives and strings) are inlined: an API should make values that may change non-constant, e.g. with a static method.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 93, Class Warfare in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-94
+    prompt: |
+      This shuffles `[0, 1, 2]` a million times and counts how often each ordering appears. Is the shuffle fair?
+    code: |
+      import java.util.*;
+
+      public class Shuffle {
+          static void shuffle(int[] a, Random rnd) {
+              for (int i = 0; i < a.length; i++) {
+                  int j = rnd.nextInt(a.length);
+                  int t = a[i]; a[i] = a[j]; a[j] = t;
+              }
+          }
+
+          public static void main(String[] args) {
+              Random rnd = new Random(7);
+              Map<String, Integer> counts = new TreeMap<>();
+              for (int n = 0; n < 1_000_000; n++) {
+                  int[] a = {0, 1, 2};
+                  shuffle(a, rnd);
+                  counts.merge(Arrays.toString(a), 1, Integer::sum);
+              }
+              System.out.println(counts);
+          }
+      }
+    language: java
+    options:
+      - text: "No: 27 equally likely swap sequences can't spread evenly over 6 orderings, so some appear about 148,000 times and others about 185,000"
+        correct: true
+      - text: "Yes: each ordering appears about 166,667 times"
+        feedback: "27 isn't divisible by 6."
+    explanation: |
+      Fisher–Yates swaps `a[i]` with a random index in `i..length-1`. Use `Collections.shuffle`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 94, Lost in the Shuffle in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-95a
+    prompt: |
+      What does this print?
+    code: |
+      public class Pie {
+          public static void main(String[] args) {
+              int slices = 0;
+              for (int i = 0; i < 8; i++);
+              {
+                  slices++;
+              }
+              System.out.println(slices);
+          }
+      }
+    language: java
+    options:
+      - text: "1"
+        correct: true
+      - text: "8"
+        feedback: "The `;` right after the `for` is its whole (empty) body; the block runs once afterwards."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 95, Just Desserts in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-95b
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Bread {
+          public static void main(String[] args) {
+              Integer[] xs = {3, 1, 4, 1, 5, 9, 2, 6};
+              Arrays.sort(xs, (a, b) -> a < b ? -1 : (b > a ? 1 : 0));
+              System.out.println(Arrays.toString(xs));
+          }
+      }
+    language: java
+    options:
+      - text: "[1, 1, 2, 3, 4, 5, 6, 9]"
+        correct: true
+      - text: "[3, 1, 4, 1, 5, 9, 2, 6]"
+        feedback: "That's what the book saw on Java 5, whose merge sort only moved elements when `compare` returned a positive number — which this comparator never does. Java 7+'s TimSort only asks whether the result is negative, so it happens to work."
+      - text: "It throws `IllegalArgumentException: Comparison method violates its general contract!`"
+        feedback: "TimSort only detects broken comparators in some cases, mostly on larger arrays."
+    explanation: |
+      `b > a` is the same test as `a < b`, so the comparator never returns 1: `compare(5, 3)` is 0 but `compare(3, 5)` is -1, which breaks the contract. Java 21 sorts this array correctly by luck. Use `Integer::compare`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 95, Just Desserts in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-95c
+    prompt: |
+      What does this print?
+    code: |
+      public class Cake {
+          public static void main(String[] args) {
+              System.out.println(true ? false : true == true ? false : true);
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "`?:` is right-associative and `==` binds tighter: it's `true ? false : ((true == true) ? false : true)`, which is `false`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 95, Just Desserts in *Java Puzzlers* (Bloch & Gafter).

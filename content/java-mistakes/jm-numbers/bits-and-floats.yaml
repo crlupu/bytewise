@@ -1,0 +1,127 @@
+title: "Bits, bytes and floating point"
+summary: "Shift and mask mistakes, negative byte values, clamping in the wrong order, and -0.0 and NaN."
+duration: 6
+tags: [java, mistakes, bits, bytes, floating point, NaN]
+sources:
+  - { book: java-mistakes, ref: "Chapter 4, Numbers" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — hand-written bit manipulation" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — forgetting negative byte values" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — clamping in the wrong order" }
+  - { book: java-mistakes, ref: "Chapter 4, Numbers — special floating-point values" }
+steps:
+  - type: explanation
+    title: "Bits and bytes"
+    body: |
+      `byte` is signed: `(byte) 0xF0` is −16, and widening it to `int` keeps the sign. Mask with `& 0xFF` to get 0–255.
+      `>>` keeps the sign bit, `>>>` shifts in zeros.
+      Library methods like `Integer.bitCount` and `Integer.highestOneBit` beat hand-written bit loops.
+
+  - type: explanation
+    title: "Special floating-point values"
+    body: |
+      `0.0 == -0.0` is true, but `Double.compare` and `equals` tell them apart.
+      `NaN` compares false with everything, itself included.
+      `Math.min(max, Math.max(min, x))` clamps; swapping `min` and `max` returns a constant.
+
+  - type: choice
+    id: jm-037
+    prompt: |
+      Count the set bits by shifting right until the value is 0. What happens?
+    code: |
+      public class Bits {
+          static int ones(int x) {
+              int n = 0;
+              while (x != 0) {
+                  n += x & 1;
+                  x >>= 1;
+              }
+              return n;
+          }
+
+          public static void main(String[] args) {
+              System.out.println(ones(7));
+              System.out.println(ones(-8));
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `3`, then hangs: `>>` copies the sign bit, so a negative number never reaches 0"
+        correct: true
+      - text: "It prints `3` and `29`"
+        feedback: "That needs `>>>`, which shifts in zeros."
+    explanation: |
+      Use `Integer.bitCount(x)`: the library already has the tricky bit operations, tested.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — hand-written bit manipulation.
+
+  - type: predict
+    id: jm-038
+    prompt: |
+      Print the bytes as unsigned numbers. What does this print?
+    code: |
+      public class Unsigned {
+          public static void main(String[] args) {
+              byte[] data = {0x10, (byte) 0xF0, (byte) 0x80};
+              int sum = 0;
+              for (byte b : data) sum += b;
+              System.out.println(sum);
+              System.out.println((data[1] & 0xFF) + " " + Byte.toUnsignedInt(data[2]));
+          }
+      }
+    language: java
+    options:
+      - text: "-128\n240 128"
+        correct: true
+      - text: "384\n240 128"
+        feedback: "`byte` is signed: `0xF0` is −16 and `0x80` is −128 when added as `int`s."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — forgetting negative byte values.
+
+  - type: predict
+    id: jm-039
+    prompt: |
+      Clamp each value to the range 0–100. What does this print?
+    code: |
+      public class Clamp {
+          static int clamp(int x) {
+              return Math.max(100, Math.min(0, x));
+          }
+
+          public static void main(String[] args) {
+              System.out.println(clamp(-5) + " " + clamp(50) + " " + clamp(500));
+          }
+      }
+    language: java
+    options:
+      - text: "100 100 100"
+        correct: true
+      - text: "0 50 100"
+        feedback: "`min` and `max` are swapped: `Math.min(0, x)` is at most 0, and `Math.max(100, …)` then always gives 100."
+    explanation: |
+      Write `Math.max(0, Math.min(100, x))` — or `Math.clamp(x, 0, 100)` on Java 21.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — clamping in the wrong order.
+
+  - type: predict
+    id: jm-040
+    prompt: |
+      What does this print?
+    code: |
+      public class Zeros {
+          public static void main(String[] args) {
+              double a = 0.0, b = -0.0;
+              System.out.println(a == b);
+              System.out.println(Double.valueOf(a).equals(b));
+              System.out.println(1 / b);
+              double nan = Math.sqrt(-1);
+              System.out.println(nan == nan);
+          }
+      }
+    language: java
+    options:
+      - text: "true\nfalse\n-Infinity\nfalse"
+        correct: true
+      - text: "true\ntrue\nInfinity\ntrue"
+        feedback: "`equals` compares bit patterns, so `0.0` and `-0.0` differ; `1 / -0.0` is `-Infinity`; and `NaN` never equals itself."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 4, Numbers — special floating-point values.

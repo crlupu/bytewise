@@ -1,0 +1,121 @@
+title: "Hidden conversions and operators"
+summary: "Numeric promotion in ?:, & versus &&, and how varargs treat arrays and null."
+duration: 6
+tags: [java, mistakes, conditional operator, varargs, boxing]
+sources:
+  - { book: java-mistakes, ref: "Chapter 2, Expressions" }
+  - { book: java-mistakes, ref: "Mistake 6 (implicit conversion in conditional expressions)" }
+  - { book: java-mistakes, ref: "Mistake 7 (non-short-circuit operators)" }
+  - { book: java-mistakes, ref: "Mistake 9 (variable arity calls)" }
+  - { book: java-mistakes, ref: "Mistake 10 (conditional operators and varargs)" }
+steps:
+  - type: explanation
+    title: "The conditional operator converts"
+    body: |
+      When `?:` has numeric operands of different types, both are promoted: `flag ? 1 : 2.0` is a `double`.
+      With one boxed and one primitive operand, the result is unboxed — and a `null` box throws.
+
+  - type: explanation
+    title: "Operators and varargs"
+    body: |
+      `&` and `|` evaluate both sides, so `s != null & s.isEmpty()` still throws.
+      A varargs parameter accepts an array as the whole argument list: passing `String[]` to `Object...` spreads it, and passing `null` makes the array itself `null`.
+
+  - type: predict
+    id: jm-006
+    prompt: |
+      What does this print?
+    code: |
+      public class Numbers {
+          public static void main(String[] args) {
+              boolean useInt = true;
+              Number n = useInt ? Integer.valueOf(7) : Double.valueOf(2.5);
+              System.out.println(n);
+          }
+      }
+    language: java
+    options:
+      - text: "7.0"
+        correct: true
+      - text: "7"
+        feedback: "Both operands are unboxed and promoted to `double`, so the result is `7.0`, boxed as a `Double`."
+    explanation: |
+      Use `if`/`else`, or cast one operand to `Number` so no numeric promotion happens.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 6 (implicit conversion in conditional expressions).
+
+  - type: choice
+    id: jm-007
+    prompt: |
+      What happens?
+    code: |
+      public class Check {
+          static boolean hasText(String s) {
+              return s != null & !s.isEmpty();
+          }
+
+          public static void main(String[] args) {
+              System.out.println(hasText("a"));
+              System.out.println(hasText(null));
+          }
+      }
+    language: java
+    options:
+      - text: "`true`, then a `NullPointerException`: `&` evaluates `s.isEmpty()` even when `s` is `null`"
+        correct: true
+      - text: "`true`, then `false`"
+        feedback: "That needs `&&`, which skips the right side."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 7 (non-short-circuit operators).
+
+  - type: predict
+    id: jm-009
+    prompt: |
+      What does this print?
+    code: |
+      public class Varargs {
+          static String count(Object... xs) {
+              return xs == null ? "null array" : String.valueOf(xs.length);
+          }
+
+          public static void main(String[] args) {
+              String[] names = {"a", "b", "c"};
+              System.out.println(count(names));
+              System.out.println(count((Object) names));
+              System.out.println(count((Object[]) null));
+          }
+      }
+    language: java
+    options:
+      - text: "3\n1\nnull array"
+        correct: true
+      - text: "1\n1\nnull array"
+        feedback: "A `String[]` is an `Object[]`, so it's passed as the whole argument array: 3 elements."
+      - text: "3\n3\n1"
+        feedback: "Casting to `Object` makes it a single argument; casting `null` to `Object[]` passes a `null` array."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 9 (variable arity calls).
+
+  - type: predict
+    id: jm-010
+    prompt: |
+      What does this print?
+    code: |
+      public class Spread {
+          static int count(Object... xs) { return xs.length; }
+
+          public static void main(String[] args) {
+              boolean two = true;
+              Object[] pair = {1, 2};
+              System.out.println(count(two ? pair : new Object[] {3}));
+              System.out.println(count(two ? pair : "single"));
+          }
+      }
+    language: java
+    options:
+      - text: "2\n1"
+        correct: true
+      - text: "2\n2"
+        feedback: "In the second call the conditional's type is `Object` (the common type of `Object[]` and `String`), so it's one argument."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 10 (conditional operators and varargs).

@@ -1,0 +1,5 @@
+title: "Comparing objects"
+summary: "Chapter 7 — == on wrappers, equals that doesn't compare contents, equals/hashCode contracts and comparators that break."
+lessons:
+  - equality
+  - comparators

@@ -62,3 +62,29 @@ steps:
       - text: It calls the `String` version, declared first
         feedback: Declaration order never matters.
     explanation: Avoid overloads with the same number of parameters when an argument could fit both.
+
+  - type: predict
+    id: jpz-46
+    prompt: |
+      What does this print?
+    code: |
+      public class Overloads {
+          Overloads(Object o) { System.out.println("Object"); }
+          Overloads(int[] a) { System.out.println("int[]"); }
+
+          public static void main(String[] args) {
+              new Overloads(null);
+          }
+      }
+    language: java
+    options:
+      - text: "int[]"
+        correct: true
+      - text: "Object"
+        feedback: "Both constructors accept `null`; `int[]` is more specific than `Object`, so it wins."
+      - text: "It doesn't compile: the call is ambiguous"
+        feedback: "It would be ambiguous only if neither type were a subtype of the other."
+    explanation: |
+      To pick the `Object` overload, cast: `new Overloads((Object) null)`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 46, The Case of the Confusing Constructor in *Java Puzzlers* (Bloch & Gafter).

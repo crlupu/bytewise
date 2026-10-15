@@ -1,0 +1,5 @@
+title: "Collections and maps"
+summary: "Chapter 8 — unrelated lookups, nulls, unmodifiable lists, mutable keys, iteration order and concurrent modification."
+lessons:
+  - lookups-and-nulls
+  - iteration-and-views

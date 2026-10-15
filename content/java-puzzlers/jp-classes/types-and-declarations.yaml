@@ -1,0 +1,109 @@
+title: "Types, casts and declarations"
+summary: "instanceof and casts at compile time and run time, and where a local variable declaration may appear."
+duration: 5
+tags: [java, puzzlers, instanceof, casts, declarations]
+sources:
+  - { book: java-puzzlers, ref: "Puzzle 50, Not Your Type" }
+  - { book: java-puzzlers, ref: "Puzzle 55, Creationism" }
+steps:
+  - type: explanation
+    title: "Casts are checked twice"
+    body: |
+      The compiler rejects a cast or `instanceof` between types that can't possibly be related, like `String` and an unrelated class.
+      A cast that might succeed compiles, and is checked at run time: if it fails, you get a `ClassCastException`.
+      `null instanceof T` is always `false`, but `(T) null` always succeeds.
+
+  - type: explanation
+    title: "Declarations aren't statements"
+    body: |
+      A local variable declaration can't be the whole body of an `if`, `for` or `while` without braces: there'd be no scope to use it in.
+      Wrap it in a block, or move the declaration out.
+
+  - type: predict
+    id: jpz-50a
+    prompt: |
+      What does this print?
+    code: |
+      public class Types1 {
+          public static void main(String[] args) {
+              String s = null;
+              System.out.println(s instanceof String);
+              Object o = (String) null;
+              System.out.println(o == null);
+          }
+      }
+    language: java
+    options:
+      - text: "false\ntrue"
+        correct: true
+      - text: "true\ntrue"
+        feedback: "`instanceof` is `false` for `null`, whatever its static type."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 50, Not Your Type in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-50b
+    prompt: |
+      Does this compile?
+    code: |
+      public class Types2 {
+          public static void main(String[] args) {
+              System.out.println(new Types2() instanceof String);
+          }
+      }
+    language: java
+    options:
+      - text: "No: `Types2` and `String` (a final class) can never be related, so the compiler rejects the test"
+        correct: true
+      - text: "Yes, and it prints `false`"
+        feedback: "The compiler rejects `instanceof` tests that can never succeed."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 50, Not Your Type in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-50c
+    prompt: |
+      What happens?
+    code: |
+      public class Types3 {
+          public static void main(String[] args) {
+              Types3 t = (Types3) new Object();
+              System.out.println("cast ok");
+          }
+      }
+    language: java
+    options:
+      - text: "It compiles, then throws `ClassCastException`: the cast might succeed for some `Object`, so it's checked at run time"
+        correct: true
+      - text: "It doesn't compile"
+        feedback: "Downcasts from `Object` are always allowed by the compiler."
+      - text: "It prints `cast ok`"
+        feedback: "A plain `Object` isn't a `Types3`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 50, Not Your Type in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-55
+    prompt: |
+      Does this compile?
+    code: |
+      public class Creatures {
+          static int made;
+          Creatures() { made++; }
+
+          public static void main(String[] args) {
+              for (int i = 0; i < 3; i++)
+                  Creatures c = new Creatures();
+              System.out.println(made);
+          }
+      }
+    language: java
+    options:
+      - text: "No: a local variable declaration can't be the body of a `for` loop without braces"
+        correct: true
+      - text: "Yes, and it prints `3`"
+        feedback: "The grammar doesn't allow a bare declaration there."
+    explanation: |
+      Write `new Creatures();` as an expression statement, or add braces.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 55, Creationism in *Java Puzzlers* (Bloch & Gafter).

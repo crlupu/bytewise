@@ -6,6 +6,8 @@ sources:
   - { book: java-puzzlers, ref: "Puzzle 57, What's in a Name?" }
   - { book: java-puzzlers, ref: "Puzzle 58, Making a Hash of It" }
   - { book: effective-java, ref: "Items 10–11" }
+  - { book: java-puzzlers, ref: "Puzzle 62, The Name Game" }
+  - { book: java-puzzlers, ref: "Puzzle 63, More of the Same" }
 steps:
   - type: explanation
     title: Hash collections look at hashCode first
@@ -70,3 +72,130 @@ steps:
         correct: true
       - text: Extend `HashSet`
         feedback: That would make it a set, not a name.
+
+  - type: predict
+    id: jpz-57
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.HashSet;
+      import java.util.Set;
+
+      public class Points {
+          final int x, y;
+          Points(int x, int y) { this.x = x; this.y = y; }
+
+          @Override
+          public boolean equals(Object o) {
+              return o instanceof Points p && p.x == x && p.y == y;
+          }
+
+          public static void main(String[] args) {
+              Set<Points> set = new HashSet<>();
+              set.add(new Points(1, 2));
+              System.out.println(set.contains(new Points(1, 2)));
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "Without `hashCode`, equal objects almost always land in different buckets, so `contains` never calls `equals`."
+    explanation: |
+      Override `hashCode` whenever you override `equals` — or use a `record`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 57, What's in a Name? in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-58
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.HashSet;
+      import java.util.Set;
+
+      public class Tag {
+          final String name;
+          Tag(String name) { this.name = name; }
+
+          public boolean equals(Tag other) {
+              return name.equals(other.name);
+          }
+
+          @Override
+          public int hashCode() { return name.hashCode(); }
+
+          public static void main(String[] args) {
+              Set<Tag> tags = new HashSet<>();
+              tags.add(new Tag("java"));
+              System.out.println(tags.contains(new Tag("java")));
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "`equals(Tag)` overloads `equals(Object)`; `HashSet` calls the `Object` version, which compares identity."
+    explanation: |
+      Use `@Override` on `equals`: it would have caught this.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 58, Making a Hash of It in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-62
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.IdentityHashMap;
+      import java.util.Map;
+
+      public class Identity {
+          public static void main(String[] args) {
+              Map<String, Integer> m = new IdentityHashMap<>();
+              m.put("key", 1);
+              m.put("key", 2);
+              m.put(new String("key"), 3);
+              System.out.println(m.size());
+          }
+      }
+    language: java
+    options:
+      - text: "2"
+        correct: true
+      - text: "3"
+        feedback: "String literals are interned: both `\"key\"` literals are the same object."
+      - text: "1"
+        feedback: "`new String(...)` creates a distinct object, which is a different key in an identity map."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 62, The Name Game in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-63
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.HashMap;
+      import java.util.Map;
+
+      public class Registry {
+          private final Map<String, String> m = new HashMap<>();
+
+          public void Registry() {
+              m.put("a", "alpha");
+              m.put("b", "beta");
+          }
+
+          public static void main(String[] args) {
+              System.out.println(new Registry().m.size());
+          }
+      }
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "2"
+        feedback: "`void Registry()` is a method, not a constructor, and nothing calls it."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 63, More of the Same in *Java Puzzlers* (Bloch & Gafter).

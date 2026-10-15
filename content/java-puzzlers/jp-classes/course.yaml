@@ -4,3 +4,4 @@ lessons:
   - overload-resolution
   - static-is-not-polymorphic
   - initialization-order
+  - types-and-declarations

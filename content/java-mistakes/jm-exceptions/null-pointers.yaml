@@ -1,0 +1,100 @@
+title: "NullPointerException"
+summary: "Unboxing null, switching on null, and null hidden in maps and chained calls."
+duration: 5
+tags: [java, mistakes, NullPointerException, boxing, "null"]
+sources:
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — NullPointerException from unboxing" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — NullPointerException in switch" }
+  - { book: java-mistakes, ref: "Chapter 5, Common exceptions — NullPointerException in chained calls" }
+steps:
+  - type: explanation
+    title: "Where nulls hide"
+    body: |
+      Unboxing a `null` `Integer` throws, and it can happen invisibly: `int n = map.get(key);`.
+      A classic `switch` on a `null` string or enum throws.
+      Java 14+ helpful NPE messages name the exact null expression.
+
+  - type: explanation
+    title: "Avoiding them"
+    body: |
+      Return empty collections and `Optional`, not `null`.
+      Use `getOrDefault`, `Objects.requireNonNull` at boundaries, and put constants first in `"x".equals(s)`.
+
+  - type: choice
+    id: jm-041
+    prompt: |
+      What happens?
+    code: |
+      import java.util.*;
+
+      public class Stock {
+          public static void main(String[] args) {
+              Map<String, Integer> stock = new HashMap<>(Map.of("apple", 3));
+              int pears = stock.get("pear");
+              System.out.println(pears);
+          }
+      }
+    language: java
+    options:
+      - text: "`NullPointerException`: `get` returns `null`, and assigning it to an `int` unboxes it"
+        correct: true
+      - text: "It prints `0`"
+        feedback: "A missing key gives `null`, not 0."
+    explanation: |
+      Use `stock.getOrDefault("pear", 0)`. Java 21's message says exactly what was null: `the return value of Map.get(Object)`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — NullPointerException from unboxing.
+
+  - type: choice
+    id: jm-042
+    prompt: |
+      What happens?
+    code: |
+      public class Command {
+          static String run(String cmd) {
+              switch (cmd) {
+                  case "start": return "starting";
+                  case "stop": return "stopping";
+                  default: return "unknown";
+              }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(run("stop"));
+              System.out.println(run(null));
+          }
+      }
+    language: java
+    options:
+      - text: "`stopping`, then `NullPointerException`: a classic `switch` on a `null` string throws instead of taking `default`"
+        correct: true
+      - text: "`stopping`, then `unknown`"
+        feedback: "`default` doesn't cover `null`."
+    explanation: |
+      On Java 21, a pattern `switch` can handle it explicitly with `case null ->`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — NullPointerException in switch.
+
+  - type: choice
+    id: jm-043
+    prompt: |
+      Which part of the message tells you what was null?
+    code: |
+      public class Chain {
+          record Address(String city) { }
+          record User(String name, Address address) { }
+
+          public static void main(String[] args) {
+              User u = new User("Ann", null);
+              System.out.println(u.address().city().toUpperCase());
+          }
+      }
+    language: java
+    options:
+      - text: "`Cannot invoke \"Chain$Address.city()\" because the return value of \"Chain$User.address()\" is null` — Java 14+ names the null expression"
+        correct: true
+      - text: "Only `java.lang.NullPointerException`, with no detail"
+        feedback: "That was the message before helpful NPE messages arrived in Java 14."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 5, Common exceptions — NullPointerException in chained calls.

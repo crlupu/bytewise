@@ -1,0 +1,254 @@
+title: "Tests that lie"
+summary: "Disabled asserts, swapped expected/actual, exact floating-point checks, tests that can't fail, and tests that depend on locale, order or each other."
+duration: 8
+tags: [java, mistakes, unit testing, assertions, flaky tests]
+sources:
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — relying on the assert statement" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — swapping expected and actual" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — exact floating-point comparison" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — a test that can't fail" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — depending on the default locale" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — depending on HashSet order" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — shared state between tests" }
+  - { book: java-mistakes, ref: "Chapter 10, Unit testing — comparing strings with ==" }
+steps:
+  - type: explanation
+    title: "A test must be able to fail"
+    body: |
+      Java's `assert` statement is disabled unless the JVM runs with `-ea`, so it checks nothing in production or in most test runs.
+      A test that expects an exception must fail when none is thrown — use `assertThrows`.
+      Compare floating-point results with a tolerance.
+
+  - type: explanation
+    title: "Tests that fail for the wrong reason"
+    body: |
+      `assertEquals(expected, actual)`: swapping them makes failure messages lie.
+      Results that depend on the default locale, on `HashSet` order or on static state left by another test pass on one machine and fail on the next.
+      Compare strings with `equals`, never `==`.
+
+  - type: predict
+    id: jm-093
+    prompt: |
+      Run with plain `java` (no options). What does this print?
+    code: |
+      public class Asserts {
+          static int square(int x) { return x * x + 1; }
+
+          public static void main(String[] args) {
+              assert square(3) == 9 : "square is wrong";
+              System.out.println("all tests passed");
+          }
+      }
+    language: java
+    options:
+      - text: "all tests passed"
+        correct: true
+      - text: "An `AssertionError: square is wrong`"
+        feedback: "`assert` statements are skipped unless the JVM runs with `-ea`."
+    explanation: |
+      Tests should use a test framework's assertions, which always run.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — relying on the assert statement.
+
+  - type: predict
+    id: jm-094
+    prompt: |
+      `assertEquals(expected, actual)` reports `expected <x> but was <y>`. What does the failing test print?
+    code: |
+      public class Swap {
+          static void assertEquals(Object expected, Object actual) {
+              if (!expected.equals(actual))
+                  System.out.println("expected <" + expected + "> but was <" + actual + ">");
+          }
+
+          static int discount(int price) { return price - price / 10 - 1; }
+
+          public static void main(String[] args) {
+              assertEquals(discount(100), 90);
+          }
+      }
+    language: java
+    options:
+      - text: "expected <89> but was <90>"
+        correct: true
+      - text: "expected <90> but was <89>"
+        feedback: "The arguments are swapped, so the message calls the buggy result the expectation."
+    explanation: |
+      Put the literal expectation first: `assertEquals(90, discount(100))`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — swapping expected and actual.
+
+  - type: predict
+    id: jm-095
+    prompt: |
+      What does this print?
+    code: |
+      public class Tolerance {
+          static double total(double... xs) {
+              double t = 0;
+              for (double x : xs) t += x;
+              return t;
+          }
+
+          public static void main(String[] args) {
+              double t = total(0.1, 0.2);
+              System.out.println(t == 0.3 ? "pass" : "FAIL: " + t);
+              System.out.println(Math.abs(t - 0.3) < 1e-9 ? "pass" : "FAIL");
+          }
+      }
+    language: java
+    options:
+      - text: "FAIL: 0.30000000000000004\npass"
+        correct: true
+      - text: "pass\npass"
+        feedback: "0.1 + 0.2 is 0.30000000000000004 in `double`."
+    explanation: |
+      Use `assertEquals(0.3, t, 1e-9)` with a tolerance.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — exact floating-point comparison.
+
+  - type: predict
+    id: jm-096
+    prompt: |
+      The test checks that `parseAge` rejects negative numbers. `parseAge` has a bug: it accepts them. What does this print?
+    code: |
+      public class CantFail {
+          static int parseAge(String s) {
+              int n = Integer.parseInt(s);
+              if (n > 150) throw new IllegalArgumentException("too old");
+              return n;
+          }
+
+          public static void main(String[] args) {
+              try {
+                  parseAge("-5");
+              } catch (IllegalArgumentException expected) {
+                  // ok, rejected as it should be
+              }
+              System.out.println("test passed");
+          }
+      }
+    language: java
+    options:
+      - text: "test passed"
+        correct: true
+      - text: "An exception, or a failure message"
+        feedback: "Nothing fails the test when no exception is thrown — it needs a `fail()` after the call."
+    explanation: |
+      Use `assertThrows(IllegalArgumentException.class, () -> parseAge("-5"))`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — a test that can't fail.
+
+  - type: predict
+    id: jm-097
+    prompt: |
+      The CI machine's locale is French. What does this print?
+    code: |
+      import java.util.Locale;
+
+      public class LocaleTest {
+          static String formatPrice(double p) { return String.format("%.2f €", p); }
+
+          public static void main(String[] args) {
+              Locale.setDefault(Locale.FRANCE);
+              String result = formatPrice(9.5);
+              System.out.println(result.equals("9.50 €") ? "pass" : "FAIL: " + result);
+          }
+      }
+    language: java
+    options:
+      - text: "FAIL: 9,50 €"
+        correct: true
+      - text: "pass"
+        feedback: "The format uses the default locale, which writes a decimal comma in French."
+    explanation: |
+      Pass an explicit `Locale` to the code under test, and run tests under more than one locale.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — depending on the default locale.
+
+  - type: predict
+    id: jm-098
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class OrderTest {
+          static Set<String> tags(String... xs) { return new HashSet<>(Arrays.asList(xs)); }
+
+          public static void main(String[] args) {
+              String result = tags("java", "jvm", "kotlin").toString();
+              System.out.println(result.equals("[java, jvm, kotlin]") ? "pass" : "FAIL: " + result);
+          }
+      }
+    language: java
+    options:
+      - text: "FAIL: [jvm, java, kotlin]"
+        correct: true
+      - text: "pass"
+        feedback: "A `HashSet`'s order follows hash codes, not insertion."
+    explanation: |
+      Compare as sets: `assertEquals(Set.of("java", "jvm", "kotlin"), tags(...))`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — depending on HashSet order.
+
+  - type: predict
+    id: jm-099
+    prompt: |
+      Two tests share a static counter. They run in the order shown. What does this print?
+    code: |
+      public class SharedState {
+          static int created = 0;
+          static void create() { created++; }
+
+          static void testCreateOne() {
+              create();
+              System.out.println(created == 1 ? "testCreateOne pass" : "testCreateOne FAIL: " + created);
+          }
+
+          static void testCreateTwo() {
+              create(); create();
+              System.out.println(created == 2 ? "testCreateTwo pass" : "testCreateTwo FAIL: " + created);
+          }
+
+          public static void main(String[] args) {
+              testCreateOne();
+              testCreateTwo();
+          }
+      }
+    language: java
+    options:
+      - text: "testCreateOne pass\ntestCreateTwo FAIL: 3"
+        correct: true
+      - text: "testCreateOne pass\ntestCreateTwo pass"
+        feedback: "The counter isn't reset, so the second test sees 3. Run alone, it would pass."
+    explanation: |
+      Reset shared state before each test (`@BeforeEach`), or avoid static mutable state.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — shared state between tests.
+
+  - type: predict
+    id: jm-100
+    prompt: |
+      What does this print?
+    code: |
+      public class IdentityTest {
+          static String greet(String name) { return "Hello, " + name; }
+
+          public static void main(String[] args) {
+              String name = args.length > 0 ? args[0] : "Ann";
+              System.out.println(greet(name) == "Hello, Ann" ? "pass" : "FAIL");
+              System.out.println(greet(name).equals("Hello, Ann") ? "pass" : "FAIL");
+          }
+      }
+    language: java
+    options:
+      - text: "FAIL\npass"
+        correct: true
+      - text: "pass\npass"
+        feedback: "`greet` builds a new string at run time; `==` compares it with the interned literal by reference."
+    explanation: |
+      `assertTrue(a == b)` on strings is a bug; use `assertEquals`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 10, Unit testing — comparing strings with ==.

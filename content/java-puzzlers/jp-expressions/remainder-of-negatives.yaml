@@ -75,3 +75,32 @@ steps:
     prompt: Complete an `isOdd` that works for negative numbers.
     template: "return i % 2 [[!=]] 0;"
     code: true
+
+  - type: predict
+    id: jpz-01
+    prompt: |
+      What does this print?
+    code: |
+      public class OddCount {
+          static boolean isOdd(int n) {
+              return n % 2 == 1;
+          }
+
+          public static void main(String[] args) {
+              int[] values = {7, -7, 4, -3, 0, 15};
+              int odd = 0;
+              for (int v : values)
+                  if (isOdd(v)) odd++;
+              System.out.println(odd + " odd values");
+          }
+      }
+    language: java
+    options:
+      - text: "2 odd values"
+        correct: true
+      - text: "4 odd values"
+        feedback: "`-7 % 2` and `-3 % 2` are `-1`, not `1`, so the negative odd numbers aren't counted."
+      - text: "0 odd values"
+        feedback: "The positive odd numbers 7 and 15 still give a remainder of 1."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 1, Oddity in *Java Puzzlers* (Bloch & Gafter).

@@ -1,0 +1,147 @@
+title: "Loops"
+summary: "Off-by-one bounds, the wrong loop variable, the wrong direction, overflow, and bodies that do the same thing every time."
+duration: 5
+tags: [java, mistakes, loops, off-by-one]
+sources:
+  - { book: java-mistakes, ref: "Chapter 3, Program structure" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — a malformed for loop" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — not using the loop variable" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — wrong loop direction" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — loop overflow" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — an idempotent loop body" }
+steps:
+  - type: explanation
+    title: "Classic for-loop slips"
+    body: |
+      `<=` instead of `<` runs one step too many; an inner loop that increments the outer variable never ends or skips work.
+      Counting down needs `i--` and `i >= 0`; copying the header of an upward loop gives a loop that never runs.
+
+  - type: explanation
+    title: "Loops that don't progress"
+    body: |
+      A loop variable near `Integer.MAX_VALUE` overflows instead of ending.
+      A body that doesn't use the loop variable does the same work every time — usually a sign of a typo.
+      Prefer for-each and streams, which have no index to get wrong.
+
+  - type: choice
+    id: jm-018
+    prompt: |
+      What happens?
+    code: |
+      public class Sum {
+          public static void main(String[] args) {
+              int[] xs = {4, 8, 15, 16};
+              int sum = 0;
+              for (int i = 0; i <= xs.length; i++)
+                  sum += xs[i];
+              System.out.println(sum);
+          }
+      }
+    language: java
+    options:
+      - text: "`ArrayIndexOutOfBoundsException: Index 4 out of bounds for length 4` — `<=` runs one step too many"
+        correct: true
+      - text: "It prints `43`"
+        feedback: "The last iteration reads `xs[4]`, which doesn't exist."
+    explanation: |
+      Use `i < xs.length`, or a for-each loop that has no index at all.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — a malformed for loop.
+
+  - type: predict
+    id: jm-019
+    prompt: |
+      Print a 3×3 multiplication table. What does this print?
+    code: |
+      public class Table {
+          public static void main(String[] args) {
+              for (int i = 1; i <= 3; i++) {
+                  StringBuilder row = new StringBuilder();
+                  for (int j = 1; j <= 3; j++)
+                      row.append(i * i).append(' ');
+                  System.out.println(row.toString().trim());
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "1 1 1\n4 4 4\n9 9 9"
+        correct: true
+      - text: "1 2 3\n2 4 6\n3 6 9"
+        feedback: "The inner loop multiplies `i * i` and never uses `j`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — not using the loop variable.
+
+  - type: predict
+    id: jm-020
+    prompt: |
+      Print the array backwards. What does this print?
+    code: |
+      public class Reverse {
+          public static void main(String[] args) {
+              String[] xs = {"a", "b", "c"};
+              StringBuilder out = new StringBuilder("[");
+              for (int i = xs.length - 1; i >= 0; i++)
+                  out.append(xs[i]);
+              System.out.println(out.append("]"));
+          }
+      }
+    language: java
+    options:
+      - text: "Nothing: after `c`, `i++` moves to index 3 and the loop throws `ArrayIndexOutOfBoundsException`"
+        correct: true
+      - text: "[cba]"
+        feedback: "The loop counts up, not down: `i++` should be `i--`."
+      - text: "[c]"
+        feedback: "It never reaches the `println`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — wrong loop direction.
+
+  - type: choice
+    id: jm-021
+    prompt: |
+      Count the multiples of 1,000,000 up to `Integer.MAX_VALUE`. What happens?
+    code: |
+      public class Multiples {
+          public static void main(String[] args) {
+              int count = 0;
+              for (int i = 0; i <= Integer.MAX_VALUE - 1; i += 1_000_000)
+                  count++;
+              System.out.println(count);
+          }
+      }
+    language: java
+    options:
+      - text: "It never ends: `i += 1_000_000` jumps past the limit and overflows to a negative number, which is still `<=` the bound"
+        correct: true
+      - text: "Prints `2148`"
+        feedback: "The loop doesn't stop once `i` passes `MAX_VALUE - 1`; it wraps around."
+    explanation: |
+      Use a `long` counter, or write the bound so the step can't overshoot (`i < limit - step`).
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — loop overflow.
+
+  - type: choice
+    id: jm-022
+    prompt: |
+      Remove the leading zeros. What happens?
+    code: |
+      public class Strip {
+          public static void main(String[] args) {
+              String s = "000123";
+              int start = 0;
+              while (s.charAt(start) == '0')
+                  s.substring(start + 1);
+              System.out.println(s.substring(start));
+          }
+      }
+    language: java
+    options:
+      - text: "It loops forever: the body neither changes `start` nor uses the result of `substring`, so every pass does exactly the same thing"
+        correct: true
+      - text: "Prints `123`"
+        feedback: "Nothing in the loop changes the condition."
+    explanation: |
+      Write `start++` in the body. A loop whose body has no effect on its condition never ends.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — an idempotent loop body.

@@ -1,0 +1,152 @@
+title: "Reflection, serialization and processes"
+summary: "Reflective access rules, inner-class constructors, unflushed output, child processes that block, and singletons broken by serialization."
+duration: 6
+tags: [java, puzzlers, reflection, serialization, processes, PrintStream]
+sources:
+  - { book: java-puzzlers, ref: "Puzzles 78–83" }
+  - { book: java-puzzlers, ref: "Puzzle 78, Reflection Infection" }
+  - { book: java-puzzlers, ref: "Puzzle 80, Further Reflection" }
+  - { book: java-puzzlers, ref: "Puzzle 81, Charred Beyond Recognition" }
+  - { book: java-puzzlers, ref: "Puzzle 82, Beer Blast" }
+  - { book: java-puzzlers, ref: "Puzzle 83, Dyslexic Monotheism" }
+steps:
+  - type: explanation
+    title: "Reflection follows access rules"
+    body: |
+      A public method of a non-public class can't be invoked reflectively from outside its package — look the method up on a public interface or class instead.
+      An inner (non-static) class has no no-argument constructor: its constructor takes the enclosing instance as a hidden first parameter.
+
+  - type: explanation
+    title: "Streams and processes"
+    body: |
+      `System.out.write(int)` writes a byte without flushing; only `println` and writes of a newline flush.
+      A child process writes into a fixed-size pipe: if the parent never reads it, the child blocks and `waitFor` waits forever.
+      Serialization creates new objects, so a serializable singleton needs `readResolve` (or an `enum`).
+
+  - type: choice
+    id: jpz-78
+    prompt: |
+      What happens?
+    code: |
+      import java.lang.reflect.Method;
+      import java.util.*;
+
+      public class Reflect {
+          public static void main(String[] args) throws Exception {
+              Iterator<String> it = new HashSet<>(Set.of("a")).iterator();
+              Method m = it.getClass().getMethod("hasNext");
+              System.out.println(m.invoke(it));
+          }
+      }
+    language: java
+    options:
+      - text: "`IllegalAccessException`: the method is public, but its class (`HashMap$KeyIterator`) isn't"
+        correct: true
+      - text: "It prints `true`"
+        feedback: "Reflection checks the declaring class's access too."
+    explanation: |
+      Look the method up on the public interface: `Iterator.class.getMethod("hasNext")`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 78, Reflection Infection in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-80
+    prompt: |
+      What happens?
+    code: |
+      public class Outer {
+          public class Inner {
+              public Inner() { }
+              public String toString() { return "inner"; }
+          }
+
+          public static void main(String[] args) throws Exception {
+              System.out.println(Inner.class.getDeclaredConstructor().newInstance());
+          }
+      }
+    language: java
+    options:
+      - text: "`NoSuchMethodException`: an inner class's \"no-arg\" constructor really takes the enclosing `Outer` as a parameter"
+        correct: true
+      - text: "It prints `inner`"
+        feedback: "There's no constructor with an empty parameter list."
+    explanation: |
+      Use `getDeclaredConstructor(Outer.class).newInstance(new Outer())`, or make the class `static`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 80, Further Reflection in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-81
+    prompt: |
+      What does this print?
+    code: |
+      public class Writer {
+          public static void main(String[] args) {
+              String s = "Hello";
+              for (int i = 0; i < s.length(); i++)
+                  System.out.write(s.charAt(i));
+          }
+      }
+    language: java
+    options:
+      - text: "Nothing"
+        correct: true
+      - text: "Hello"
+        feedback: "`write(int)` doesn't flush unless the byte is a newline, and nothing flushes the stream before the program ends."
+    explanation: |
+      Call `System.out.flush()` — or just use `print`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 81, Charred Beyond Recognition in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-82
+    prompt: |
+      The child process prints 200,000 lines. What happens?
+    code: |
+      public class Child {
+          public static void main(String[] args) throws Exception {
+              Process p = new ProcessBuilder("seq", "1", "200000").start();
+              int code = p.waitFor();
+              System.out.println("exit code " + code);
+          }
+      }
+    language: java
+    options:
+      - text: "It hangs: the child fills the pipe to the parent and blocks, while the parent waits for it to exit without reading"
+        correct: true
+      - text: "It prints `exit code 0`"
+        feedback: "Only if the output fits in the pipe's buffer (a few KB)."
+    explanation: |
+      Read the output (or use `redirectOutput(Redirect.DISCARD)` / `inheritIO()`) before calling `waitFor`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 82, Beer Blast in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-83
+    prompt: |
+      What does this print?
+    code: |
+      import java.io.*;
+
+      public class King implements Serializable {
+          public static final King INSTANCE = new King();
+          private King() { }
+
+          public static void main(String[] args) throws Exception {
+              ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+              new ObjectOutputStream(bytes).writeObject(INSTANCE);
+              Object copy = new ObjectInputStream(
+                      new ByteArrayInputStream(bytes.toByteArray())).readObject();
+              System.out.println(copy == INSTANCE);
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "Deserialization creates a new object without calling the constructor."
+    explanation: |
+      Add `private Object readResolve() { return INSTANCE; }` — or make the singleton an `enum`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 83, Dyslexic Monotheism in *Java Puzzlers* (Bloch & Gafter).

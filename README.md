@@ -78,12 +78,22 @@ reader — the question says so. The code is shown as published, minus the trail
 [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/); each of those
 exercises carries that credit.
 
+**Java Puzzlers** and **100 Java Mistakes** have one exercise per puzzle (step ids `jpz-<n>`,
+all 95, with a step for each variant where a puzzle has several programs) and per mistake
+(`jm-<n>`, all 100). Neither book's code is openly licensed, so these programs are written
+fresh for Bytewise: each sets the same trap as the puzzle or mistake it credits, and was
+compiled and run on Java 21, with every answer — output, exception, compile error or hang —
+checked against that run. Where modern Java differs from the book (`+=` on an `Object`,
+the default charset, the class-file verifier, TimSort), the question says so. Mistakes from
+chapter 2 are cited by number; the rest are cited by chapter and topic.
+
 | Topic | Books |
 |---|---|
 | Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |
 | Java Concurrency in Practice | *Java Concurrency in Practice* (Goetz et al.) — every chapter |
 | Thinking in Java | *Thinking in Java*, 4th ed. (Eckel) — short lessons built around class and object diagrams |
 | Java Puzzlers | *Java Puzzlers* (Bloch & Gafter) — every output checked on Java 21 |
+| 100 Java Mistakes | *100 Java Mistakes and How to Avoid Them* (Valeev) — every mistake, as a program to run |
 | Modern Java in Action | *Modern Java in Action*, 2nd ed. (Urma, Fusco & Mycroft) |
 | Java Generics and Collections | *Java Generics and Collections* (Naftalin & Wadler) |
 | The Well-Grounded Java Developer | *The Well-Grounded Java Developer*, 2nd ed. (Evans, Clark & Verburg) |

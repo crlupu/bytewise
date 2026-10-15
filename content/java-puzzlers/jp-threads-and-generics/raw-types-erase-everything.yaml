@@ -5,6 +5,8 @@ tags: [java, puzzlers, generics, raw types, erasure]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 88, Raw Deal" }
   - { book: effective-java, ref: "Item 26" }
+  - { book: java-puzzlers, ref: "Puzzle 89, Generic Drugs" }
+  - { book: java-puzzlers, ref: "Puzzle 90, It's Absurd, It's a Pain, It's Superclass!" }
 steps:
   - type: explanation
     title: Raw means erased
@@ -55,3 +57,93 @@ steps:
     prompt: Accept a list of anything without using a raw type.
     template: "static int count(List<[[?]]> items) { return items.size(); }"
     code: true
+
+  - type: choice
+    id: jpz-88
+    prompt: |
+      Does this compile?
+    code: |
+      import java.util.List;
+
+      public class Raw {
+          static class Box<T> {
+              List<String> labels() { return List.of("a", "b"); }
+          }
+
+          public static void main(String[] args) {
+              Box box = new Box<Integer>();
+              for (String s : box.labels())
+                  System.out.println(s);
+          }
+      }
+    language: java
+    options:
+      - text: "No: on a raw `Box`, every generic type in its members is erased — `labels()` returns a raw `List` of `Object`"
+        correct: true
+      - text: "Yes: `labels()` doesn't use `T`"
+        feedback: "Raw types erase all generic information in instance members, even unrelated type arguments."
+    explanation: |
+      Declare `Box<?> box` or `Box<Integer> box`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 88, Raw Deal in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-89
+    prompt: |
+      Does this compile?
+    code: |
+      public class Chain<E> {
+          private Node<E> head;
+
+          private class Node<E> {
+              E value;
+              Node<E> next;
+          }
+
+          public void push(E e) {
+              Node<E> n = new Node<>();
+              n.value = e;
+              n.next = head;
+              head = n;
+          }
+
+          public static void main(String[] args) {
+              Chain<String> c = new Chain<>();
+              c.push("x");
+              System.out.println(c.head.value);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes, and it prints `x` — but `Node<E>` declares a new `E` that shadows `Chain`'s, which is confusing and easy to get wrong"
+        correct: true
+      - text: "No: `E` is declared twice"
+        feedback: "A nested generic class may declare its own type parameter with the same name; it shadows the outer one."
+    explanation: |
+      Make `Node` a `static` nested class with its own parameter, or a non-generic inner class that uses the outer `E`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 89, Generic Drugs in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-90
+    prompt: |
+      Does this compile?
+    code: |
+      public class Outer {
+          class Inner1 extends Outer { }
+          class Inner2 extends Inner1 { }
+
+          public static void main(String[] args) {
+              System.out.println("ok");
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — `Inner2`'s implicit `super()` call uses `Outer.this` as `Inner1`'s enclosing instance; but which instance that is gets confusing fast"
+        correct: true
+      - text: "No: `Inner1` needs an enclosing instance"
+        feedback: "Inside `Outer`, the current `Outer.this` is supplied implicitly."
+    explanation: |
+      The book's version compiled too, but picked a surprising enclosing instance. Prefer static nested classes.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 90, It's Absurd, It's a Pain, It's Superclass! in *Java Puzzlers* (Bloch & Gafter).

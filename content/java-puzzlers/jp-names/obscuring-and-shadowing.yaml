@@ -6,6 +6,7 @@ sources:
   - { book: java-puzzlers, ref: "Puzzle 68, Shades of Gray" }
   - { book: java-puzzlers, ref: "Puzzle 67, All Strung Out" }
   - { book: java-puzzlers, ref: "Puzzle 71, Import Duty" }
+  - { book: java-puzzlers, ref: "Puzzle 69, Fade to Black" }
 steps:
   - type: explanation
     title: Variables win over types
@@ -79,3 +80,121 @@ steps:
       Inside `ImportDuty`, the simple name `toString` first finds members of the class itself, including the `toString()` inherited from `Object`.
       Members always shadow static imports, so the call resolves to `Object.toString()`, which takes no arguments, and fails to compile.
       Writing `Arrays.toString(args)` sidesteps name lookup entirely.
+
+  - type: choice
+    id: jpz-67
+    prompt: |
+      This file defines its own `String` class. What happens when you run `Greeter`?
+    code: |
+      // Greeter.java
+      public class Greeter {
+          public static void main(String[] args) {
+              System.out.println("hi");
+          }
+      }
+
+      class String {
+          private final java.lang.String s;
+          String(java.lang.String s) { this.s = s; }
+          public java.lang.String toString() { return s; }
+      }
+    language: java
+    options:
+      - text: "The JVM can't find `main`: `String[]` here is this file's `String`, not `java.lang.String`"
+        correct: true
+      - text: "It prints `hi`"
+        feedback: "The parameter type doesn't match `java.lang.String[]`, so it isn't the entry point."
+      - text: "It doesn't compile"
+        feedback: "It compiles: the local class shadows `java.lang.String` throughout the file."
+    explanation: |
+      Never reuse the names of `java.lang` classes.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 67, All Strung Out in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-68
+    prompt: |
+      `Paint.Gray` is both a nested class and a static field. What does this print?
+    code: |
+      public class Shades {
+          public static void main(String[] args) {
+              System.out.println(Paint.Gray.NAME);
+          }
+      }
+
+      class Paint {
+          static class Gray {
+              static final String NAME = "class";
+          }
+          static Shade Gray = new Shade();
+      }
+
+      class Shade {
+          final String NAME = "field";
+      }
+    language: java
+    options:
+      - text: "field"
+        correct: true
+      - text: "class"
+        feedback: "When a name could be a variable or a type, the variable wins: the type is obscured."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 68, Shades of Gray in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-69
+    prompt: |
+      How can code still reach the obscured nested class? What does this print?
+    code: |
+      public class Fade {
+          public static void main(String[] args) {
+              System.out.println(((Paint.Gray) null).NAME);
+              System.out.println(Fade.<Paint.Gray>name());
+          }
+
+          static <T extends Paint.Gray> String name() { return T.NAME; }
+      }
+
+      class Paint {
+          static class Gray {
+              static final String NAME = "class";
+          }
+          static Shade Gray = new Shade();
+      }
+
+      class Shade {
+          final String NAME = "field";
+      }
+    language: java
+    options:
+      - text: "class\nclass"
+        correct: true
+      - text: "field\nfield"
+        feedback: "In a cast or a type argument, only a type can appear, so `Paint.Gray` means the class there."
+    explanation: |
+      Obscuring is avoided by naming conventions: classes capitalized, fields lower case.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 69, Fade to Black in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-71
+    prompt: |
+      Does this compile?
+    code: |
+      import static java.util.Arrays.toString;
+
+      public class Imports {
+          public static void main(String[] args) {
+              System.out.println(toString(new int[] {1, 2, 3}));
+          }
+      }
+    language: java
+    options:
+      - text: "No: the inherited `Object.toString()` shadows the static import, and it takes no arguments"
+        correct: true
+      - text: "Yes, and it prints `[1, 2, 3]`"
+        feedback: "Members in scope (including inherited ones) shadow statically imported ones."
+    explanation: |
+      Call `Arrays.toString(...)` with the class name.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 71, Import Duty in *Java Puzzlers* (Bloch & Gafter).

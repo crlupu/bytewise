@@ -6,6 +6,7 @@ sources:
   - { book: java-puzzlers, ref: "Puzzle 5, The Joy of Hex" }
   - { book: java-puzzlers, ref: "Puzzle 6, Multicast" }
   - { book: java-puzzlers, ref: "Puzzle 8, Dos Equis" }
+  - { book: java-puzzlers, ref: "Puzzle 75, Heads or Tails?" }
 steps:
   - type: explanation
     title: Widening copies the sign bit
@@ -93,3 +94,100 @@ steps:
         right: Zero-extends
       - left: "`int` → `byte`"
         right: Keeps the low 8 bits
+
+  - type: predict
+    id: jpz-05
+    prompt: |
+      What does this print?
+    code: |
+      public class HexSum {
+          public static void main(String[] args) {
+              System.out.println(Long.toHexString(0x300000000L + 0x80000000));
+          }
+      }
+    language: java
+    options:
+      - text: "280000000"
+        correct: true
+      - text: "380000000"
+        feedback: "`0x80000000` is a negative `int`; it's sign-extended to `0xffffffff80000000` before the addition."
+    explanation: |
+      Hex and octal `int` literals with the top bit set are negative. Write `0x80000000L` to get the positive value.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 5, The Joy of Hex in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-06
+    prompt: |
+      What does this print?
+    code: |
+      public class Casts {
+          public static void main(String[] args) {
+              byte b = -2;
+              System.out.println((int) (char) b);
+          }
+      }
+    language: java
+    options:
+      - text: "65534"
+        correct: true
+      - text: "-2"
+        feedback: "`char` is unsigned: `(char) -2` is `\\uFFFE`, and widening a `char` to `int` zero-extends."
+      - text: "254"
+        feedback: "The byte is first sign-extended to 16 bits, not 8."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 6, Multicast in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-08
+    prompt: |
+      What does this print?
+    code: |
+      public class Ternaries {
+          public static void main(String[] args) {
+              char c = 'Y';
+              int zero = 0;
+              System.out.print(true ? c : 0);
+              System.out.print(false ? zero : c);
+              System.out.println();
+          }
+      }
+    language: java
+    options:
+      - text: "Y89"
+        correct: true
+      - text: "YY"
+        feedback: "In the second expression the other operand is an `int` variable, not a constant, so the result type is `int`."
+      - text: "8989"
+        feedback: "In the first, `0` is a constant that fits in `char`, so the result type is `char`."
+    explanation: |
+      Give both operands of `?:` the same type.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 8, Dos Equis in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-75
+    prompt: |
+      Does this compile on Java 21, and what type does the conditional have?
+    code: |
+      import java.util.Random;
+
+      public class Coin {
+          static class Side { }
+          static class Heads extends Side { public String toString() { return "heads"; } }
+          static class Tails extends Side { public String toString() { return "tails"; } }
+
+          public static void main(String[] args) {
+              Random rnd = new Random(1);
+              Side s = rnd.nextBoolean() ? new Heads() : new Tails();
+              System.out.println(s);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes: the conditional's type is the least upper bound of `Heads` and `Tails`, which is `Side`"
+        correct: true
+      - text: "No: the operands have different types"
+        feedback: "That was the rule before Java 5, when the book's puzzle was set."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 75, Heads or Tails? in *Java Puzzlers* (Bloch & Gafter).

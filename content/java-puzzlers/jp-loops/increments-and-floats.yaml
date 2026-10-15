@@ -86,3 +86,77 @@ steps:
       `%` and `*` have the same precedence and associate left to right, so `ms % 60*1000` means `(ms % 60) * 1000`.
       That's 0 whenever `ms` is a multiple of 60, which happens 60,000 times in an hour of milliseconds.
       The intended `ms % (60 * 1000)` would be true 60 times. A named constant, `MS_PER_MINUTE`, makes the mistake impossible to write.
+
+  - type: predict
+    id: jpz-25
+    prompt: |
+      What does this print?
+    code: |
+      public class Counter {
+          public static void main(String[] args) {
+              int total = 0;
+              for (int i = 0; i < 50; i++)
+                  total = total++;
+              System.out.println(total);
+          }
+      }
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "50"
+        feedback: "`total++` evaluates to the old value, which is then assigned back over the increment."
+      - text: "49"
+        feedback: "No increment survives."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 25, Inclement Increment in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-34
+    prompt: |
+      What does this print?
+    code: |
+      public class FloatCount {
+          public static void main(String[] args) {
+              final int START = 2_000_000_000;
+              int count = 0;
+              for (float f = START; f < START + 50; f++)
+                  count++;
+              System.out.println(count);
+          }
+      }
+    language: java
+    options:
+      - text: "0"
+        correct: true
+      - text: "50"
+        feedback: "Near 2×10⁹, `float` values are 128 apart: `START + 50` (converted to `float`) equals `START`, so the loop body never runs."
+      - text: "It loops forever"
+        feedback: "The condition is false at the start."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 34, Down for the Count in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-35
+    prompt: |
+      The loop counts every millisecond of an hour and should count whole minutes. What does it print?
+    code: |
+      public class Minutes {
+          public static void main(String[] args) {
+              int minutes = 0;
+              for (int ms = 0; ms < 60 * 60 * 1000; ms++)
+                  if (ms % 60 * 1000 == 0)
+                      minutes++;
+              System.out.println(minutes);
+          }
+      }
+    language: java
+    options:
+      - text: "60000"
+        correct: true
+      - text: "60"
+        feedback: "`%` and `*` have the same precedence and associate left: it's `(ms % 60) * 1000`, which is 0 every 60 ms."
+    explanation: |
+      Write `ms % (60 * 1000)`, or better, a named constant `MS_PER_MINUTE`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 35, Minute by Minute in *Java Puzzlers* (Bloch & Gafter).

@@ -1,0 +1,238 @@
+title: "Library methods that surprise"
+summary: "char arithmetic in append, eager orElse, getBoolean, round, new BigDecimal(double), reused streams, split, Random and String.valueOf(null)."
+duration: 8
+tags: [java, mistakes, library, Optional, BigDecimal, streams, Random]
+sources:
+  - { book: java-mistakes, ref: "Chapter 9, Library methods" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — appending char arithmetic" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — Optional.orElse versus orElseGet" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — Boolean.getBoolean" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — Math.round" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — new BigDecimal(double)" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — reusing a stream" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — String.split drops trailing fields" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — creating a new Random each time" }
+  - { book: java-mistakes, ref: "Chapter 9, Library methods — String.valueOf(null)" }
+steps:
+  - type: explanation
+    title: "Read the name, then the docs"
+    body: |
+      `Boolean.getBoolean` and `Integer.getInteger` read system properties.
+      `Math.round` rounds half up (toward positive infinity), so `round(-2.5)` is −2.
+      `new BigDecimal(0.1)` captures the binary approximation; use `BigDecimal.valueOf` or a string.
+
+  - type: explanation
+    title: "Evaluation and reuse"
+    body: |
+      `opt.orElse(compute())` always calls `compute()`; `orElseGet(() -> compute())` calls it only when empty.
+      A `Stream` can be consumed once.
+      `split` drops trailing empty strings unless you pass a negative limit.
+      A new `Random` with the same seed produces the same sequence.
+
+  - type: predict
+    id: jm-084
+    prompt: |
+      What does this print?
+    code: |
+      public class Initials {
+          public static void main(String[] args) {
+              String first = "Ada", last = "Lovelace";
+              StringBuilder sb = new StringBuilder();
+              sb.append(first.charAt(0) + last.charAt(0));
+              System.out.println(sb);
+          }
+      }
+    language: java
+    options:
+      - text: "141"
+        correct: true
+      - text: "AL"
+        feedback: "Two `char`s with `+` are added as numbers (65 + 76) before `append` sees them."
+    explanation: |
+      Append them separately: `sb.append(first.charAt(0)).append(last.charAt(0))`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — appending char arithmetic.
+
+  - type: predict
+    id: jm-085
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.Optional;
+
+      public class Lazy {
+          static String loadDefault() {
+              System.out.println("loading default...");
+              return "guest";
+          }
+
+          public static void main(String[] args) {
+              Optional<String> user = Optional.of("ann");
+              System.out.println(user.orElse(loadDefault()));
+              System.out.println(user.orElseGet(Lazy::loadDefault));
+          }
+      }
+    language: java
+    options:
+      - text: "loading default...\nann\nann"
+        correct: true
+      - text: "ann\nann"
+        feedback: "`orElse`'s argument is evaluated before the call, even when the `Optional` has a value."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — Optional.orElse versus orElseGet.
+
+  - type: predict
+    id: jm-086
+    prompt: |
+      What does this print?
+    code: |
+      public class Flags {
+          public static void main(String[] args) {
+              String setting = "true";
+              System.out.println(Boolean.getBoolean(setting));
+              System.out.println(Boolean.parseBoolean(setting));
+          }
+      }
+    language: java
+    options:
+      - text: "false\ntrue"
+        correct: true
+      - text: "true\ntrue"
+        feedback: "`Boolean.getBoolean(name)` reads the system property called `true`, which isn't set."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — Boolean.getBoolean.
+
+  - type: predict
+    id: jm-087
+    prompt: |
+      What does this print?
+    code: |
+      public class Rounding {
+          public static void main(String[] args) {
+              System.out.println(Math.round(2.5) + " " + Math.round(-2.5) + " " + Math.round(-2.6));
+              System.out.println((int) -2.9);
+          }
+      }
+    language: java
+    options:
+      - text: "3 -2 -3\n-2"
+        correct: true
+      - text: "3 -3 -3\n-3"
+        feedback: "`Math.round` rounds halves toward positive infinity (−2.5 → −2), and a cast truncates toward zero (−2.9 → −2)."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — Math.round.
+
+  - type: predict
+    id: jm-088
+    prompt: |
+      What does this print?
+    code: |
+      import java.math.BigDecimal;
+
+      public class Exact {
+          public static void main(String[] args) {
+              System.out.println(new BigDecimal(0.25));
+              System.out.println(new BigDecimal(0.1).compareTo(new BigDecimal("0.1")) == 0);
+              System.out.println(BigDecimal.valueOf(0.1));
+          }
+      }
+    language: java
+    options:
+      - text: "0.25\nfalse\n0.1"
+        correct: true
+      - text: "0.25\ntrue\n0.1"
+        feedback: "0.25 is exact in binary, but 0.1 isn't: `new BigDecimal(0.1)` keeps the binary approximation, which isn't 0.1."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — new BigDecimal(double).
+
+  - type: choice
+    id: jm-089
+    prompt: |
+      What happens?
+    code: |
+      import java.util.stream.*;
+
+      public class Twice {
+          public static void main(String[] args) {
+              Stream<String> words = Stream.of("a", "bb", "ccc");
+              System.out.println(words.count());
+              System.out.println(words.mapToInt(String::length).sum());
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `3`, then throws `IllegalStateException`: a stream can be consumed only once"
+        correct: true
+      - text: "It prints `3` and `6`"
+        feedback: "Create a new stream for each pipeline (e.g. with a `Supplier<Stream<String>>`)."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — reusing a stream.
+
+  - type: predict
+    id: jm-090
+    prompt: |
+      Each CSV line should have 4 fields. What does this print?
+    code: |
+      public class Fields {
+          public static void main(String[] args) {
+              String line = "ann,30,,";
+              System.out.println(line.split(",").length);
+              System.out.println(line.split(",", -1).length);
+          }
+      }
+    language: java
+    options:
+      - text: "2\n4"
+        correct: true
+      - text: "4\n4"
+        feedback: "Without a limit, `split` removes trailing empty strings."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — String.split drops trailing fields.
+
+  - type: predict
+    id: jm-091
+    prompt: |
+      Roll a die three times. What does this print?
+    code: |
+      import java.util.Random;
+
+      public class Dice {
+          static int roll() {
+              return new Random(42).nextInt(6) + 1;
+          }
+
+          public static void main(String[] args) {
+              System.out.println(roll() == roll() && roll() == roll());
+          }
+      }
+    language: java
+    options:
+      - text: "true"
+        correct: true
+      - text: "false"
+        feedback: "Each call creates a `Random` with the same seed, so every roll is the same number."
+    explanation: |
+      Create one `Random` and reuse it, or use `ThreadLocalRandom.current()`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — creating a new Random each time.
+
+  - type: choice
+    id: jm-092
+    prompt: |
+      What happens?
+    code: |
+      public class ValueOf {
+          public static void main(String[] args) {
+              Object o = null;
+              System.out.println(String.valueOf(o));
+              System.out.println(String.valueOf(null));
+          }
+      }
+    language: java
+    options:
+      - text: "It prints `null`, then throws `NullPointerException`: a bare `null` picks the more specific `valueOf(char[])` overload"
+        correct: true
+      - text: "It prints `null` twice"
+        feedback: "Overload resolution prefers `char[]` over `Object` for a `null` literal."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 9, Library methods — String.valueOf(null).

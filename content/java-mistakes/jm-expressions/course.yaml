@@ -1,0 +1,6 @@
+title: "Expressions"
+summary: "Chapter 2 — precedence, accidental concatenation, conditional and varargs conversions, non-short-circuit operators, ignored results and wrong method references."
+lessons:
+  - precedence
+  - conversions-and-operators
+  - results-and-method-refs

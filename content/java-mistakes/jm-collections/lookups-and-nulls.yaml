@@ -1,0 +1,220 @@
+title: "Lookups, nulls and unmodifiable lists"
+summary: "Searching for the wrong type, add versus addAll, null-hostile collections and streams, and lists you can't change."
+duration: 7
+tags: [java, mistakes, collections, "null", List.of, streams]
+sources:
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — searching for an unrelated type" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — mixing up a single object and a collection" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — searching for null in a null-hostile collection" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — null values in streams" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — unexpected unboxing" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — modifying an unmodifiable collection" }
+  - { book: java-mistakes, ref: "Chapter 8, Collections and maps — an unmodifiable view that changes" }
+steps:
+  - type: explanation
+    title: "Type-blind methods"
+    body: |
+      `contains`, `remove` and `Map.get` take `Object`, so a `List<Long>` happily searches for an `Integer` and never finds it.
+      `add(list)` adds one element (the list); `addAll(list)` adds its elements.
+      `List<Integer>.remove(1)` removes index 1, not the value 1.
+
+  - type: explanation
+    title: "Nulls and immutability"
+    body: |
+      `List.of`, `Set.of` and `Map.of` reject `null` — even in `contains`. `Collectors.toMap` rejects `null` values.
+      `List.of` and `Collections.unmodifiableList` throw on `add`; `Arrays.asList` has a fixed size.
+      An unmodifiable view still shows changes to the list behind it.
+
+  - type: predict
+    id: jm-071
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Ids {
+          public static void main(String[] args) {
+              List<Long> ids = new ArrayList<>(List.of(1L, 2L, 3L));
+              int wanted = 2;
+              System.out.println(ids.contains(wanted));
+              ids.remove(Integer.valueOf(3));
+              System.out.println(ids);
+          }
+      }
+    language: java
+    options:
+      - text: "false\n[1, 2, 3]"
+        correct: true
+      - text: "true\n[1, 2]"
+        feedback: "`wanted` is boxed to an `Integer`, which never equals a `Long`; for the same reason the `remove` finds nothing."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — searching for an unrelated type.
+
+  - type: predict
+    id: jm-072
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Merge {
+          public static void main(String[] args) {
+              List<Object> all = new ArrayList<>();
+              List<String> more = List.of("b", "c");
+              all.add("a");
+              all.add(more);
+              System.out.println(all.size() + " " + all);
+          }
+      }
+    language: java
+    options:
+      - text: "2 [a, [b, c]]"
+        correct: true
+      - text: "3 [a, b, c]"
+        feedback: "`add(more)` adds the list itself as one element; `addAll(more)` would add its elements."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — mixing up a single object and a collection.
+
+  - type: choice
+    id: jm-073
+    prompt: |
+      What happens?
+    code: |
+      import java.util.*;
+
+      public class Allowed {
+          static final Set<String> ROLES = Set.of("admin", "editor");
+
+          static boolean allowed(String role) {
+              return ROLES.contains(role);
+          }
+
+          public static void main(String[] args) {
+              System.out.println(allowed("admin"));
+              System.out.println(allowed(null));
+          }
+      }
+    language: java
+    options:
+      - text: "`true`, then `NullPointerException`: `Set.of` collections reject `null` even in `contains`"
+        correct: true
+      - text: "`true`, then `false`"
+        feedback: "That's what a `HashSet` would return."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — searching for null in a null-hostile collection.
+
+  - type: choice
+    id: jm-074
+    prompt: |
+      What happens?
+    code: |
+      import java.util.*;
+      import java.util.stream.*;
+
+      public class Emails {
+          record User(String name, String email) { }
+
+          public static void main(String[] args) {
+              List<User> users = List.of(new User("ann", "ann@x.org"), new User("bob", null));
+              Map<String, String> byName = users.stream()
+                      .collect(Collectors.toMap(User::name, User::email));
+              System.out.println(byName);
+          }
+      }
+    language: java
+    options:
+      - text: "`NullPointerException`: `Collectors.toMap` doesn't accept `null` values, although `HashMap` does"
+        correct: true
+      - text: "It prints `{ann=ann@x.org, bob=null}`"
+        feedback: "`toMap` uses `merge`, which rejects `null`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — null values in streams.
+
+  - type: choice
+    id: jm-075
+    prompt: |
+      What happens?
+    code: |
+      import java.util.*;
+
+      public class Counts {
+          public static void main(String[] args) {
+              Map<String, Integer> counts = new HashMap<>(Map.of("a", 2));
+              boolean known = true;
+              Integer n = known ? counts.get("b") : 0;
+              System.out.println(n);
+          }
+      }
+    language: java
+    options:
+      - text: "`NullPointerException`: with an `int` operand, the conditional unboxes `counts.get(\"b\")`, which is `null`"
+        correct: true
+      - text: "It prints `null`"
+        feedback: "The result type of `?:` is `int` here, so `null` is unboxed before being boxed again."
+    explanation: |
+      Write `Integer n = known ? counts.get("b") : Integer.valueOf(0);` — or use `getOrDefault`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — unexpected unboxing.
+
+  - type: predict
+    id: jm-076
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Modify {
+          static String tryAdd(List<String> xs) {
+              try { xs.add("x"); return "added"; }
+              catch (UnsupportedOperationException e) { return "UOE"; }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(tryAdd(new ArrayList<>(List.of("a"))));
+              System.out.println(tryAdd(List.of("a")));
+              System.out.println(tryAdd(Arrays.asList("a")));
+              System.out.println(tryAdd(Collections.unmodifiableList(new ArrayList<>())));
+          }
+      }
+    language: java
+    options:
+      - text: "added\nUOE\nUOE\nUOE"
+        correct: true
+      - text: "added\nUOE\nadded\nUOE"
+        feedback: "`Arrays.asList` is a fixed-size view of the array: `set` works, `add` doesn't."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — modifying an unmodifiable collection.
+
+  - type: predict
+    id: jm-077
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class View {
+          private final List<String> items = new ArrayList<>(List.of("a"));
+
+          List<String> snapshot() { return Collections.unmodifiableList(items); }
+
+          public static void main(String[] args) {
+              View v = new View();
+              List<String> before = v.snapshot();
+              v.items.add("b");
+              System.out.println(before);
+              System.out.println(List.copyOf(v.items) == v.items);
+          }
+      }
+    language: java
+    options:
+      - text: "[a, b]\nfalse"
+        correct: true
+      - text: "[a]\nfalse"
+        feedback: "An unmodifiable view isn't a copy: it shows later changes to the list behind it, so `before` now shows `b` too."
+      - text: "[a, b]\ntrue"
+        feedback: "`List.copyOf` of an `ArrayList` makes a new, unmodifiable list."
+    explanation: |
+      `unmodifiableList` is a read-only window, not a copy. Use `List.copyOf` to take a snapshot.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 8, Collections and maps — an unmodifiable view that changes.

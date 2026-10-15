@@ -71,3 +71,55 @@ steps:
         right: "2"
       - left: "`10`"
         right: "10"
+
+  - type: predict
+    id: jpz-59
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.Set;
+      import java.util.TreeSet;
+
+      public class Codes {
+          public static void main(String[] args) {
+              Set<Integer> codes = new TreeSet<>();
+              int[] raw = {100, 010, 8, 101, 12, 014};
+              for (int c : raw) codes.add(c);
+              System.out.println(codes);
+          }
+      }
+    language: java
+    options:
+      - text: "[8, 12, 100, 101]"
+        correct: true
+      - text: "[8, 10, 12, 14, 100, 101]"
+        feedback: "A leading `0` makes a literal octal: `010` is 8 and `014` is 12."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 59, What's the Difference? in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-61
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.Calendar;
+
+      public class Dates {
+          public static void main(String[] args) {
+              Calendar cal = Calendar.getInstance();
+              cal.clear();
+              cal.set(2025, 12, 31);
+              System.out.println(cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH) + 1)
+                      + "-" + cal.get(Calendar.DAY_OF_MONTH));
+          }
+      }
+    language: java
+    options:
+      - text: "2026-1-31"
+        correct: true
+      - text: "2025-12-31"
+        feedback: "`Calendar` months start at 0: month 12 is January of the next year."
+    explanation: |
+      Use `java.time.LocalDate.of(2025, 12, 31)`, where months start at 1.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 61, The Dating Game in *Java Puzzlers* (Bloch & Gafter).

@@ -6,6 +6,9 @@ sources:
   - { book: java-puzzlers, ref: "Puzzle 11, The Last Laugh" }
   - { book: java-puzzlers, ref: "Puzzle 12, ABC" }
   - { book: java-puzzlers, ref: "Puzzle 13, Animal Farm" }
+  - { book: java-puzzlers, ref: "Puzzle 18, String Cheese" }
+  - { book: java-puzzlers, ref: "Puzzle 22, Dupe of URL" }
+  - { book: java-puzzlers, ref: "Puzzle 23, No Pain, No Gain" }
 steps:
   - type: explanation
     title: + on chars adds
@@ -88,3 +91,145 @@ steps:
       `+` has higher precedence than `==`, so the expression is `("Animals are equal: " + pig) == dog`.
       That compares two different `String` objects by reference, which is false, and `println` prints just `false` — the prefix never appears.
       Even with parentheses, `pig == dog` would be false: `dog` is built at run time, so it's a different object from the interned `pig`. Use `equals`.
+
+  - type: predict
+    id: jpz-11
+    prompt: |
+      What does this print?
+    code: |
+      public class Grade {
+          public static void main(String[] args) {
+              System.out.println('A' + '+');
+              System.out.println("" + 'A' + '+');
+          }
+      }
+    language: java
+    options:
+      - text: "108\nA+"
+        correct: true
+      - text: "A+\nA+"
+        feedback: "Two `char`s with `+` are added as numbers: 65 + 43."
+      - text: "108\n108"
+        feedback: "Starting with `\"\"` makes the whole expression string concatenation."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 11, The Last Laugh in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-12
+    prompt: |
+      What does this print?
+    code: |
+      public class Letters {
+          public static void main(String[] args) {
+              char[] word = {'J', 'a', 'v', 'a'};
+              System.out.println(word);
+              System.out.println("Word: " + word);
+          }
+      }
+    language: java
+    options:
+      - text: "`Java`, then `Word: [C@` followed by a hash code"
+        correct: true
+      - text: "`Java` twice (with `Word: ` on the second line)"
+        feedback: "`println(char[])` prints the characters, but string concatenation calls the array's `toString()`."
+      - text: "`[C@…` twice"
+        feedback: "`println` has a `char[]` overload that prints the contents."
+    explanation: |
+      Use `String.valueOf(word)` or `new String(word)` when concatenating.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 12, ABC in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-13
+    prompt: |
+      What does this print?
+    code: |
+      public class Equality {
+          public static void main(String[] args) {
+              String cat = "size: 4";
+              String dog = "size: " + cat.length() / 2 + "";
+              dog = dog.substring(0, 7);
+              System.out.println("Same text: " + cat == dog);
+          }
+      }
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "Same text: false"
+        feedback: "`+` binds tighter than `==`: the string `\"Same text: size: 4\"` is compared with `dog`, and only `false` is printed."
+      - text: "Same text: true"
+        feedback: "Even with parentheses, `==` compares references, and `dog` is built at run time."
+    explanation: |
+      Compare strings with `equals`, and parenthesize mixed `+`/`==` expressions.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 13, Animal Farm in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-18
+    prompt: |
+      On Java 21, what does this print?
+    code: |
+      public class Bytes {
+          public static void main(String[] args) {
+              byte[] data = {(byte) 0xE9};
+              String s = new String(data);
+              System.out.println(s.length() + " " + (int) s.charAt(0));
+          }
+      }
+    language: java
+    options:
+      - text: "1 65533"
+        correct: true
+      - text: "1 233"
+        feedback: "That's what the book saw with a Latin-1 platform charset. Since Java 18 the default charset is UTF-8, where a lone 0xE9 byte is invalid."
+    explanation: |
+      Always pass a charset when converting between bytes and strings (`new String(data, StandardCharsets.ISO_8859_1)`).
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 18, String Cheese in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-22
+    prompt: |
+      Someone pasted a URL straight into the code. Does this compile, and what does it print?
+    code: |
+      public class Links {
+          public static void main(String[] args) {
+              System.out.print("docs at:");
+              https://docs.oracle.com/javase/21/
+              System.out.println(" (see above)");
+          }
+      }
+    language: java
+    options:
+      - text: "It compiles and prints `docs at: (see above)`: `https:` is a statement label and the rest of the line is a `//` comment"
+        correct: true
+      - text: "It doesn't compile: a URL isn't valid Java"
+        feedback: "It happens to be valid: a label followed by a comment."
+    explanation: |
+      Labels are rare enough that a stray one goes unnoticed. Code that looks wrong but compiles deserves a second look.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 22, Dupe of URL in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-23
+    prompt: |
+      What does this print?
+    code: |
+      public class Builder {
+          public static void main(String[] args) {
+              StringBuilder word = new StringBuilder('P');
+              word.append("ear");
+              System.out.println(word);
+          }
+      }
+    language: java
+    options:
+      - text: "ear"
+        correct: true
+      - text: "Pear"
+        feedback: "There's no `StringBuilder(char)` constructor: `'P'` widens to `int` 80, which sets the initial capacity."
+    explanation: |
+      Pass a `String`: `new StringBuilder("P")`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 23, No Pain, No Gain in *Java Puzzlers* (Bloch & Gafter).

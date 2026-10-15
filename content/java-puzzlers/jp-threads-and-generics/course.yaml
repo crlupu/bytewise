@@ -3,3 +3,5 @@ summary: Chapters 9 and 10 — run versus start, the interrupted flag, class-ini
 lessons:
   - thread-puzzlers
   - raw-types-erase-everything
+  - reflection-and-io
+  - advanced-puzzlers

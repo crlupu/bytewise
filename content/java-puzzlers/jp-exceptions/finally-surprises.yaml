@@ -5,6 +5,8 @@ tags: [java, puzzlers, exceptions, finally, return, system exit]
 sources:
   - { book: java-puzzlers, ref: "Puzzle 36, Indecision" }
   - { book: java-puzzlers, ref: "Puzzle 39, Hello, Goodbye" }
+  - { book: java-puzzlers, ref: "Puzzle 42, Thrown for a Loop" }
+  - { book: java-puzzlers, ref: "Puzzle 45, Exhausting Workout" }
 steps:
   - type: explanation
     title: finally can override the try
@@ -92,3 +94,124 @@ steps:
         correct: true
       - text: "`return result;`"
         feedback: It would discard any exception thrown by the `try` block.
+
+  - type: predict
+    id: jpz-36
+    prompt: |
+      What does this print?
+    code: |
+      public class Decide {
+          static String choose() {
+              try {
+                  return "try";
+              } finally {
+                  return "finally";
+              }
+          }
+
+          public static void main(String[] args) {
+              System.out.println(choose());
+          }
+      }
+    language: java
+    options:
+      - text: "finally"
+        correct: true
+      - text: "try"
+        feedback: "A `return` in `finally` replaces the pending return from `try`."
+      - text: "It doesn't compile"
+        feedback: "It compiles (with a warning)."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 36, Indecision in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-39
+    prompt: |
+      What does this print?
+    code: |
+      public class Bye {
+          public static void main(String[] args) {
+              try {
+                  System.out.println("Working");
+                  System.exit(0);
+              } finally {
+                  System.out.println("Cleaning up");
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Working"
+        correct: true
+      - text: "Working\nCleaning up"
+        feedback: "`System.exit` stops the JVM; it doesn't return, so the `finally` never runs."
+    explanation: |
+      To run cleanup at exit, register a shutdown hook with `Runtime.getRuntime().addShutdownHook(...)`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 39, Hello, Goodbye in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-42
+    prompt: |
+      Count the arrays whose third element is 3, stopping when the index runs off the end. What happens?
+    code: |
+      public class ThirdIsThree {
+          public static void main(String[] args) {
+              int[][] tests = {{9, 8, 3}, {1, 2}, {1, 2, 3, 4}, {3}};
+              int n = 0;
+              try {
+                  int i = 0;
+                  while (true)
+                      if (thirdIsThree(tests[i++])) n++;
+              } catch (ArrayIndexOutOfBoundsException e) {
+                  // ran out of tests
+              }
+              System.out.println(n);
+          }
+
+          static boolean thirdIsThree(int[] a) {
+              return a.length >= 3 & a[2] == 3;
+          }
+      }
+    language: java
+    options:
+      - text: "Prints `1`: `&` doesn't short-circuit, so `{1, 2}` throws — and the catch thinks the loop is done"
+        correct: true
+      - text: "Prints `2`"
+        feedback: "Two arrays qualify, but the loop stops early at the second test."
+      - text: "Throws `ArrayIndexOutOfBoundsException`"
+        feedback: "It's caught — that's the problem."
+    explanation: |
+      Use `&&`, and never use exceptions for ordinary loop control.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 42, Thrown for a Loop in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: choice
+    id: jpz-45
+    prompt: |
+      What happens?
+    code: |
+      public class Workout {
+          public static void main(String[] args) {
+              workHard();
+              System.out.println("Nap time");
+          }
+
+          static void workHard() {
+              try {
+                  workHard();
+              } finally {
+                  workHard();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It runs for practically forever: every `StackOverflowError` is caught by a `finally` that recurses again, doubling the work at each level"
+        correct: true
+      - text: "`StackOverflowError` almost at once"
+        feedback: "The overflow happens, but each `finally` catches it and starts over — about 2^depth calls."
+      - text: "Prints `Nap time`"
+        feedback: "Not in your lifetime."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 45, Exhausting Workout in *Java Puzzlers* (Bloch & Gafter).

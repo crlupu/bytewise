@@ -1,0 +1,161 @@
+title: "Precedence and parentheses"
+summary: "Shifts, the conditional operator and mixed && / || bind differently from how they read."
+duration: 7
+tags: [java, mistakes, precedence, operators, strings]
+sources:
+  - { book: java-mistakes, ref: "Chapter 2, Expressions" }
+  - { book: java-mistakes, ref: "Mistake 1 (operator precedence)" }
+  - { book: java-mistakes, ref: "Mistake 2 (missing parentheses)" }
+  - { book: java-mistakes, ref: "Mistake 3 (accidental concatenation)" }
+  - { book: java-mistakes, ref: "Mistake 4 (multiline string literals)" }
+  - { book: java-mistakes, ref: "Mistake 5 (unary plus)" }
+  - { book: java-mistakes, ref: "Mistake 8 (mixing && and ||)" }
+steps:
+  - type: explanation
+    title: "Precedence surprises"
+    body: |
+      Shifts bind more loosely than `+`: `a << 8 + b` is `a << (8 + b)`.
+      `+` binds more tightly than `?:` and `==`, so `"x: " + flag ? a : b` tries to use a string as the condition.
+      `&&` binds more tightly than `||`.
+
+  - type: explanation
+    title: "Strings and plus"
+    body: |
+      `"Sum: " + a + b` concatenates left to right: once a string is involved, every `+` after it concatenates.
+      Adjacent string pieces split across lines need explicit spaces.
+      When in doubt, add parentheses: they cost nothing.
+
+  - type: predict
+    id: jm-001
+    prompt: |
+      Pack red, green and blue (each 0–255) into one `int`. What does this print?
+    code: |
+      public class Rgb {
+          public static void main(String[] args) {
+              int r = 1, g = 2, b = 3;
+              int rgb = r << 16 + g << 8 + b;
+              System.out.println(Integer.toHexString(rgb));
+          }
+      }
+    language: java
+    options:
+      - text: "20000000"
+        correct: true
+      - text: "10203"
+        feedback: "`+` binds tighter than `<<`: it's `r << (16 + g) << (8 + b)`."
+    explanation: |
+      Write `(r << 16) + (g << 8) + b`, or better `(r << 16) | (g << 8) | b`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 1 (operator precedence).
+
+  - type: choice
+    id: jm-002
+    prompt: |
+      Does this compile?
+    code: |
+      public class Status {
+          public static void main(String[] args) {
+              boolean ok = args.length == 0;
+              String msg = "Status: " + ok ? "fine" : "broken";
+              System.out.println(msg);
+          }
+      }
+    language: java
+    options:
+      - text: "No: `+` binds first, so the condition is the `String` `\"Status: \" + ok`"
+        correct: true
+      - text: "Yes, and it prints `Status: fine`"
+        feedback: "That needs parentheses: `\"Status: \" + (ok ? \"fine\" : \"broken\")`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 2 (missing parentheses).
+
+  - type: predict
+    id: jm-003
+    prompt: |
+      What does this print?
+    code: |
+      public class Cart {
+          public static void main(String[] args) {
+              int books = 2, pens = 3;
+              System.out.println("Items: " + books + pens);
+              System.out.println(books + pens + " items");
+          }
+      }
+    language: java
+    options:
+      - text: "Items: 23\n5 items"
+        correct: true
+      - text: "Items: 5\n5 items"
+        feedback: "`+` is evaluated left to right: after `\"Items: \" + books` the left side is a `String`, so `pens` is appended."
+      - text: "Items: 23\n23 items"
+        feedback: "In the second line the two `int`s are added before the string appears."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 3 (accidental concatenation).
+
+  - type: predict
+    id: jm-004
+    prompt: |
+      What does this print?
+    code: |
+      public class Query {
+          public static void main(String[] args) {
+              String sql = "SELECT name, email" +
+                           "FROM users" +
+                           "WHERE active = true";
+              System.out.println(sql);
+          }
+      }
+    language: java
+    options:
+      - text: "SELECT name, emailFROM usersWHERE active = true"
+        correct: true
+      - text: "SELECT name, email FROM users WHERE active = true"
+        feedback: "Nothing adds a space where the lines are joined."
+    explanation: |
+      Use a text block (`"""`) for multi-line text, or put the spaces in explicitly.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 4 (multiline string literals).
+
+  - type: predict
+    id: jm-005
+    prompt: |
+      What does this print?
+    code: |
+      public class Score {
+          public static void main(String[] args) {
+              int score = 10;
+              score =+ 5;
+              System.out.println(score);
+          }
+      }
+    language: java
+    options:
+      - text: "5"
+        correct: true
+      - text: "15"
+        feedback: "`=+` is `=` followed by unary plus: `score = +5`."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 5 (unary plus).
+
+  - type: predict
+    id: jm-008
+    prompt: |
+      Only admins or owners may delete, and only when the item isn't locked. The item is locked. What does this print?
+    code: |
+      public class Access {
+          public static void main(String[] args) {
+              boolean admin = true, owner = false, locked = true;
+              boolean canDelete = admin || owner && !locked;
+              System.out.println(canDelete);
+          }
+      }
+    language: java
+    options:
+      - text: "true"
+        correct: true
+      - text: "false"
+        feedback: "`&&` binds tighter than `||`: it's `admin || (owner && !locked)`, which is `true` for an admin."
+    explanation: |
+      Write `(admin || owner) && !locked`.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Mistake 8 (mixing && and ||).

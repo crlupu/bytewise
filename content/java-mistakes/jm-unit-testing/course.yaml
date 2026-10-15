@@ -1,0 +1,4 @@
+title: "Unit testing"
+summary: "Chapter 10 — tests that pass when they shouldn't, or fail for the wrong reason."
+lessons:
+  - tests-that-lie

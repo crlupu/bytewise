@@ -1,0 +1,111 @@
+title: "Classes and initialization"
+summary: "Static initialization order, overridden methods that forget super, and fields that are accidentally static."
+duration: 5
+tags: [java, mistakes, initialization, static, inheritance]
+sources:
+  - { book: java-mistakes, ref: "Chapter 3, Program structure" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — incorrect initialization order" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — a missing super call" }
+  - { book: java-mistakes, ref: "Chapter 3, Program structure — an accidentally static field" }
+steps:
+  - type: explanation
+    title: "Initialization order"
+    body: |
+      Static fields initialize top to bottom when the class is first used; a field read before its initializer runs holds its default (0, `null`).
+      Instance fields initialize after the superclass constructor, so a method called from that constructor sees them unset.
+
+  - type: explanation
+    title: "Inheritance slips"
+    body: |
+      An override that forgets `super.method()` skips the parent's work.
+      A field declared `static` by mistake is shared by every instance, so the last write wins.
+
+  - type: predict
+    id: jm-023
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Registry {
+          static final Registry DEFAULT = new Registry("default");
+          static final List<String> NAMES = new ArrayList<>();
+
+          Registry(String name) {
+              if (NAMES == null) System.out.println("NAMES is not ready for " + name);
+              else NAMES.add(name);
+          }
+
+          public static void main(String[] args) {
+              new Registry("custom");
+              System.out.println(NAMES);
+          }
+      }
+    language: java
+    options:
+      - text: "NAMES is not ready for default\n[custom]"
+        correct: true
+      - text: "[default, custom]"
+        feedback: "`DEFAULT` is created while `NAMES` is still `null`: static fields initialize top to bottom."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — incorrect initialization order.
+
+  - type: predict
+    id: jm-024
+    prompt: |
+      What does this print?
+    code: |
+      import java.util.*;
+
+      public class Audit {
+          static class Base {
+              final List<String> log = new ArrayList<>();
+              void save() { log.add("validated"); log.add("saved"); }
+          }
+          static class Timed extends Base {
+              @Override void save() { log.add("timer started"); }
+          }
+
+          public static void main(String[] args) {
+              Base b = new Timed();
+              b.save();
+              System.out.println(b.log);
+          }
+      }
+    language: java
+    options:
+      - text: "[timer started]"
+        correct: true
+      - text: "[timer started, validated, saved]"
+        feedback: "The override never calls `super.save()`, so the parent's work is skipped."
+    explanation: |
+      Call `super.save()` in the override — or design the base class with a template method so subclasses can't forget.
+
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — a missing super call.
+
+  - type: predict
+    id: jm-025
+    prompt: |
+      What does this print?
+    code: |
+      public class Users {
+          static class User {
+              private static String name;
+              User(String name) { this.name = name; }
+              String name() { return name; }
+          }
+
+          public static void main(String[] args) {
+              User a = new User("Ann");
+              User b = new User("Bob");
+              System.out.println(a.name() + " " + b.name());
+          }
+      }
+    language: java
+    options:
+      - text: "Bob Bob"
+        correct: true
+      - text: "Ann Bob"
+        feedback: "`name` is `static`: both objects share one field, and the last constructor wins."
+    explanation: |
+      Original program written for Bytewise, run on Java 21. It shows a mistake from *100 Java Mistakes and How to Avoid Them* (Tagir Valeev), Chapter 3, Program structure — an accidentally static field.

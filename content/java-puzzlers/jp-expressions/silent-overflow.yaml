@@ -86,3 +86,49 @@ steps:
     template: "long micros = 24[[L]] * 60 * 60 * 1000 * 1000;"
     code: true
     caseSensitive: true
+
+  - type: predict
+    id: jpz-03
+    prompt: |
+      What does this print?
+    code: |
+      public class NanosPerHour {
+          public static void main(String[] args) {
+              final long NANOS_PER_HOUR = 60 * 60 * 1000 * 1000 * 1000;
+              final long MILLIS_PER_HOUR = 60 * 60 * 1000;
+              System.out.println(NANOS_PER_HOUR / MILLIS_PER_HOUR);
+          }
+      }
+    language: java
+    options:
+      - text: "227"
+        correct: true
+      - text: "1000000"
+        feedback: "The right-hand side is computed in `int` and overflows before it's widened to `long`."
+      - text: "It doesn't compile: the constant is too large"
+        feedback: "Constant overflow in `int` arithmetic is legal and silent."
+    explanation: |
+      Make the first factor a `long` (`60L * 60 * …`) so the whole product is computed in `long`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 3, Long Division in *Java Puzzlers* (Bloch & Gafter).
+
+  - type: predict
+    id: jpz-04
+    prompt: |
+      What does this print?
+    code: |
+      public class Elementary2 {
+          public static void main(String[] args) {
+              System.out.println(54321 + 1111l);
+          }
+      }
+    language: java
+    options:
+      - text: "55432"
+        correct: true
+      - text: "65432"
+        feedback: "The last character of `1111l` is a lowercase L, not a 1: the literal is 1111 as a `long`."
+    explanation: |
+      Always write long literals with an uppercase `L`.
+
+      Original program written for Bytewise, run on Java 21. It sets the same trap as Puzzle 4, It's Elementary in *Java Puzzlers* (Bloch & Gafter).
