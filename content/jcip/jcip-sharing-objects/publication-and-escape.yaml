@@ -72,3 +72,132 @@ steps:
       - text: Neither is safe
       - text: Both are safe
     explanation: Provide a `start()` or `initialize()` method, or use a factory.
+
+  - type: choice
+    id: listing-3-5
+    prompt: |
+      **Listing 3.5** · After `initialize()`, what's true of the set in `knownSecrets`?
+    code: |
+      class Secrets {
+          public static Set<Secret> knownSecrets;
+
+          public void initialize() {
+              knownSecrets = new HashSet<Secret>();
+          }
+      }
+
+      class Secret {
+      }
+    language: java
+    options:
+      - text: "It's published — any code can reach it, and any `Secret` added to it"
+        correct: true
+      - text: "It's confined to the `Secrets` object"
+        feedback: "It's a public static field, reachable from anywhere."
+      - text: "It's safe to modify from several threads"
+        feedback: "It's a plain `HashSet`; publishing it doesn't make it thread-safe."
+
+  - type: choice
+    id: listing-3-6
+    prompt: |
+      **Listing 3.6** · What's the problem with `getStates()`?
+    code: |
+      class UnsafeStates {
+          private String[] states = new String[]{
+              "AK", "AL" /*...*/
+          };
+
+          public String[] getStates() {
+              return states;
+          }
+      }
+    language: java
+    options:
+      - text: "The private array escapes — any caller can change its contents"
+        correct: true
+      - text: "Nothing — the field is `private`"
+        feedback: "The method returns the array itself, not a copy."
+      - text: "The array is copied on every call, which is slow"
+        feedback: "It isn't copied at all."
+
+  - type: choice
+    id: listing-3-7
+    prompt: |
+      **Listing 3.7** · What can go wrong in this constructor?
+    code: |
+      public class ThisEscape {
+          public ThisEscape(EventSource source) {
+              source.registerListener(new EventListener() {
+                  public void onEvent(Event e) {
+                      doSomething(e);
+                  }
+              });
+          }
+
+          void doSomething(Event e) {
+          }
+
+          interface EventSource {
+              void registerListener(EventListener e);
+          }
+
+          interface EventListener {
+              void onEvent(Event e);
+          }
+
+          interface Event {
+          }
+      }
+    language: java
+    options:
+      - text: "`this` escapes: the source can call `doSomething` on a partly built object"
+        correct: true
+      - text: "Another thread can see the object before the constructor finishes"
+        correct: true
+      - text: "Nothing — the listener is only registered"
+        feedback: "The anonymous class holds a hidden reference to `ThisEscape.this`."
+
+  - type: choice
+    id: listing-3-8
+    prompt: |
+      **Listing 3.8** · How does `SafeListener` avoid the problem of registering a listener in its constructor?
+    code: |
+      public class SafeListener {
+          private final EventListener listener;
+
+          private SafeListener() {
+              listener = new EventListener() {
+                  public void onEvent(Event e) {
+                      doSomething(e);
+                  }
+              };
+          }
+
+          public static SafeListener newInstance(EventSource source) {
+              SafeListener safe = new SafeListener();
+              source.registerListener(safe.listener);
+              return safe;
+          }
+
+          void doSomething(Event e) {
+          }
+
+          interface EventSource {
+              void registerListener(EventListener e);
+          }
+
+          interface EventListener {
+              void onEvent(Event e);
+          }
+
+          interface Event {
+          }
+      }
+    language: java
+    options:
+      - text: "The constructor only builds the listener; the factory registers it once the object is complete"
+        correct: true
+      - text: "It doesn't — `this` still escapes from the constructor"
+        feedback: "The constructor never passes the listener (or `this`) to anyone."
+      - text: "Making the constructor private makes it thread-safe"
+        feedback: "The private constructor just forces callers through the factory, which registers after construction."

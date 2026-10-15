@@ -78,3 +78,28 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "Whenever you submit to an Executor tasks that are not [[independent]], be aware of the possibility of thread [[starvation]] deadlock."
+
+  - type: choice
+    id: listing-8-1
+    prompt: |
+      **Listing 8.1** · `exec` is `Executors.newSingleThreadExecutor()`. A `RenderPageTask` is submitted to it. What happens?
+    code: |
+      public class RenderPageTask implements Callable<String> {
+          public String call() throws Exception {
+              Future<String> header, footer;
+              header = exec.submit(new LoadFileTask("header.html"));
+              footer = exec.submit(new LoadFileTask("footer.html"));
+              String page = renderBody();
+              return header.get() + page + footer.get();
+          }
+      }
+    language: java
+    options:
+      - text: "Deadlock — the subtasks wait in the queue behind the task waiting for them"
+        correct: true
+      - text: "It works, just slowly"
+        feedback: "The only thread is blocked in `header.get()`; the subtasks never run."
+      - text: "`RejectedExecutionException`"
+        feedback: "The executor's queue is unbounded; the submits succeed."
+    explanation: |
+      Thread-starvation deadlock: any pool too small for tasks that wait on other tasks in the same pool.

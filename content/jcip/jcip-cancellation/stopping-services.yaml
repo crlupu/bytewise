@@ -55,3 +55,256 @@ steps:
       - Call `shutdown()` so no new tasks are accepted
       - Call `awaitTermination` to let queued and running tasks finish within a time limit
       - If they don't finish in time, call `shutdownNow()` to interrupt them
+
+  - type: choice
+    id: listing-7-13
+    prompt: |
+      **Listing 7.13** · How do you stop this logging service?
+    code: |
+      public class LogWriter {
+          private final BlockingQueue<String> queue;
+          private final LoggerThread logger;
+          private static final int CAPACITY = 1000;
+
+          public LogWriter(Writer writer) {
+              this.queue = new LinkedBlockingQueue<String>(CAPACITY);
+              this.logger = new LoggerThread(writer);
+          }
+
+          public void start() {
+              logger.start();
+          }
+
+          public void log(String msg) throws InterruptedException {
+              queue.put(msg);
+          }
+
+          private class LoggerThread extends Thread {
+              private final PrintWriter writer;
+
+              public LoggerThread(Writer writer) {
+                  this.writer = new PrintWriter(writer, true); // autoflush
+              }
+
+              public void run() {
+                  try {
+                      while (true)
+                          writer.println(queue.take());
+                  } catch (InterruptedException ignored) {
+                  } finally {
+                      writer.close();
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "You can't cleanly — interrupting the logger loses queued messages and leaves `log` callers blocked on a full queue"
+        correct: true
+      - text: "Interrupt the logger thread; everything queued is written first"
+        feedback: "On interrupt `run()` exits, dropping the queue."
+      - text: "It stops by itself when the queue is empty"
+        feedback: "`take()` just waits for more."
+
+  - type: choice
+    id: listing-7-14
+    prompt: |
+      **Listing 7.14** · `LogWriter` writes queued messages from a logger thread; `shutdownRequested` is a `volatile` flag set on shutdown. What's the problem?
+    code: |
+      public void log(String msg) throws InterruptedException {
+          if (!shutdownRequested)
+              queue.put(msg);
+          else
+              throw new IllegalStateException("logger is shut down");
+      }
+    language: java
+    options:
+      - text: "Check-then-act race: a message can be put after the logger exits, and `put` may block forever"
+        correct: true
+      - text: "No problem — the flag is `volatile`"
+        feedback: "Visibility isn't atomicity; the check and `put` can be split by shutdown."
+      - text: "`IllegalStateException` is the wrong exception type"
+        feedback: "The type is fine; the race is the issue."
+
+  - type: choice
+    id: listing-7-15
+    prompt: |
+      **Listing 7.15** · `stop()` is called while 3 messages are queued. What happens?
+    code: |
+      public class LogService {
+          private final BlockingQueue<String> queue;
+          private final LoggerThread loggerThread;
+          private final PrintWriter writer;
+          @GuardedBy("this") private boolean isShutdown;
+          @GuardedBy("this") private int reservations;
+
+          public LogService(Writer writer) {
+              this.queue = new LinkedBlockingQueue<String>();
+              this.loggerThread = new LoggerThread();
+              this.writer = new PrintWriter(writer);
+          }
+
+          public void start() {
+              loggerThread.start();
+          }
+
+          public void stop() {
+              synchronized (this) {
+                  isShutdown = true;
+              }
+              loggerThread.interrupt();
+          }
+
+          public void log(String msg) throws InterruptedException {
+              synchronized (this) {
+                  if (isShutdown)
+                      throw new IllegalStateException(/*...*/);
+                  ++reservations;
+              }
+              queue.put(msg);
+          }
+
+          private class LoggerThread extends Thread {
+              public void run() {
+                  try {
+                      while (true) {
+                          try {
+                              synchronized (LogService.this) {
+                                  if (isShutdown && reservations == 0)
+                                      break;
+                              }
+                              String msg = queue.take();
+                              synchronized (LogService.this) {
+                                  --reservations;
+                              }
+                              writer.println(msg);
+                          } catch (InterruptedException e) { /* retry */
+                          }
+                      }
+                  } finally {
+                      writer.close();
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "All 3 are written, then the logger exits; later `log` calls throw"
+        correct: true
+      - text: "The queued messages are dropped"
+        feedback: "The logger exits only when `isShutdown && reservations == 0`."
+      - text: "The logger keeps running forever"
+        feedback: "Once reservations drain to zero it breaks out."
+    explanation: |
+      The interrupt only wakes `take()`; the reservation count decides when it's safe to stop.
+
+  - type: choice
+    id: listing-7-16
+    prompt: |
+      **Listing 7.16** · What does `stop()` guarantee?
+    code: |
+      public class LogService {
+          private final ExecutorService exec = Executors.newSingleThreadExecutor();
+
+          public void log(String msg) {
+              try {
+                  exec.execute(new WriteTask(msg));
+              } catch (RejectedExecutionException ignored) { }
+          }
+
+          public void stop() throws InterruptedException {
+              try {
+                  exec.shutdown();
+                  exec.awaitTermination(TIMEOUT, UNIT);
+              } finally {
+                  writer.close();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Already-submitted messages are written (up to the timeout); new ones are silently rejected"
+        correct: true
+      - text: "Pending messages are discarded"
+        feedback: "`shutdown()` lets queued tasks run; `shutdownNow()` would drain them."
+      - text: "`log` after `stop` throws to the caller"
+        feedback: "The `RejectedExecutionException` is caught and ignored."
+
+  - type: choice
+    id: listing-7-17
+    prompt: |
+      **Listing 7.17** · `IndexingService` has one crawler (producer) and one indexer (consumer) sharing a `BlockingQueue<File>`. `stop()` interrupts the crawler. How does the indexer know to stop?
+    code: |
+      private static final File POISON = new File("");
+
+      public void stop() { producer.interrupt(); }
+
+      public void awaitTermination() throws InterruptedException {
+          consumer.join();
+      }
+    language: java
+    options:
+      - text: "The crawler puts `POISON` on the queue when it finishes; the indexer stops when it takes it"
+        correct: true
+      - text: "The indexer is interrupted too"
+        feedback: "Only the producer is interrupted; the poison pill reaches the consumer in order."
+      - text: "The indexer stops when the queue is empty"
+        feedback: "An empty queue just means it waits."
+    explanation: |
+      A poison pill works only when the number of producers and consumers is known.
+
+  - type: choice
+    id: listing-7-18
+    prompt: |
+      **Listing 7.18** · The crawler is interrupted while `put(POISON)` is blocked on a full queue. What happens?
+    code: |
+      class CrawlerThread extends Thread {
+          public void run() {
+              try {
+                  crawl(root);
+              } catch (InterruptedException e) { /* fall through */
+              } finally {
+                  while (true) {
+                      try {
+                          queue.put(POISON);
+                          break;
+                      } catch (InterruptedException e1) { /* retry */ }
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It retries until the pill is on the queue"
+        correct: true
+      - text: "The pill is lost and the indexer never stops"
+        feedback: "The loop only breaks after a successful `put`."
+      - text: "It throws `InterruptedException` out of `run`"
+        feedback: "It's caught and the `put` is retried."
+
+  - type: choice
+    id: listing-7-19
+    prompt: |
+      **Listing 7.19** · Files A and B are queued before `POISON`. What does the indexer do?
+    code: |
+      class IndexerThread extends Thread {
+          public void run() {
+              try {
+                  while (true) {
+                      File file = queue.take();
+                      if (file == POISON)
+                          break;
+                      else
+                          indexFile(file);
+                  }
+              } catch (InterruptedException consumed) { }
+          }
+      }
+    language: java
+    options:
+      - text: "Indexes A and B, then stops"
+        correct: true
+      - text: "Stops immediately, skipping A and B"
+        feedback: "The queue is FIFO; the pill comes after them."
+      - text: "Stops only if a file named \"\" is found"
+        feedback: "It compares identity (`==`) with the one `POISON` instance, not names."

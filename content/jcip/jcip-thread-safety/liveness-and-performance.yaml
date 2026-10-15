@@ -57,3 +57,88 @@ steps:
         correct: true
       - text: Nothing — only the waiting thread is affected
         feedback: Every thread queued on that lock waits too.
+
+  - type: choice
+    id: listing-2-6
+    prompt: |
+      **Listing 2.6** · Is this servlet thread-safe, and how does it behave under load?
+    code: |
+      public class SynchronizedFactorizer extends GenericServlet implements Servlet {
+          @GuardedBy("this") private BigInteger lastNumber;
+          @GuardedBy("this") private BigInteger[] lastFactors;
+
+          public synchronized void service(ServletRequest req,
+                                           ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              if (i.equals(lastNumber))
+                  encodeIntoResponse(resp, lastFactors);
+              else {
+                  BigInteger[] factors = factor(i);
+                  lastNumber = i;
+                  lastFactors = factors;
+                  encodeIntoResponse(resp, factors);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It's thread-safe"
+        correct: true
+      - text: "Only one request is served at a time, even while factoring"
+        correct: true
+      - text: "It can return mismatched factors"
+        feedback: "Every access to the cache is under the same lock."
+      - text: "It can deadlock"
+        feedback: "There's only one lock."
+
+  - type: choice
+    id: listing-2-8
+    prompt: |
+      **Listing 2.8** · Many requests call `service` at once. What's true?
+    code: |
+      public class CachedFactorizer extends GenericServlet implements Servlet {
+          @GuardedBy("this") private BigInteger lastNumber;
+          @GuardedBy("this") private BigInteger[] lastFactors;
+          @GuardedBy("this") private long hits;
+          @GuardedBy("this") private long cacheHits;
+
+          public synchronized long getHits() {
+              return hits;
+          }
+
+          public synchronized double getCacheHitRatio() {
+              return (double) cacheHits / (double) hits;
+          }
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = null;
+              synchronized (this) {
+                  ++hits;
+                  if (i.equals(lastNumber)) {
+                      ++cacheHits;
+                      factors = lastFactors.clone();
+                  }
+              }
+              if (factors == null) {
+                  factors = factor(i);
+                  synchronized (this) {
+                      lastNumber = i;
+                      lastFactors = factors.clone();
+                  }
+              }
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: "It's thread-safe"
+        correct: true
+      - text: "Requests can factor different numbers at the same time"
+        correct: true
+      - text: "`hits` can lose increments"
+        feedback: "`++hits` happens inside `synchronized (this)`."
+      - text: "A request can get another number's factors"
+        feedback: "The check of `lastNumber` and the copy of `lastFactors` happen under one lock, and so does the update."
+    explanation: |
+      Only the short reads and writes of shared state are locked; the slow `factor` call runs with no lock held.

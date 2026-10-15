@@ -68,3 +68,61 @@ steps:
     prompt: Get the shared lock.
     template: "Lock r = rwl.[[readLock]]();"
     code: true
+
+  - type: choice
+    id: listing-13-6
+    prompt: |
+      **Listing 13.6** · Thread A holds the read lock. Thread B asks for the read lock, thread C for the write lock. Which may proceed at once?
+    code: |
+      public interface ReadWriteLock {
+          Lock readLock();
+          Lock writeLock();
+      }
+    language: java
+    options:
+      - text: "B — readers share the lock; C waits until all readers are done"
+        correct: true
+      - text: "C — writers have priority"
+        feedback: "A writer can't enter while any reader holds the lock."
+      - text: "Neither — only one thread at a time"
+        feedback: "That's a plain mutual-exclusion lock."
+
+  - type: choice
+    id: listing-13-7
+    prompt: |
+      **Listing 13.7** · When does `ReadWriteMap` beat a synchronized map?
+    code: |
+      public class ReadWriteMap<K, V> {
+          private final Map<K, V> map;
+          private final ReadWriteLock lock = new ReentrantReadWriteLock();
+          private final Lock r = lock.readLock();
+          private final Lock w = lock.writeLock();
+
+          public V put(K key, V value) {
+              w.lock();
+              try {
+                  return map.put(key, value);
+              } finally {
+                  w.unlock();
+              }
+          }
+
+          public V get(Object key) {
+              r.lock();
+              try {
+                  return map.get(key);
+              } finally {
+                  r.unlock();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Mostly reads, many threads, and reads that hold the lock long enough to matter"
+        correct: true
+      - text: "Always — read-write locks are faster"
+        feedback: "They have more overhead; for short, write-heavy work they're slower."
+      - text: "Mostly writes"
+        feedback: "Writes are exclusive either way."
+    explanation: |
+      For a plain map, `ConcurrentHashMap` is usually better still.

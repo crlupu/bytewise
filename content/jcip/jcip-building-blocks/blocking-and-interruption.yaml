@@ -73,3 +73,36 @@ steps:
         right: Not interruptible — the thread keeps waiting
       - left: Classic blocking socket I/O in `java.io`
         right: Not interruptible — closing the socket is the usual workaround
+
+  - type: choice
+    id: listing-5-10
+    prompt: |
+      **Listing 5.10** · The thread running this task is interrupted while waiting in `take()`. What happens?
+    code: |
+      public class TaskRunnable implements Runnable {
+          BlockingQueue<Task> queue;
+
+          public void run() {
+              try {
+                  processTask(queue.take());
+              } catch (InterruptedException e) {
+                  // restore interrupted status
+                  Thread.currentThread().interrupt();
+              }
+          }
+
+          void processTask(Task task) {
+              // Handle the task
+          }
+
+          interface Task {
+          }
+      }
+    language: java
+    options:
+      - text: "The wait ends, and the interrupt flag is set again so callers higher up can see it"
+        correct: true
+      - text: "The interrupt is swallowed and lost"
+        feedback: "`interrupt()` in the catch restores the status that throwing cleared."
+      - text: "The task keeps waiting"
+        feedback: "`take()` responds to interruption by throwing."

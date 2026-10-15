@@ -73,3 +73,120 @@ steps:
       A pool reuses its threads for many tasks, and a `ThreadLocal` value lives as long as its thread.
       A value set by one task — a user ID, a transaction — is still there when the next unrelated task runs on that thread, leaking data between requests.
       It also keeps objects alive for the pool's lifetime. Clear thread-local values in a `finally` block at the end of each task.
+
+  - type: choice
+    id: listing-3-9
+    prompt: |
+      **Listing 3.9** · Many threads call `loadTheArk` at once on one `Animals` object. Is the `animals` set safe, though it's a plain `TreeSet`?
+    code: |
+      public class Animals {
+          Ark ark;
+          Species species;
+          Gender gender;
+
+          public int loadTheArk(Collection<Animal> candidates) {
+              SortedSet<Animal> animals;
+              int numPairs = 0;
+              Animal candidate = null;
+
+              // animals confined to method, don't let them escape!
+              animals = new TreeSet<Animal>(new SpeciesGenderComparator());
+              animals.addAll(candidates);
+              for (Animal a : animals) {
+                  if (candidate == null || !candidate.isPotentialMate(a))
+                      candidate = a;
+                  else {
+                      ark.load(new AnimalPair(candidate, a));
+                      ++numPairs;
+                      candidate = null;
+                  }
+              }
+              return numPairs;
+          }
+
+          class Animal {
+              Species species;
+              Gender gender;
+
+              public boolean isPotentialMate(Animal other) {
+                  return species == other.species && gender != other.gender;
+              }
+          }
+
+          enum Species {
+              AARDVARK, BENGAL_TIGER, CARIBOU, DINGO, ELEPHANT, FROG, GNU, HYENA,
+              IGUANA, JAGUAR, KIWI, LEOPARD, MASTADON, NEWT, OCTOPUS,
+              PIRANHA, QUETZAL, RHINOCEROS, SALAMANDER, THREE_TOED_SLOTH,
+              UNICORN, VIPER, WEREWOLF, XANTHUS_HUMMINBIRD, YAK, ZEBRA
+          }
+
+          enum Gender {
+              MALE, FEMALE
+          }
+
+          class AnimalPair {
+              private final Animal one, two;
+
+              public AnimalPair(Animal one, Animal two) {
+                  this.one = one;
+                  this.two = two;
+              }
+          }
+
+          class SpeciesGenderComparator implements Comparator<Animal> {
+              public int compare(Animal one, Animal two) {
+                  int speciesCompare = one.species.compareTo(two.species);
+                  return (speciesCompare != 0)
+                          ? speciesCompare
+                          : one.gender.compareTo(two.gender);
+              }
+          }
+
+          class Ark {
+              private final Set<AnimalPair> loadedAnimals = new HashSet<AnimalPair>();
+
+              public void load(AnimalPair pair) {
+                  loadedAnimals.add(pair);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — it's a local variable that never escapes, so each thread has its own"
+        correct: true
+      - text: "No — `TreeSet` isn't thread-safe"
+        feedback: "That only matters if it's shared. Here only one thread can ever reach it."
+      - text: "Only if the method is `synchronized`"
+        feedback: "Stack confinement makes it safe without a lock."
+
+  - type: choice
+    id: listing-3-10
+    prompt: |
+      **Listing 3.10** · Several threads call `getConnection()`. What do they get?
+    code: |
+      public class ConnectionDispenser {
+          static String DB_URL = "jdbc:mysql://localhost/mydatabase";
+
+          private ThreadLocal<Connection> connectionHolder
+                  = new ThreadLocal<Connection>() {
+                      public Connection initialValue() {
+                          try {
+                              return DriverManager.getConnection(DB_URL);
+                          } catch (SQLException e) {
+                              throw new RuntimeException("Unable to acquire Connection, e");
+                          }
+                      };
+                  };
+
+          public Connection getConnection() {
+              return connectionHolder.get();
+          }
+      }
+    language: java
+    options:
+      - text: "Each thread gets its own connection, created on its first call"
+        correct: true
+      - text: "They all share one connection"
+        feedback: "`ThreadLocal` keeps a separate value per thread."
+      - text: "A new connection on every call"
+        feedback: "`initialValue` runs once per thread; later calls return the same one."

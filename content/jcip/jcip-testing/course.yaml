@@ -2,4 +2,5 @@ title: Testing concurrent programs
 summary: Chapter 12 — testing for correctness and performance, and the traps in each.
 lessons:
   - testing-correctness
+  - testing-correctness-code
   - testing-performance

@@ -81,3 +81,221 @@ steps:
     prompt: A custom thread factory can name threads and install an exception handler.
     template: "Thread t = new Thread(r, poolName + \"-\" + [[threadNumber]].incrementAndGet());"
     code: true
+
+  - type: choice
+    id: listing-8-2
+    prompt: |
+      **Listing 8.2** · Core 2, max 4, a bounded queue of 10. All threads are busy and the queue has room. A task is submitted. What does the pool do?
+    code: |
+      new ThreadPoolExecutor(
+          2,                               // corePoolSize
+          4,                               // maximumPoolSize
+          60, TimeUnit.SECONDS,            // keepAliveTime
+          new ArrayBlockingQueue<>(10));   // workQueue
+    language: java
+    options:
+      - text: "Queues it — extra threads beyond core are only created when the queue is full"
+        correct: true
+      - text: "Starts a third thread right away"
+        feedback: "Above core size, the pool grows only once the queue rejects the offer."
+      - text: "Rejects it"
+        feedback: "Rejection happens only when the queue is full and the pool is at max."
+    explanation: |
+      A consequence: with an unbounded queue the pool never grows past core size.
+
+  - type: choice
+    id: listing-8-3
+    prompt: |
+      **Listing 8.3** · All 10 threads are busy and the queue is full. A task is submitted from a request thread. What happens?
+    code: |
+      ThreadPoolExecutor executor
+          = new ThreadPoolExecutor(N_THREADS, N_THREADS,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(CAPACITY));
+      executor.setRejectedExecutionHandler(
+          new ThreadPoolExecutor.CallerRunsPolicy());
+    language: java
+    options:
+      - text: "The submitting thread runs the task itself, which slows down new submissions"
+        correct: true
+      - text: "The task is silently dropped"
+        feedback: "That's `DiscardPolicy`."
+      - text: "`RejectedExecutionException` is thrown"
+        feedback: "That's the default `AbortPolicy`."
+      - text: "The oldest queued task is dropped"
+        feedback: "That's `DiscardOldestPolicy`."
+
+  - type: choice
+    id: listing-8-4
+    prompt: |
+      **Listing 8.4** · `bound` is 5 and the underlying pool's queue is unbounded. What does a sixth `submitTask` call do while five tasks are still running?
+    code: |
+      public class BoundedExecutor {
+          private final Executor exec;
+          private final Semaphore semaphore;
+
+          public BoundedExecutor(Executor exec, int bound) {
+              this.exec = exec;
+              this.semaphore = new Semaphore(bound);
+          }
+
+          public void submitTask(final Runnable command)
+                  throws InterruptedException {
+              semaphore.acquire();
+              try {
+                  exec.execute(new Runnable() {
+                      public void run() {
+                          try {
+                              command.run();
+                          } finally {
+                              semaphore.release();
+                          }
+                      }
+                  });
+              } catch (RejectedExecutionException e) {
+                  semaphore.release();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Blocks in `acquire()` until one of the five finishes"
+        correct: true
+      - text: "Queues the task in the pool"
+        feedback: "The semaphore stops it before it reaches `execute`."
+      - text: "Throws `RejectedExecutionException`"
+        feedback: "The semaphore blocks rather than rejecting."
+    explanation: |
+      If `execute` itself rejects the task, the permit is given back in the `catch`.
+
+  - type: choice
+    id: listing-8-5
+    prompt: |
+      **Listing 8.5** · What does this print?
+    code: |
+      ThreadFactory f = r -> {
+          Thread t = new Thread(r, "worker");
+          t.setDaemon(true);
+          return t;
+      };
+      ExecutorService exec = Executors.newSingleThreadExecutor(f);
+      exec.submit(() -> System.out.println(
+          Thread.currentThread().getName() + " " + Thread.currentThread().isDaemon())).get();
+      exec.shutdown();
+    language: java
+    options:
+      - text: "worker true"
+        correct: true
+      - text: "pool-1-thread-1 false"
+        feedback: "That's the default factory's name; the custom factory is used for every pool thread."
+      - text: "worker false"
+        feedback: "The factory marks the thread as daemon."
+
+  - type: choice
+    id: listing-8-6
+    prompt: |
+      **Listing 8.6** · `MyAppThread(r, name)` names the thread `name-<count>` and installs a logging uncaught-exception handler. Which threads does a pool built with `new MyThreadFactory("crawler")` create?
+    code: |
+      public class MyThreadFactory implements ThreadFactory {
+          private final String poolName;
+
+          public MyThreadFactory(String poolName) {
+              this.poolName = poolName;
+          }
+
+          public Thread newThread(Runnable runnable) {
+              return new MyAppThread(runnable, poolName);
+          }
+      }
+    language: java
+    options:
+      - text: "`MyAppThread`s named `crawler-1`, `crawler-2`, … with that handler"
+        correct: true
+      - text: "Plain `Thread`s named `pool-1-thread-1`"
+        feedback: "The pool asks the factory for every thread it creates."
+      - text: "Exactly one thread"
+        feedback: "The factory is called whenever the pool needs a new thread."
+
+  - type: choice
+    id: listing-8-7
+    prompt: |
+      **Listing 8.7** · Why does `run()` copy `debugLifecycle` into a local first?
+    code: |
+      public class MyAppThread extends Thread {
+          public static final String DEFAULT_NAME = "MyAppThread";
+          private static volatile boolean debugLifecycle = false;
+          private static final AtomicInteger created = new AtomicInteger();
+          private static final AtomicInteger alive = new AtomicInteger();
+          private static final Logger log = Logger.getAnonymousLogger();
+
+          public MyAppThread(Runnable r) {
+              this(r, DEFAULT_NAME);
+          }
+
+          public MyAppThread(Runnable runnable, String name) {
+              super(runnable, name + "-" + created.incrementAndGet());
+              setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+                  public void uncaughtException(Thread t,
+                                                Throwable e) {
+                      log.log(Level.SEVERE,
+                              "UNCAUGHT in thread " + t.getName(), e);
+                  }
+              });
+          }
+
+          public void run() {
+              // Copy debug flag to ensure consistent value throughout.
+              boolean debug = debugLifecycle;
+              if (debug) log.log(Level.FINE, "Created " + getName());
+              try {
+                  alive.incrementAndGet();
+                  super.run();
+              } finally {
+                  alive.decrementAndGet();
+                  if (debug) log.log(Level.FINE, "Exiting " + getName());
+              }
+          }
+
+          public static int getThreadsCreated() {
+              return created.get();
+          }
+
+          public static int getThreadsAlive() {
+              return alive.get();
+          }
+
+          public static boolean getDebug() {
+              return debugLifecycle;
+          }
+
+          public static void setDebug(boolean b) {
+              debugLifecycle = b;
+          }
+      }
+    language: java
+    options:
+      - text: "So the \"Created\" and \"Exiting\" logs use the same value even if the flag changes mid-run"
+        correct: true
+      - text: "Because reading a `volatile` field isn't thread-safe"
+        feedback: "Reading it is safe; it may just change between reads."
+      - text: "For speed only"
+        feedback: "It's for consistency between the two log lines."
+
+  - type: choice
+    id: listing-8-8
+    prompt: |
+      **Listing 8.8** · What does this print?
+    code: |
+      ExecutorService exec = Executors.newFixedThreadPool(2);
+      if (exec instanceof ThreadPoolExecutor)
+          ((ThreadPoolExecutor) exec).setCorePoolSize(4);
+      ExecutorService single = Executors.newSingleThreadExecutor();
+      System.out.println(single instanceof ThreadPoolExecutor);
+    language: java
+    options:
+      - text: "false"
+        correct: true
+      - text: "true"
+        feedback: "`newSingleThreadExecutor` wraps its pool so its configuration can't be changed by a cast."
+    explanation: |
+      The fixed pool can be reconfigured by casting; use `Executors.unconfigurableExecutorService` to prevent that.

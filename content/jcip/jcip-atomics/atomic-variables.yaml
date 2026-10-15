@@ -69,3 +69,115 @@ steps:
         correct: true
       - text: Yes, they're thread-safe
         feedback: Thread-safe doesn't make them good keys; their identity-based equality and mutability do the opposite.
+
+  - type: choice
+    id: listing-15-3
+    prompt: |
+      **Listing 15.3** · The range is (0, 10). One thread calls `setLower(5)` while another calls `setUpper(4)`. Can the range end up (5, 4)?
+    code: |
+      public class CasNumberRange {
+          private static class IntPair {
+              final int lower;  // lower <= upper
+              final int upper;
+              IntPair(int lower, int upper) { this.lower = lower; this.upper = upper; }
+          }
+
+          private final AtomicReference<IntPair> values =
+                  new AtomicReference<IntPair>(new IntPair(0, 0));
+
+          public void setLower(int i) {
+              while (true) {
+                  IntPair oldv = values.get();
+                  if (i > oldv.upper)
+                      throw new IllegalArgumentException("Can't set lower to " + i + " > upper");
+                  IntPair newv = new IntPair(i, oldv.upper);
+                  if (values.compareAndSet(oldv, newv))
+                      return;
+              }
+          }
+
+          public void setUpper(int i) {
+              while (true) {
+                  IntPair oldv = values.get();
+                  if (i < oldv.lower)
+                      throw new IllegalArgumentException("Can't set upper to " + i + " < lower");
+                  IntPair newv = new IntPair(oldv.lower, i);
+                  if (values.compareAndSet(oldv, newv))
+                      return;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "No — whichever CAS loses retries against the new pair and then throws"
+        correct: true
+      - text: "Yes — each check passes against (0, 10)"
+        feedback: "Both checks pass, but only one CAS on the old pair can succeed."
+      - text: "Yes, unless the fields are volatile"
+        feedback: "The pair is immutable and swapped as a whole."
+
+  - type: choice
+    id: listing-15-4
+    prompt: |
+      **Listing 15.4** · What does this `nextInt(n)` guarantee under contention?
+    code: |
+      public class ReentrantLockPseudoRandom extends PseudoRandom {
+          private final Lock lock = new ReentrantLock(false);
+          private int seed;
+
+          ReentrantLockPseudoRandom(int seed) {
+              this.seed = seed;
+          }
+
+          public int nextInt(int n) {
+              lock.lock();
+              try {
+                  int s = seed;
+                  seed = calculateNext(s);
+                  int remainder = s % n;
+                  return remainder > 0 ? remainder : remainder + n;
+              } finally {
+                  lock.unlock();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Each seed is used once; threads take turns on the lock"
+        correct: true
+      - text: "Threads may get the same number"
+        feedback: "The lock makes read-and-update of `seed` atomic."
+      - text: "Nothing — `seed` isn't volatile"
+        feedback: "Lock acquisition and release give visibility."
+
+  - type: choice
+    id: listing-15-5
+    prompt: |
+      **Listing 15.5** · Compared with the `ReentrantLock` version, how does this perform?
+    code: |
+      public class AtomicPseudoRandom extends PseudoRandom {
+          private AtomicInteger seed;
+
+          AtomicPseudoRandom(int seed) {
+              this.seed = new AtomicInteger(seed);
+          }
+
+          public int nextInt(int n) {
+              while (true) {
+                  int s = seed.get();
+                  int nextSeed = calculateNext(s);
+                  if (seed.compareAndSet(s, nextSeed)) {
+                      int remainder = s % n;
+                      return remainder > 0 ? remainder : remainder + n;
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Better at low to moderate contention; under extreme contention locks can win, as CAS failures cause retries"
+        correct: true
+      - text: "Always worse"
+        feedback: "Realistic contention favors atomics."
+      - text: "Always better"
+        feedback: "Under very high contention, retries thrash while a lock queues threads."

@@ -59,3 +59,50 @@ steps:
   - type: blank
     prompt: Complete the summary of the risks.
     template: "Safety means nothing bad ever happens; [[liveness]] means something good eventually happens."
+
+  - type: choice
+    id: listing-1-1
+    prompt: |
+      **Listing 1.1** · Several threads call `getNext()` on one shared `UnsafeSequence`. What can happen?
+    code: |
+      public class UnsafeSequence {
+          private int value;
+
+          /**
+           * Returns a unique value.
+           */
+          public int getNext() {
+              return value++;
+          }
+      }
+    language: java
+    options:
+      - text: "Two callers can get the same value"
+        correct: true
+      - text: "Some values can be skipped while others repeat"
+        correct: true
+      - text: "Every caller gets a unique value"
+        feedback: "`value++` is read, add, write — two threads can read the same value before either writes."
+    explanation: |
+      `value++` is three steps. Interleave two threads and both return the same number.
+
+  - type: choice
+    id: listing-1-2
+    prompt: |
+      **Listing 1.2** · Several threads call `getNext()` on one shared `Sequence`. What happens?
+    code: |
+      public class Sequence {
+          @GuardedBy("this") private int nextValue;
+
+          public synchronized int getNext() {
+              return nextValue++;
+          }
+      }
+    language: java
+    options:
+      - text: "Every caller gets a unique value"
+        correct: true
+      - text: "Two callers can get the same value"
+        feedback: "`synchronized` makes the read, add and write one atomic step."
+      - text: "It can deadlock"
+        feedback: "Only one lock is involved, and it's always released when the method returns."

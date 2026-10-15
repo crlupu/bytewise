@@ -72,3 +72,129 @@ steps:
       Returning the internal map lets callers read and modify it without holding the tracker's lock, and the `MutablePoint`s inside can change while they're being read.
       A deep copy — a new map with new point objects — taken while holding the lock gives callers a consistent snapshot they can't use to corrupt the tracker.
       The trade-offs are the cost of copying and a snapshot that's immediately out of date; immutable points would make the copy cheaper.
+
+  - type: choice
+    id: listing-4-2
+    prompt: |
+      **Listing 4.2** · Is `PersonSet` thread-safe, though `HashSet` isn't?
+    code: |
+      public class PersonSet {
+          @GuardedBy("this") private final Set<Person> mySet = new HashSet<Person>();
+
+          public synchronized void addPerson(Person p) {
+              mySet.add(p);
+          }
+
+          public synchronized boolean containsPerson(Person p) {
+              return mySet.contains(p);
+          }
+
+          interface Person {
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — the set is confined to the object and only touched under its lock"
+        correct: true
+      - text: "No — the `Person` objects inside aren't thread-safe"
+        correct: true
+      - text: "No — `HashSet` can't be made thread-safe"
+        feedback: "Confinement plus locking makes the set safe to use."
+    explanation: |
+      The set is safe; the `Person` objects in it are a separate question — they must be thread-safe themselves, or guarded separately.
+
+  - type: choice
+    id: listing-4-3
+    prompt: |
+      **Listing 4.3** · Why guard `widget` with a private lock object instead of `this`?
+    code: |
+      public class PrivateLock {
+          private final Object myLock = new Object();
+          @GuardedBy("myLock") Widget widget;
+
+          void someMethod() {
+              synchronized (myLock) {
+                  // Access or modify the state of widget
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Client code can't take the lock, so it can't break the locking policy or cause liveness problems"
+        correct: true
+      - text: "It's faster than `synchronized` methods"
+        feedback: "It performs the same; the gain is encapsulation."
+      - text: "`this` can't be used as a lock"
+        feedback: "It can — that's what `synchronized` methods do."
+
+  - type: choice
+    id: listing-4-4
+    prompt: |
+      **Listing 4.4** · Is `MonitorVehicleTracker` thread-safe, given that `MutablePoint` isn't?
+    code: |
+      public class MonitorVehicleTracker {
+          @GuardedBy("this") private final Map<String, MutablePoint> locations;
+
+          public MonitorVehicleTracker(Map<String, MutablePoint> locations) {
+              this.locations = deepCopy(locations);
+          }
+
+          public synchronized Map<String, MutablePoint> getLocations() {
+              return deepCopy(locations);
+          }
+
+          public synchronized MutablePoint getLocation(String id) {
+              MutablePoint loc = locations.get(id);
+              return loc == null ? null : new MutablePoint(loc);
+          }
+
+          public synchronized void setLocation(String id, int x, int y) {
+              MutablePoint loc = locations.get(id);
+              if (loc == null)
+                  throw new IllegalArgumentException("No such ID: " + id);
+              loc.x = x;
+              loc.y = y;
+          }
+
+          private static Map<String, MutablePoint> deepCopy(Map<String, MutablePoint> m) {
+              Map<String, MutablePoint> result = new HashMap<String, MutablePoint>();
+
+              for (String id : m.keySet())
+                  result.put(id, new MutablePoint(m.get(id)));
+
+              return Collections.unmodifiableMap(result);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — every point is copied in and out, so callers never touch the stored ones"
+        correct: true
+      - text: "Copying the whole map in `getLocations` can be slow with many vehicles"
+        correct: true
+      - text: "No — callers can change the stored points through `getLocation`"
+        feedback: "`getLocation` returns a new `MutablePoint`, not the stored one."
+
+  - type: choice
+    id: listing-4-5
+    prompt: |
+      **Listing 4.5** · Can a `MutablePoint` be safely shared between threads as it is?
+    code: |
+      public class MutablePoint {
+          public int x, y;
+
+          public MutablePoint() {
+              x = 0;
+              y = 0;
+          }
+
+          public MutablePoint(MutablePoint p) {
+              this.x = p.x;
+              this.y = p.y;
+          }
+      }
+    language: java
+    options:
+      - text: "No — its fields are public and mutable, with no locking"
+        correct: true
+      - text: "Yes — `x` and `y` are `int`s, which are written atomically"
+        feedback: "Each write is atomic, but a reader can see a new `x` with an old `y` — or stale values altogether."

@@ -58,6 +58,14 @@ course per chapter: one lesson for each of Effective Java's 90 items, and one le
 major section of JCIP's 16 chapters (61 lessons, ending with a follow-up on Java 21 virtual
 threads). Each lesson has a short explanation and practice exercises.
 
+Every one of JCIP's 197 code listings is also an exercise (step ids `listing-<chapter>-<n>`),
+placed in the lesson for its section: read the code, then say whether it's safe, what goes
+wrong, or what it prints. The listings come from the book's companion code at jcip.net, which
+its authors released into the public domain; Javadoc and fragment listings were written out
+from the book, and a few known slips in the online copies are corrected. When a lesson would
+pass 15 steps, its extra listings move to a follow-on "…: in code" lesson that opens with a
+recap of the lesson's ideas (`splitlong` in the authoring scripts does this).
+
 | Topic | Books |
 |---|---|
 | Effective Java | *Effective Java*, 3rd ed. (Bloch) — every item |

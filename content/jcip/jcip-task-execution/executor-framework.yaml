@@ -72,3 +72,210 @@ steps:
     prompt: Start a graceful shutdown.
     template: "exec.[[shutdown]](); exec.awaitTermination(30, TimeUnit.SECONDS);"
     code: true
+
+  - type: choice
+    id: listing-6-3
+    prompt: |
+      **Listing 6.3** · Code submits tasks through `Executor`. What does it leave to the implementation?
+    code: |
+      public interface Executor {
+          void execute(Runnable command);
+      }
+    language: java
+    options:
+      - text: "Which thread runs each task, when, and how many at once"
+        correct: true
+      - text: "Nothing — `execute` always starts a new thread"
+        feedback: "An executor may queue, pool, or even run tasks in the caller's thread."
+      - text: "Returning the task's result"
+        feedback: "`execute` returns nothing; `ExecutorService.submit` returns a `Future`."
+
+  - type: choice
+    id: listing-6-4
+    prompt: |
+      **Listing 6.4** · How does this server behave under a burst of 10,000 requests?
+    code: |
+      public class TaskExecutionWebServer {
+          private static final int NTHREADS = 100;
+          private static final Executor exec
+                  = Executors.newFixedThreadPool(NTHREADS);
+
+          public static void main(String[] args) throws IOException {
+              ServerSocket socket = new ServerSocket(80);
+              while (true) {
+                  final Socket connection = socket.accept();
+                  Runnable task = new Runnable() {
+                      public void run() {
+                          handleRequest(connection);
+                      }
+                  };
+                  exec.execute(task);
+              }
+          }
+
+          private static void handleRequest(Socket connection) {
+              // request-handling logic here
+          }
+      }
+    language: java
+    options:
+      - text: "At most 100 run at once; the rest wait in the pool's queue"
+        correct: true
+      - text: "It creates a thread per request"
+        feedback: "A fixed pool reuses its 100 threads."
+      - text: "Requests beyond 100 are rejected"
+        feedback: "`newFixedThreadPool` uses an unbounded queue."
+
+  - type: choice
+    id: listing-6-5
+    prompt: |
+      **Listing 6.5** · Swapping this executor into the server in 6.4 makes it behave like which earlier version?
+    code: |
+      public class ThreadPerTaskExecutor implements Executor {
+          public void execute(Runnable r) {
+              new Thread(r).start();
+          };
+      }
+    language: java
+    options:
+      - text: "The thread-per-task server"
+        correct: true
+      - text: "The single-threaded server"
+        feedback: "That's what an executor running tasks in the caller's thread does."
+      - text: "The fixed pool"
+        feedback: "Nothing bounds the number of threads here."
+
+  - type: choice
+    id: listing-6-6
+    prompt: |
+      **Listing 6.6** · Swapping this executor into the server in 6.4 makes it behave like which earlier version?
+    code: |
+      public class WithinThreadExecutor implements Executor {
+          public void execute(Runnable r) {
+              r.run();
+          };
+      }
+    language: java
+    options:
+      - text: "The single-threaded server"
+        correct: true
+      - text: "The thread-per-task server"
+        feedback: "`r.run()` runs the task in the calling thread."
+      - text: "A fixed pool of one"
+        feedback: "There's no separate thread or queue — the caller does the work."
+
+  - type: choice
+    id: listing-6-7
+    prompt: |
+      **Listing 6.7** · What's the difference between `shutdown` and `shutdownNow`?
+    code: |
+      public interface ExecutorService extends Executor {
+          void shutdown();
+          List<Runnable> shutdownNow();
+          boolean isShutdown();
+          boolean isTerminated();
+          boolean awaitTermination(long timeout, TimeUnit unit)
+              throws InterruptedException;
+          // ... additional convenience methods for task submission
+      }
+    language: java
+    options:
+      - text: "`shutdown` lets queued and running tasks finish; `shutdownNow` interrupts running tasks and returns the queued ones"
+        correct: true
+      - text: "`shutdown` waits for termination; `shutdownNow` doesn't"
+        feedback: "Neither waits — use `awaitTermination` for that."
+      - text: "They do the same thing"
+        feedback: "`shutdownNow` cancels queued tasks and interrupts running ones."
+
+  - type: choice
+    id: listing-6-8
+    prompt: |
+      **Listing 6.8** · A request arrives just after `stop()` is called. What happens?
+    code: |
+      public class LifecycleWebServer {
+          private final ExecutorService exec = Executors.newCachedThreadPool();
+
+          public void start() throws IOException {
+              ServerSocket socket = new ServerSocket(80);
+              while (!exec.isShutdown()) {
+                  try {
+                      final Socket conn = socket.accept();
+                      exec.execute(new Runnable() {
+                          public void run() {
+                              handleRequest(conn);
+                          }
+                      });
+                  } catch (RejectedExecutionException e) {
+                      if (!exec.isShutdown())
+                          log("task submission rejected", e);
+                  }
+              }
+          }
+
+          public void stop() {
+              exec.shutdown();
+          }
+
+          private void log(String msg, Exception e) {
+              Logger.getAnonymousLogger().log(Level.WARNING, msg, e);
+          }
+
+          void handleRequest(Socket connection) {
+              Request req = readRequest(connection);
+              if (isShutdownRequest(req))
+                  stop();
+              else
+                  dispatchRequest(req);
+          }
+
+          interface Request {
+          }
+
+          private Request readRequest(Socket s) {
+              return null;
+          }
+
+          private void dispatchRequest(Request r) {
+          }
+
+          private boolean isShutdownRequest(Request r) {
+              return false;
+          }
+      }
+    language: java
+    options:
+      - text: "`execute` rejects it, and the server doesn't log the rejection because it's shutting down"
+        correct: true
+      - text: "The loop ends at the next check of `isShutdown()`"
+        correct: true
+      - text: "It's queued and handled later"
+        feedback: "A shut-down executor rejects new tasks."
+
+  - type: choice
+    id: listing-6-9
+    prompt: |
+      **Listing 6.9** · What happens when this program runs?
+    code: |
+      public class OutOfTime {
+          public static void main(String[] args) throws Exception {
+              Timer timer = new Timer();
+              timer.schedule(new ThrowTask(), 1);
+              SECONDS.sleep(1);
+              timer.schedule(new ThrowTask(), 1);
+              SECONDS.sleep(5);
+          }
+
+          static class ThrowTask extends TimerTask {
+              public void run() {
+                  throw new RuntimeException();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "It ends after about 1 second, with `IllegalStateException: Timer already cancelled`"
+        correct: true
+      - text: "It runs 6 seconds, with two `RuntimeException`s"
+        feedback: "The first exception kills the Timer's only thread, so the second `schedule` fails."
+      - text: "It runs 6 seconds and ignores the exceptions"
+        feedback: "An exception in a TimerTask cancels the whole Timer."

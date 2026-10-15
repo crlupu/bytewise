@@ -62,3 +62,111 @@ steps:
     prompt: Wait on an explicit condition.
     template: "while (count == 0) notEmpty.[[await]]();"
     code: true
+
+  - type: choice
+    id: listing-14-10
+    prompt: |
+      **Listing 14.10** · What's the advantage of `Condition` over `wait`/`notify`?
+    code: |
+      public interface Condition {
+          void await() throws InterruptedException;
+          boolean await(long time, TimeUnit unit)
+              throws InterruptedException;
+          long awaitNanos(long nanosTimeout) throws InterruptedException;
+          void awaitUninterruptibly();
+          boolean awaitUntil(Date deadline) throws InterruptedException;
+
+          void signal();
+          void signalAll();
+      }
+    language: java
+    options:
+      - text: "A lock can have several conditions, so each kind of waiter gets its own queue"
+        correct: true
+      - text: "`await` doesn't need the lock"
+        feedback: "You must hold the associated lock."
+      - text: "No spurious wakeups"
+        feedback: "`await` can still wake spuriously — always loop."
+    explanation: |
+      Careful: `Condition` objects also have `wait`/`notify` from `Object` — calling those by mistake is a classic bug.
+
+  - type: choice
+    id: listing-14-11
+    prompt: |
+      **Listing 14.11** · Why can this buffer use `signal()` instead of `signalAll()`?
+    code: |
+      public void put(T x) throws InterruptedException {
+          lock.lock();
+          try {
+              while (count == items.length)
+                  notFull.await();
+              items[tail] = x;
+              if (++tail == items.length)
+                  tail = 0;
+              ++count;
+              notEmpty.signal();
+          } finally {
+              lock.unlock();
+          }
+      }
+
+      public T take() throws InterruptedException {
+          lock.lock();
+          try {
+              while (count == 0)
+                  notEmpty.await();
+              T x = items[head];
+              items[head] = null;
+              if (++head == items.length)
+                  head = 0;
+              --count;
+              notFull.signal();
+              return x;
+          } finally {
+              lock.unlock();
+          }
+      }
+    language: java
+    options:
+      - text: "Each condition has one kind of waiter, and each put or take enables exactly one of them"
+        correct: true
+      - text: "It can't — it may lose wakeups"
+        feedback: "Separate conditions make single notification safe."
+      - text: "`signal` wakes everyone"
+        feedback: "`signal` wakes one waiter."
+
+  - type: choice
+    id: listing-14-12
+    prompt: |
+      **Listing 14.12** · `SemaphoreOnLock(0)`. Thread A calls `acquire()`, then thread B calls `release()`. What happens?
+    code: |
+      public void acquire() throws InterruptedException {
+          lock.lock();
+          try {
+              while (permits <= 0)
+                  permitsAvailable.await();
+              --permits;
+          } finally {
+              lock.unlock();
+          }
+      }
+
+      public void release() {
+          lock.lock();
+          try {
+              ++permits;
+              permitsAvailable.signal();
+          } finally {
+              lock.unlock();
+          }
+      }
+    language: java
+    options:
+      - text: "A wakes, takes the permit and returns; permits is back to 0"
+        correct: true
+      - text: "A stays blocked"
+        feedback: "`signal` wakes it and permits is now 1."
+      - text: "B blocks until A finishes"
+        feedback: "`await` releases the lock, so B can take it."
+    explanation: |
+      A semaphore can be built on a lock and a lock on a semaphore — in practice both are built on AQS.

@@ -69,3 +69,223 @@ steps:
         correct: true
       - text: Never
         feedback: Publishing a thread-safe, unconstrained variable is fine — callers can't put it into an invalid state.
+
+  - type: choice
+    id: listing-4-6
+    prompt: |
+      **Listing 4.6** · Can a `Point` be shared freely between threads?
+    code: |
+      public class Point {
+          public final int x, y;
+
+          public Point(int x, int y) {
+              this.x = x;
+              this.y = y;
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — it's immutable, with `final` fields"
+        correct: true
+      - text: "No — its fields are public"
+        feedback: "Public `final` fields can't be changed, so there's nothing to protect."
+
+  - type: choice
+    id: listing-4-7
+    prompt: |
+      **Listing 4.7** · Is `DelegatingVehicleTracker` thread-safe, with no locks of its own?
+    code: |
+      public class DelegatingVehicleTracker {
+          private final ConcurrentMap<String, Point> locations;
+          private final Map<String, Point> unmodifiableMap;
+
+          public DelegatingVehicleTracker(Map<String, Point> points) {
+              locations = new ConcurrentHashMap<String, Point>(points);
+              unmodifiableMap = Collections.unmodifiableMap(locations);
+          }
+
+          public Map<String, Point> getLocations() {
+              return unmodifiableMap;
+          }
+
+          public Point getLocation(String id) {
+              return locations.get(id);
+          }
+
+          public void setLocation(String id, int x, int y) {
+              if (locations.replace(id, new Point(x, y)) == null)
+                  throw new IllegalArgumentException("invalid vehicle name: " + id);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — it delegates to a `ConcurrentHashMap` of immutable `Point`s"
+        correct: true
+      - text: "`getLocations` returns a live view that reflects later changes"
+        correct: true
+      - text: "No — `setLocation` checks then acts"
+        feedback: "`replace` is a single atomic operation."
+
+  - type: choice
+    id: listing-4-8
+    prompt: |
+      **Listing 4.8** · How does this `getLocations` differ from returning `Collections.unmodifiableMap(locations)`?
+    code: |
+      public Map<String, Point> getLocations() {
+          return Collections.unmodifiableMap(
+                  new HashMap<String, Point>(locations));
+      }
+    language: java
+    options:
+      - text: "It returns a snapshot that won't change as vehicles move"
+        correct: true
+      - text: "It returns a live view of the current locations"
+        feedback: "It copies the map first, so later updates don't show."
+      - text: "It's no longer thread-safe"
+        feedback: "Copying a `ConcurrentHashMap` is safe; the copy is never shared mutably."
+
+  - type: choice
+    id: listing-4-9
+    prompt: |
+      **Listing 4.9** · Is `VisualComponent` thread-safe, with no locks of its own?
+    code: |
+      public class VisualComponent {
+          private final List<KeyListener> keyListeners
+                  = new CopyOnWriteArrayList<KeyListener>();
+          private final List<MouseListener> mouseListeners
+                  = new CopyOnWriteArrayList<MouseListener>();
+
+          public void addKeyListener(KeyListener listener) {
+              keyListeners.add(listener);
+          }
+
+          public void addMouseListener(MouseListener listener) {
+              mouseListeners.add(listener);
+          }
+
+          public void removeKeyListener(KeyListener listener) {
+              keyListeners.remove(listener);
+          }
+
+          public void removeMouseListener(MouseListener listener) {
+              mouseListeners.remove(listener);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — the two lists are independent and each is thread-safe"
+        correct: true
+      - text: "No — adding to both lists needs one lock"
+        feedback: "No invariant ties the two lists together, so each can be safe on its own."
+
+  - type: choice
+    id: listing-4-10
+    prompt: |
+      **Listing 4.10** · Range (0, 10). One thread calls `setLower(5)` while another calls `setUpper(4)`. What can happen?
+    code: |
+      public class NumberRange {
+          // INVARIANT: lower <= upper
+          private final AtomicInteger lower = new AtomicInteger(0);
+          private final AtomicInteger upper = new AtomicInteger(0);
+
+          public void setLower(int i) {
+              if (i > upper.get())
+                  throw new IllegalArgumentException("can't set lower to " + i + " > upper");
+              lower.set(i);
+          }
+
+          public void setUpper(int i) {
+              if (i < lower.get())
+                  throw new IllegalArgumentException("can't set upper to " + i + " < lower");
+              upper.set(i);
+          }
+
+          public boolean isInRange(int i) {
+              return (i >= lower.get() && i <= upper.get());
+          }
+      }
+    language: java
+    options:
+      - text: "Both succeed, leaving the invalid range (5, 4)"
+        correct: true
+      - text: "One of them always throws"
+        feedback: "Each check reads the other bound before the other thread has written it."
+      - text: "It's safe — each bound is an `AtomicInteger`"
+        feedback: "The invariant links the two variables, so each check-then-act must be atomic across both."
+
+  - type: choice
+    id: listing-4-11
+    prompt: |
+      **Listing 4.11** · Why does `SafePoint` have a `get()` returning both coordinates, and a private constructor taking an array?
+    code: |
+      public class SafePoint {
+          @GuardedBy("this") private int x, y;
+
+          private SafePoint(int[] a) {
+              this(a[0], a[1]);
+          }
+
+          public SafePoint(SafePoint p) {
+              this(p.get());
+          }
+
+          public SafePoint(int x, int y) {
+              this.set(x, y);
+          }
+
+          public synchronized int[] get() {
+              return new int[]{x, y};
+          }
+
+          public synchronized void set(int x, int y) {
+              this.x = x;
+              this.y = y;
+          }
+      }
+    language: java
+    options:
+      - text: "So a copy reads x and y together, under one lock"
+        correct: true
+      - text: "Separate `getX()` and `getY()` would let a copy mix an old x with a new y"
+        correct: true
+      - text: "Arrays are faster than two fields"
+        feedback: "It's about reading both values atomically."
+    explanation: |
+      The private array constructor avoids the race that `this(p.x, p.y)` would have — the private constructor capture idiom.
+
+  - type: choice
+    id: listing-4-12
+    prompt: |
+      **Listing 4.12** · Is `PublishingVehicleTracker` thread-safe?
+    code: |
+      public class PublishingVehicleTracker {
+          private final Map<String, SafePoint> locations;
+          private final Map<String, SafePoint> unmodifiableMap;
+
+          public PublishingVehicleTracker(Map<String, SafePoint> locations) {
+              this.locations = new ConcurrentHashMap<String, SafePoint>(locations);
+              this.unmodifiableMap = Collections.unmodifiableMap(this.locations);
+          }
+
+          public Map<String, SafePoint> getLocations() {
+              return unmodifiableMap;
+          }
+
+          public SafePoint getLocation(String id) {
+              return locations.get(id);
+          }
+
+          public void setLocation(String id, int x, int y) {
+              if (!locations.containsKey(id))
+                  throw new IllegalArgumentException("invalid vehicle name: " + id);
+              locations.get(id).set(x, y);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — the map is concurrent and each `SafePoint` is thread-safe"
+        correct: true
+      - text: "Callers can move vehicles through the points they get back"
+        correct: true
+      - text: "No — the `SafePoint`s are mutable"
+        feedback: "Mutable is fine when they're thread-safe and publishing them is part of the design."

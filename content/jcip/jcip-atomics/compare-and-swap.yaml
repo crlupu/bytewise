@@ -85,3 +85,47 @@ steps:
         right: Proceed hoping for no interference; detect it and retry if there was
       - left: Pessimistic concurrency
         right: Prevent interference up front, by locking
+
+  - type: choice
+    id: listing-15-1
+    prompt: |
+      **Listing 15.1** · `value` is 5. What do `compareAndSwap(4, 9)` and then `compareAndSwap(5, 9)` return, and what's `value` afterwards?
+    code: |
+      public synchronized int compareAndSwap(int expectedValue,
+                                             int newValue) {
+          int oldValue = value;
+          if (oldValue == expectedValue)
+              value = newValue;
+          return oldValue;
+      }
+    language: java
+    options:
+      - text: "5 then 5; value is 9"
+        correct: true
+      - text: "4 then 5; value is 9"
+        feedback: "It returns the value it found, not the expected one."
+      - text: "5 then 9; value is 9"
+        feedback: "It returns the old value, before the swap."
+      - text: "false then true; value is 9"
+        feedback: "`compareAndSwap` returns the old value; `compareAndSet` returns a boolean."
+
+  - type: choice
+    id: listing-15-2
+    prompt: |
+      **Listing 15.2** · Two threads call `increment()` at once on a counter at 0. What's the result?
+    code: |
+      public int increment() {
+          int v;
+          do {
+              v = value.get();
+          } while (v != value.compareAndSwap(v, v + 1));
+          return v + 1;
+      }
+    language: java
+    options:
+      - text: "One returns 1, the other retries and returns 2"
+        correct: true
+      - text: "Both may return 1"
+        feedback: "Only one CAS from 0 succeeds; the other sees a different value and retries."
+      - text: "One blocks until the other finishes"
+        feedback: "Nonblocking: the loser just loops."

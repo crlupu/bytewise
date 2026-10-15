@@ -74,3 +74,29 @@ steps:
         correct: true
       - text: Volatile is a faster lock
         feedback: It provides no mutual exclusion at all.
+
+  - type: choice
+    id: listing-3-4
+    prompt: |
+      **Listing 3.4** · Another thread sets `asleep = true`. What happens to the loop in `tryToSleep`?
+    code: |
+      public class CountingSheep {
+          volatile boolean asleep;
+
+          void tryToSleep() {
+              while (!asleep)
+                  countSomeSheep();
+          }
+
+          void countSomeSheep() {
+              // One, two, three...
+          }
+      }
+    language: java
+    options:
+      - text: "It sees the change and stops"
+        correct: true
+      - text: "It may loop forever on a cached value"
+        feedback: "`asleep` is `volatile`, so every read sees the latest write."
+      - text: "It throws `ConcurrentModificationException`"
+        feedback: "That's for collections changed during iteration."

@@ -53,3 +53,70 @@ steps:
     prompt: Install a handler for a thread.
     template: "t.[[setUncaughtExceptionHandler]]((thread, e) -> log.severe(\"Thread \" + thread + \" died: \" + e));"
     code: true
+
+  - type: choice
+    id: listing-7-23
+    prompt: |
+      **Listing 7.23** · `runTask` throws a `RuntimeException`. What happens?
+    code: |
+      public void run() {
+          Throwable thrown = null;
+          try {
+              while (!isInterrupted())
+                  runTask(getTaskFromWorkQueue());
+          } catch (Throwable e) {
+              thrown = e;
+          } finally {
+              threadExited(this, thrown);
+          }
+      }
+    language: java
+    options:
+      - text: "The worker exits and tells the pool via `threadExited`, which can replace it"
+        correct: true
+      - text: "The exception is swallowed and the worker takes the next task"
+        feedback: "The catch is outside the loop, so the loop ends."
+      - text: "The JVM exits"
+        feedback: "An uncaught exception only ends that thread."
+
+  - type: choice
+    id: listing-7-24
+    prompt: |
+      **Listing 7.24** · What does this print?
+    code: |
+      Thread t = new Thread(() -> { throw new IllegalStateException("boom"); });
+      t.setUncaughtExceptionHandler((th, e) ->
+          System.out.println("caught " + e.getMessage()));
+      t.start();
+      t.join();
+      System.out.println("main done");
+    language: java
+    options:
+      - text: "caught boom, then main done"
+        correct: true
+      - text: "A stack trace, then main done"
+        feedback: "The handler replaces the default stack trace printing."
+      - text: "main done only"
+        feedback: "The handler runs in the dying thread before `join` returns."
+      - text: "The exception propagates to main"
+        feedback: "Exceptions don't cross threads; `join` just waits."
+
+  - type: choice
+    id: listing-7-25
+    prompt: |
+      **Listing 7.25** · A task submitted with `ExecutorService.submit` throws. Does this handler see it?
+    code: |
+      public class UEHLogger implements Thread.UncaughtExceptionHandler {
+          public void uncaughtException(Thread t, Throwable e) {
+              Logger logger = Logger.getAnonymousLogger();
+              logger.log(Level.SEVERE, "Thread terminated with exception: " + t.getName(), e);
+          }
+      }
+    language: java
+    options:
+      - text: "No — `submit` captures it in the `Future`; `get()` rethrows it in an `ExecutionException`"
+        correct: true
+      - text: "Yes — every exception in a pool thread reaches the handler"
+        feedback: "Only tasks run with `execute` let the exception escape the thread."
+      - text: "Yes, but only for checked exceptions"
+        feedback: "`submit` captures both checked and unchecked."

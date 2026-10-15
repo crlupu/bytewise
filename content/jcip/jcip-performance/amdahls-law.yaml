@@ -75,3 +75,37 @@ steps:
         correct: true
       - text: The concurrent one uses less memory
     explanation: Reducing the serialised fraction is what scalability work is about.
+
+  - type: choice
+    id: listing-11-1
+    prompt: |
+      **Listing 11.1** · Many worker threads run this loop over one shared queue. Which part is serial?
+    code: |
+      public class WorkerThread extends Thread {
+          private final BlockingQueue<Runnable> queue;
+
+          public WorkerThread(BlockingQueue<Runnable> queue) {
+              this.queue = queue;
+          }
+
+          public void run() {
+              while (true) {
+                  try {
+                      Runnable task = queue.take();
+                      task.run();
+                  } catch (InterruptedException e) {
+                      break; /* Allow thread to exit */
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Taking from the shared queue — workers contend for it"
+        correct: true
+      - text: "Nothing — each task runs independently"
+        feedback: "The queue is shared, so `take()` coordinates every worker."
+      - text: "Only `task.run()`"
+        feedback: "That's the parallel part."
+    explanation: |
+      Every concurrent program has some serial portion; Amdahl's law caps the speedup by it.

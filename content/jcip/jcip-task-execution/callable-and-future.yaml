@@ -74,3 +74,354 @@ steps:
     prompt: Wait for a result with a time budget.
     template: "ad = f.get(timeLeftNanos, TimeUnit.[[NANOSECONDS]]);"
     code: true
+
+  - type: choice
+    id: listing-6-10
+    prompt: |
+      **Listing 6.10** · What's slow about rendering the page this way?
+    code: |
+      public abstract class SingleThreadRenderer {
+          void renderPage(CharSequence source) {
+              renderText(source);
+              List<ImageData> imageData = new ArrayList<ImageData>();
+              for (ImageInfo imageInfo : scanForImageInfo(source))
+                  imageData.add(imageInfo.downloadImage());
+              for (ImageData data : imageData)
+                  renderImage(data);
+          }
+
+          interface ImageData {
+          }
+
+          interface ImageInfo {
+              ImageData downloadImage();
+          }
+
+          abstract void renderText(CharSequence s);
+          abstract List<ImageInfo> scanForImageInfo(CharSequence s);
+          abstract void renderImage(ImageData i);
+      }
+    language: java
+    options:
+      - text: "All images download one after another, after the text, with the CPU mostly idle"
+        correct: true
+      - text: "It renders text twice"
+        feedback: "Text is rendered once, before any image is downloaded."
+      - text: "It isn't thread-safe"
+        feedback: "It's single-threaded."
+
+  - type: choice
+    id: listing-6-11
+    prompt: |
+      **Listing 6.11** · What can a `Callable` do that a `Runnable` can't?
+    code: |
+      public interface Callable<V> {
+          V call() throws Exception;
+      }
+
+      public interface Future<V> {
+          boolean cancel(boolean mayInterruptIfRunning);
+          boolean isCancelled();
+          boolean isDone();
+          V get() throws InterruptedException, ExecutionException,
+                         CancellationException;
+          V get(long timeout, TimeUnit unit)
+              throws InterruptedException, ExecutionException,
+                     CancellationException, TimeoutException;
+      }
+    language: java
+    options:
+      - text: "Return a result"
+        correct: true
+      - text: "Throw a checked exception"
+        correct: true
+      - text: "Run on a thread"
+        feedback: "Both can be run on threads or executors."
+
+  - type: choice
+    id: listing-6-12
+    prompt: |
+      **Listing 6.12** · `submit(task)` on a `ThreadPoolExecutor` calls this. What does `submit` return?
+    code: |
+      protected <T> RunnableFuture<T> newTaskFor(Callable<T> task) {
+          return new FutureTask<T>(task);
+      }
+    language: java
+    options:
+      - text: "The `FutureTask`, which is both the task the pool runs and the `Future` the caller waits on"
+        correct: true
+      - text: "A new thread"
+        feedback: "It's a task object; the pool decides the thread."
+      - text: "The `Callable` itself"
+        feedback: "It's wrapped in a `FutureTask`."
+
+  - type: choice
+    id: listing-6-13
+    prompt: |
+      **Listing 6.13** · How much faster is this than rendering sequentially, if downloading images takes far longer than rendering text?
+    code: |
+      public abstract class FutureRenderer {
+          private final ExecutorService executor = Executors.newCachedThreadPool();
+
+          void renderPage(CharSequence source) {
+              final List<ImageInfo> imageInfos = scanForImageInfo(source);
+              Callable<List<ImageData>> task =
+                      new Callable<List<ImageData>>() {
+                          public List<ImageData> call() {
+                              List<ImageData> result = new ArrayList<ImageData>();
+                              for (ImageInfo imageInfo : imageInfos)
+                                  result.add(imageInfo.downloadImage());
+                              return result;
+                          }
+                      };
+
+              Future<List<ImageData>> future = executor.submit(task);
+              renderText(source);
+
+              try {
+                  List<ImageData> imageData = future.get();
+                  for (ImageData data : imageData)
+                      renderImage(data);
+              } catch (InterruptedException e) {
+                  // Re-assert the thread's interrupted status
+                  Thread.currentThread().interrupt();
+                  // We don't need the result, so cancel the task too
+                  future.cancel(true);
+              } catch (ExecutionException e) {
+                  throw launderThrowable(e.getCause());
+              }
+          }
+
+          interface ImageData {
+          }
+
+          interface ImageInfo {
+              ImageData downloadImage();
+          }
+
+          abstract void renderText(CharSequence s);
+
+          abstract List<ImageInfo> scanForImageInfo(CharSequence s);
+
+          abstract void renderImage(ImageData i);
+      }
+    language: java
+    options:
+      - text: "Only a little — text renders while images download, but the images still come one after another"
+        correct: true
+      - text: "Much faster — all images download in parallel"
+        feedback: "One task downloads all the images, sequentially."
+      - text: "Slower"
+        feedback: "Text rendering now overlaps the downloads."
+
+  - type: choice
+    id: listing-6-14
+    prompt: |
+      **Listing 6.14** · How does `ExecutorCompletionService` hand back results as they finish?
+    code: |
+      private class QueueingFuture<V> extends FutureTask<V> {
+          QueueingFuture(Callable<V> c) { super(c); }
+          QueueingFuture(Runnable t, V r) { super(t, r); }
+
+          protected void done() {
+              completionQueue.add(this);
+          }
+      }
+    language: java
+    options:
+      - text: "Each task's `done()` puts it on a queue, which `take()` reads from"
+        correct: true
+      - text: "It polls each future in turn"
+        feedback: "Completion pushes the future onto the queue; nothing polls."
+      - text: "Results come back in submission order"
+        feedback: "They come back in completion order."
+
+  - type: choice
+    id: listing-6-15
+    prompt: |
+      **Listing 6.15** · In what order are the images rendered?
+    code: |
+      public abstract class Renderer {
+          private final ExecutorService executor;
+
+          Renderer(ExecutorService executor) {
+              this.executor = executor;
+          }
+
+          void renderPage(CharSequence source) {
+              final List<ImageInfo> info = scanForImageInfo(source);
+              CompletionService<ImageData> completionService =
+                      new ExecutorCompletionService<ImageData>(executor);
+              for (final ImageInfo imageInfo : info)
+                  completionService.submit(new Callable<ImageData>() {
+                      public ImageData call() {
+                          return imageInfo.downloadImage();
+                      }
+                  });
+
+              renderText(source);
+
+              try {
+                  for (int t = 0, n = info.size(); t < n; t++) {
+                      Future<ImageData> f = completionService.take();
+                      ImageData imageData = f.get();
+                      renderImage(imageData);
+                  }
+              } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+              } catch (ExecutionException e) {
+                  throw launderThrowable(e.getCause());
+              }
+          }
+
+          interface ImageData {
+          }
+
+          interface ImageInfo {
+              ImageData downloadImage();
+          }
+
+          abstract void renderText(CharSequence s);
+
+          abstract List<ImageInfo> scanForImageInfo(CharSequence s);
+
+          abstract void renderImage(ImageData i);
+      }
+    language: java
+    options:
+      - text: "As each finishes downloading, in whatever order that is"
+        correct: true
+      - text: "In the order they appear in the page"
+        feedback: "`completionService.take()` returns whichever task finished next."
+      - text: "All at once, after every download finishes"
+        feedback: "Each is rendered as soon as it's ready."
+
+  - type: choice
+    id: listing-6-16
+    prompt: |
+      **Listing 6.16** · The ad takes longer than the time budget. What happens?
+    code: |
+      public class RenderWithTimeBudget {
+          private static final Ad DEFAULT_AD = new Ad();
+          private static final long TIME_BUDGET = 1000;
+          private static final ExecutorService exec = Executors.newCachedThreadPool();
+
+          Page renderPageWithAd() throws InterruptedException {
+              long endNanos = System.nanoTime() + TIME_BUDGET;
+              Future<Ad> f = exec.submit(new FetchAdTask());
+              // Render the page while waiting for the ad
+              Page page = renderPageBody();
+              Ad ad;
+              try {
+                  // Only wait for the remaining time budget
+                  long timeLeft = endNanos - System.nanoTime();
+                  ad = f.get(timeLeft, NANOSECONDS);
+              } catch (ExecutionException e) {
+                  ad = DEFAULT_AD;
+              } catch (TimeoutException e) {
+                  ad = DEFAULT_AD;
+                  f.cancel(true);
+              }
+              page.setAd(ad);
+              return page;
+          }
+
+          Page renderPageBody() { return new Page(); }
+
+          static class Ad {
+          }
+
+          static class Page {
+              public void setAd(Ad ad) { }
+          }
+
+          static class FetchAdTask implements Callable<Ad> {
+              public Ad call() {
+                  return new Ad();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "The page gets the default ad, and the ad task is cancelled"
+        correct: true
+      - text: "The page waits for the ad"
+        feedback: "`get` waits only for the time left."
+      - text: "The ad task keeps running in the background"
+        feedback: "`f.cancel(true)` interrupts it."
+
+  - type: choice
+    id: listing-6-17
+    prompt: |
+      **Listing 6.17** · Some companies don't answer within the time limit. What do they contribute to the list?
+    code: |
+      public class TimeBudget {
+          private static ExecutorService exec = Executors.newCachedThreadPool();
+
+          public List<TravelQuote> getRankedTravelQuotes(TravelInfo travelInfo, Set<TravelCompany> companies,
+                                                         Comparator<TravelQuote> ranking, long time, TimeUnit unit)
+                  throws InterruptedException {
+              List<QuoteTask> tasks = new ArrayList<QuoteTask>();
+              for (TravelCompany company : companies)
+                  tasks.add(new QuoteTask(company, travelInfo));
+
+              List<Future<TravelQuote>> futures = exec.invokeAll(tasks, time, unit);
+
+              List<TravelQuote> quotes =
+                      new ArrayList<TravelQuote>(tasks.size());
+              Iterator<QuoteTask> taskIter = tasks.iterator();
+              for (Future<TravelQuote> f : futures) {
+                  QuoteTask task = taskIter.next();
+                  try {
+                      quotes.add(f.get());
+                  } catch (ExecutionException e) {
+                      quotes.add(task.getFailureQuote(e.getCause()));
+                  } catch (CancellationException e) {
+                      quotes.add(task.getTimeoutQuote(e));
+                  }
+              }
+
+              Collections.sort(quotes, ranking);
+              return quotes;
+          }
+      }
+
+      class QuoteTask implements Callable<TravelQuote> {
+          private final TravelCompany company;
+          private final TravelInfo travelInfo;
+
+          public QuoteTask(TravelCompany company, TravelInfo travelInfo) {
+              this.company = company;
+              this.travelInfo = travelInfo;
+          }
+
+          TravelQuote getFailureQuote(Throwable t) {
+              return null;
+          }
+
+          TravelQuote getTimeoutQuote(CancellationException e) {
+              return null;
+          }
+
+          public TravelQuote call() throws Exception {
+              return company.solicitQuote(travelInfo);
+          }
+      }
+
+      interface TravelCompany {
+          TravelQuote solicitQuote(TravelInfo travelInfo) throws Exception;
+      }
+
+      interface TravelQuote {
+      }
+
+      interface TravelInfo {
+      }
+    language: java
+    options:
+      - text: "A timeout quote — `invokeAll` cancels them, and `get` throws `CancellationException`"
+        correct: true
+      - text: "Nothing — they're left out"
+        feedback: "Every task has a future; cancelled ones get a timeout quote."
+      - text: "The method waits for them anyway"
+        feedback: "`invokeAll` with a timeout returns when the time is up."

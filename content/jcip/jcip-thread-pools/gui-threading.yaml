@@ -50,3 +50,349 @@ steps:
     prompt: Schedule a UI update from a background thread.
     template: "SwingUtilities.[[invokeLater]](() -> label.setText(\"Done\"));"
     code: true
+
+  - type: choice
+    id: listing-9-1
+    prompt: |
+      **Listing 9.1** · Two `invokeLater` tasks are posted. How do they run?
+    code: |
+      public class SwingUtilities {
+          private static final ExecutorService exec =
+                  Executors.newSingleThreadExecutor(new SwingThreadFactory());
+          private static volatile Thread swingThread;
+
+          private static class SwingThreadFactory implements ThreadFactory {
+              public Thread newThread(Runnable r) {
+                  swingThread = new Thread(r);
+                  return swingThread;
+              }
+          }
+
+          public static boolean isEventDispatchThread() {
+              return Thread.currentThread() == swingThread;
+          }
+
+          public static void invokeLater(Runnable task) {
+              exec.execute(task);
+          }
+
+          public static void invokeAndWait(Runnable task)
+                  throws InterruptedException, InvocationTargetException {
+              Future f = exec.submit(task);
+              try {
+                  f.get();
+              } catch (ExecutionException e) {
+                  throw new InvocationTargetException(e);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "One at a time, in order, on the same thread"
+        correct: true
+      - text: "In parallel on pool threads"
+        feedback: "It's a single-thread executor."
+      - text: "On the caller's thread"
+        feedback: "They're queued to the event thread."
+
+  - type: choice
+    id: listing-9-2
+    prompt: |
+      **Listing 9.2** · `execute(r)` is called from the event thread. What happens?
+    code: |
+      public class GuiExecutor extends AbstractExecutorService {
+          // Singletons have a private constructor and a public factory
+          private static final GuiExecutor instance = new GuiExecutor();
+
+          private GuiExecutor() {
+          }
+
+          public static GuiExecutor instance() {
+              return instance;
+          }
+
+          public void execute(Runnable r) {
+              if (SwingUtilities.isEventDispatchThread())
+                  r.run();
+              else
+                  SwingUtilities.invokeLater(r);
+          }
+
+          public void shutdown() {
+              throw new UnsupportedOperationException();
+          }
+
+          public List<Runnable> shutdownNow() {
+              throw new UnsupportedOperationException();
+          }
+
+          public boolean awaitTermination(long timeout, TimeUnit unit)
+                  throws InterruptedException {
+              throw new UnsupportedOperationException();
+          }
+
+          public boolean isShutdown() {
+              return false;
+          }
+
+          public boolean isTerminated() {
+              return false;
+          }
+      }
+    language: java
+    options:
+      - text: "`r` runs immediately, in place"
+        correct: true
+      - text: "`r` is queued to run later"
+        feedback: "Only callers off the event thread go through `invokeLater`."
+      - text: "`UnsupportedOperationException`"
+        feedback: "Only the shutdown methods throw."
+
+  - type: choice
+    id: listing-9-3
+    prompt: |
+      **Listing 9.3** · Which thread runs `actionPerformed`?
+    code: |
+      final Random random = new Random();
+      final JButton button = new JButton("Change Color");
+      ...
+      button.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              button.setBackground(new Color(random.nextInt()));
+          }
+      });
+    language: java
+    options:
+      - text: "The event dispatch thread — so touching the button there is safe"
+        correct: true
+      - text: "The thread that called `addActionListener`"
+        feedback: "Listeners are called by the event thread."
+      - text: "A new background thread"
+        feedback: "Swing doesn't spawn threads for listeners."
+
+  - type: choice
+    id: listing-9-4
+    prompt: |
+      **Listing 9.4** · The button is clicked. Where does the big computation run?
+    code: |
+      ExecutorService exec = Executors.newCachedThreadPool();
+      ...
+      computeButton.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              exec.execute(new Runnable() {
+                  public void run() { /* Do big computation */ }
+              });
+          }
+      });
+    language: java
+    options:
+      - text: "On a pool thread — the event thread stays free and the UI responsive"
+        correct: true
+      - text: "On the event thread"
+        feedback: "`execute` hands it to the pool."
+    explanation: |
+      There's no feedback though — nothing tells the UI when it's done.
+
+  - type: choice
+    id: listing-9-5
+    prompt: |
+      **Listing 9.5** · Why does the `finally` block go through `GuiExecutor`?
+    code: |
+      button.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              button.setEnabled(false);
+              label.setText("busy");
+              exec.execute(new Runnable() {
+                  public void run() {
+                      try {
+                          /* Do big computation */
+                      } finally {
+                          GuiExecutor.instance().execute(new Runnable() {
+                              public void run() {
+                                  button.setEnabled(true);
+                                  label.setText("idle");
+                              }
+                          });
+                      }
+                  }
+              });
+          }
+      });
+    language: java
+    options:
+      - text: "Swing components may only be touched from the event thread, and this code runs on a pool thread"
+        correct: true
+      - text: "To make the update faster"
+        feedback: "It's about thread confinement."
+      - text: "It isn't needed"
+        feedback: "Calling `setEnabled` from a pool thread breaks Swing's single-thread rule."
+
+  - type: choice
+    id: listing-9-6
+    prompt: |
+      **Listing 9.6** · Why can `runningTask` be a plain field with no lock?
+    code: |
+      Future<?> runningTask = null; // thread-confined
+      ...
+      startButton.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              if (runningTask == null) {
+                  runningTask = exec.submit(new Runnable() {
+                      public void run() {
+                          while (moreWork()) {
+                              if (Thread.currentThread().isInterrupted()) {
+                                  cleanUpPartialWork();
+                                  break;
+                              }
+                              doSomeWork();
+                          }
+                      }
+                  });
+              }
+          }
+      });
+      cancelButton.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent event) {
+              if (runningTask != null)
+                  runningTask.cancel(true);
+          }
+      });
+    language: java
+    options:
+      - text: "Only the event thread reads or writes it — both listeners run there"
+        correct: true
+      - text: "`Future` fields are thread-safe"
+        feedback: "The `Future` is, the field holding it isn't — but it's confined."
+      - text: "It can't — it should be `volatile`"
+        feedback: "Thread confinement to the event thread is enough."
+
+  - type: choice
+    id: listing-9-7
+    prompt: |
+      **Listing 9.7** · On which thread does `onCompletion` run?
+    code: |
+      public abstract class BackgroundTask <V> implements Runnable, Future<V> {
+          private final FutureTask<V> computation = new Computation();
+
+          private class Computation extends FutureTask<V> {
+              public Computation() {
+                  super(new Callable<V>() {
+                      public V call() throws Exception {
+                          return BackgroundTask.this.compute();
+                      }
+                  });
+              }
+
+              protected final void done() {
+                  GuiExecutor.instance().execute(new Runnable() {
+                      public void run() {
+                          V value = null;
+                          Throwable thrown = null;
+                          boolean cancelled = false;
+                          try {
+                              value = get();
+                          } catch (ExecutionException e) {
+                              thrown = e.getCause();
+                          } catch (CancellationException e) {
+                              cancelled = true;
+                          } catch (InterruptedException consumed) {
+                          } finally {
+                              onCompletion(value, thrown, cancelled);
+                          }
+                      };
+                  });
+              }
+          }
+
+          protected void setProgress(final int current, final int max) {
+              GuiExecutor.instance().execute(new Runnable() {
+                  public void run() {
+                      onProgress(current, max);
+                  }
+              });
+          }
+
+          protected abstract V compute() throws Exception;
+
+          protected void onCompletion(V result, Throwable exception,
+                                      boolean cancelled) {
+          }
+
+          protected void onProgress(int current, int max) {
+          }
+
+          public boolean cancel(boolean mayInterruptIfRunning) {
+              return computation.cancel(mayInterruptIfRunning);
+          }
+
+          public V get() throws InterruptedException, ExecutionException {
+              return computation.get();
+          }
+
+          public V get(long timeout, TimeUnit unit)
+                  throws InterruptedException,
+                  ExecutionException,
+                  TimeoutException {
+              return computation.get(timeout, unit);
+          }
+
+          public boolean isCancelled() {
+              return computation.isCancelled();
+          }
+
+          public boolean isDone() {
+              return computation.isDone();
+          }
+
+          public void run() {
+              computation.run();
+          }
+      }
+    language: java
+    options:
+      - text: "The event thread — `done()` posts it through `GuiExecutor`"
+        correct: true
+      - text: "The background thread that ran `compute()`"
+        feedback: "`done()` hands the callback to the GUI executor."
+      - text: "Whichever thread called `cancel`"
+        feedback: "Even on cancel, the callback is posted to the event thread."
+
+  - type: choice
+    id: listing-9-8
+    prompt: |
+      **Listing 9.8** · `BackgroundTask` runs `compute()` in the background and calls `onCompletion` on the event thread. Cancel is clicked during the work. What happens?
+    code: |
+      startButton.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+              class CancelListener implements ActionListener {
+                  BackgroundTask<?> task;
+                  public void actionPerformed(ActionEvent event) {
+                      if (task != null)
+                          task.cancel(true);
+                  }
+              }
+              final CancelListener listener = new CancelListener();
+              listener.task = new BackgroundTask<Void>() {
+                  public Void compute() {
+                      while (moreWork() && !isCancelled())
+                          doSomeWork();
+                      return null;
+                  }
+                  public void onCompletion(Void result, Throwable exception,
+                                           boolean cancelled) {
+                      cancelButton.removeActionListener(listener);
+                      label.setText("done");
+                  }
+              };
+              cancelButton.addActionListener(listener);
+              exec.execute(listener.task);
+          }
+      });
+    language: java
+    options:
+      - text: "The loop sees `isCancelled()` and stops; `onCompletion` runs on the event thread and removes the listener"
+        correct: true
+      - text: "`onCompletion` is skipped for cancelled tasks"
+        feedback: "`done()` always runs, passing `cancelled = true`."
+      - text: "The work keeps going to the end"
+        feedback: "`compute` checks `isCancelled()` on each pass."

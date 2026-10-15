@@ -63,3 +63,78 @@ steps:
   - type: blank
     prompt: Complete the definition.
     template: "A data race occurs when a variable is read by more than one thread and written by at least one, and the reads and writes are not ordered by [[happens-before]]."
+
+  - type: choice
+    id: listing-16-1
+    prompt: |
+      **Listing 16.1** · Which outputs are possible?
+    code: |
+      public class PossibleReordering {
+          static int x = 0, y = 0;
+          static int a = 0, b = 0;
+
+          public static void main(String[] args) throws InterruptedException {
+              Thread one = new Thread(() -> {
+                  a = 1;
+                  x = b;
+              });
+              Thread other = new Thread(() -> {
+                  b = 1;
+                  y = a;
+              });
+              one.start();
+              other.start();
+              one.join();
+              other.join();
+              System.out.println("(" + x + "," + y + ")");
+          }
+      }
+    language: java
+    options:
+      - text: "(1,0), (0,1), (1,1) and also (0,0)"
+        correct: true
+      - text: "Only (1,0), (0,1) and (1,1)"
+        feedback: "With no happens-before, each thread's two actions can be reordered as seen by the other, giving (0,0)."
+      - text: "Only (1,1)"
+        feedback: "The threads can run one after the other."
+
+  - type: choice
+    id: listing-16-2
+    prompt: |
+      **Listing 16.2** · `result` is a plain field. Why do other threads reliably see it after `get()`?
+    code: |
+      private final class Sync extends AbstractQueuedSynchronizer {
+          private static final int RUNNING = 1, RAN = 2, CANCELLED = 4;
+          private V result;
+          private Exception exception;
+
+          void innerSet(V v) {
+              while (true) {
+                  int s = getState();
+                  if (ranOrCancelled(s))
+                      return;
+                  if (compareAndSetState(s, RAN))
+                      break;
+              }
+              result = v;
+              releaseShared(0);
+              done();
+          }
+
+          V innerGet() throws InterruptedException, ExecutionException {
+              acquireSharedInterruptibly(0);
+              if (getState() == CANCELLED)
+                  throw new CancellationException();
+              if (exception != null)
+                  throw new ExecutionException(exception);
+              return result;
+          }
+      }
+    language: java
+    options:
+      - text: "Piggybacking: the write precedes `releaseShared` (a volatile write), and the read follows `acquireShared` (a volatile read)"
+        correct: true
+      - text: "It isn't reliable — `result` should be volatile"
+        feedback: "The release/acquire pair already orders it."
+      - text: "`final` semantics"
+        feedback: "`result` isn't final."

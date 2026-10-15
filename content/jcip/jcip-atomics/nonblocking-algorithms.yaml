@@ -83,3 +83,104 @@ steps:
     prompt: A reference paired with a version counter.
     template: "AtomicStampedReference<Node> top = new [[AtomicStampedReference]]<>(null, 0);"
     code: true
+
+  - type: choice
+    id: listing-15-6
+    prompt: |
+      **Listing 15.6** · Two threads push at the same time. What happens?
+    code: |
+      public class ConcurrentStack<E> {
+          AtomicReference<Node<E>> top = new AtomicReference<Node<E>>();
+
+          public void push(E item) {
+              Node<E> newHead = new Node<E>(item);
+              Node<E> oldHead;
+              do {
+                  oldHead = top.get();
+                  newHead.next = oldHead;
+              } while (!top.compareAndSet(oldHead, newHead));
+          }
+
+          public E pop() {
+              Node<E> oldHead;
+              Node<E> newHead;
+              do {
+                  oldHead = top.get();
+                  if (oldHead == null)
+                      return null;
+                  newHead = oldHead.next;
+              } while (!top.compareAndSet(oldHead, newHead));
+              return oldHead.item;
+          }
+
+          private static class Node<E> {
+              public final E item;
+              public Node<E> next;
+              public Node(E item) { this.item = item; }
+          }
+      }
+    language: java
+    options:
+      - text: "One CAS wins; the other rereads `top` and retries, so both items end up on the stack"
+        correct: true
+      - text: "One item is lost"
+        feedback: "The losing CAS fails rather than overwriting."
+      - text: "One thread blocks"
+        feedback: "No locks — it retries."
+
+  - type: choice
+    id: listing-15-7
+    prompt: |
+      **Listing 15.7** · Thread A has linked its node after the tail but not yet advanced `tail`. Thread B starts a `put`. What does B do?
+    code: |
+      public boolean put(E item) {
+          Node<E> newNode = new Node<E>(item, null);
+          while (true) {
+              Node<E> curTail = tail.get();
+              Node<E> tailNext = curTail.next.get();
+              if (curTail == tail.get()) {
+                  if (tailNext != null) {
+                      tail.compareAndSet(curTail, tailNext);
+                  } else {
+                      if (curTail.next.compareAndSet(null, newNode)) {
+                          tail.compareAndSet(curTail, newNode);
+                          return true;
+                      }
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Advances `tail` for A, then retries its own insertion"
+        correct: true
+      - text: "Waits for A to finish"
+        feedback: "Nonblocking: B helps instead of waiting."
+      - text: "Links its node after A's old tail, overwriting A's node"
+        feedback: "The CAS on `next` only succeeds if it's still `null`."
+
+  - type: choice
+    id: listing-15-8
+    prompt: |
+      **Listing 15.8** · Why use a field updater instead of an `AtomicReference` per node?
+    code: |
+      private class Node<E> {
+          private final E item;
+          private volatile Node<E> next;
+
+          public Node(E item) { this.item = item; }
+      }
+
+      private static AtomicReferenceFieldUpdater<Node, Node> nextUpdater
+          = AtomicReferenceFieldUpdater.newUpdater(
+              Node.class, Node.class, "next");
+    language: java
+    options:
+      - text: "Saves allocating an extra atomic object per node, while still allowing CAS on `next`"
+        correct: true
+      - text: "Updaters are stronger than atomic classes"
+        feedback: "Their guarantees are weaker, if anything."
+      - text: "`volatile` fields can't be read otherwise"
+        feedback: "They're read directly; the updater is for CAS."
+    explanation: |
+      Today `VarHandle` (Java 9+) is the usual way to do this.

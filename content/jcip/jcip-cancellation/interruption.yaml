@@ -63,3 +63,163 @@ steps:
     prompt: Loop until interrupted.
     template: "while (!Thread.currentThread().[[isInterrupted]]()) queue.put(p = p.nextProbablePrime());"
     code: true
+
+  - type: choice
+    id: listing-7-3
+    prompt: |
+      **Listing 7.3** · The queue is bounded and the consumer has stopped taking from it. The consumer then calls `cancel()`. What happens?
+    code: |
+      class BrokenPrimeProducer extends Thread {
+          private final BlockingQueue<BigInteger> queue;
+          private volatile boolean cancelled = false;
+
+          BrokenPrimeProducer(BlockingQueue<BigInteger> queue) {
+              this.queue = queue;
+          }
+
+          public void run() {
+              try {
+                  BigInteger p = BigInteger.ONE;
+                  while (!cancelled)
+                      queue.put(p = p.nextProbablePrime());
+              } catch (InterruptedException consumed) {
+              }
+          }
+
+          public void cancel() {
+              cancelled = true;
+          }
+      }
+    language: java
+    options:
+      - text: "The producer may never stop — it is blocked in `put()` and never rechecks `cancelled`"
+        correct: true
+      - text: "The producer stops at once — `cancelled` is `volatile`"
+        feedback: "Visibility doesn't help a thread that is blocked and never reads the flag."
+      - text: "`put()` throws `InterruptedException` and the producer exits"
+        feedback: "Nothing interrupts the thread; setting a flag isn't an interrupt."
+
+  - type: choice
+    id: listing-7-4
+    prompt: |
+      **Listing 7.4** · What does this print?
+    code: |
+      Thread t = Thread.currentThread();
+      t.interrupt();
+      System.out.println(t.isInterrupted());
+      System.out.println(Thread.interrupted());
+      System.out.println(Thread.interrupted());
+    language: java
+    options:
+      - text: "true, true, false"
+        correct: true
+      - text: "true, true, true"
+        feedback: "The static `Thread.interrupted()` clears the status as it reads it."
+      - text: "true, false, false"
+        feedback: "`isInterrupted()` doesn't clear the flag, so the first `interrupted()` still sees it."
+      - text: "false, true, false"
+        feedback: "`interrupt()` sets the status straight away on the current thread."
+    explanation: |
+      `isInterrupted()` only reads the status; the static `Thread.interrupted()` reads and clears it — the only way to clear it.
+
+  - type: choice
+    id: listing-7-5
+    prompt: |
+      **Listing 7.5** · Another thread calls `cancel()` while the producer is blocked in `queue.put(...)` on a full queue. What happens?
+    code: |
+      public class PrimeProducer extends Thread {
+          private final BlockingQueue<BigInteger> queue;
+
+          PrimeProducer(BlockingQueue<BigInteger> queue) {
+              this.queue = queue;
+          }
+
+          public void run() {
+              try {
+                  BigInteger p = BigInteger.ONE;
+                  while (!Thread.currentThread().isInterrupted())
+                      queue.put(p = p.nextProbablePrime());
+              } catch (InterruptedException consumed) {
+                  /* Allow thread to exit */
+              }
+          }
+
+          public void cancel() {
+              interrupt();
+          }
+      }
+    language: java
+    options:
+      - text: "`put` throws `InterruptedException` and the thread exits"
+        correct: true
+      - text: "The producer stays blocked until the queue has room"
+        feedback: "Blocking library methods like `put` respond to interruption by throwing."
+      - text: "The loop checks `isInterrupted()` and exits without exceptions"
+        feedback: "The thread is inside `put`, not at the loop test; `put` throws."
+
+  - type: choice
+    id: listing-7-6
+    prompt: |
+      **Listing 7.6** · A library method can't handle interruption itself. Which version is right?
+    code: |
+      // A
+      BlockingQueue<Task> queue;
+      public Task getNextTask() throws InterruptedException {
+          return queue.take();
+      }
+
+      // B
+      public Task getNextTask() {
+          try {
+              return queue.take();
+          } catch (InterruptedException e) {
+              return null;
+          }
+      }
+    language: java
+    options:
+      - text: "A — propagate `InterruptedException` to the caller"
+        correct: true
+      - text: "B — it keeps callers free of a checked exception"
+        feedback: "B swallows the interrupt: the code up the stack never learns it was asked to stop."
+      - text: "Both are fine"
+        feedback: "Only code that owns the thread may swallow an interrupt."
+
+  - type: choice
+    id: listing-7-7
+    prompt: |
+      **Listing 7.7** · The thread is interrupted while waiting in `take()`. What does `getNextTask` do?
+    code: |
+      public class NoncancelableTask {
+          public Task getNextTask(BlockingQueue<Task> queue) {
+              boolean interrupted = false;
+              try {
+                  while (true) {
+                      try {
+                          return queue.take();
+                      } catch (InterruptedException e) {
+                          interrupted = true;
+                          // fall through and retry
+                      }
+                  }
+              } finally {
+                  if (interrupted)
+                      Thread.currentThread().interrupt();
+              }
+          }
+
+          interface Task {
+          }
+      }
+    language: java
+    options:
+      - text: "Keeps waiting for a task, then re-sets the interrupt status before returning"
+        correct: true
+      - text: "Returns `null` straight away"
+        feedback: "It retries `take()` until it gets a task."
+      - text: "Spins at 100% CPU forever"
+        feedback: "It records the interrupt and retries; the interrupt is only restored on the way out, so `take()` blocks normally."
+      - text: "Loses the interrupt"
+        feedback: "The `finally` block calls `interrupt()` again."
+    explanation: |
+      Restoring the interrupt inside the loop would make `take()` throw at once every time — a spin. So it's saved and restored at the end.

@@ -55,3 +55,62 @@ steps:
   - type: blank
     prompt: Complete the summary.
     template: "Processing tasks [[sequentially]] gives poor responsiveness; creating a thread per task gives poor [[resource]] management."
+
+  - type: choice
+    id: listing-6-1
+    prompt: |
+      **Listing 6.1** · What's the problem with this server?
+    code: |
+      public class SingleThreadWebServer {
+          public static void main(String[] args) throws IOException {
+              ServerSocket socket = new ServerSocket(80);
+              while (true) {
+                  Socket connection = socket.accept();
+                  handleRequest(connection);
+              }
+          }
+
+          private static void handleRequest(Socket connection) {
+              // request-handling logic here
+          }
+      }
+    language: java
+    options:
+      - text: "It handles one request at a time — a slow request delays everyone"
+        correct: true
+      - text: "It can run out of threads under load"
+        feedback: "It never creates threads."
+      - text: "It isn't thread-safe"
+        feedback: "Only the main thread runs it."
+
+  - type: choice
+    id: listing-6-2
+    prompt: |
+      **Listing 6.2** · What happens under a sudden burst of 10,000 requests?
+    code: |
+      public class ThreadPerTaskWebServer {
+          public static void main(String[] args) throws IOException {
+              ServerSocket socket = new ServerSocket(80);
+              while (true) {
+                  final Socket connection = socket.accept();
+                  Runnable task = new Runnable() {
+                      public void run() {
+                          handleRequest(connection);
+                      }
+                  };
+                  new Thread(task).start();
+              }
+          }
+
+          private static void handleRequest(Socket connection) {
+              // request-handling logic here
+          }
+      }
+    language: java
+    options:
+      - text: "It creates 10,000 threads and may run out of memory or crash"
+        correct: true
+      - text: "Requests run concurrently, which helps under normal load"
+        correct: true
+      - text: "It degrades gracefully"
+        feedback: "There's no bound on the number of threads."

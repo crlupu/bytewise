@@ -95,3 +95,107 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "Strive to use [[open]] calls throughout your program — calling alien methods with no locks held."
+
+  - type: choice
+    id: listing-10-5
+    prompt: |
+      **Listing 10.5** · One thread calls `taxi.setLocation(dest)` (reaching its destination) while another calls `dispatcher.getImage()`. What can happen?
+    code: |
+      public class CooperatingDeadlock {
+          class Taxi {
+              @GuardedBy("this") private Point location, destination;
+              private final Dispatcher dispatcher;
+
+              public Taxi(Dispatcher dispatcher) {
+                  this.dispatcher = dispatcher;
+              }
+
+              public synchronized Point getLocation() {
+                  return location;
+              }
+
+              public synchronized void setLocation(Point location) {
+                  this.location = location;
+                  if (location.equals(destination))
+                      dispatcher.notifyAvailable(this);
+              }
+
+              public synchronized Point getDestination() {
+                  return destination;
+              }
+
+              public synchronized void setDestination(Point destination) {
+                  this.destination = destination;
+              }
+          }
+
+          class Dispatcher {
+              @GuardedBy("this") private final Set<Taxi> taxis;
+              @GuardedBy("this") private final Set<Taxi> availableTaxis;
+
+              public Dispatcher() {
+                  taxis = new HashSet<Taxi>();
+                  availableTaxis = new HashSet<Taxi>();
+              }
+
+              public synchronized void notifyAvailable(Taxi taxi) {
+                  availableTaxis.add(taxi);
+              }
+
+              public synchronized Image getImage() {
+                  Image image = new Image();
+                  for (Taxi t : taxis)
+                      image.drawMarker(t.getLocation());
+                  return image;
+              }
+          }
+
+          class Image {
+              public void drawMarker(Point p) {
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Deadlock — setLocation holds the taxi and wants the dispatcher; getImage holds the dispatcher and wants the taxi"
+        correct: true
+      - text: "Nothing — no method takes two locks explicitly"
+        feedback: "Calling a synchronized method while holding a lock acquires a second lock."
+      - text: "`ConcurrentModificationException` in `getImage`"
+        feedback: "`taxis` is guarded by the dispatcher's lock."
+
+  - type: choice
+    id: listing-10-6
+    prompt: |
+      **Listing 10.6** · Can these two methods still deadlock with each other?
+    code: |
+      // Taxi
+      public void setLocation(Point location) {
+          boolean reachedDestination;
+          synchronized (this) {
+              this.location = location;
+              reachedDestination = location.equals(destination);
+          }
+          if (reachedDestination)
+              dispatcher.notifyAvailable(this);
+      }
+
+      // Dispatcher
+      public Image getImage() {
+          Set<Taxi> copy;
+          synchronized (this) {
+              copy = new HashSet<Taxi>(taxis);
+          }
+          Image image = new Image();
+          for (Taxi t : copy)
+              image.drawMarker(t.getLocation());
+          return image;
+      }
+    language: java
+    options:
+      - text: "No — each calls the other object with no lock held (open calls)"
+        correct: true
+      - text: "Yes — they still take both locks"
+        feedback: "Never at the same time: each lock is released before the outside call."
+    explanation: |
+      The price: `getImage` is no longer an atomic snapshot of all taxis.

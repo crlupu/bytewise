@@ -59,3 +59,162 @@ steps:
   - type: blank
     prompt: Complete the advice.
     template: "Lock splitting works when a lock guards several [[independent]] state variables."
+
+  - type: choice
+    id: listing-11-4
+    prompt: |
+      **Listing 11.4** · Which part of `userLocationMatches` actually needs the lock?
+    code: |
+      public class AttributeStore {
+          @GuardedBy("this") private final Map<String, String>
+                  attributes = new HashMap<String, String>();
+
+          public synchronized boolean userLocationMatches(String name,
+                                                          String regexp) {
+              String key = "users." + name + ".location";
+              String location = attributes.get(key);
+              if (location == null)
+                  return false;
+              else
+                  return Pattern.matches(regexp, location);
+          }
+      }
+    language: java
+    options:
+      - text: "Only `attributes.get(key)`"
+        correct: true
+      - text: "All of it"
+        feedback: "Building the key and matching the regex touch no shared state."
+      - text: "None — `HashMap.get` is safe"
+        feedback: "The map is shared and mutable, so reads need the lock."
+
+  - type: choice
+    id: listing-11-5
+    prompt: |
+      **Listing 11.5** · Is this version still thread-safe?
+    code: |
+      public class BetterAttributeStore {
+          @GuardedBy("this") private final Map<String, String>
+                  attributes = new HashMap<String, String>();
+
+          public boolean userLocationMatches(String name, String regexp) {
+              String key = "users." + name + ".location";
+              String location;
+              synchronized (this) {
+                  location = attributes.get(key);
+              }
+              if (location == null)
+                  return false;
+              else
+                  return Pattern.matches(regexp, location);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — the only shared state, the map, is still read under the lock"
+        correct: true
+      - text: "No — `location` is read outside the lock"
+        feedback: "`location` is a local, and `String` is immutable."
+    explanation: |
+      Shorter lock hold times mean less contention. Delegating to a `ConcurrentHashMap` would remove the lock entirely.
+
+  - type: choice
+    id: listing-11-6
+    prompt: |
+      **Listing 11.6** · Users and queries are independent sets. What's the scalability problem?
+    code: |
+      public class ServerStatusBeforeSplit {
+          @GuardedBy("this") public final Set<String> users;
+          @GuardedBy("this") public final Set<String> queries;
+
+          public ServerStatusBeforeSplit() {
+              users = new HashSet<String>();
+              queries = new HashSet<String>();
+          }
+
+          public synchronized void addUser(String u) {
+              users.add(u);
+          }
+
+          public synchronized void addQuery(String q) {
+              queries.add(q);
+          }
+
+          public synchronized void removeUser(String u) {
+              users.remove(u);
+          }
+
+          public synchronized void removeQuery(String q) {
+              queries.remove(q);
+          }
+      }
+    language: java
+    options:
+      - text: "One lock guards both, so adding a user waits for a query update and vice versa"
+        correct: true
+      - text: "The sets aren't thread-safe"
+        feedback: "Every access is synchronized."
+      - text: "None"
+        feedback: "Independent state sharing one lock causes needless contention."
+
+  - type: choice
+    id: listing-11-7
+    prompt: |
+      **Listing 11.7** · What does splitting the lock change?
+    code: |
+      public class ServerStatusAfterSplit {
+          @GuardedBy("users") public final Set<String> users;
+          @GuardedBy("queries") public final Set<String> queries;
+          ...
+          public void addUser(String u) {
+              synchronized (users) { users.add(u); }
+          }
+          public void addQuery(String q) {
+              synchronized (queries) { queries.add(q); }
+          }
+          public void removeUser(String u) {
+              synchronized (users) { users.remove(u); }
+          }
+          public void removeQuery(String q) {
+              synchronized (queries) { queries.remove(q); }
+          }
+      }
+    language: java
+    options:
+      - text: "User and query updates no longer block each other"
+        correct: true
+      - text: "It risks deadlock"
+        feedback: "No method holds both locks."
+      - text: "Nothing — it's the same lock"
+        feedback: "Each set is now locked separately."
+
+  - type: choice
+    id: listing-11-8
+    prompt: |
+      **Listing 11.8** · `StripedMap` uses 16 locks for its buckets: `buckets[n]` is guarded by `locks[n % 16]`. How many threads can call `get` on different stripes at once, and what does `clear()` cost?
+    code: |
+      public Object get(Object key) {
+          int hash = hash(key);
+          synchronized (locks[hash % N_LOCKS]) {
+              for (Node m = buckets[hash]; m != null; m = m.next)
+                  if (m.key.equals(key))
+                      return m.value;
+          }
+          return null;
+      }
+
+      public void clear() {
+          for (int i = 0; i < buckets.length; i++) {
+              synchronized (locks[i % N_LOCKS]) {
+                  buckets[i] = null;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Up to 16; `clear` takes each stripe lock in turn, so it isn't atomic"
+        correct: true
+      - text: "One; `clear` is atomic"
+        feedback: "Different stripes have different locks."
+      - text: "Unlimited; `clear` must take all 16 locks at once"
+        feedback: "Here it takes them one at a time; an atomic clear would need all of them."

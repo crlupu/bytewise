@@ -82,3 +82,98 @@ steps:
       - text: Rarely — allocation is cheap, and immutability removes locking, defensive copies and generational GC costs
         correct: true
       - text: Yes, always
+
+  - type: choice
+    id: listing-3-11
+    prompt: |
+      **Listing 3.11** · Is `ThreeStooges` immutable, though it holds a mutable `HashSet`?
+    code: |
+      public final class ThreeStooges {
+          private final Set<String> stooges = new HashSet<String>();
+
+          public ThreeStooges() {
+              stooges.add("Moe");
+              stooges.add("Larry");
+              stooges.add("Curly");
+          }
+
+          public boolean isStooge(String name) {
+              return stooges.contains(name);
+          }
+
+          public String getStoogeNames() {
+              List<String> stooges = new Vector<String>();
+              stooges.add("Moe");
+              stooges.add("Larry");
+              stooges.add("Curly");
+              return stooges.toString();
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — the set is filled in the constructor, never changed after and never escapes"
+        correct: true
+      - text: "No — any class holding a mutable object is mutable"
+        feedback: "Immutability is about the object's state never changing after construction, not the types of its fields."
+      - text: "Only if the set were a `ConcurrentHashMap`-backed set"
+        feedback: "No thread-safe collection is needed: the set is only read after construction."
+
+  - type: choice
+    id: listing-3-12
+    prompt: |
+      **Listing 3.12** · Why does `OneValueCache` copy the factors array, both in and out?
+    code: |
+      public class OneValueCache {
+          private final BigInteger lastNumber;
+          private final BigInteger[] lastFactors;
+
+          public OneValueCache(BigInteger i,
+                               BigInteger[] factors) {
+              lastNumber = i;
+              lastFactors = Arrays.copyOf(factors, factors.length);
+          }
+
+          public BigInteger[] getFactors(BigInteger i) {
+              if (lastNumber == null || !lastNumber.equals(i))
+                  return null;
+              else
+                  return Arrays.copyOf(lastFactors, lastFactors.length);
+          }
+      }
+    language: java
+    options:
+      - text: "So no caller can change the cached array — the holder stays immutable"
+        correct: true
+      - text: "It doesn't need to; the fields are `final`"
+        feedback: "`final` stops the field being reassigned, not the array's contents being changed."
+      - text: "To make it faster"
+        feedback: "Copying costs time; it's done for safety."
+
+  - type: choice
+    id: listing-3-13
+    prompt: |
+      **Listing 3.13** · Many requests call `service` at once. What's true?
+    code: |
+      public class VolatileCachedFactorizer extends GenericServlet implements Servlet {
+          private volatile OneValueCache cache = new OneValueCache(null, null);
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = cache.getFactors(i);
+              if (factors == null) {
+                  factors = factor(i);
+                  cache = new OneValueCache(i, factors);
+              }
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: "It's thread-safe without any locking"
+        correct: true
+      - text: "A request always sees a matching number and factors"
+        correct: true
+      - text: "Two requests can overwrite each other's cache, but that's harmless"
+        correct: true
+      - text: "The cache can hold one request's number with another's factors"
+        feedback: "Both are in one immutable object, swapped in with a single volatile write."

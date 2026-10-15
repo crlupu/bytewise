@@ -133,3 +133,31 @@ steps:
       Calling `super.doSomething()` from the subclass's synchronized method needs the same lock — `this` — that the thread already holds.
       Intrinsic locks are reentrant: the JVM records the owning thread and a count, so the owner can acquire the lock again and it's released only when the count returns to zero.
       Without reentrancy, this ordinary pattern would deadlock against itself.
+
+  - type: choice
+    id: listing-2-7
+    prompt: |
+      **Listing 2.7** · A thread calls `doSomething()` on a `LoggingWidget`. What happens?
+    code: |
+      public class Widget {
+          public synchronized void doSomething() {
+              ...
+          }
+      }
+
+      public class LoggingWidget extends Widget {
+          public synchronized void doSomething() {
+              System.out.println(toString() + ": calling doSomething");
+              super.doSomething();
+          }
+      }
+    language: java
+    options:
+      - text: "It runs normally — the thread already holds the lock and may take it again"
+        correct: true
+      - text: "It deadlocks — `super.doSomething()` waits for a lock its own thread holds"
+        feedback: "That would happen if intrinsic locks weren't reentrant. They are."
+      - text: "It throws `IllegalMonitorStateException`"
+        feedback: "That's for `wait`/`notify` without the lock."
+    explanation: |
+      Intrinsic locks are reentrant: they count acquisitions per thread, so a thread can re-enter a lock it already holds.

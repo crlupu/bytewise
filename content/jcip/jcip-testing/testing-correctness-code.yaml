@@ -1,0 +1,104 @@
+title: "Testing for correctness: in code"
+summary: "More examples for testing for correctness, one question each."
+duration: 3
+tags: [java, concurrency, testing, safety tests, interleavings, bounded buffer]
+sources:
+  - { book: jcip, ref: "§12.1, Testing for Correctness" }
+steps:
+  - type: explanation
+    title: "Recap: What to test"
+    body: |
+      Normal behaviour, like a full buffer reporting full.
+      Blocking: `take` on an empty buffer really waits.
+      Safety: nothing lost or duplicated under load.
+      Resources: nothing leaks.
+
+  - type: explanation
+    title: "Recap: Test without hiding bugs"
+    body: |
+      Compare checksums of what was put and taken.
+      Start all threads together with a latch.
+      Use more threads than CPUs to get more interleavings.
+      Run many iterations. Bugs are rare.
+
+  - type: choice
+    id: listing-12-8
+    prompt: |
+      **Listing 12.8** · Why wrap the default factory instead of using it directly?
+    code: |
+      class TestingThreadFactory implements ThreadFactory {
+          public final AtomicInteger numCreated = new AtomicInteger();
+          private final ThreadFactory factory = Executors.defaultThreadFactory();
+
+          public Thread newThread(Runnable r) {
+              numCreated.incrementAndGet();
+              return factory.newThread(r);
+          }
+      }
+    language: java
+    options:
+      - text: "To count how many threads the pool creates, so a test can check it"
+        correct: true
+      - text: "To make the threads daemons"
+        feedback: "It doesn't change the threads."
+      - text: "The default factory isn't thread-safe"
+        feedback: "It is; this just adds a counter."
+
+  - type: choice
+    id: listing-12-9
+    prompt: |
+      **Listing 12.9** · `threadFactory` counts the threads it creates. 100 sleeping tasks go into a pool of 10. What does the test assert?
+    code: |
+      public void testPoolExpansion() throws InterruptedException {
+          int MAX_SIZE = 10;
+          ExecutorService exec = Executors.newFixedThreadPool(MAX_SIZE, threadFactory);
+
+          for (int i = 0; i < 10 * MAX_SIZE; i++)
+              exec.execute(new Runnable() {
+                  public void run() {
+                      try {
+                          Thread.sleep(Long.MAX_VALUE);
+                      } catch (InterruptedException e) {
+                          Thread.currentThread().interrupt();
+                      }
+                  }
+              });
+          for (int i = 0;
+               i < 20 && threadFactory.numCreated.get() < MAX_SIZE;
+               i++)
+              Thread.sleep(100);
+          assertEquals(threadFactory.numCreated.get(), MAX_SIZE);
+          exec.shutdownNow();
+      }
+    language: java
+    options:
+      - text: "Exactly 10 threads were created — the pool grew to its size and no further"
+        correct: true
+      - text: "100 threads were created"
+        feedback: "A fixed pool never exceeds its size; the rest queue."
+      - text: "The tasks finished"
+        feedback: "They sleep forever; `shutdownNow()` interrupts them."
+
+  - type: choice
+    id: listing-12-10
+    prompt: |
+      **Listing 12.10** · Why insert this into code under test?
+    code: |
+      public synchronized void transferCredits(Account from,
+                                               Account to,
+                                               int amount) {
+          from.setBalance(from.getBalance() - amount);
+          if (random.nextInt(1000) > THRESHOLD)
+              Thread.yield();
+          to.setBalance(to.getBalance() + amount);
+      }
+    language: java
+    options:
+      - text: "To create more thread interleavings in critical spots, making concurrency bugs show up in tests"
+        correct: true
+      - text: "To make the method faster"
+        feedback: "It only slows it down."
+      - text: "To fix a race"
+        feedback: "It doesn't change correctness; it shakes out bugs."
+    explanation: |
+      `yield` (or a short sleep) is only a hint — and here the method is synchronized, so it mainly matters for code that isn't.

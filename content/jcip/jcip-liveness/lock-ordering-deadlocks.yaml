@@ -108,3 +108,115 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "A program will be free of lock-ordering deadlocks if all threads acquire the locks they need in a fixed global [[order]]."
+
+  - type: choice
+    id: listing-10-1
+    prompt: |
+      **Listing 10.1** · Thread A calls `leftRight()` while thread B calls `rightLeft()`. What can happen?
+    code: |
+      public class LeftRightDeadlock {
+          private final Object left = new Object();
+          private final Object right = new Object();
+
+          public void leftRight() {
+              synchronized (left) {
+                  synchronized (right) {
+                      doSomething();
+                  }
+              }
+          }
+
+          public void rightLeft() {
+              synchronized (right) {
+                  synchronized (left) {
+                      doSomethingElse();
+                  }
+              }
+          }
+
+          void doSomething() {
+          }
+
+          void doSomethingElse() {
+          }
+      }
+    language: java
+    options:
+      - text: "Deadlock — A holds `left` waiting for `right`, B holds `right` waiting for `left`"
+        correct: true
+      - text: "Nothing — each method is short"
+        feedback: "Timing only makes it rare, not impossible."
+      - text: "One call throws `IllegalMonitorStateException`"
+        feedback: "Nested `synchronized` blocks are legal."
+
+  - type: choice
+    id: listing-10-2
+    prompt: |
+      **Listing 10.2** · Thread A calls `transferMoney(x, y, 10)` while thread B calls `transferMoney(y, x, 20)`. What can happen?
+    code: |
+      public static void transferMoney(Account fromAccount,
+                                       Account toAccount,
+                                       DollarAmount amount)
+              throws InsufficientFundsException {
+          synchronized (fromAccount) {
+              synchronized (toAccount) {
+                  if (fromAccount.getBalance().compareTo(amount) < 0)
+                      throw new InsufficientFundsException();
+                  else {
+                      fromAccount.debit(amount);
+                      toAccount.credit(amount);
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Deadlock — the lock order depends on the arguments, so A and B take them in opposite order"
+        correct: true
+      - text: "It's safe — every call locks \"from\" then \"to\""
+        feedback: "\"From\" for A is \"to\" for B."
+      - text: "Lost update on the balances"
+        feedback: "Both accounts are locked during the update."
+
+  - type: choice
+    id: listing-10-4
+    prompt: |
+      **Listing 10.4** · 20 threads each make 1,000,000 random transfers between 5 accounts with the deadlock-prone `transferMoney` that locks "from" then "to". What usually happens?
+    code: |
+      public class DemonstrateDeadlock {
+          private static final int NUM_THREADS = 20;
+          private static final int NUM_ACCOUNTS = 5;
+          private static final int NUM_ITERATIONS = 1000000;
+
+          public static void main(String[] args) {
+              final Random rnd = new Random();
+              final Account[] accounts = new Account[NUM_ACCOUNTS];
+
+              for (int i = 0; i < accounts.length; i++)
+                  accounts[i] = new Account();
+
+              class TransferThread extends Thread {
+                  public void run() {
+                      for (int i = 0; i < NUM_ITERATIONS; i++) {
+                          int fromAcct = rnd.nextInt(NUM_ACCOUNTS);
+                          int toAcct = rnd.nextInt(NUM_ACCOUNTS);
+                          DollarAmount amount = new DollarAmount(rnd.nextInt(1000));
+                          try {
+                              DynamicOrderDeadlock.transferMoney(accounts[fromAcct], accounts[toAcct], amount);
+                          } catch (DynamicOrderDeadlock.InsufficientFundsException ignored) {
+                          }
+                      }
+                  }
+              }
+              for (int i = 0; i < NUM_THREADS; i++)
+                  new TransferThread().start();
+          }
+      }
+    language: java
+    options:
+      - text: "It deadlocks quickly"
+        correct: true
+      - text: "It runs to completion; deadlock needs very bad luck"
+        feedback: "With few accounts and many threads, opposite-order pairs collide almost at once."
+      - text: "It throws `InsufficientFundsException` and stops"
+        feedback: "Those are caught and ignored."

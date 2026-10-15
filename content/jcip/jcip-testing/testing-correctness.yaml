@@ -59,3 +59,261 @@ steps:
   - type: blank
     prompt: Complete the advice.
     template: "Concurrency bugs are low-probability events, so tests must run many [[iterations]] to have a chance of finding them."
+
+  - type: choice
+    id: listing-12-1
+    prompt: |
+      **Listing 12.1** · Capacity is 2. A thread calls `put` three times with no takers. What happens?
+    code: |
+      public class SemaphoreBoundedBuffer <E> {
+          private final Semaphore availableItems, availableSpaces;
+          @GuardedBy("this") private final E[] items;
+          @GuardedBy("this") private int putPosition = 0, takePosition = 0;
+
+          public SemaphoreBoundedBuffer(int capacity) {
+              if (capacity <= 0)
+                  throw new IllegalArgumentException();
+              availableItems = new Semaphore(0);
+              availableSpaces = new Semaphore(capacity);
+              items = (E[]) new Object[capacity];
+          }
+
+          public boolean isEmpty() {
+              return availableItems.availablePermits() == 0;
+          }
+
+          public boolean isFull() {
+              return availableSpaces.availablePermits() == 0;
+          }
+
+          public void put(E x) throws InterruptedException {
+              availableSpaces.acquire();
+              doInsert(x);
+              availableItems.release();
+          }
+
+          public E take() throws InterruptedException {
+              availableItems.acquire();
+              E item = doExtract();
+              availableSpaces.release();
+              return item;
+          }
+
+          private synchronized void doInsert(E x) {
+              int i = putPosition;
+              items[i] = x;
+              putPosition = (++i == items.length) ? 0 : i;
+          }
+
+          private synchronized E doExtract() {
+              int i = takePosition;
+              E x = items[i];
+              items[i] = null;
+              takePosition = (++i == items.length) ? 0 : i;
+              return x;
+          }
+      }
+    language: java
+    options:
+      - text: "The third `put` blocks in `availableSpaces.acquire()`"
+        correct: true
+      - text: "The third `put` overwrites the first item"
+        feedback: "The semaphore has no permits left."
+      - text: "`IllegalStateException`"
+        feedback: "Bounded buffers block rather than throw."
+
+  - type: choice
+    id: listing-12-2
+    prompt: |
+      **Listing 12.2** · `SemaphoreBoundedBuffer` blocks `put` when full and `take` when empty. Do these tests pass?
+    code: |
+      void testIsEmptyWhenConstructed() {
+          SemaphoreBoundedBuffer<Integer> bb = new SemaphoreBoundedBuffer<Integer>(10);
+          assertTrue(bb.isEmpty());
+          assertFalse(bb.isFull());
+      }
+
+      void testIsFullAfterPuts() throws InterruptedException {
+          SemaphoreBoundedBuffer<Integer> bb = new SemaphoreBoundedBuffer<Integer>(10);
+          for (int i = 0; i < 10; i++)
+              bb.put(i);
+          assertTrue(bb.isFull());
+          assertFalse(bb.isEmpty());
+      }
+    language: java
+    options:
+      - text: "Yes, both"
+        correct: true
+      - text: "The second blocks forever on the 10th `put`"
+        feedback: "Capacity is 10, so ten puts fit."
+      - text: "The first fails — a new buffer is full"
+        feedback: "It starts with 10 free spaces."
+
+  - type: choice
+    id: listing-12-3
+    prompt: |
+      **Listing 12.3** · What does this test check?
+    code: |
+      void testTakeBlocksWhenEmpty() {
+          final SemaphoreBoundedBuffer<Integer> bb = new SemaphoreBoundedBuffer<Integer>(10);
+          Thread taker = new Thread() {
+              public void run() {
+                  try {
+                      int unused = bb.take();
+                      fail();
+                  } catch (InterruptedException success) { }
+              }
+          };
+          try {
+              taker.start();
+              Thread.sleep(LOCKUP_DETECT_TIMEOUT);
+              taker.interrupt();
+              taker.join(LOCKUP_DETECT_TIMEOUT);
+              assertFalse(taker.isAlive());
+          } catch (Exception unexpected) {
+              fail();
+          }
+      }
+    language: java
+    options:
+      - text: "That `take` blocks on an empty buffer and responds to interruption"
+        correct: true
+      - text: "That `take` returns `null` when empty"
+        feedback: "Returning at all would hit `fail()`."
+      - text: "That `take` is fast"
+        feedback: "It's about blocking and interruptibility, not speed."
+    explanation: |
+      Note `fail()` in another thread doesn't fail the test by itself — the main thread's `assertFalse(taker.isAlive())` does the real check.
+
+  - type: choice
+    id: listing-12-4
+    prompt: |
+      **Listing 12.4** · Why use this generator in concurrent tests instead of a shared `java.util.Random`?
+    code: |
+      public class XorShift {
+          static final AtomicInteger seq = new AtomicInteger(8862213);
+          int x = -1831433054;
+
+          public XorShift(int seed) {
+              x = seed;
+          }
+
+          public XorShift() {
+              this((int) System.nanoTime() + seq.getAndAdd(129));
+          }
+
+          public int next() {
+              x ^= x << 6;
+              x ^= x >>> 21;
+              x ^= (x << 7);
+              return x;
+          }
+      }
+    language: java
+    options:
+      - text: "It's cheap and each thread can own one, so the test doesn't serialize on a shared generator"
+        correct: true
+      - text: "It produces better random numbers"
+        feedback: "It's medium quality; good enough for tests."
+      - text: "`Random` isn't thread-safe"
+        feedback: "`Random` is thread-safe, but contended — that's the problem."
+
+  - type: choice
+    id: listing-12-5
+    prompt: |
+      **Listing 12.5** · With 10 pairs, the barrier has 21 parties. Why does the main thread call `barrier.await()` twice?
+    code: |
+      void test() {
+          try {
+              for (int i = 0; i < nPairs; i++) {
+                  pool.execute(new Producer());
+                  pool.execute(new Consumer());
+              }
+              barrier.await();
+              barrier.await();
+              assertEquals(putSum.get(), takeSum.get());
+          } catch (Exception e) {
+              throw new RuntimeException(e);
+          }
+      }
+    language: java
+    options:
+      - text: "First to start all workers together, second to wait until they've all finished"
+        correct: true
+      - text: "It's a mistake — once is enough"
+        feedback: "Workers also await twice: before and after their loops."
+      - text: "To retry if the first barrier breaks"
+        feedback: "Each await is a separate generation of the barrier."
+
+  - type: choice
+    id: listing-12-6
+    prompt: |
+      **Listing 12.6** · Producers sum what they put and consumers sum what they take. If the buffer ever dropped or duplicated an item, what would the test see?
+    code: |
+      class Producer implements Runnable {
+          public void run() {
+              try {
+                  int seed = (this.hashCode() ^ (int) System.nanoTime());
+                  int sum = 0;
+                  barrier.await();
+                  for (int i = nTrials; i > 0; --i) {
+                      bb.put(seed);
+                      sum += seed;
+                      seed = xorShift(seed);
+                  }
+                  putSum.getAndAdd(sum);
+                  barrier.await();
+              } catch (Exception e) {
+                  throw new RuntimeException(e);
+              }
+          }
+      }
+
+      class Consumer implements Runnable {
+          public void run() {
+              try {
+                  barrier.await();
+                  int sum = 0;
+                  for (int i = nTrials; i > 0; --i)
+                      sum += bb.take();
+                  takeSum.getAndAdd(sum);
+                  barrier.await();
+              } catch (Exception e) {
+                  throw new RuntimeException(e);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Almost certainly a mismatch between `putSum` and `takeSum`"
+        correct: true
+      - text: "Nothing — the sums can still match"
+        feedback: "With random values, a lost or duplicated item changes the sum except by extreme coincidence."
+      - text: "An `ArithmeticException` on overflow"
+        feedback: "`int` overflow wraps silently; both sums wrap the same way."
+    explanation: |
+      Each thread sums locally and publishes once, so the checksum itself adds no contention.
+
+  - type: choice
+    id: listing-12-7
+    prompt: |
+      **Listing 12.7** · `Big` holds a 100,000-element array. If `take` forgot to null out the slot it read, what would this test detect?
+    code: |
+      void testLeak() throws InterruptedException {
+          SemaphoreBoundedBuffer<Big> bb = new SemaphoreBoundedBuffer<Big>(CAPACITY);
+          int heapSize1 = snapshotHeap();
+          for (int i = 0; i < CAPACITY; i++)
+              bb.put(new Big());
+          for (int i = 0; i < CAPACITY; i++)
+              bb.take();
+          int heapSize2 = snapshotHeap();
+          assertTrue(Math.abs(heapSize1 - heapSize2) < THRESHOLD);
+      }
+    language: java
+    options:
+      - text: "A large heap growth — the empty buffer would still reference every `Big`"
+        correct: true
+      - text: "Nothing — taken items are always garbage"
+        feedback: "Not while the array still points at them."
+      - text: "A `ConcurrentModificationException`"
+        feedback: "It's single-threaded and measures memory."

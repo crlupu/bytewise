@@ -72,3 +72,82 @@ steps:
     prompt: The queue method that blocks when the queue is empty.
     template: "File next = queue.[[take]]();"
     code: true
+
+  - type: choice
+    id: listing-5-8
+    prompt: |
+      **Listing 5.8** · The queue is bounded to 10. Crawlers find files much faster than indexers can index them. What happens?
+    code: |
+      static class FileCrawler implements Runnable {
+          private final BlockingQueue<File> fileQueue;
+          private final FileFilter fileFilter;
+          private final File root;
+          ...
+          public void run() {
+              try {
+                  crawl(root);
+              } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+              }
+          }
+
+          private void crawl(File root) throws InterruptedException {
+              File[] entries = root.listFiles(fileFilter);
+              if (entries != null) {
+                  for (File entry : entries)
+                      if (entry.isDirectory())
+                          crawl(entry);
+                      else if (!alreadyIndexed(entry))
+                          fileQueue.put(entry);
+              }
+          }
+      }
+
+      static class Indexer implements Runnable {
+          private final BlockingQueue<File> queue;
+          ...
+          public void run() {
+              try {
+                  while (true)
+                      indexFile(queue.take());
+              } catch (InterruptedException e) {
+                  Thread.currentThread().interrupt();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Crawlers block in `put` until indexers catch up"
+        correct: true
+      - text: "The queue grows until memory runs out"
+        feedback: "A bounded queue makes `put` wait when it's full."
+      - text: "Files are dropped when the queue is full"
+        feedback: "`put` waits; `offer` is the one that gives up."
+
+  - type: choice
+    id: listing-5-9
+    prompt: |
+      **Listing 5.9** · When all files are indexed, what do the indexer threads do?
+    code: |
+      public static void startIndexing(File[] roots) {
+          BlockingQueue<File> queue = new LinkedBlockingQueue<File>(BOUND);
+          FileFilter filter = new FileFilter() {
+              public boolean accept(File file) { return true; }
+          };
+
+          for (File root : roots)
+              new Thread(new FileCrawler(queue, filter, root)).start();
+
+          for (int i = 0; i < N_CONSUMERS; i++)
+              new Thread(new Indexer(queue)).start();
+      }
+    language: java
+    options:
+      - text: "Wait in `take()` forever — nothing tells them to stop"
+        correct: true
+      - text: "Exit once the queue is empty"
+        feedback: "`take()` just blocks on an empty queue."
+      - text: "Throw `NoSuchElementException`"
+        feedback: "That's `remove()`; `take()` waits."
+    explanation: |
+      Chapter 7 adds a way to stop them: interruption, or a poison pill.

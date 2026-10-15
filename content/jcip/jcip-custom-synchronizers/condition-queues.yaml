@@ -64,3 +64,113 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "Whenever you wait on a condition, make sure someone will perform a [[notification]] whenever the condition predicate becomes true."
+
+  - type: choice
+    id: listing-14-6
+    prompt: |
+      **Listing 14.6** · Why `while (isFull()) wait();` rather than `if`?
+    code: |
+      public synchronized void put(V v) throws InterruptedException {
+          while (isFull())
+              wait();
+          doPut(v);
+          notifyAll();
+      }
+
+      public synchronized V take() throws InterruptedException {
+          while (isEmpty())
+              wait();
+          V v = doTake();
+          notifyAll();
+          return v;
+      }
+    language: java
+    options:
+      - text: "A woken thread must recheck: another may have refilled the buffer first, or the wakeup may be spurious"
+        correct: true
+      - text: "`if` would not compile"
+        feedback: "It compiles; it's just wrong."
+      - text: "`while` makes it faster"
+        feedback: "It's about correctness."
+    explanation: |
+      One condition queue serves both "not full" and "not empty" waiters, which is also why it uses `notifyAll`.
+
+  - type: choice
+    id: listing-14-7
+    prompt: |
+      **Listing 14.7** · Which rule does this canonical form NOT follow?
+    code: |
+      void stateDependentMethod() throws InterruptedException {
+          // condition predicate must be guarded by lock
+          synchronized (lock) {
+              while (!conditionPredicate())
+                  lock.wait();
+              // object is now in desired state
+          }
+      }
+    language: java
+    options:
+      - text: "None — it holds the lock, tests in a loop and waits on the lock it holds"
+        correct: true
+      - text: "It should call `wait()` outside the lock"
+        feedback: "`wait` without holding the lock throws `IllegalMonitorStateException`."
+      - text: "It should use `if` instead of `while`"
+        feedback: "Always recheck after waking."
+
+  - type: choice
+    id: listing-14-8
+    prompt: |
+      **Listing 14.8** · When does this `put` call `notifyAll()`?
+    code: |
+      public synchronized void put(V v) throws InterruptedException {
+          while (isFull())
+              wait();
+          boolean wasEmpty = isEmpty();
+          doPut(v);
+          if (wasEmpty)
+              notifyAll();
+      }
+    language: java
+    options:
+      - text: "Only when the buffer goes from empty to non-empty — the only time takers can be waiting"
+        correct: true
+      - text: "After every put"
+        feedback: "It's conditional on `wasEmpty`."
+      - text: "Never — `take` wakes itself"
+        feedback: "Waiting takers need a notification."
+    explanation: |
+      Conditional notification is an optimization that's easy to get wrong; use it with care.
+
+  - type: choice
+    id: listing-14-9
+    prompt: |
+      **Listing 14.9** · The gate is opened then quickly closed again before a waiting thread gets to run. Does the waiter pass?
+    code: |
+      public class ThreadGate {
+          @GuardedBy("this") private boolean isOpen;
+          @GuardedBy("this") private int generation;
+
+          public synchronized void close() {
+              isOpen = false;
+          }
+
+          public synchronized void open() {
+              ++generation;
+              isOpen = true;
+              notifyAll();
+          }
+
+          public synchronized void await() throws InterruptedException {
+              int arrivalGeneration = generation;
+              while (!isOpen && arrivalGeneration == generation)
+                  wait();
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — `generation` changed since it arrived"
+        correct: true
+      - text: "No — the gate is closed when it rechecks"
+        feedback: "The predicate also accepts a newer generation."
+      - text: "It waits forever"
+        feedback: "`generation > arrivalGeneration` lets it out."

@@ -89,3 +89,107 @@ steps:
       - text: It's the fastest
         feedback: It's slightly slower, but it doesn't break when someone else changes their locking.
     explanation: "`ImprovedList<T> implements List<T>` wrapping a list, with every method synchronized on itself."
+
+  - type: choice
+    id: listing-4-13
+    prompt: |
+      **Listing 4.13** · Is `putIfAbsent` atomic?
+    code: |
+      public class BetterVector <E> extends Vector<E> {
+          // When extending a serializable class, you should redefine serialVersionUID
+          static final long serialVersionUID = -3963416950630760754L;
+
+          public synchronized boolean putIfAbsent(E x) {
+              boolean absent = !contains(x);
+              if (absent)
+                  add(x);
+              return absent;
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — `Vector` synchronizes on itself, and so does this method"
+        correct: true
+      - text: "It depends on `Vector` keeping that locking policy"
+        correct: true
+      - text: "No — `contains` and `add` are separate calls"
+        feedback: "They run inside one `synchronized` method using the same lock as `Vector`."
+
+  - type: choice
+    id: listing-4-14
+    prompt: |
+      **Listing 4.14** · Is `putIfAbsent` atomic?
+    code: |
+      public class ListHelper<E> {
+          public List<E> list = Collections.synchronizedList(new ArrayList<E>());
+
+          public synchronized boolean putIfAbsent(E x) {
+              boolean absent = !list.contains(x);
+              if (absent)
+                  list.add(x);
+              return absent;
+          }
+      }
+    language: java
+    options:
+      - text: "No — it locks the helper, while the list's own methods lock the list"
+        correct: true
+      - text: "Another thread can add the same element through `list` directly"
+        correct: true
+      - text: "Yes — the method is `synchronized`"
+        feedback: "It's synchronized on the wrong lock."
+
+  - type: choice
+    id: listing-4-15
+    prompt: |
+      **Listing 4.15** · Is `putIfAbsent` atomic now?
+    code: |
+      public class ListHelper<E> {
+          public List<E> list = Collections.synchronizedList(new ArrayList<E>());
+
+          public boolean putIfAbsent(E x) {
+              synchronized (list) {
+                  boolean absent = !list.contains(x);
+                  if (absent)
+                      list.add(x);
+                  return absent;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — it holds the same lock the synchronized list uses"
+        correct: true
+      - text: "It works only because the wrapper happens to lock on itself — client code must know that"
+        correct: true
+      - text: "No — the list must be copied first"
+        feedback: "Client-side locking on the list itself is enough."
+
+  - type: choice
+    id: listing-4-16
+    prompt: |
+      **Listing 4.16** · Is `putIfAbsent` atomic, whatever the underlying list does?
+    code: |
+      public class ImprovedList<T> implements List<T> {
+          private final List<T> list;
+
+          public ImprovedList(List<T> list) { this.list = list; }
+
+          public synchronized boolean putIfAbsent(T x) {
+              boolean contains = list.contains(x);
+              if (!contains)
+                  list.add(x);
+              return !contains;
+          }
+
+          public synchronized void clear() { list.clear(); }
+          // ... the other List methods delegate the same way
+      }
+    language: java
+    options:
+      - text: "Yes — it uses its own lock, as long as every client goes through it"
+        correct: true
+      - text: "Only if the wrapped list locks on itself"
+        feedback: "It doesn't rely on the wrapped list's locking at all."
+      - text: "No — `contains` and `add` aren't atomic"
+        feedback: "Both run inside one synchronized method of the wrapper."

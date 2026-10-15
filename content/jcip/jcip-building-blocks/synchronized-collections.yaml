@@ -88,3 +88,144 @@ steps:
       The debug statement concatenates the set into a string, which calls `set.toString()`, which iterates over the set.
       The method that does this isn't synchronized, so another thread calling `addTenThings` at the same time can modify the set mid-iteration, causing `ConcurrentModificationException`.
       Hidden iterations also lurk in `hashCode`, `equals`, `containsAll` and copy constructors — which is why it's safer to wrap the collection and its lock together in one class.
+
+  - type: choice
+    id: listing-5-1
+    prompt: |
+      **Listing 5.1** · `Vector` synchronizes every method. One thread calls `getLast` while another calls `deleteLast` on the same 10-element vector. What can happen?
+    code: |
+      public class UnsafeVectorHelpers {
+          public static Object getLast(Vector list) {
+              int lastIndex = list.size() - 1;
+              return list.get(lastIndex);
+          }
+
+          public static void deleteLast(Vector list) {
+              int lastIndex = list.size() - 1;
+              list.remove(lastIndex);
+          }
+      }
+    language: java
+    options:
+      - text: "`getLast` throws `ArrayIndexOutOfBoundsException`"
+        correct: true
+      - text: "Both always work — `Vector` is thread-safe"
+        feedback: "Each call is atomic, but `size()` then `get()` is a compound action another thread can split."
+      - text: "It deadlocks"
+        feedback: "Each method takes the vector's lock briefly and releases it."
+
+  - type: choice
+    id: listing-5-2
+    prompt: |
+      **Listing 5.2** · Are `getLast` and `deleteLast` safe to call concurrently now?
+    code: |
+      public class SafeVectorHelpers {
+          public static Object getLast(Vector list) {
+              synchronized (list) {
+                  int lastIndex = list.size() - 1;
+                  return list.get(lastIndex);
+              }
+          }
+
+          public static void deleteLast(Vector list) {
+              synchronized (list) {
+                  int lastIndex = list.size() - 1;
+                  list.remove(lastIndex);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — each holds the vector's own lock across `size()` and the access"
+        correct: true
+      - text: "No — they should lock the helper class instead"
+        feedback: "Only the vector's own lock excludes the vector's other callers."
+      - text: "Yes, but only because `Vector` methods are synchronized; locking isn't needed"
+        feedback: "The explicit lock is what makes the compound action atomic."
+
+  - type: choice
+    id: listing-5-3
+    prompt: |
+      **Listing 5.3** · `vector` is a `Vector` shared with other threads, which may remove elements. What can this loop do?
+    code: |
+      for (int i = 0; i < vector.size(); i++)
+          doSomething(vector.get(i));
+    language: java
+    options:
+      - text: "Throw `ArrayIndexOutOfBoundsException` if an element is removed mid-loop"
+        correct: true
+      - text: "Nothing bad — `Vector` is thread-safe"
+        feedback: "Each call is safe on its own, but `size()` and `get(i)` aren't atomic together."
+      - text: "Throw `ConcurrentModificationException`"
+        feedback: "Indexed access doesn't use an iterator, so nothing checks the modification count."
+
+  - type: choice
+    id: listing-5-4
+    prompt: |
+      **Listing 5.4** · What does holding the vector's lock for the whole loop cost?
+    code: |
+      synchronized (vector) {
+          for (int i = 0; i < vector.size(); i++)
+              doSomething(vector.get(i));
+      }
+    language: java
+    options:
+      - text: "No other thread can use the vector until the loop ends"
+        correct: true
+      - text: "Nothing — the loop is now correct and free"
+        feedback: "It's correct, but every other access waits for the whole iteration."
+      - text: "It can still throw `ArrayIndexOutOfBoundsException`"
+        feedback: "No other thread can remove elements while the lock is held."
+
+  - type: choice
+    id: listing-5-5
+    prompt: |
+      **Listing 5.5** · Another thread adds widgets while this loop runs. What can happen?
+    code: |
+      List<Widget> widgetList
+          = Collections.synchronizedList(new ArrayList<Widget>());
+      ...
+      for (Widget w : widgetList)
+          doSomething(w);
+    language: java
+    options:
+      - text: "`ConcurrentModificationException`"
+        correct: true
+      - text: "Nothing — the list is synchronized"
+        feedback: "The wrapper locks each call, not the whole iteration; its iterator is fail-fast."
+      - text: "It deadlocks"
+        feedback: "Nothing holds the lock while waiting."
+
+  - type: choice
+    id: listing-5-6
+    prompt: |
+      **Listing 5.6** · Another thread calls `add` while `addTenThings` runs. What can happen?
+    code: |
+      public class HiddenIterator {
+          @GuardedBy("this") private final Set<Integer> set = new HashSet<Integer>();
+
+          public synchronized void add(Integer i) {
+              set.add(i);
+          }
+
+          public synchronized void remove(Integer i) {
+              set.remove(i);
+          }
+
+          public void addTenThings() {
+              Random r = new Random();
+              for (int i = 0; i < 10; i++)
+                  add(r.nextInt());
+              System.out.println("DEBUG: added ten elements to " + set);
+          }
+      }
+    language: java
+    options:
+      - text: "`ConcurrentModificationException` from the debug line"
+        correct: true
+      - text: "Nothing — `add` and `remove` are synchronized"
+        feedback: "String concatenation calls `set.toString()`, which iterates the set without the lock."
+      - text: "The numbers are added twice"
+        feedback: "Each `add` is synchronized; the danger is the unlocked iteration."
+    explanation: |
+      Hidden iteration: `toString`, `hashCode`, `equals`, `containsAll` and the like all iterate the collection.

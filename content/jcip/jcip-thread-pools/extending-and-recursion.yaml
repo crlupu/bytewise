@@ -46,3 +46,367 @@ steps:
     prompt: Override the hook that runs after each task.
     template: "protected void [[afterExecute]](Runnable r, Throwable t) { ... }"
     code: true
+
+  - type: choice
+    id: listing-8-9
+    prompt: |
+      **Listing 8.9** · Why is `startTime` a `ThreadLocal`?
+    code: |
+      public class TimingThreadPool extends ThreadPoolExecutor {
+
+          public TimingThreadPool() {
+              super(1, 1, 0L, TimeUnit.SECONDS, null);
+          }
+
+          private final ThreadLocal<Long> startTime = new ThreadLocal<Long>();
+          private final Logger log = Logger.getLogger("TimingThreadPool");
+          private final AtomicLong numTasks = new AtomicLong();
+          private final AtomicLong totalTime = new AtomicLong();
+
+          protected void beforeExecute(Thread t, Runnable r) {
+              super.beforeExecute(t, r);
+              log.fine(String.format("Thread %s: start %s", t, r));
+              startTime.set(System.nanoTime());
+          }
+
+          protected void afterExecute(Runnable r, Throwable t) {
+              try {
+                  long endTime = System.nanoTime();
+                  long taskTime = endTime - startTime.get();
+                  numTasks.incrementAndGet();
+                  totalTime.addAndGet(taskTime);
+                  log.fine(String.format("Thread %s: end %s, time=%dns",
+                          t, r, taskTime));
+              } finally {
+                  super.afterExecute(r, t);
+              }
+          }
+
+          protected void terminated() {
+              try {
+                  log.info(String.format("Terminated: avg time=%dns",
+                          totalTime.get() / numTasks.get()));
+              } finally {
+                  super.terminated();
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "`beforeExecute` and `afterExecute` run in the same worker thread, but different workers time tasks concurrently"
+        correct: true
+      - text: "So the timing survives across tasks"
+        feedback: "Each task overwrites the value in `beforeExecute`."
+      - text: "`AtomicLong` can't hold nanoseconds"
+        feedback: "It can; a shared field would just mix up concurrent tasks."
+
+  - type: choice
+    id: listing-8-10
+    prompt: |
+      **Listing 8.10** · When `processInParallel` returns, are all elements processed?
+    code: |
+      void processInParallel(Executor exec, List<Element> elements) {
+          for (final Element e : elements)
+              exec.execute(new Runnable() {
+                  public void run() { process(e); }
+              });
+      }
+    language: java
+    options:
+      - text: "Not necessarily — it only submits the tasks"
+        correct: true
+      - text: "Yes — `execute` waits for each task"
+        feedback: "`execute` hands the task over and returns."
+      - text: "Yes, if the executor has enough threads"
+        feedback: "Even with many threads, nothing waits for them here."
+
+  - type: choice
+    id: listing-8-11
+    prompt: |
+      **Listing 8.11** · `results` is shared by every task. Which collection type must it be?
+    code: |
+      public <T> void parallelRecursive(final Executor exec,
+                                        List<Node<T>> nodes,
+                                        final Collection<T> results) {
+          for (final Node<T> n : nodes) {
+              exec.execute(new Runnable() {
+                  public void run() { results.add(n.compute()); }
+              });
+              parallelRecursive(exec, n.getChildren(), results);
+          }
+      }
+    language: java
+    options:
+      - text: "A thread-safe one, like `ConcurrentLinkedQueue`"
+        correct: true
+      - text: "Any — each task adds a different element"
+        feedback: "Concurrent `add` calls on an `ArrayList` can lose elements or corrupt it."
+      - text: "An `ArrayList`, because the recursion is sequential"
+        feedback: "The traversal is sequential, but the adds happen in pool threads."
+    explanation: |
+      The traversal itself stays sequential; only each node's `compute()` runs in parallel.
+
+  - type: choice
+    id: listing-8-12
+    prompt: |
+      **Listing 8.12** · How does `getParallelResults` know all the computations have finished?
+    code: |
+      public <T> Collection<T> getParallelResults(List<Node<T>> nodes)
+              throws InterruptedException {
+          ExecutorService exec = Executors.newCachedThreadPool();
+          Queue<T> resultQueue = new ConcurrentLinkedQueue<T>();
+          parallelRecursive(exec, nodes, resultQueue);
+          exec.shutdown();
+          exec.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+          return resultQueue;
+      }
+    language: java
+    options:
+      - text: "`parallelRecursive` submits every task before returning, so `shutdown` + `awaitTermination` waits for them all"
+        correct: true
+      - text: "It doesn't — results may be missing"
+        feedback: "All submission happens in the calling thread before `shutdown`."
+      - text: "`ConcurrentLinkedQueue` blocks until full"
+        feedback: "It's non-blocking and unbounded."
+
+  - type: choice
+    id: listing-8-13
+    prompt: |
+      **Listing 8.13** · What do the type parameters `P` and `M` stand for?
+    code: |
+      public interface Puzzle <P, M> {
+          P initialPosition();
+
+          boolean isGoal(P position);
+
+          Set<M> legalMoves(P position);
+
+          P move(P position, M move);
+      }
+    language: java
+    options:
+      - text: "A position and a move"
+        correct: true
+      - text: "A puzzle and its solver"
+        feedback: "`initialPosition()` returns `P`, `legalMoves` returns `Set<M>`."
+      - text: "Parent and member nodes"
+        feedback: "`move(P, M)` returns a new `P`."
+
+  - type: choice
+    id: listing-8-14
+    prompt: |
+      **Listing 8.14** · A goal node is 3 moves from the start: `start →a→ x →b→ y →c→ goal`. What does `asMoveList()` on the goal node return?
+    code: |
+      public class PuzzleNode <P, M> {
+          final P pos;
+          final M move;
+          final PuzzleNode<P, M> prev;
+
+          public PuzzleNode(P pos, M move, PuzzleNode<P, M> prev) {
+              this.pos = pos;
+              this.move = move;
+              this.prev = prev;
+          }
+
+          List<M> asMoveList() {
+              List<M> solution = new LinkedList<M>();
+              for (PuzzleNode<P, M> n = this; n.move != null; n = n.prev)
+                  solution.add(0, n.move);
+              return solution;
+          }
+      }
+    language: java
+    options:
+      - text: "[a, b, c]"
+        correct: true
+      - text: "[c, b, a]"
+        feedback: "Each move is inserted at index 0 while walking back, which reverses the order."
+      - text: "[start, x, y, goal]"
+        feedback: "It collects moves, not positions."
+
+  - type: choice
+    id: listing-8-15
+    prompt: |
+      **Listing 8.15** · What search strategy is this?
+    code: |
+      public class SequentialPuzzleSolver <P, M> {
+          private final Puzzle<P, M> puzzle;
+          private final Set<P> seen = new HashSet<P>();
+
+          public SequentialPuzzleSolver(Puzzle<P, M> puzzle) {
+              this.puzzle = puzzle;
+          }
+
+          public List<M> solve() {
+              P pos = puzzle.initialPosition();
+              return search(new PuzzleNode<P, M>(pos, null, null));
+          }
+
+          private List<M> search(PuzzleNode<P, M> node) {
+              if (!seen.contains(node.pos)) {
+                  seen.add(node.pos);
+                  if (puzzle.isGoal(node.pos))
+                      return node.asMoveList();
+                  for (M move : puzzle.legalMoves(node.pos)) {
+                      P pos = puzzle.move(node.pos, move);
+                      PuzzleNode<P, M> child = new PuzzleNode<P, M>(pos, move, node);
+                      List<M> result = search(child);
+                      if (result != null)
+                          return result;
+                  }
+              }
+              return null;
+          }
+      }
+    language: java
+    options:
+      - text: "Depth-first, skipping positions already seen"
+        correct: true
+      - text: "Breadth-first"
+        feedback: "It recurses into the first child before trying siblings."
+      - text: "Exhaustive with no pruning"
+        feedback: "`seen` prevents revisiting positions."
+
+  - type: choice
+    id: listing-8-16
+    prompt: |
+      **Listing 8.16** · The puzzle has no solution. What does `solve()` do?
+    code: |
+      public class ConcurrentPuzzleSolver <P, M> {
+          private final Puzzle<P, M> puzzle;
+          private final ExecutorService exec;
+          private final ConcurrentMap<P, Boolean> seen;
+          protected final ValueLatch<PuzzleNode<P, M>> solution = new ValueLatch<PuzzleNode<P, M>>();
+
+          public ConcurrentPuzzleSolver(Puzzle<P, M> puzzle) {
+              this.puzzle = puzzle;
+              this.exec = initThreadPool();
+              this.seen = new ConcurrentHashMap<P, Boolean>();
+              if (exec instanceof ThreadPoolExecutor) {
+                  ThreadPoolExecutor tpe = (ThreadPoolExecutor) exec;
+                  tpe.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+              }
+          }
+
+          private ExecutorService initThreadPool() {
+              return Executors.newCachedThreadPool();
+          }
+
+          public List<M> solve() throws InterruptedException {
+              try {
+                  P p = puzzle.initialPosition();
+                  exec.execute(newTask(p, null, null));
+                  // block until solution found
+                  PuzzleNode<P, M> solnPuzzleNode = solution.getValue();
+                  return (solnPuzzleNode == null) ? null : solnPuzzleNode.asMoveList();
+              } finally {
+                  exec.shutdown();
+              }
+          }
+
+          protected Runnable newTask(P p, M m, PuzzleNode<P, M> n) {
+              return new SolverTask(p, m, n);
+          }
+
+          protected class SolverTask extends PuzzleNode<P, M> implements Runnable {
+              SolverTask(P pos, M move, PuzzleNode<P, M> prev) {
+                  super(pos, move, prev);
+              }
+
+              public void run() {
+                  if (solution.isSet()
+                          || seen.putIfAbsent(pos, true) != null)
+                      return; // already solved or seen this position
+                  if (puzzle.isGoal(pos))
+                      solution.setValue(this);
+                  else
+                      for (M m : puzzle.legalMoves(pos))
+                          exec.execute(newTask(puzzle.move(pos, m), m, this));
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Waits forever — `getValue()` blocks until a solution is set"
+        correct: true
+      - text: "Returns `null`"
+        feedback: "Nothing ever calls `setValue` if no goal is found."
+      - text: "Throws when the pool runs out of tasks"
+        feedback: "An idle pool doesn't signal anything."
+
+  - type: choice
+    id: listing-8-17
+    prompt: |
+      **Listing 8.17** · Two solver tasks find a goal at once and both call `setValue`. Which value does `getValue` return?
+    code: |
+      public class ValueLatch <T> {
+          @GuardedBy("this") private T value = null;
+          private final CountDownLatch done = new CountDownLatch(1);
+
+          public boolean isSet() {
+              return (done.getCount() == 0);
+          }
+
+          public synchronized void setValue(T newValue) {
+              if (!isSet()) {
+                  value = newValue;
+                  done.countDown();
+              }
+          }
+
+          public T getValue() throws InterruptedException {
+              done.await();
+              synchronized (this) {
+                  return value;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "The first one set — the second call sees `isSet()` and does nothing"
+        correct: true
+      - text: "The last one set"
+        feedback: "`setValue` is synchronized and only writes if not yet set."
+      - text: "Either, unpredictably mixed"
+        feedback: "The lock makes check-and-set atomic."
+
+  - type: choice
+    id: listing-8-18
+    prompt: |
+      **Listing 8.18** · How does this solver detect that there is no solution?
+    code: |
+      public class PuzzleSolver <P,M> extends ConcurrentPuzzleSolver<P, M> {
+          PuzzleSolver(Puzzle<P, M> puzzle) {
+              super(puzzle);
+          }
+
+          private final AtomicInteger taskCount = new AtomicInteger(0);
+
+          protected Runnable newTask(P p, M m, PuzzleNode<P, M> n) {
+              return new CountingSolverTask(p, m, n);
+          }
+
+          class CountingSolverTask extends SolverTask {
+              CountingSolverTask(P pos, M move, PuzzleNode<P, M> prev) {
+                  super(pos, move, prev);
+                  taskCount.incrementAndGet();
+              }
+
+              public void run() {
+                  try {
+                      super.run();
+                  } finally {
+                      if (taskCount.decrementAndGet() == 0)
+                          solution.setValue(null);
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Counts live tasks; when the count drops to zero, it sets the solution to `null`"
+        correct: true
+      - text: "It times out"
+        feedback: "There's no timeout here — a time limit could be added to `getValue` separately."
+      - text: "It checks if the `seen` map stops growing"
+        feedback: "It uses `taskCount`."

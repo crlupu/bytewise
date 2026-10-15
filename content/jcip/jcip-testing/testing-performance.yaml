@@ -56,3 +56,106 @@ steps:
   - type: blank
     prompt: Complete the advice.
     template: "Run tests long enough that [[garbage]] collection and compilation happen many times, rather than once by chance."
+
+  - type: choice
+    id: listing-12-11
+    prompt: |
+      **Listing 12.11** · This is the barrier action of a `CyclicBarrier`. When the barrier trips twice, what does `getTime()` return?
+    code: |
+      public class BarrierTimer implements Runnable {
+          private boolean started;
+          private long startTime, endTime;
+
+          public synchronized void run() {
+              long t = System.nanoTime();
+              if (!started) {
+                  started = true;
+                  startTime = t;
+              } else
+                  endTime = t;
+          }
+
+          public synchronized void clear() {
+              started = false;
+          }
+
+          public synchronized long getTime() {
+              return endTime - startTime;
+          }
+      }
+    language: java
+    options:
+      - text: "The time between the two trips"
+        correct: true
+      - text: "The time since the timer was created"
+        feedback: "The first trip records the start."
+      - text: "Zero"
+        feedback: "The second trip records the end."
+
+  - type: choice
+    id: listing-12-12
+    prompt: |
+      **Listing 12.12** · Why measure with the barrier action rather than timing inside each thread?
+    code: |
+      public TimedPutTakeTest(int cap, int pairs, int trials) {
+          super(cap, pairs, trials);
+          barrier = new CyclicBarrier(nPairs * 2 + 1, timer);
+      }
+
+      public void test() {
+          try {
+              timer.clear();
+              for (int i = 0; i < nPairs; i++) {
+                  pool.execute(new PutTakeTest.Producer());
+                  pool.execute(new PutTakeTest.Consumer());
+              }
+              barrier.await();
+              barrier.await();
+              long nsPerItem = timer.getTime() / (nPairs * (long) nTrials);
+              System.out.print("Throughput: " + nsPerItem + " ns/item");
+              assertEquals(putSum.get(), takeSum.get());
+          } catch (Exception e) {
+              throw new RuntimeException(e);
+          }
+      }
+    language: java
+    options:
+      - text: "It times the whole run, from when all threads start to when all finish"
+        correct: true
+      - text: "It's more precise than `System.nanoTime`"
+        feedback: "It uses `nanoTime` too."
+      - text: "Threads can't read the clock"
+        feedback: "They can; per-thread times just don't add up to the total."
+
+  - type: choice
+    id: listing-12-13
+    prompt: |
+      **Listing 12.13** · This driver runs each configuration twice, with a 1 s sleep between. Why the second run?
+    code: |
+      public static void main(String[] args) throws Exception {
+          int tpt = 100000; // trials per thread
+          for (int cap = 1; cap <= 1000; cap *= 10) {
+              System.out.println("Capacity: " + cap);
+              for (int pairs = 1; pairs <= 128; pairs *= 2) {
+                  TimedPutTakeTest t = new TimedPutTakeTest(cap, pairs, tpt);
+                  System.out.print("Pairs: " + pairs + "\t");
+                  t.test();
+                  System.out.print("\t");
+                  Thread.sleep(1000);
+                  t.test();
+                  System.out.println();
+                  Thread.sleep(1000);
+              }
+          }
+          PutTakeTest.pool.shutdown();
+      }
+    language: java
+    options:
+      - text: "The first run includes warm-up — JIT compilation and thread creation; the second is steadier"
+        correct: true
+      - text: "To average away randomness"
+        feedback: "Two runs are printed side by side, not averaged."
+      - text: "The first run always fails"
+        feedback: "Both runs assert the same checksum."
+    explanation: |
+      Typically capacity 1 is slowest, and throughput drops as the number of pairs exceeds the CPUs.

@@ -68,3 +68,204 @@ steps:
         correct: true
       - text: Thread safety
         feedback: That's solved; what's left is a policy for when entries leave.
+
+  - type: choice
+    id: listing-5-16
+    prompt: |
+      **Listing 5.16** · Is `Memoizer1` thread-safe, and how does it perform?
+    code: |
+      public class Memoizer1 <A, V> implements Computable<A, V> {
+          @GuardedBy("this") private final Map<A, V> cache = new HashMap<A, V>();
+          private final Computable<A, V> c;
+
+          public Memoizer1(Computable<A, V> c) {
+              this.c = c;
+          }
+
+          public synchronized V compute(A arg) throws InterruptedException {
+              V result = cache.get(arg);
+              if (result == null) {
+                  result = c.compute(arg);
+                  cache.put(arg, result);
+              }
+              return result;
+          }
+      }
+
+      interface Computable <A, V> {
+          V compute(A arg) throws InterruptedException;
+      }
+
+      class ExpensiveFunction
+              implements Computable<String, BigInteger> {
+          public BigInteger compute(String arg) {
+              // after deep thought...
+              return new BigInteger(arg);
+          }
+      }
+    language: java
+    options:
+      - text: "It's thread-safe"
+        correct: true
+      - text: "Only one thread can compute at a time, even for different arguments"
+        correct: true
+      - text: "Two threads can compute the same value"
+        feedback: "The whole method is synchronized."
+
+  - type: choice
+    id: listing-5-17
+    prompt: |
+      **Listing 5.17** · What's the remaining problem with `Memoizer2`?
+    code: |
+      public class Memoizer2 <A, V> implements Computable<A, V> {
+          private final Map<A, V> cache = new ConcurrentHashMap<A, V>();
+          private final Computable<A, V> c;
+
+          public Memoizer2(Computable<A, V> c) {
+              this.c = c;
+          }
+
+          public V compute(A arg) throws InterruptedException {
+              V result = cache.get(arg);
+              if (result == null) {
+                  result = c.compute(arg);
+                  cache.put(arg, result);
+              }
+              return result;
+          }
+      }
+    language: java
+    options:
+      - text: "Two threads can compute the same value at the same time"
+        correct: true
+      - text: "It isn't thread-safe — the map can be corrupted"
+        feedback: "`ConcurrentHashMap` handles concurrent `get` and `put`."
+      - text: "Only one thread can compute at a time"
+        feedback: "There's no lock around the computation anymore."
+
+  - type: choice
+    id: listing-5-18
+    prompt: |
+      **Listing 5.18** · What's the remaining problem with `Memoizer3`?
+    code: |
+      public class Memoizer3<A, V> implements Computable<A, V> {
+          private final Map<A, Future<V>> cache
+                  = new ConcurrentHashMap<A, Future<V>>();
+          private final Computable<A, V> c;
+
+          public Memoizer3(Computable<A, V> c) { this.c = c; }
+
+          public V compute(final A arg) throws InterruptedException {
+              Future<V> f = cache.get(arg);
+              if (f == null) {
+                  Callable<V> eval = new Callable<V>() {
+                      public V call() throws InterruptedException {
+                          return c.compute(arg);
+                      }
+                  };
+                  FutureTask<V> ft = new FutureTask<V>(eval);
+                  f = ft;
+                  cache.put(arg, ft);
+                  ft.run(); // call to c.compute happens here
+              }
+              try {
+                  return f.get();
+              } catch (ExecutionException e) {
+                  throw launderThrowable(e.getCause());
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "A small window remains: two threads can both miss, both put, and both compute"
+        correct: true
+      - text: "Threads asking for a value already being computed compute it again"
+        feedback: "They find the `Future` and wait on it — that's what this version fixed."
+      - text: "None — it's the final version"
+        feedback: "`get`, then `put`, is still check-then-act."
+
+  - type: choice
+    id: listing-5-19
+    prompt: |
+      **Listing 5.19** · Is each value computed only once, and what happens if a computation is cancelled?
+    code: |
+      public class Memoizer <A, V> implements Computable<A, V> {
+          private final ConcurrentMap<A, Future<V>> cache
+                  = new ConcurrentHashMap<A, Future<V>>();
+          private final Computable<A, V> c;
+
+          public Memoizer(Computable<A, V> c) {
+              this.c = c;
+          }
+
+          public V compute(final A arg) throws InterruptedException {
+              while (true) {
+                  Future<V> f = cache.get(arg);
+                  if (f == null) {
+                      Callable<V> eval = new Callable<V>() {
+                          public V call() throws InterruptedException {
+                              return c.compute(arg);
+                          }
+                      };
+                      FutureTask<V> ft = new FutureTask<V>(eval);
+                      f = cache.putIfAbsent(arg, ft);
+                      if (f == null) {
+                          f = ft;
+                          ft.run();
+                      }
+                  }
+                  try {
+                      return f.get();
+                  } catch (CancellationException e) {
+                      cache.remove(arg, f);
+                  } catch (ExecutionException e) {
+                      throw LaunderThrowable.launderThrowable(e.getCause());
+                  }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Each value is computed once — `putIfAbsent` lets only one future in"
+        correct: true
+      - text: "A cancelled future is removed, and the loop tries again"
+        correct: true
+      - text: "Cached values expire after a while"
+        feedback: "There's no expiry or eviction — the cache only grows."
+
+  - type: choice
+    id: listing-5-20
+    prompt: |
+      **Listing 5.20** · Two requests ask to factor the same number at the same moment. What happens?
+    code: |
+      public class Factorizer extends GenericServlet implements Servlet {
+          private final Computable<BigInteger, BigInteger[]> c =
+                  new Computable<BigInteger, BigInteger[]>() {
+                      public BigInteger[] compute(BigInteger arg) {
+                          return factor(arg);
+                      }
+                  };
+          private final Computable<BigInteger, BigInteger[]> cache
+                  = new Memoizer<BigInteger, BigInteger[]>(c);
+
+          public void service(ServletRequest req,
+                              ServletResponse resp) {
+              try {
+                  BigInteger i = extractFromRequest(req);
+                  encodeIntoResponse(resp, cache.compute(i));
+              } catch (InterruptedException e) {
+                  encodeError(resp, "factorization interrupted");
+              }
+          }
+
+          void encodeError(ServletResponse resp, String errorString) {
+          }
+      }
+    language: java
+    options:
+      - text: "It's factored once; both requests get the result"
+        correct: true
+      - text: "It's factored twice"
+        feedback: "The `Memoizer` makes the second request wait on the first's `Future`."
+      - text: "The second request gets an error"
+        feedback: "It simply waits for the result."

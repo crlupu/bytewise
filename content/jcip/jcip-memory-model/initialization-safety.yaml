@@ -52,3 +52,34 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "Initialization safety applies only to values reachable through [[final]] fields, as of the time the constructor finishes."
+
+  - type: choice
+    id: listing-16-8
+    prompt: |
+      **Listing 16.8** · A `SafeStates` reference is passed to another thread through a data race. Will that thread see the full map?
+    code: |
+      public class SafeStates {
+          private final Map<String, String> states;
+
+          public SafeStates() {
+              states = new HashMap<String, String>();
+              states.put("alaska", "AK");
+              states.put("alabama", "AL");
+              /*...*/
+              states.put("wyoming", "WY");
+          }
+
+          public String getAbbreviation(String s) {
+              return states.get(s);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — writes reachable through a final field, made in the constructor, are visible once it ends"
+        correct: true
+      - text: "No — `HashMap` isn't thread-safe"
+        feedback: "It's never modified after construction, and final-field semantics cover its contents."
+      - text: "Only if `states` were volatile"
+        feedback: "`final` gives initialization safety."
+    explanation: |
+      This holds only if `this` doesn't escape during construction, and only for the state as of the end of the constructor.

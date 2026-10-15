@@ -57,3 +57,125 @@ steps:
     prompt: Release everyone waiting on a start gate.
     template: "startGate.[[countDown]]();"
     code: true
+
+  - type: choice
+    id: listing-5-11
+    prompt: |
+      **Listing 5.11** · What does `timeTasks` measure?
+    code: |
+      public class TestHarness {
+          public long timeTasks(int nThreads, final Runnable task)
+                  throws InterruptedException {
+              final CountDownLatch startGate = new CountDownLatch(1);
+              final CountDownLatch endGate = new CountDownLatch(nThreads);
+
+              for (int i = 0; i < nThreads; i++) {
+                  Thread t = new Thread() {
+                      public void run() {
+                          try {
+                              startGate.await();
+                              try {
+                                  task.run();
+                              } finally {
+                                  endGate.countDown();
+                              }
+                          } catch (InterruptedException ignored) {
+                          }
+                      }
+                  };
+                  t.start();
+              }
+
+              long start = System.nanoTime();
+              startGate.countDown();
+              endGate.await();
+              long end = System.nanoTime();
+              return end - start;
+          }
+      }
+    language: java
+    options:
+      - text: "The time from releasing all threads together until the last one finishes"
+        correct: true
+      - text: "The time to create and start the threads"
+        feedback: "Timing starts only after every thread is waiting at the start gate."
+      - text: "Each thread's own running time"
+        feedback: "It measures the whole batch, from one start to the last finish."
+
+  - type: choice
+    id: listing-5-12
+    prompt: |
+      **Listing 5.12** · `get()` is called before loading has finished. What happens?
+    code: |
+      public class Preloader {
+          ProductInfo loadProductInfo() throws DataLoadException {
+              return null;
+          }
+
+          private final FutureTask<ProductInfo> future =
+              new FutureTask<ProductInfo>(new Callable<ProductInfo>() {
+                  public ProductInfo call() throws DataLoadException {
+                      return loadProductInfo();
+                  }
+              });
+          private final Thread thread = new Thread(future);
+
+          public void start() { thread.start(); }
+
+          public ProductInfo get()
+                  throws DataLoadException, InterruptedException {
+              try {
+                  return future.get();
+              } catch (ExecutionException e) {
+                  Throwable cause = e.getCause();
+                  if (cause instanceof DataLoadException)
+                      throw (DataLoadException) cause;
+                  else
+                      throw LaunderThrowable.launderThrowable(cause);
+              }
+          }
+
+          interface ProductInfo {
+          }
+      }
+
+      class DataLoadException extends Exception { }
+    language: java
+    options:
+      - text: "It waits until the data is loaded, then returns it"
+        correct: true
+      - text: "It returns `null`"
+        feedback: "`FutureTask.get()` blocks until the result is ready."
+      - text: "It starts a second load"
+        feedback: "The task runs once, in the preloading thread."
+
+  - type: choice
+    id: listing-5-13
+    prompt: |
+      **Listing 5.13** · What does `launderThrowable` do with a checked exception like `IOException`?
+    code: |
+      public class LaunderThrowable {
+
+          /**
+           * Coerce an unchecked Throwable to a RuntimeException
+           * <p/>
+           * If the Throwable is an Error, throw it; if it is a
+           * RuntimeException return it, otherwise throw IllegalStateException
+           */
+          public static RuntimeException launderThrowable(Throwable t) {
+              if (t instanceof RuntimeException)
+                  return (RuntimeException) t;
+              else if (t instanceof Error)
+                  throw (Error) t;
+              else
+                  throw new IllegalStateException("Not unchecked", t);
+          }
+      }
+    language: java
+    options:
+      - text: "Throws `IllegalStateException` — the caller should have handled checked causes already"
+        correct: true
+      - text: "Returns it wrapped as a `RuntimeException`"
+        feedback: "Only `RuntimeException`s are returned; a checked cause means a logic error."
+      - text: "Rethrows it unchanged"
+        feedback: "Checked exceptions can't be rethrown from a method that doesn't declare them."

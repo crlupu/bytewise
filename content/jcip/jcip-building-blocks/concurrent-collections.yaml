@@ -69,3 +69,27 @@ steps:
         correct: true
       - text: A queue of jobs added and removed thousands of times a second
         feedback: Each write copies the whole array, so frequent writes are very expensive.
+
+  - type: choice
+    id: listing-5-7
+    prompt: |
+      **Listing 5.7** · Two threads call `putIfAbsent("k", v)` at once on a `ConcurrentHashMap` without `"k"`. What happens?
+    code: |
+      public interface ConcurrentMap<K, V> extends Map<K, V> {
+          // Insert into map only if no value is mapped from K
+          V putIfAbsent(K key, V value);
+          // Remove only if K is mapped to V
+          boolean remove(K key, V value);
+          // Replace value only if K is mapped to oldValue
+          boolean replace(K key, V oldValue, V newValue);
+          // Replace value only if K is mapped to some value
+          V replace(K key, V newValue);
+      }
+    language: java
+    options:
+      - text: "Exactly one value is stored; the other call returns it"
+        correct: true
+      - text: "Both values are stored, the later replacing the earlier"
+        feedback: "`putIfAbsent` is atomic — the check and the insert can't be split."
+      - text: "Both calls return `null`"
+        feedback: "Only the winner gets `null`; the loser gets the winner's value."

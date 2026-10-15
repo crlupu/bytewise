@@ -61,3 +61,30 @@ steps:
       - text: The `HashMap` — it manages its own state
         feedback: An object you encapsulate is part of your state. Collections hand out shared ownership only through what they return.
     explanation: Ownership is a design decision; documenting it tells others who is responsible for locking.
+
+  - type: choice
+    id: listing-4-1
+    prompt: |
+      **Listing 4.1** · Is `Counter` thread-safe?
+    code: |
+      public final class Counter {
+          @GuardedBy("this") private long value = 0;
+
+          public synchronized long getValue() {
+              return value;
+          }
+
+          public synchronized long increment() {
+              if (value == Long.MAX_VALUE)
+                  throw new IllegalStateException("counter overflow");
+              return ++value;
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — its only state is guarded by `this`, and both methods hold it"
+        correct: true
+      - text: "No — `increment` checks then acts"
+        feedback: "The check and the increment happen inside one synchronized method."
+      - text: "No — `getValue` doesn't need the lock but should drop it"
+        feedback: "Reading a `long` needs the lock to be guaranteed fresh — and atomic on 32-bit JVMs."

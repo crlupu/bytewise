@@ -93,3 +93,37 @@ steps:
       Intrinsic locks are purely cooperative: holding an object's lock only stops other threads from acquiring that same lock.
       Code that reads or writes the fields without synchronizing isn't affected at all.
       Thread safety comes from every access to shared state using the same lock, consistently — which is why documenting the guarding lock matters.
+
+  - type: choice
+    id: listing-2-5
+    prompt: |
+      **Listing 2.5** · Two requests run `service` at once with different numbers. What can go wrong?
+    code: |
+      public class UnsafeCachingFactorizer extends GenericServlet implements Servlet {
+          private final AtomicReference<BigInteger> lastNumber
+                  = new AtomicReference<BigInteger>();
+          private final AtomicReference<BigInteger[]> lastFactors
+                  = new AtomicReference<BigInteger[]>();
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              if (i.equals(lastNumber.get()))
+                  encodeIntoResponse(resp, lastFactors.get());
+              else {
+                  BigInteger[] factors = factor(i);
+                  lastNumber.set(i);
+                  lastFactors.set(factors);
+                  encodeIntoResponse(resp, factors);
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "A request can get the factors of a different number"
+        correct: true
+      - text: "`lastNumber` and `lastFactors` can be updated by different threads, leaving a mismatched pair"
+        correct: true
+      - text: "Nothing — each field is an atomic reference"
+        feedback: "Each update is atomic, but the pair isn't: the invariant spans two variables."
+    explanation: |
+      Two atomic variables don't make a compound action atomic. Both must change together, under one lock.

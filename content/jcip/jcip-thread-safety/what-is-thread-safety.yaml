@@ -65,3 +65,25 @@ steps:
         correct: true
       - text: After it's finished and tested single-threaded
         feedback: Good encapsulation and immutability make it easy early; adding locks later means re-examining every access.
+
+  - type: choice
+    id: listing-2-1
+    prompt: |
+      **Listing 2.1** · Many requests call `service` at once on one `StatelessFactorizer`. Is it thread-safe?
+    code: |
+      public class StatelessFactorizer extends GenericServlet implements Servlet {
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = factor(i);
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: "Yes — it has no fields, so threads share no state"
+        correct: true
+      - text: "No — `service` needs to be `synchronized`"
+        feedback: "There's nothing shared to protect: each call uses only its own local variables."
+      - text: "No — `factors` is shared between requests"
+        feedback: "`factors` is a local variable, so each thread has its own."

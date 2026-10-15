@@ -4,5 +4,6 @@ lessons:
   - interruption
   - cancelling-tasks
   - stopping-services
+  - stopping-services-code
   - abnormal-termination
   - jvm-shutdown

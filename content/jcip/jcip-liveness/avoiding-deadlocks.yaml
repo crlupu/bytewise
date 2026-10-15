@@ -69,3 +69,59 @@ steps:
     prompt: Try a lock, giving up after a timeout.
     template: "if (lock.[[tryLock]](1, TimeUnit.SECONDS)) { try { ... } finally { lock.unlock(); } }"
     code: true
+
+  - type: choice
+    id: listing-10-3
+    prompt: |
+      **Listing 10.3** · `transferMoney` locks both accounts, picking the order by `System.identityHashCode`. Why is there a third branch with `tieLock`?
+    code: |
+      int fromHash = System.identityHashCode(fromAcct);
+      int toHash = System.identityHashCode(toAcct);
+
+      if (fromHash < toHash) {
+          synchronized (fromAcct) {
+              synchronized (toAcct) { new Helper().transfer(); }
+          }
+      } else if (fromHash > toHash) {
+          synchronized (toAcct) {
+              synchronized (fromAcct) { new Helper().transfer(); }
+          }
+      } else {
+          synchronized (tieLock) {
+              synchronized (fromAcct) {
+                  synchronized (toAcct) { new Helper().transfer(); }
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "Two different objects can have the same identity hash; the tie lock makes such pairs take turns"
+        correct: true
+      - text: "For transfers from an account to itself"
+        feedback: "Locks are reentrant, so that case is fine either way; the issue is two distinct accounts with equal hashes."
+      - text: "To make transfers faster"
+        feedback: "It serializes tied transfers; it's rare enough not to matter."
+    explanation: |
+      If accounts have a unique, comparable key such as an account number, ordering by it avoids the tie lock altogether.
+
+  - type: choice
+    id: listing-10-7
+    prompt: |
+      **Listing 10.7** · What does this thread dump excerpt show?
+    code: |
+      "Thread-1":
+        waiting to lock monitor 0x080f0cdc (a MumbleDBConnection),
+        which is held by "Thread-0"
+      "Thread-0":
+        waiting to lock monitor 0x080f0ed4 (a MumbleDBCallableStatement),
+        which is held by "Thread-1"
+    language: java
+    options:
+      - text: "A deadlock: each thread holds the lock the other is waiting for"
+        correct: true
+      - text: "Lock contention that will resolve once Thread-0 finishes"
+        feedback: "Thread-0 can't finish — it's waiting on Thread-1."
+      - text: "A livelock"
+        feedback: "Livelocked threads keep running; these are blocked."
+    explanation: |
+      The JVM finds such cycles itself; `jstack` prints "Found one Java-level deadlock".

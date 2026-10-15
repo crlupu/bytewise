@@ -77,3 +77,41 @@ steps:
   - type: blank
     prompt: Complete the rule.
     template: "Don't worry excessively about the cost of [[uncontended]] synchronization; focus your optimization efforts on areas where lock [[contention]] actually occurs."
+
+  - type: choice
+    id: listing-11-2
+    prompt: |
+      **Listing 11.2** · What does this synchronization achieve?
+    code: |
+      synchronized (new Object()) {
+          // do something
+      }
+    language: java
+    options:
+      - text: "Nothing — no other thread can ever lock that object; the JVM may remove it"
+        correct: true
+      - text: "It makes the block atomic"
+        feedback: "Each call locks a fresh object, so nothing is excluded."
+      - text: "It flushes memory for other threads"
+        feedback: "Visibility only applies between threads locking the same object."
+
+  - type: choice
+    id: listing-11-3
+    prompt: |
+      **Listing 11.3** · `getStoogeNames()` uses a `Vector`, whose methods lock it. What can the JIT do here?
+    code: |
+      public String getStoogeNames() {
+          List<String> stooges = new Vector<String>();
+          stooges.add("Moe");
+          stooges.add("Larry");
+          stooges.add("Curly");
+          return stooges.toString();
+      }
+    language: java
+    options:
+      - text: "Remove all four locks — escape analysis shows the vector never leaves the method"
+        correct: true
+      - text: "Nothing — it must take the lock four times"
+        feedback: "Uncontended, unshared locks can be elided."
+      - text: "Merge them but never remove them"
+        feedback: "Coarsening merges; elision removes them for thread-local objects."

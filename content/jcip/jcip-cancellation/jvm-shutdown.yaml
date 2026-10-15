@@ -55,3 +55,27 @@ steps:
   - type: blank
     prompt: Complete the advice on finalizers.
     template: "Avoid [[finalizers]]: in most cases `finally` blocks and explicit close methods manage resources better."
+
+  - type: choice
+    id: listing-7-26
+    prompt: |
+      **Listing 7.26** · When does this hook run?
+    code: |
+      public void start() {
+          Runtime.getRuntime().addShutdownHook(new Thread() {
+              public void run() {
+                  try { LogService.this.stop(); }
+                  catch (InterruptedException ignored) { }
+              }
+          });
+      }
+    language: java
+    options:
+      - text: "On orderly shutdown — last non-daemon thread ends, `System.exit`, or Ctrl-C"
+        correct: true
+      - text: "On any shutdown, including `Runtime.halt` and `kill -9`"
+        feedback: "Abrupt termination skips hooks."
+      - text: "Only on `System.exit`"
+        feedback: "Normal exit and SIGINT also run hooks."
+    explanation: |
+      Hooks run concurrently with each other and with any live threads — so they must be thread-safe and quick.

@@ -87,3 +87,52 @@ steps:
         right: Synchronizes internally; callers just use its public interface
       - left: Guarded
         right: Accessed only with a specific lock held
+
+  - type: choice
+    id: listing-3-14
+    prompt: |
+      **Listing 3.14** · One thread calls `initialize()`; another reads `holder`. What can the reader see?
+    code: |
+      public class StuffIntoPublic {
+          public Holder holder;
+
+          public void initialize() {
+              holder = new Holder(42);
+          }
+      }
+    language: java
+    options:
+      - text: "`null`, even after `initialize()` has run"
+        correct: true
+      - text: "A `Holder` whose `n` still looks like 0"
+        correct: true
+      - text: "Always a fully built `Holder` with `n` = 42"
+        feedback: "The write to `holder` isn't synchronized, so the reader has no guarantee about either the reference or the object's fields."
+
+  - type: choice
+    id: listing-3-15
+    prompt: |
+      **Listing 3.15** · A `Holder` is published without synchronization, through a plain public field. Another thread calls `assertSanity()`. What can happen?
+    code: |
+      public class Holder {
+          private int n;
+
+          public Holder(int n) {
+              this.n = n;
+          }
+
+          public void assertSanity() {
+              if (n != n)
+                  throw new AssertionError("This statement is false.");
+          }
+      }
+    language: java
+    options:
+      - text: "It can throw `AssertionError` — the two reads of `n` see different values"
+        correct: true
+      - text: "It can never fail: `n != n` is always false"
+        feedback: "The first read can see the default 0 and the second 42 when the object wasn't safely published."
+      - text: "It's always safe because `n` is private"
+        feedback: "Access modifiers don't affect visibility between threads."
+    explanation: |
+      Making `n` `final`, or publishing the `Holder` safely, would rule this out.

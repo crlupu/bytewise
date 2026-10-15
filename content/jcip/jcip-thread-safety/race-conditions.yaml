@@ -189,3 +189,82 @@ steps:
       Both threads check `instance == null` before either assigns, so both create an `ExpensiveObject`.
       Each caller gets a different object, which matters when it's meant to be a singleton — a registry, a cache, a connection.
       This is check-then-act: the decision is based on an observation that may be out of date by the time you act. Synchronizing the method makes check and act atomic.
+
+  - type: choice
+    id: listing-2-2
+    prompt: |
+      **Listing 2.2** · Many requests call `service` at once. What's true of `count`?
+    code: |
+      public class UnsafeCountingFactorizer extends GenericServlet implements Servlet {
+          private long count = 0;
+
+          public long getCount() {
+              return count;
+          }
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = factor(i);
+              ++count;
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: "Increments can be lost, so `count` ends up too low"
+        correct: true
+      - text: "`getCount()` can return a stale value to another thread"
+        correct: true
+      - text: "It's exact — `++count` is a single operation"
+        feedback: "`++count` is read, add, write: a classic read-modify-write race."
+
+  - type: choice
+    id: listing-2-3
+    prompt: |
+      **Listing 2.3** · Two threads call `getInstance()` at the same time, before an instance exists. What can happen?
+    code: |
+      public class LazyInitRace {
+          private ExpensiveObject instance = null;
+
+          public ExpensiveObject getInstance() {
+              if (instance == null)
+                  instance = new ExpensiveObject();
+              return instance;
+          }
+      }
+
+      class ExpensiveObject { }
+    language: java
+    options:
+      - text: "Both create an `ExpensiveObject`, and the callers get different instances"
+        correct: true
+      - text: "Exactly one instance is ever created"
+        feedback: "Both threads can see `null` before either assigns — check-then-act."
+      - text: "It deadlocks"
+        feedback: "No locks are involved at all."
+
+  - type: choice
+    id: listing-2-4
+    prompt: |
+      **Listing 2.4** · Many requests call `service` at once. What's true of `count`?
+    code: |
+      public class CountingFactorizer extends GenericServlet implements Servlet {
+          private final AtomicLong count = new AtomicLong(0);
+
+          public long getCount() { return count.get(); }
+
+          public void service(ServletRequest req, ServletResponse resp) {
+              BigInteger i = extractFromRequest(req);
+              BigInteger[] factors = factor(i);
+              count.incrementAndGet();
+              encodeIntoResponse(resp, factors);
+          }
+      }
+    language: java
+    options:
+      - text: "Every request is counted exactly once"
+        correct: true
+      - text: "Increments can be lost"
+        feedback: "`incrementAndGet` is an atomic read-modify-write."
+      - text: "`service` must also be `synchronized`"
+        feedback: "The only state is the `AtomicLong`, which is thread-safe on its own."

@@ -94,3 +94,87 @@ steps:
         right: Writes seen out of order — reordering
       - left: The reader sees half of two different 64-bit writes
         right: A nonatomic `long` or `double` write
+
+  - type: choice
+    id: listing-3-1
+    prompt: |
+      **Listing 3.1** · What can this program do?
+    code: |
+      public class NoVisibility {
+          private static boolean ready;
+          private static int number;
+
+          private static class ReaderThread extends Thread {
+              public void run() {
+                  while (!ready)
+                      Thread.yield();
+                  System.out.println(number);
+              }
+          }
+
+          public static void main(String[] args) {
+              new ReaderThread().start();
+              number = 42;
+              ready = true;
+          }
+      }
+    language: java
+    options:
+      - text: "Print 42"
+        correct: true
+      - text: "Print 0"
+        correct: true
+      - text: "Loop forever"
+        correct: true
+      - text: "Only ever print 42"
+        feedback: "With no synchronization, the reader may see `ready` before `number`, or never see `ready` at all."
+
+  - type: choice
+    id: listing-3-2
+    prompt: |
+      **Listing 3.2** · One thread calls `set(5)`; later another calls `get()`. What can it return?
+    code: |
+      public class MutableInteger {
+          private int value;
+
+          public int get() {
+              return value;
+          }
+
+          public void set(int value) {
+              this.value = value;
+          }
+      }
+    language: java
+    options:
+      - text: "5"
+        correct: true
+      - text: "An older value, such as 0"
+        correct: true
+      - text: "Always 5"
+        feedback: "Without synchronization, nothing guarantees the reader sees the write."
+
+  - type: choice
+    id: listing-3-3
+    prompt: |
+      **Listing 3.3** · One thread calls `set(5)`; later another calls `get()`. What does it return?
+    code: |
+      public class SynchronizedInteger {
+          @GuardedBy("this") private int value;
+
+          public synchronized int get() {
+              return value;
+          }
+
+          public synchronized void set(int value) {
+              this.value = value;
+          }
+      }
+    language: java
+    options:
+      - text: "5 — both methods synchronize on the same lock"
+        correct: true
+      - text: "Possibly a stale value"
+        feedback: "Synchronizing both the getter and the setter guarantees visibility."
+      - text: "It would be just as safe with only `set` synchronized"
+        feedback: "The reader must synchronize too, or it may see a stale value."

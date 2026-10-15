@@ -88,3 +88,120 @@ steps:
         right: Safe since Java 5, but more complex than needed
       - left: Double-checked locking without volatile
         right: Broken
+
+  - type: choice
+    id: listing-16-3
+    prompt: |
+      **Listing 16.3** · Two threads call `getInstance()` at once. What can go wrong?
+    code: |
+      public class UnsafeLazyInitialization {
+          private static Resource resource;
+
+          public static Resource getInstance() {
+              if (resource == null)
+                  resource = new Resource();
+              return resource;
+          }
+      }
+    language: java
+    options:
+      - text: "Two instances may be made, and a thread may see a partly constructed `Resource`"
+        correct: true
+      - text: "Only that two instances may be made"
+        feedback: "Without happens-before, another thread can also see the reference before the fields are written."
+      - text: "Nothing — a static field is shared"
+        feedback: "Shared isn't the same as safely published."
+
+  - type: choice
+    id: listing-16-4
+    prompt: |
+      **Listing 16.4** · What's the cost of this fix?
+    code: |
+      public class SafeLazyInitialization {
+          private static Resource resource;
+
+          public synchronized static Resource getInstance() {
+              if (resource == null)
+                  resource = new Resource();
+              return resource;
+          }
+      }
+    language: java
+    options:
+      - text: "Every call takes the lock, even long after initialization"
+        correct: true
+      - text: "It isn't thread-safe"
+        feedback: "The lock makes check and create atomic, and publishes safely."
+      - text: "None at all"
+        feedback: "Uncontended locks are cheap, but heavily called getters contend."
+
+  - type: choice
+    id: listing-16-5
+    prompt: |
+      **Listing 16.5** · Is `getResource()` thread-safe without any locking?
+    code: |
+      public class EagerInitialization {
+          private static Resource resource = new Resource();
+
+          public static Resource getResource() { return resource; }
+      }
+    language: java
+    options:
+      - text: "Yes — static initializers run under the class-init lock, which publishes safely"
+        correct: true
+      - text: "No — `resource` should be volatile"
+        feedback: "Class initialization guarantees visibility of static initializer writes."
+      - text: "Only if `Resource` is immutable"
+        feedback: "Publication is safe; later mutations would still need synchronization."
+
+  - type: choice
+    id: listing-16-6
+    prompt: |
+      **Listing 16.6** · When is the `Resource` created?
+    code: |
+      public class ResourceFactory {
+          private static class ResourceHolder {
+              public static Resource resource = new Resource();
+          }
+
+          public static Resource getResource() {
+              return ResourceHolder.resource;
+          }
+      }
+    language: java
+    options:
+      - text: "On the first call to `getResource()`, when `ResourceHolder` is initialized — lazily and safely"
+        correct: true
+      - text: "When `ResourceFactory` is loaded"
+        feedback: "A nested class is initialized separately, on first use."
+      - text: "On every call"
+        feedback: "Class initialization happens once."
+
+  - type: choice
+    id: listing-16-7
+    prompt: |
+      **Listing 16.7** · What's wrong with this (with a non-volatile `resource`)?
+    code: |
+      public class DoubleCheckedLocking {
+          private static Resource resource;
+
+          public static Resource getInstance() {
+              if (resource == null) {
+                  synchronized (DoubleCheckedLocking.class) {
+                      if (resource == null)
+                          resource = new Resource();
+                  }
+              }
+              return resource;
+          }
+      }
+    language: java
+    options:
+      - text: "The unlocked first read can see a non-null reference to a partly constructed object"
+        correct: true
+      - text: "Two instances may be created"
+        feedback: "The second check under the lock prevents that."
+      - text: "Nothing"
+        feedback: "The fast path has no happens-before with the write."
+    explanation: |
+      Declaring `resource` `volatile` fixes it (Java 5+), but the holder idiom is simpler.

@@ -67,3 +67,129 @@ steps:
   - type: blank
     prompt: Complete the summary.
     template: "AQS-based synchronizers keep their state in a single [[int|integer]], read and written with getState, setState and compareAndSetState."
+
+  - type: choice
+    id: listing-14-13
+    prompt: |
+      **Listing 14.13** · In AQS, what does `tryAcquire` returning `false` lead to?
+    code: |
+      boolean acquire() throws InterruptedException {
+          while (state does not permit acquire) {
+              if (blocking acquisition requested) {
+                  enqueue current thread if not already queued
+                  block current thread
+              }
+              else
+                  return failure
+          }
+          possibly update synchronization state
+          dequeue thread if it was queued
+          return success
+      }
+
+      void release() {
+          update synchronization state
+          if (new state may permit a blocked thread to acquire)
+              unblock one or more queued threads
+      }
+    language: java
+    options:
+      - text: "The thread is queued and blocked until a release may let it in"
+        correct: true
+      - text: "An exception"
+        feedback: "Failure just means wait (or return failure for `try` variants)."
+      - text: "A spin loop"
+        feedback: "AQS parks queued threads."
+
+  - type: choice
+    id: listing-14-14
+    prompt: |
+      **Listing 14.14** · Three threads call `await()`, then one calls `signal()`. What happens?
+    code: |
+      public class OneShotLatch {
+          private final Sync sync = new Sync();
+
+          public void signal() { sync.releaseShared(0); }
+
+          public void await() throws InterruptedException {
+              sync.acquireSharedInterruptibly(0);
+          }
+
+          private class Sync extends AbstractQueuedSynchronizer {
+              protected int tryAcquireShared(int ignored) {
+                  return (getState() == 1) ? 1 : -1;
+              }
+
+              protected boolean tryReleaseShared(int ignored) {
+                  setState(1);
+                  return true;
+              }
+          }
+      }
+    language: java
+    options:
+      - text: "All three are released, and later `await` calls return at once"
+        correct: true
+      - text: "Only one is released"
+        feedback: "Shared mode with a positive result lets every waiter through."
+      - text: "None — state is reset"
+        feedback: "Nothing ever sets the state back to 0."
+
+  - type: choice
+    id: listing-14-15
+    prompt: |
+      **Listing 14.15** · The current thread already owns this `ReentrantLock` with hold count 1 and calls `lock()` again. What does `tryAcquire` do?
+    code: |
+      protected boolean tryAcquire(int ignored) {
+          final Thread current = Thread.currentThread();
+          int c = getState();
+          if (c == 0) {
+              if (compareAndSetState(0, 1)) {
+                  owner = current;
+                  return true;
+              }
+          } else if (current == owner) {
+              setState(c + 1);
+              return true;
+          }
+          return false;
+      }
+    language: java
+    options:
+      - text: "Sets the state to 2 and succeeds — no CAS needed, as only the owner can be here"
+        correct: true
+      - text: "Fails, and the thread deadlocks on itself"
+        feedback: "`current == owner` handles reentry."
+      - text: "CASes the state from 0 to 1"
+        feedback: "State isn't 0; it's held."
+
+  - type: choice
+    id: listing-14-16
+    prompt: |
+      **Listing 14.16** · Semaphore has 1 permit. A thread calls `tryAcquireShared(2)`. What happens?
+    code: |
+      protected int tryAcquireShared(int acquires) {
+          while (true) {
+              int available = getState();
+              int remaining = available - acquires;
+              if (remaining < 0
+                      || compareAndSetState(available, remaining))
+                  return remaining;
+          }
+      }
+
+      protected boolean tryReleaseShared(int releases) {
+          while (true) {
+              int p = getState();
+              if (compareAndSetState(p, p + releases))
+                  return true;
+          }
+      }
+    language: java
+    options:
+      - text: "Returns -1 without changing the state — the thread will be queued"
+        correct: true
+      - text: "Takes the 1 permit and waits for another"
+        feedback: "It's all or nothing."
+      - text: "Sets the state to -1"
+        feedback: "`remaining < 0` short-circuits before the CAS."
