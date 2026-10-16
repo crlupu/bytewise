@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { CheckIcon, DownIcon, GripIcon, UpIcon, WrongIcon } from "@/components/icons";
 import { Html } from "@/components/ui";
 import type { BlankPart, BlankStep, MatchStep, Option, OrderStep } from "@/lib/types";
@@ -108,9 +108,56 @@ export function OrderAnswer({
   const listRef = useRef<HTMLOListElement>(null);
   const [dragging, setDragging] = useState<number | null>(null);
   const locked = phase === "correct";
+  // Where each item was on screen just before a move (keyed by item), so the
+  // items can slide from there to their new places instead of jumping.
+  const before = useRef<Map<number, number> | null>(null);
+  const moved = useRef<number | null>(null);
+  // The item a button just moved, so focus can follow it to its new row.
+  const refocus = useRef<{ item: number; dir: "up" | "down" } | null>(null);
+
+  const rows = () => [...(listRef.current?.children ?? [])] as HTMLElement[];
+
+  useLayoutEffect(() => {
+    const tops = before.current;
+    before.current = null;
+    if (tops && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      for (const el of rows()) {
+        el.getAnimations().forEach((a) => a.cancel());
+        const from = tops.get(Number(el.dataset.item));
+        const dy = from === undefined ? 0 : from - el.getBoundingClientRect().top;
+        if (Math.abs(dy) < 1) continue;
+        // The item being moved lifts slightly and passes over its neighbours.
+        const lead = Number(el.dataset.item) === moved.current;
+        const anim = el.animate(
+          lead
+            ? [
+                { transform: `translateY(${dy}px) scale(1)` },
+                { transform: `translateY(${dy / 2}px) scale(1.02)`, offset: 0.4 },
+                { transform: "none" },
+              ]
+            : [{ transform: `translateY(${dy}px)` }, { transform: "none" }],
+          { duration: 280, easing: "cubic-bezier(0.2, 0.9, 0.3, 1)" },
+        );
+        if (lead) {
+          el.style.zIndex = "2";
+          anim.onfinish = anim.oncancel = () => el.style.removeProperty("z-index");
+        }
+      }
+    }
+    const f = refocus.current;
+    refocus.current = null;
+    if (f) {
+      const row = rows().find((el) => Number(el.dataset.item) === f.item);
+      const btns = [...(row?.querySelectorAll<HTMLButtonElement>(".order-item__moves button") ?? [])];
+      const want = f.dir === "up" ? btns[0] : btns[1];
+      (want && !want.disabled ? want : btns.find((b) => !b.disabled))?.focus();
+    }
+  }, [value]);
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= value.length || from === to) return;
+    before.current = new Map(rows().map((el) => [Number(el.dataset.item), el.getBoundingClientRect().top]));
+    moved.current = value[from];
     const next = value.slice();
     const [x] = next.splice(from, 1);
     next.splice(to, 0, x);
@@ -149,12 +196,12 @@ export function OrderAnswer({
           phase === "wrong" && item !== i ? "is-off" : "",
         ].join(" ");
         return (
-          <li key={item} className={cls}>
+          <li key={item} className={cls} data-item={item}>
             <span className="order-item__index">{i + 1}</span>
             <Html as="span" className="order-item__text" html={step.items[item]} />
             {!locked && (
               <span className="order-item__moves">
-                <button type="button" className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => move(i, i - 1)}>
+                <button type="button" className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => { refocus.current = { item, dir: "up" }; move(i, i - 1); }}>
                   <UpIcon aria-hidden />
                 </button>
                 <button
@@ -162,7 +209,10 @@ export function OrderAnswer({
                   className="icon-btn"
                   aria-label="Move down"
                   disabled={i === value.length - 1}
-                  onClick={() => move(i, i + 1)}
+                  onClick={() => {
+                    refocus.current = { item, dir: "down" };
+                    move(i, i + 1);
+                  }}
                 >
                   <DownIcon aria-hidden />
                 </button>
