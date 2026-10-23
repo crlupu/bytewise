@@ -1,14 +1,17 @@
 /* ============================================================
-   Bytewise — Grove.
+   Bytewise — Volt.
 
-   Black and white, lit by one green. Green means progress: a right
-   answer, a filled meter, a finished lesson. The one filled button on a
-   screen is black in light mode and lime in dark mode. Amber means "not
-   yet" (a wrong answer, an item due, the streak spark); red means
-   destructive and nothing else.
+   Forest and volt: a near-black green, lit by one electric yellow.
+   Yellow means "this matters": the one filled button on a screen, progress,
+   a right answer, the streak. Everything else stays neutral so the yellow
+   is the only saturated colour. Orange means "not yet" (a wrong answer, an
+   item due); red means destructive and nothing else. In light mode yellow
+   can't be read on white, so text-level accents use a deep olive and
+   yellow fills carry a forest edge.
 
    Layout is bento: big rounded tiles of different sizes, a floating tab
-   bar, and answers that sit close to the thumb.
+   bar, and answers that sit close to the thumb. The Continue tile and the
+   rank card are flat forest with a strip of volt bars along the bottom.
 
    Type is Inter Tight for everything you read and JetBrains Mono for
    code and small labels.
@@ -16,10 +19,11 @@
 
 :root {
   --electric: #097cfb;
-  /* Grove: black and white, lit by one green. */
-  --lime: #a6ee6a;
-  --on-lime: #0a1a04;
-  --glow: #7ed957;
+  /* Volt: one electric yellow on forest green. */
+  --lime: #e6ff00;
+  --on-lime: #0a1400;
+  --forest: #112000;
+  --glow: transparent;
 
   --r-card: 24px;
   --r-control: 14px;
@@ -52,37 +56,38 @@
 :root,
 .light {
   color-scheme: light;
-  --background: #f2f4ef;
+  --background: #f3f4ee;
   --surface: #ffffff;
-  --surface-secondary: #eef1ea;
-  --surface-tertiary: #e4e8df;
+  --surface-secondary: #ecede6;
+  --surface-tertiary: #e2e4da;
 
-  --foreground: #0a0d09;
-  --muted: #5a6355;
-  --faint: #9ba496;
+  --foreground: #0a1400;
+  --muted: #585e4e;
+  --faint: #97a27f;
 
-  --separator: #e2e6dd;
-  --border: #d8ddd2;
-  --border-strong: #8a9285;
+  --separator: #e3e5dc;
+  --border: #d7dacf;
+  --border-strong: #7e8968;
 
-  /* Green means progress: a right answer, a filled meter, a done lesson. */
-  --accent: #2f8f2c;
+  /* Progress, right answers and done lessons: deep olive for marks you read,
+     pale volt behind them. */
+  --accent: #2f5200;
   --accent-foreground: #ffffff;
-  --accent-soft: rgba(47, 143, 44, 0.12);
-  --accent-soft-strong: rgba(47, 143, 44, 0.2);
-  --accent-track: rgba(47, 143, 44, 0.16);
-  /* The one filled button per screen: black on light, lime on dark. */
-  --primary: #0a0d09;
-  --primary-foreground: #ffffff;
+  --accent-soft: #f2ff80;
+  --accent-soft-strong: #eaff4d;
+  --accent-track: rgba(10, 20, 0, 0.1);
+  /* The one filled button per screen: forest with volt text. */
+  --primary: #112000;
+  --primary-foreground: #e6ff00;
 
-  --warning: #8a5d0c;
-  --warning-mark: #a8720f;
-  --warning-soft: rgba(201, 138, 18, 0.13);
+  --warning: #b4430c;
+  --warning-mark: #d9541a;
+  --warning-soft: rgba(217, 84, 26, 0.1);
   --danger: #d0302f;
   --danger-soft: rgba(208, 48, 47, 0.1);
 
-  --default: rgba(118, 122, 118, 0.12);
-  --fill-hover: rgba(118, 122, 118, 0.2);
+  --default: rgba(110, 118, 98, 0.12);
+  --fill-hover: rgba(110, 118, 98, 0.2);
 
   --bar-bg: rgba(255, 255, 255, 0.82);
   --bar-border: rgba(0, 0, 0, 0.1);
@@ -91,55 +96,56 @@
   --blanket: rgba(0, 0, 0, 0.28);
 
   --field-bg: #ffffff;
-  --field-border: #d4d7d3;
-  --code-bg: #f6f8f3;
+  --field-border: #d3d9be;
+  --code-bg: #f7f9ec;
 
-  --scale-0: #e4e8df;
+  --scale-0: #e2e4da;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #050605;
-  --surface: #121611;
-  --surface-secondary: #1a2019;
-  --surface-tertiary: #242b22;
+  --background: #060b00;
+  --surface: #0e1602;
+  --surface-secondary: #141f05;
+  --surface-tertiary: #1b2808;
 
-  --foreground: #f1f4ee;
-  --muted: #9aa395;
-  --faint: #5d6659;
+  --foreground: #f5f7ee;
+  --muted: #a3aa94;
+  --faint: #5e6553;
 
-  --separator: #232a21;
-  --border: #2c342a;
-  --border-strong: #6a7466;
+  --separator: #1c2412;
+  --border: #262f1a;
+  --border-strong: #68705a;
 
-  --accent: #8fe25a;
-  --accent-foreground: #0a1a04;
-  --accent-soft: rgba(143, 226, 90, 0.16);
-  --accent-soft-strong: rgba(143, 226, 90, 0.26);
-  --accent-track: rgba(143, 226, 90, 0.2);
-  --primary: #a6ee6a;
-  --primary-foreground: #0a1a04;
+  --accent: #e6ff00;
+  --accent-foreground: #0a1400;
+  --accent-soft: rgba(230, 255, 0, 0.12);
+  --accent-soft-strong: rgba(230, 255, 0, 0.24);
+  --accent-track: rgba(255, 255, 255, 0.1);
+  --primary: #e6ff00;
+  --primary-foreground: #0a1400;
 
-  --warning: #ffc35a;
-  --warning-mark: #ffc35a;
-  --warning-soft: rgba(255, 195, 90, 0.14);
+  /* "Not yet" is orange, far enough from the yellow to never be mistaken for it. */
+  --warning: #ff8a4c;
+  --warning-mark: #ff7a33;
+  --warning-soft: rgba(255, 122, 51, 0.14);
   --danger: #ff6b61;
   --danger-soft: rgba(255, 107, 97, 0.15);
 
-  --default: rgba(120, 120, 128, 0.24);
-  --fill-hover: rgba(120, 120, 128, 0.34);
+  --default: rgba(120, 128, 110, 0.24);
+  --fill-hover: rgba(120, 128, 110, 0.34);
 
-  --bar-bg: rgba(20, 25, 19, 0.82);
+  --bar-bg: rgba(14, 22, 2, 0.82);
   --bar-border: rgba(255, 255, 255, 0.1);
   --card-shadow: none;
   --lift-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   --blanket: rgba(0, 0, 0, 0.55);
 
-  --field-bg: #1a2019;
-  --field-border: #2c342a;
-  --code-bg: #0c0f0b;
+  --field-bg: #0e1602;
+  --field-border: #262f1a;
+  --code-bg: #040800;
 
-  --scale-0: #1a2019;
+  --scale-0: #141f05;
 }
 
 :root {
@@ -2695,7 +2701,7 @@ body {
   border-radius: var(--r-pill);
   box-shadow:
     0 0 0 0.5px var(--bar-border),
-    0 12px 32px -10px rgba(10, 13, 9, 0.35);
+    0 12px 32px -10px rgba(10, 20, 0, 0.35);
 }
 @media (min-width: 42rem) {
   .tabbar {
@@ -2792,23 +2798,32 @@ body {
   margin-block-start: 0.125rem;
 }
 
-/* Continue: black, lit from the corner by the green glow. */
+/* Continue: flat forest, with a strip of volt bars rising along the bottom. */
 .tile--continue {
+  position: relative;
+  overflow: hidden;
   grid-column: 1 / -1;
   min-block-size: 11rem;
   justify-content: flex-end;
   gap: 0.25rem;
+  padding-block-end: 3.75rem;
   color: #fff;
-  background:
-    radial-gradient(70% 90% at 95% 120%, var(--glow), transparent 65%),
-    #0a0d09;
+  background: var(--forest);
   box-shadow: none;
 }
 .dark .tile--continue {
-  background:
-    radial-gradient(70% 90% at 95% 120%, var(--glow), transparent 65%),
-    var(--surface);
-  box-shadow: inset 0 0 0 1px var(--separator);
+  background: #0d1800;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+/* The volt bars: the brand's texture, decorative only. */
+.tile--continue::after,
+.sk-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  block-size: 3.25rem;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20600%20220'%20preserveAspectRatio='none'%3E%3Cg%20fill='%23e6ff00'%3E%3Crect%20x='0'%20y='9'%20width='4'%20height='211'/%3E%3Crect%20x='0'%20y='-31'%20width='2'%20height='12'/%3E%3Crect%20x='6'%20y='147'%20width='8'%20height='73'/%3E%3Crect%20x='6'%20y='114'%20width='2'%20height='32'/%3E%3Crect%20x='14'%20y='143'%20width='3'%20height='77'/%3E%3Crect%20x='17'%20y='65'%20width='3'%20height='155'/%3E%3Crect%20x='17'%20y='34'%20width='2'%20height='9'/%3E%3Crect%20x='21'%20y='77'%20width='2'%20height='143'/%3E%3Crect%20x='28'%20y='78'%20width='2'%20height='142'/%3E%3Crect%20x='30'%20y='79'%20width='8'%20height='141'/%3E%3Crect%20x='30'%20y='69'%20width='2'%20height='9'/%3E%3Crect%20x='43'%20y='94'%20width='3'%20height='126'/%3E%3Crect%20x='49'%20y='39'%20width='8'%20height='181'/%3E%3Crect%20x='49'%20y='22'%20width='2'%20height='21'/%3E%3Crect%20x='57'%20y='125'%20width='8'%20height='95'/%3E%3Crect%20x='68'%20y='89'%20width='4'%20height='131'/%3E%3Crect%20x='73'%20y='124'%20width='14'%20height='96'/%3E%3Crect%20x='87'%20y='102'%20width='14'%20height='118'/%3E%3Crect%20x='103'%20y='132'%20width='10'%20height='88'/%3E%3Crect%20x='113'%20y='163'%20width='14'%20height='57'/%3E%3Crect%20x='127'%20y='98'%20width='2'%20height='122'/%3E%3Crect%20x='132'%20y='102'%20width='4'%20height='118'/%3E%3Crect%20x='139'%20y='160'%20width='4'%20height='60'/%3E%3Crect%20x='139'%20y='136'%20width='2'%20height='14'/%3E%3Crect%20x='144'%20y='139'%20width='6'%20height='81'/%3E%3Crect%20x='144'%20y='105'%20width='2'%20height='31'/%3E%3Crect%20x='155'%20y='95'%20width='4'%20height='125'/%3E%3Crect%20x='161'%20y='142'%20width='10'%20height='78'/%3E%3Crect%20x='172'%20y='175'%20width='3'%20height='45'/%3E%3Crect%20x='175'%20y='109'%20width='6'%20height='111'/%3E%3Crect%20x='175'%20y='94'%20width='2'%20height='32'/%3E%3Crect%20x='186'%20y='132'%20width='4'%20height='88'/%3E%3Crect%20x='186'%20y='94'%20width='2'%20height='9'/%3E%3Crect%20x='212'%20y='157'%20width='6'%20height='63'/%3E%3Crect%20x='226'%20y='182'%20width='3'%20height='38'/%3E%3Crect%20x='226'%20y='167'%20width='2'%20height='40'/%3E%3Crect%20x='229'%20y='146'%20width='4'%20height='74'/%3E%3Crect%20x='229'%20y='116'%20width='2'%20height='15'/%3E%3Crect%20x='235'%20y='149'%20width='4'%20height='71'/%3E%3Crect%20x='235'%20y='112'%20width='2'%20height='35'/%3E%3Crect%20x='242'%20y='171'%20width='6'%20height='49'/%3E%3Crect%20x='250'%20y='139'%20width='6'%20height='81'/%3E%3Crect%20x='250'%20y='100'%20width='2'%20height='29'/%3E%3Crect%20x='257'%20y='159'%20width='10'%20height='61'/%3E%3Crect%20x='267'%20y='144'%20width='10'%20height='76'/%3E%3Crect%20x='279'%20y='184'%20width='14'%20height='36'/%3E%3Crect%20x='303'%20y='187'%20width='14'%20height='33'/%3E%3Crect%20x='318'%20y='178'%20width='8'%20height='42'/%3E%3Crect%20x='328'%20y='191'%20width='6'%20height='29'/%3E%3Crect%20x='353'%20y='196'%20width='2'%20height='24'/%3E%3Crect%20x='353'%20y='177'%20width='2'%20height='36'/%3E%3Crect%20x='360'%20y='175'%20width='8'%20height='45'/%3E%3Crect%20x='383'%20y='181'%20width='6'%20height='39'/%3E%3Crect%20x='389'%20y='181'%20width='14'%20height='39'/%3E%3Crect%20x='413'%20y='196'%20width='3'%20height='24'/%3E%3Crect%20x='421'%20y='198'%20width='14'%20height='22'/%3E%3Crect%20x='436'%20y='202'%20width='8'%20height='18'/%3E%3Crect%20x='444'%20y='199'%20width='8'%20height='21'/%3E%3Crect%20x='453'%20y='199'%20width='14'%20height='21'/%3E%3Crect%20x='453'%20y='161'%20width='4'%20height='21'/%3E%3Crect%20x='472'%20y='212'%20width='4'%20height='8'/%3E%3Crect%20x='472'%20y='184'%20width='2'%20height='35'/%3E%3Crect%20x='481'%20y='205'%20width='14'%20height='15'/%3E%3Crect%20x='500'%20y='212'%20width='3'%20height='8'/%3E%3Crect%20x='500'%20y='178'%20width='2'%20height='17'/%3E%3Crect%20x='508'%20y='211'%20width='2'%20height='9'/%3E%3Crect%20x='508'%20y='198'%20width='2'%20height='9'/%3E%3Crect%20x='512'%20y='214'%20width='10'%20height='6'/%3E%3Crect%20x='522'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='522'%20y='204'%20width='2'%20height='38'/%3E%3Crect%20x='552'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='563'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='573'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='584'%20y='216'%20width='2'%20height='4'/%3E%3Crect%20x='589'%20y='216'%20width='2'%20height='4'/%3E%3Crect%20x='589'%20y='201'%20width='2'%20height='29'/%3E%3Crect%20x='597'%20y='216'%20width='10'%20height='4'/%3E%3C/g%3E%3C/svg%3E") left bottom / 100% 100% no-repeat;
 }
 @media (min-width: 42rem) {
   .tile--continue {
@@ -2848,12 +2863,12 @@ body {
 }
 .tile__sub {
   font-size: 0.875rem;
-  color: #b9c2b4;
+  color: #b7bfa6;
 }
 .tile__meta {
   margin-block-start: 0.5rem;
   font-size: 0.8125rem;
-  color: #dfe8d9;
+  color: #e3e8d6;
 }
 .tile__meta--bar {
   display: flex;
@@ -2869,7 +2884,7 @@ body {
   background: var(--lime);
 }
 
-/* Streak: the one lime tile. */
+/* Streak: the one volt tile. */
 /* Streak and review sit side by side: both numbers on the top line,
    the hint and the button at the bottom. */
 .tile--streak .tile__big,
@@ -2896,8 +2911,9 @@ body {
   color: var(--on-lime);
   box-shadow: none;
 }
-.dark .tile--streak {
-  box-shadow: 0 0 40px -12px rgba(126, 217, 87, 0.6);
+/* On light paper the volt needs an edge to hold its shape. */
+:root:not(.dark) .tile--streak {
+  box-shadow: inset 0 0 0 1.5px var(--on-lime);
 }
 
 /* Review: amber number when something is due. */
@@ -2943,7 +2959,7 @@ body {
   .tile:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -14px rgba(10, 13, 9, 0.35);
+      0 10px 24px -14px rgba(10, 20, 0, 0.35);
   }
   .tile--continue:hover,
   .tile--streak:hover {
@@ -3015,7 +3031,7 @@ body {
   .row:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -16px rgba(10, 13, 9, 0.35);
+      0 10px 24px -16px rgba(10, 20, 0, 0.35);
   }
 }
 
@@ -3091,7 +3107,7 @@ body {
   border: 0;
   border-radius: 28px 28px 0 0;
   background: var(--surface);
-  box-shadow: 0 -14px 40px -16px rgba(10, 13, 9, 0.28);
+  box-shadow: 0 -14px 40px -16px rgba(10, 20, 0, 0.28);
 }
 .dark .player__foot {
   box-shadow:
@@ -3360,7 +3376,7 @@ body {
   block-size: 2.75rem;
   margin-block-end: 0.5rem;
   border-radius: 12px;
-  background: #0a0d09;
+  background: var(--forest);
   color: #fff;
   font-weight: 800;
   font-size: 1rem;
@@ -3378,7 +3394,7 @@ body {
 }
 .dark .book__mark {
   background: #fff;
-  color: #0a0d09;
+  color: var(--forest);
 }
 .book__title {
   font-size: 1rem;
@@ -3412,7 +3428,7 @@ body {
   .book:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -16px rgba(10, 13, 9, 0.35);
+      0 10px 24px -16px rgba(10, 20, 0, 0.35);
   }
 }
 .bento + section {
@@ -3422,7 +3438,7 @@ body {
   margin-block-start: 1.5rem;
 }
 
-/* ---- Dark mode: glass cards over a faint green glow ----
+/* ---- Dark mode: glass cards over forest ----
    Cards, lists, tiles and answer options are translucent with a lit top edge.
    Sheets, popovers and the lesson footer stay opaque so text over them stays legible. */
 .dark {
@@ -3432,11 +3448,7 @@ body {
   --glass-highlight: rgba(255, 255, 255, 0.08);
 }
 .dark body {
-  background:
-    radial-gradient(120% 55% at 100% 0%, rgba(126, 217, 87, 0.1), transparent 60%),
-    radial-gradient(90% 40% at 0% 100%, rgba(126, 217, 87, 0.05), transparent 60%),
-    var(--background);
-  background-attachment: fixed;
+  background: var(--background);
 }
 /* :where() keeps this at the specificity of `.dark` alone, so states like
    .match-item.is-active and .option.is-selected still win. */
@@ -3660,22 +3672,21 @@ pre code {
   color: var(--muted);
 }
 
-/* The rank card: dark, like the Continue tile, with the level in lime. */
+/* The rank card: forest, like the Continue tile, with the level in volt. */
 .sk-hero {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 1.125rem;
+  padding-block-end: 4.5rem;
   color: #fff;
-  background:
-    radial-gradient(70% 90% at 100% 0%, var(--glow), transparent 65%),
-    #0a0d09;
+  background: var(--forest);
   box-shadow: none;
 }
 .dark .sk-hero {
-  background:
-    radial-gradient(70% 90% at 100% 0%, var(--glow), transparent 65%),
-    var(--surface);
-  box-shadow: inset 0 0 0 1px var(--separator);
+  background: #0d1800;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .sk-hero .sk-eyebrow { color: rgba(255, 255, 255, 0.6); }
 .sk-hero__top { display: flex; align-items: center; gap: 1rem; }
@@ -3803,7 +3814,7 @@ pre code {
   inline-size: 5rem;
   block-size: 5rem;
   border-radius: 1.5rem;
-  background: #0a0d09;
+  background: var(--forest);
   color: var(--lime);
   animation: pop 500ms var(--ease-out);
 }
@@ -3875,7 +3886,7 @@ pre code {
   background: var(--surface);
   box-shadow:
     inset 0 0 0 1px var(--separator),
-    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+    0 12px 32px -12px rgba(10, 20, 0, 0.35);
 }
 .dark .feedback-dock .feedback {
   box-shadow:
@@ -3886,7 +3897,7 @@ pre code {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   box-shadow:
     inset 0 0 0 1.5px var(--accent),
-    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+    0 12px 32px -12px rgba(10, 20, 0, 0.35);
 }
 .dark .feedback-dock .feedback--correct {
   box-shadow:
@@ -3896,5 +3907,33 @@ pre code {
 .feedback-dock .feedback--wrong {
   box-shadow:
     inset 0 0 0 1.5px var(--warning-mark),
-    0 12px 32px -12px rgba(10, 13, 9, 0.35);
+    0 12px 32px -12px rgba(10, 20, 0, 0.35);
+}
+
+/* ---- Volt contrast rules ----
+   Light: a volt fill always carries a forest edge, or it melts into white.
+   Dark: finished items are a quiet forest fill, so yellow is kept for what
+   needs attention. */
+:root:not(.dark) .option.is-selected {
+  background: #eeff66;
+  box-shadow: inset 0 0 0 2px var(--on-lime);
+}
+:root:not(.dark) .option.is-selected .option__mark {
+  background: var(--on-lime);
+  border-color: var(--on-lime);
+  color: var(--lime);
+}
+:root:not(.dark) .row.is-done,
+:root:not(.dark) .book.is-done {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1.5px var(--on-lime);
+}
+.dark .row.is-done,
+.dark .book.is-done {
+  background: #132003;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.dark .option.is-selected,
+.dark .order-item.is-right {
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
