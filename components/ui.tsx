@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ReactNode, useEffect, useRef } from "react";
 import { BackIcon, CheckIcon, LockIcon } from "@/components/icons";
 import type { LessonStatus } from "@/lib/status";
@@ -20,7 +21,7 @@ export function PageHead({
   children?: ReactNode;
 }) {
   useEffect(() => {
-    document.title = title === "Skills" ? "Bytewise" : `${title} · Bytewise`;
+    document.title = title === "Today" ? "Bytewise" : `${title} · Bytewise`;
   }, [title]);
   return (
     <header>
@@ -186,4 +187,17 @@ export function Html({ html, className, as: Tag = "div" }: { html: string; class
 
 export function plural(n: number, one: string, many = `${one}s`) {
   return `${n} ${n === 1 ? one : many}`;
+}
+
+/** Sends a page that has moved to its new address, keeping it out of history. */
+export function Redirect({ to }: { to: string }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(to);
+  }, [router, to]);
+  return (
+    <p className="caption">
+      This page has moved to <Link href={to}>{to}</Link>.
+    </p>
+  );
 }

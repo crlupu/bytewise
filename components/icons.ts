@@ -42,4 +42,8 @@ export {
   IoHeartOutline as HeartEmptyIcon,
   IoFlash as BossIcon,
   IoEllipseOutline as TodoIcon,
+  IoSwapVertical as MoveIcon,
+  IoSunny as TodayIcon,
+  IoLibrary as LibraryIcon,
+  IoPerson as YouIcon,
 } from "react-icons/io5";

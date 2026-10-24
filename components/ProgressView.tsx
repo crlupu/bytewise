@@ -42,7 +42,7 @@ export function ProgressView({ catalog, titles }: { catalog: Catalog; titles: Re
 
   return (
     <>
-      <PageHead title="Progress" />
+      <PageHead title="Activity" back={{ href: "/you/", label: "You" }} />
 
       <div className="stats">
         <div className="card card--pad">

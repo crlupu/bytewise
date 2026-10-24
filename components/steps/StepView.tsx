@@ -266,7 +266,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
           <CheckIcon aria-hidden />
         </span>
         <div>
-          <p className="feedback__title">{attempts.current === 1 ? "Correct" : "That's it"}</p>
+          <p className="feedback__title">{attempts.current === 1 ? "Right, first try" : "Right"}</p>
           {step.explanation && <Html className="feedback__body prose" html={step.explanation} />}
           {step.details && !showDetails && (
             <button
@@ -292,7 +292,7 @@ function Exercise({ step, onAttempt, onHint, onContinue, onBack, alreadyDone, co
           <WrongIcon aria-hidden />
         </span>
         <div>
-          <p className="feedback__title">Not quite</p>
+          <p className="feedback__title">Not yet</p>
           {verdict?.text && <p className="feedback__body">{verdict.text}</p>}
           {verdict?.feedback ? (
             <Html className="feedback__body prose" html={verdict.feedback} />

@@ -27,7 +27,7 @@ export function SettingsView({ counts }: { counts: { topics: number; courses: nu
 
   return (
     <>
-      <PageHead title="Settings" />
+      <PageHead title="Settings" back={{ href: "/you/", label: "You" }} />
 
       <section>
         <h2 className="group-label">Appearance</h2>

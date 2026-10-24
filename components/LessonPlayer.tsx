@@ -71,15 +71,17 @@ export function LessonPlayer({
             <CloseIcon aria-hidden />
           </Link>
           <div className="player__progress">
-            <div className="segments" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={Math.min(index ?? 0, total)} aria-label="Lesson progress">
-              {lesson.body.map((s, i) => (
-                <span
-                  key={s.key}
-                  className={p.steps[s.key]?.completed || (index !== null && i < index) ? "is-done" : i === index ? "is-current" : ""}
-                />
-              ))}
+            <div
+              className="lesson-bar"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-valuenow={Math.min(index ?? 0, total)}
+              aria-label="Lesson progress"
+            >
+              <span style={{ inlineSize: `${(Math.min(index === null ? 0 : finished ? total : index + 1, total) / total) * 100}%` }} />
             </div>
-            <span className="player__count figure">{index === null ? "" : finished ? "Done" : `${index + 1} / ${total}`}</span>
+            <span className="player__count figure">{index === null ? "" : finished ? "Done" : `${index + 1} of ${total}`}</span>
           </div>
         </div>
       </header>
@@ -159,7 +161,7 @@ function Complete({ lesson, next, minutes, books }: { lesson: Lesson; next: Less
                 Next lesson
               </Link>
             ) : (
-              <Link href="/learn/" className="btn btn--primary">
+              <Link href="/" className="btn btn--primary">
                 Done
               </Link>
             )}

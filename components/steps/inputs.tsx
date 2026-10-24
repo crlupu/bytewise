@@ -1,7 +1,7 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
-import { CheckIcon, DownIcon, GripIcon, UpIcon, WrongIcon } from "@/components/icons";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CheckIcon, DownIcon, GripIcon, MoveIcon, UpIcon, WrongIcon } from "@/components/icons";
 import { Html } from "@/components/ui";
 import type { BlankPart, BlankStep, MatchStep, Option, OrderStep } from "@/lib/types";
 
@@ -52,6 +52,8 @@ export function Options({
                 {on && (phase === "wrong" && !o.correct ? <WrongIcon /> : <CheckIcon />)}
               </span>
               <Html as="span" className="option__text" html={o.html} />
+              {phase === "correct" && o.correct && <span className="option__tag option__tag--right">Right</span>}
+              {on && phase === "wrong" && !o.correct && <span className="option__tag option__tag--wrong">Not this one</span>}
             </button>
           );
         })}
@@ -93,7 +95,11 @@ export function TextAnswer({
   );
 }
 
-/** Reorder by dragging the grip, or with the up and down buttons. */
+/**
+ * Reorder by dragging the grip, or tap a row to pick it and move it with
+ * the Up and Down buttons that appear under it. Keeping the buttons on the
+ * picked row only leaves every item's text the full width of the row.
+ */
 export function OrderAnswer({
   step,
   value,
@@ -107,6 +113,8 @@ export function OrderAnswer({
 }) {
   const listRef = useRef<HTMLOListElement>(null);
   const [dragging, setDragging] = useState<number | null>(null);
+  // The item (not the position) whose Up and Down buttons are showing.
+  const [picked, setPicked] = useState<number | null>(null);
   const locked = phase === "correct";
   // Where each item was on screen just before a move (keyed by item), so the
   // items can slide from there to their new places instead of jumping.
@@ -154,6 +162,11 @@ export function OrderAnswer({
     }
   }, [value]);
 
+  // Checking (or getting it right) puts the buttons away.
+  useEffect(() => {
+    if (phase !== "answering") setPicked(null);
+  }, [phase]);
+
   const move = (from: number, to: number) => {
     if (to < 0 || to >= value.length || from === to) return;
     before.current = new Map(rows().map((el) => [Number(el.dataset.item), el.getBoundingClientRect().top]));
@@ -185,28 +198,67 @@ export function OrderAnswer({
     }
   };
 
+  const marked = phase !== "answering";
   return (
     <ol className="order-list" ref={listRef} onPointerMove={onPointerMove} onPointerUp={() => setDragging(null)} onPointerCancel={() => setDragging(null)}>
       {value.map((item, i) => {
-        const marked = phase !== "answering";
-        const cls = [
-          "order-item",
-          dragging === i ? "is-dragging" : "",
-          marked && item === i ? "is-right" : "",
-          phase === "wrong" && item !== i ? "is-off" : "",
-        ].join(" ");
+        const right = marked && item === i;
+        const off = phase === "wrong" && item !== i;
+        const open = picked === item && !locked;
+        const cls = ["order-item", dragging === i ? "is-dragging" : "", right ? "is-right" : "", off ? "is-off" : "", open ? "is-picked" : ""].join(" ");
         return (
           <li key={item} className={cls} data-item={item}>
-            <span className="order-item__index">{i + 1}</span>
-            <Html as="span" className="order-item__text" html={step.items[item]} />
-            {!locked && (
-              <span className="order-item__moves">
-                <button type="button" className="icon-btn" aria-label="Move up" disabled={i === 0} onClick={() => { refocus.current = { item, dir: "up" }; move(i, i - 1); }}>
+            <div className="order-item__row">
+              {!locked && (
+                <span className="grip order-item__grip" aria-hidden onPointerDown={(e) => onPointerDown(e, i)}>
+                  <GripIcon />
+                </span>
+              )}
+              <span className="order-item__index">{i + 1}</span>
+              {locked ? (
+                <Html as="span" className="order-item__text" html={step.items[item]} />
+              ) : (
+                <button
+                  type="button"
+                  className="order-item__text order-item__pick"
+                  aria-expanded={open}
+                  onClick={() => setPicked(open ? null : item)}
+                >
+                  <Html as="span" html={step.items[item]} />
+                  <span className="sr-only">{open ? ", hide move buttons" : ", move"}</span>
+                </button>
+              )}
+              {right && (
+                <span className="order-item__status order-item__status--right">
+                  <CheckIcon aria-hidden />
+                  In place
+                </span>
+              )}
+              {off && (
+                <span className="order-item__status order-item__status--off">
+                  <MoveIcon aria-hidden />
+                  Move
+                </span>
+              )}
+            </div>
+            {open && (
+              <div className="order-item__moves">
+                <button
+                  type="button"
+                  className="btn btn--secondary btn--sm"
+                  aria-label="Move up"
+                  disabled={i === 0}
+                  onClick={() => {
+                    refocus.current = { item, dir: "up" };
+                    move(i, i - 1);
+                  }}
+                >
                   <UpIcon aria-hidden />
+                  Up
                 </button>
                 <button
                   type="button"
-                  className="icon-btn"
+                  className="btn btn--secondary btn--sm"
                   aria-label="Move down"
                   disabled={i === value.length - 1}
                   onClick={() => {
@@ -215,11 +267,9 @@ export function OrderAnswer({
                   }}
                 >
                   <DownIcon aria-hidden />
+                  Down
                 </button>
-                <span className="icon-btn grip" aria-hidden onPointerDown={(e) => onPointerDown(e, i)}>
-                  <GripIcon />
-                </span>
-              </span>
+              </div>
             )}
           </li>
         );

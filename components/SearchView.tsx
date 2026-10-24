@@ -17,10 +17,9 @@ function highlight(text: string, terms: string[]) {
 }
 
 /** Search lessons by title, summary and tags. Every term must match somewhere;
- * a match in the title counts most. */
-export function SearchView({ catalog }: { catalog: Catalog }) {
+ * a match in the title counts most. Used by the Library and by the search page. */
+export function SearchResults({ catalog, q }: { catalog: Catalog; q: string }) {
   const p = useProgress();
-  const [q, setQ] = useState("");
   const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
   const all = useMemo(
     () =>
@@ -29,15 +28,6 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
       ),
     [catalog],
   );
-  const library = useMemo(() => {
-    const count = new Map<string, number>();
-    for (const a of all) for (const src of new Set(a.lesson.sources.map((x) => x.book))) count.set(src, (count.get(src) ?? 0) + 1);
-    return [...count]
-      .filter(([id]) => catalog.books[id])
-      .map(([id, n]) => ({ book: catalog.books[id], count: n }));
-  }, [all, catalog.books]);
-  const tags = useMemo(() => [...new Set(all.flatMap((a) => a.lesson.tags))].sort(), [all]);
-
   const hits: Hit[] = terms.length
     ? all
         .map((a) => {
@@ -61,9 +51,67 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
         .sort((a, b) => b.score - a.score)
     : [];
 
+  if (!terms.length) return null;
+  return hits.length ? (
+    <section>
+      <h2 className="group-label">{plural(hits.length, "lesson")}</h2>
+      <ul className="list">
+        {hits.map(({ lesson: l, index, course, topic }) => {
+          const st = lessonSteps(l, p);
+          return (
+            <li key={l.key}>
+              <Link href={`/lesson/${l.courseId}/${l.id}/`} className="list-row">
+                <StatusMark status={lessonStatus(l, p)} index={index} pct={Math.round((st.done / st.total) * 100)} />
+                <span className="list-row__body">
+                  <span className="list-row__title" style={{ display: "block" }}>
+                    {highlight(l.title, terms)}
+                  </span>
+                  <span className="list-row__sub" style={{ display: "block" }}>
+                    {highlight(l.summary.replace(/`/g, ""), terms)}
+                  </span>
+                  <span className="list-row__meta" style={{ display: "block" }}>
+                    {topic} · {course}
+                    {l.tags.length > 0 && <> · {highlight(l.tags.join(", "), terms)}</>}
+                  </span>
+                </span>
+                <ChevronIcon className="chevron" aria-hidden />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  ) : (
+    <div className="empty">
+      <SearchIcon className="empty__icon" aria-hidden />
+      <p className="empty__title">No lessons match “{q}”</p>
+      <p>Try a broader word, or one of the tags.</p>
+    </div>
+  );
+}
+
+export function SearchView({ catalog }: { catalog: Catalog }) {
+  const [q, setQ] = useState("");
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const all = useMemo(
+    () =>
+      catalog.topics.flatMap((t) =>
+        t.courses.flatMap((c) => c.lessons.map((l, index) => ({ lesson: l, index, course: c.title, topic: t.title }))),
+      ),
+    [catalog],
+  );
+  const library = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const a of all) for (const src of new Set(a.lesson.sources.map((x) => x.book))) count.set(src, (count.get(src) ?? 0) + 1);
+    return [...count]
+      .filter(([id]) => catalog.books[id])
+      .map(([id, n]) => ({ book: catalog.books[id], count: n }));
+  }, [all, catalog.books]);
+  const tags = useMemo(() => [...new Set(all.flatMap((a) => a.lesson.tags))].sort(), [all]);
+
   return (
     <>
-      <PageHead title="Search" back={{ href: "/learn/", label: "Learn" }} />
+      <PageHead title="Search" back={{ href: "/library/", label: "Library" }} />
       <label className="search">
         <SearchIcon aria-hidden />
         <span className="sr-only">Search lessons</span>
@@ -106,41 +154,8 @@ export function SearchView({ catalog }: { catalog: Catalog }) {
             </section>
           )}
         </>
-      ) : hits.length ? (
-        <section>
-          <h2 className="group-label">{plural(hits.length, "lesson")}</h2>
-          <ul className="list">
-            {hits.map(({ lesson: l, index, course, topic }) => {
-              const st = lessonSteps(l, p);
-              return (
-                <li key={l.key}>
-                  <Link href={`/lesson/${l.courseId}/${l.id}/`} className="list-row">
-                    <StatusMark status={lessonStatus(l, p)} index={index} pct={Math.round((st.done / st.total) * 100)} />
-                    <span className="list-row__body">
-                      <span className="list-row__title" style={{ display: "block" }}>
-                        {highlight(l.title, terms)}
-                      </span>
-                      <span className="list-row__sub" style={{ display: "block" }}>
-                        {highlight(l.summary, terms)}
-                      </span>
-                      <span className="list-row__meta" style={{ display: "block" }}>
-                        {topic} · {course}
-                        {l.tags.length > 0 && <> · {highlight(l.tags.join(", "), terms)}</>}
-                      </span>
-                    </span>
-                    <ChevronIcon className="chevron" aria-hidden />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
       ) : (
-        <div className="empty">
-          <SearchIcon className="empty__icon" aria-hidden />
-          <p className="empty__title">No lessons match “{q}”</p>
-          <p>Try a broader word, or one of the tags.</p>
-        </div>
+        <SearchResults catalog={catalog} q={q} />
       )}
     </>
   );

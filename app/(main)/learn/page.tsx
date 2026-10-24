@@ -1,6 +1,6 @@
-import { HomeView } from "@/components/HomeView";
-import { getCatalog } from "@/lib/content";
+import { Redirect } from "@/components/ui";
 
-export default async function LearnPage() {
-  return <HomeView catalog={await getCatalog()} />;
+/** The library used to live here; old links and bookmarks land on the Library tab. */
+export default function LearnPage() {
+  return <Redirect to="/library/" />;
 }

@@ -44,14 +44,15 @@ export function gradeOrder(_step: OrderStep, arrangement: number[]): Verdict & {
   return {
     correct,
     placed,
-    text: correct ? undefined : `${right} of ${arrangement.length} are in the right place.`,
+    text: correct ? undefined : `${right} of ${arrangement.length} ${right === 1 ? "is" : "are"} in the right place.`,
   };
 }
 
 export function gradeMatch(step: MatchStep, pairs: Record<number, number>): Verdict & { right: boolean[] } {
   const right = step.left.map((_, i) => pairs[i] === i);
   const correct = right.every(Boolean);
-  return { correct, right, text: correct ? undefined : `${right.filter(Boolean).length} of ${right.length} pairs are right.` };
+  const n = right.filter(Boolean).length;
+  return { correct, right, text: correct ? undefined : `${n} of ${right.length} pairs ${n === 1 ? "is" : "are"} right.` };
 }
 
 export function gradeBlank(step: BlankStep, values: string[]): Verdict & { right: boolean[] } {

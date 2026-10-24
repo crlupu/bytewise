@@ -1,7 +1,6 @@
-import { SkillsView } from "@/components/SkillsView";
-import { getAllLessons, getCatalog } from "@/lib/content";
-import { buildSkillIndex } from "@/lib/skills";
+import { HomeView } from "@/components/HomeView";
+import { getCatalog } from "@/lib/content";
 
-export default async function Home() {
-  return <SkillsView catalog={await getCatalog()} index={buildSkillIndex(await getAllLessons())} />;
+export default async function TodayPage() {
+  return <HomeView catalog={await getCatalog()} />;
 }

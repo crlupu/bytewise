@@ -279,20 +279,20 @@ export const RANKS: { title: string; req: RankReq }[] = [
 
 export type Standing = { skills: Record<string, number>; judgment: number; bosses: number };
 
-export function requirements(req: RankReq, s: Standing): { text: string; met: boolean }[] {
-  const out: { text: string; met: boolean }[] = [];
+export function requirements(req: RankReq, s: Standing): { text: string; progress?: string; met: boolean }[] {
+  const out: { text: string; progress?: string; met: boolean }[] = [];
   if (req.skills) {
     const [count, min] = req.skills;
     const n = Object.values(s.skills).filter((m) => m >= min).length;
-    out.push({ text: `${count === SKILLS.length ? "Every" : count} skill${count === 1 ? "" : "s"} at ${min}% mastery (${Math.min(n, count)}/${count})`, met: n >= count });
+    out.push({ text: `${count === SKILLS.length ? "Every" : count} skill${count === 1 ? "" : "s"} at ${min}% mastery`, progress: `${Math.min(n, count)} of ${count}`, met: n >= count });
   }
   if (req.must) {
     const [id, min] = req.must;
     const sk = SKILLS.find((x) => x.id === id)!;
-    out.push({ text: `${sk.title} at ${min}%`, met: (s.skills[id] ?? 0) >= min });
+    out.push({ text: `${sk.title} at ${min}%`, progress: `${s.skills[id] ?? 0}%`, met: (s.skills[id] ?? 0) >= min });
   }
-  if (req.bosses) out.push({ text: `${req.bosses} boss${req.bosses === 1 ? "" : "es"} defeated (${Math.min(s.bosses, req.bosses)}/${req.bosses})`, met: s.bosses >= req.bosses });
-  if (req.judgment) out.push({ text: `Engineering judgment at ${req.judgment} (${s.judgment})`, met: s.judgment >= req.judgment });
+  if (req.bosses) out.push({ text: `${req.bosses} boss${req.bosses === 1 ? "" : "es"} defeated`, progress: `${Math.min(s.bosses, req.bosses)} of ${req.bosses}`, met: s.bosses >= req.bosses });
+  if (req.judgment) out.push({ text: `Engineering judgment at ${req.judgment}`, progress: String(s.judgment), met: s.judgment >= req.judgment });
   return out;
 }
 
@@ -334,7 +334,7 @@ export function dailyQuests(p: Progress, index: SkillIndex, due: number, mast: R
   if (due > 0 || act.reviews > 0) {
     quests.push({ id: "review", title: "Clear your reviews", detail: act.reviews > 0 ? "Review session done" : `${due} due`, done: act.reviews > 0, href: "/review/" });
   } else {
-    quests.push({ id: "answer", title: "Answer 5 new exercises", detail: `${Math.min(act.exercises, 5)} of 5`, done: act.exercises >= 5, href: "/learn/" });
+    quests.push({ id: "answer", title: "Answer 5 new exercises", detail: `${Math.min(act.exercises, 5)} of 5`, done: act.exercises >= 5, href: "/" });
   }
 
   const started = SKILLS.filter((s) => learned(index.exercises[s.id], p) > 0 && mast[s.id] < 100);
@@ -350,7 +350,7 @@ export function dailyQuests(p: Progress, index: SkillIndex, due: number, mast: R
   const beatenToday = SKILLS.find((s) => p.bosses[s.id]?.defeated === t);
   if (beatenToday) quests.push({ id: "boss", title: `Defeat ${beatenToday.boss.name}`, detail: "Defeated", done: true, href: `/boss/${beatenToday.id}/` });
   else if (ready) quests.push({ id: "boss", title: `Defeat ${ready.boss.name}`, detail: `${ready.title} boss`, done: false, href: `/boss/${ready.id}/` });
-  else quests.push({ id: "ten", title: "Answer 10 exercises", detail: `${Math.min(act.exercises, 10)} of 10`, done: act.exercises >= 10, href: "/learn/" });
+  else quests.push({ id: "ten", title: "Answer 10 exercises", detail: `${Math.min(act.exercises, 10)} of 10`, done: act.exercises >= 10, href: "/" });
 
   return quests;
 }

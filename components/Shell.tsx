@@ -3,23 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ReactNode, useMemo } from "react";
-import { LearnIcon, ProgressIcon, ReviewIcon, SettingsIcon, SkillsIcon } from "@/components/icons";
+import { LibraryIcon, ReviewIcon, TodayIcon, YouIcon } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 import { dueItems, useProgress } from "@/lib/progress";
 
 const TABS = [
-  { href: "/", label: "Skills", icon: SkillsIcon },
-  { href: "/learn/", label: "Learn", icon: LearnIcon },
+  { href: "/", label: "Today", icon: TodayIcon },
+  { href: "/library/", label: "Library", icon: LibraryIcon },
   { href: "/review/", label: "Review", icon: ReviewIcon },
-  { href: "/progress/", label: "Progress", icon: ProgressIcon },
-  { href: "/settings/", label: "Settings", icon: SettingsIcon },
+  { href: "/you/", label: "You", icon: YouIcon },
 ];
+
+/** Which tab a page belongs to: pages reached from a tab keep it lit. */
+const SECTIONS: Record<string, string[]> = {
+  "/library/": ["/library/", "/learn/", "/course/", "/topic/", "/search/"],
+  "/review/": ["/review/"],
+  "/you/": ["/you/", "/skills/", "/progress/", "/settings/"],
+};
 
 function isActive(path: string, href: string) {
   const p = path.endsWith("/") ? path : `${path}/`;
   if (href === "/") return p === "/";
-  if (href === "/learn/") return ["/learn/", "/course/", "/topic/", "/search/"].some((x) => p.startsWith(x));
-  return p.startsWith(href);
+  return SECTIONS[href].some((x) => p.startsWith(x));
 }
 
 /**

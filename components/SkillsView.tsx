@@ -35,7 +35,6 @@ const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
  */
 export function SkillsView({ catalog, index }: { catalog: Catalog; index: SkillIndex }) {
   const p = useProgress();
-  const hydrated = useHydrated();
 
   const metas = new Map<string, LessonMeta>(catalog.topics.flatMap((t) => t.courses.flatMap((c) => c.lessons.map((l) => [l.key, l] as const))));
   const known = new Set([...metas.values()].flatMap((l) => l.exercises));
@@ -44,15 +43,7 @@ export function SkillsView({ catalog, index }: { catalog: Catalog; index: SkillI
   const mast = Object.fromEntries(SKILLS.map((s) => [s.id, mastery(index.exercises[s.id], p)]));
   const facets = FACETS.map((f) => ({ ...f, score: mastery(index.facets[f.id], p) }));
   const judgment = Math.round(facets.reduce((n, f) => n + f.score, 0) / facets.length);
-  const bosses = SKILLS.filter((s) => p.bosses[s.id]?.defeated).length;
-  const standing = { skills: mast, judgment, bosses };
-  const rank = rankOf(standing);
-  const next = RANKS[rank + 1];
-  const xp = totalXp(p);
-  const lvl = playerLevel(xp);
   const quests = dailyQuests(p, index, due, mast);
-  const week = weekDays(p);
-  const weekMax = Math.max(1, ...week.map((d) => d.n));
 
   const nextLesson = (skillId: string) =>
     index.lessons[skillId].map((k) => metas.get(k)!).find((l) => l && p.lessons[l.key]?.status !== "completed" && lessonStatus(l, p) !== "locked");
@@ -64,49 +55,9 @@ export function SkillsView({ catalog, index }: { catalog: Catalog; index: SkillI
 
   return (
     <>
-      <PageHead title="Skills" subtitle="Your engineering skill tree" />
+      <PageHead title="Skill tree" subtitle="Your engineering skills" back={{ href: "/you/", label: "You" }} />
 
-      <section className="card card--pad sk-hero" aria-label="Rank and level">
-        <div className="sk-hero__top">
-          <span className="sk-level figure" aria-label={`Level ${lvl.level}`}>
-            <span className="sk-level__label">Level</span>
-            {hydrated ? lvl.level : "–"}
-          </span>
-          <div className="sk-hero__text">
-            <p className="sk-eyebrow">Rank {rank + 1} of {RANKS.length}</p>
-            <h2 className="sk-hero__rank">{RANKS[rank].title}</h2>
-            <div className="sk-xp">
-              <Meter value={(lvl.into / lvl.span) * 100} label="XP to next level" />
-              <span className="figure">
-                {xp.toLocaleString()} XP · {(lvl.span - lvl.into).toLocaleString()} to level {lvl.level + 1}
-              </span>
-            </div>
-          </div>
-        </div>
-        {next && (
-          <div className="sk-next">
-            <p className="sk-eyebrow">Next rank: {next.title}</p>
-            <ul className="sk-reqs">
-              {requirements(next.req, standing).map((r) => (
-                <li key={r.text} className={r.met ? "is-met" : undefined}>
-                  {r.met ? <CheckIcon aria-label="Met" /> : <TodoIcon aria-label="Not yet" />}
-                  {r.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <div className="sk-week" role="img" aria-label="Activity this week, Monday to Sunday">
-          {week.map((d, i) => (
-            <span key={d.day} className="sk-week__day">
-              <span className="sk-week__bar">
-                <span style={{ blockSize: `${(d.n / weekMax) * 100}%` }} className={d.n ? undefined : "is-zero"} />
-              </span>
-              <span className="sk-week__label">{DAYS[i]}</span>
-            </span>
-          ))}
-        </div>
-      </section>
+      <RankCard index={index} />
 
       <section aria-label="Today's quests">
         <h2 className="section-title">Today&apos;s quests</h2>
@@ -233,5 +184,69 @@ export function SkillsView({ catalog, index }: { catalog: Catalog; index: SkillI
         there&apos;s nothing to grind.
       </p>
     </>
+  );
+}
+
+/**
+ * The rank card: level, rank, XP to the next level, what the next rank
+ * needs and this week's activity. Shown on You and at the top of the skill tree.
+ */
+export function RankCard({ index }: { index: SkillIndex }) {
+  const p = useProgress();
+  const hydrated = useHydrated();
+  const mast = Object.fromEntries(SKILLS.map((s) => [s.id, mastery(index.exercises[s.id], p)]));
+  const facets = FACETS.map((f) => mastery(index.facets[f.id], p));
+  const judgment = Math.round(facets.reduce((n, f) => n + f, 0) / facets.length);
+  const bosses = SKILLS.filter((s) => p.bosses[s.id]?.defeated).length;
+  const standing = { skills: mast, judgment, bosses };
+  const rank = rankOf(standing);
+  const next = RANKS[rank + 1];
+  const xp = totalXp(p);
+  const lvl = playerLevel(xp);
+  const week = weekDays(p);
+  const weekMax = Math.max(1, ...week.map((d) => d.n));
+  return (
+    <section className="card card--pad sk-hero" aria-label="Rank and level">
+      <div className="sk-hero__top">
+        <span className="sk-level figure" aria-label={`Level ${lvl.level}`}>
+          <span className="sk-level__label">Level</span>
+          {hydrated ? lvl.level : "–"}
+        </span>
+        <div className="sk-hero__text">
+          <p className="sk-eyebrow">Rank {rank + 1} of {RANKS.length}</p>
+          <h2 className="sk-hero__rank">{RANKS[rank].title}</h2>
+          <div className="sk-xp">
+            <Meter value={(lvl.into / lvl.span) * 100} label="XP to next level" />
+            <span className="figure">
+              {xp.toLocaleString()} XP · {(lvl.span - lvl.into).toLocaleString()} to level {lvl.level + 1}
+            </span>
+          </div>
+        </div>
+      </div>
+      {next && (
+        <div className="sk-next">
+          <p className="sk-eyebrow">Next rank: {next.title}</p>
+          <ul className="sk-reqs">
+            {requirements(next.req, standing).map((r) => (
+              <li key={r.text} className={r.met ? "is-met" : undefined}>
+                {r.met ? <CheckIcon aria-label="Met" /> : <TodoIcon aria-label="Not yet" />}
+                <span className="sk-reqs__text">{r.text}</span>
+            {r.progress && <span className="sk-reqs__n figure">{r.progress}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <div className="sk-week" role="img" aria-label="Activity this week, Monday to Sunday">
+        {week.map((d, i) => (
+          <span key={d.day} className="sk-week__day">
+            <span className="sk-week__bar">
+              <span style={{ blockSize: `${(d.n / weekMax) * 100}%` }} className={d.n ? undefined : "is-zero"} />
+            </span>
+            <span className="sk-week__label">{DAYS[i]}</span>
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
