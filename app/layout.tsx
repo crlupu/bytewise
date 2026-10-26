@@ -9,7 +9,7 @@ import "./globals.css";
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 // Variable fonts (Latin subset from Google Fonts) kept in the repo, so the build never fetches them.
-const interTight = localFont({ src: "./fonts/InterTight-latin.woff2", weight: "400 900", variable: "--font-inter-tight", display: "swap" });
+const urbanist = localFont({ src: "./fonts/Urbanist-latin.woff2", weight: "300 800", variable: "--font-urbanist", display: "swap" });
 const jetbrainsMono = localFont({ src: "./fonts/JetBrainsMono-latin.woff2", weight: "400 500", variable: "--font-jetbrains-mono", display: "swap" });
 
 export const metadata: Metadata = {
@@ -32,14 +32,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f4ee" },
-    { media: "(prefers-color-scheme: dark)", color: "#060b00" },
+    { media: "(prefers-color-scheme: light)", color: "#efeef1" },
+    { media: "(prefers-color-scheme: dark)", color: "#111113" },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${interTight.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${urbanist.variable} ${jetbrainsMono.variable}`}>
       <head>
         {/* Applied before the first paint, so a dark-mode visit never flashes white. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />

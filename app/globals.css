@@ -1,152 +1,153 @@
 /* ============================================================
-   Bytewise — Volt.
+   Bytewise — Ledger.
 
-   Forest and volt: a near-black green, lit by one electric yellow.
-   Yellow means "this matters": the one filled button on a screen, progress,
-   a right answer, the streak. Everything else stays neutral so the yellow
-   is the only saturated colour. Orange means "not yet" (a wrong answer, an
-   item due); red means destructive and nothing else. In light mode yellow
-   can't be read on white, so text-level accents use a deep olive and
-   yellow fills carry a forest edge.
+   A well-kept ledger: a cool grey ground, near-black ink, hairline
+   bars and big honest numbers, and one mint accent. Mint is always a
+   FILL (a done mark, the streak, the quick-start key, a delta chip) with
+   ink on it; where it has to be text in light mode it becomes a deep
+   green (--accent). Orange means "not yet" (a wrong answer, an item due);
+   red means destructive and nothing else.
 
-   Layout is bento: big rounded tiles of different sizes, a floating tab
-   bar, and answers that sit close to the thumb. The Continue tile and the
-   rank card are flat forest with a strip of volt bars along the bottom.
+   Panels are flat: a surface tile with a 1px hairline. The primary
+   button is ink. Only floating things (the tab bar) cast a shadow.
+   Screens open with a dot label; panels open with an uppercase
+   micro-label.
 
-   Type is Inter Tight for everything you read and JetBrains Mono for
-   code and small labels.
+   Type is Urbanist for everything you read and JetBrains Mono for code.
+   The design system lives in Claude Design as "Bytewise".
    ============================================================ */
 
 :root {
   --electric: #097cfb;
-  /* Volt: one electric yellow on forest green. */
-  --lime: #e6ff00;
-  --on-lime: #0a1400;
-  --forest: #112000;
+  /* The one accent, as a fill, and what sits on it. */
+  --lime: #75fa90;
+  --on-lime: #0e0e10;
+  /* The dark dock: the Continue tile, the rank card, code. */
+  --forest: #1c1c1f;
   --glow: transparent;
 
-  --r-card: 24px;
-  --r-control: 14px;
+  --r-card: 18px;
+  --r-control: 10px;
   --r-small: 6px;
   --r-pill: 999px;
 
-  --font-ui: var(--font-inter-tight), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial,
-    sans-serif;
-  --font-figure: var(--font-inter-tight), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-ui: var(--font-urbanist), "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-figure: var(--font-urbanist), "Avenir Next", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-code: var(--font-jetbrains-mono), ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 
   --tabbar-h: 3.25rem;
   --sidebar-w: 15rem;
 
-  --fast: 110ms;
-  --moderate: 240ms;
+  --fast: 120ms;
+  --moderate: 300ms;
   --ease: cubic-bezier(0.2, 0, 0.38, 0.9);
   --ease-out: cubic-bezier(0, 0, 0.3, 1);
 
-  /* Data colours: small marks only (a topic's dot). One luminance band,
-     no blue, so nothing is mistaken for the accent. */
-  --data-indigo: #3d6b2f;
-  --data-teal: #1f7a5c;
-  --data-orange: #a8720f;
-  --data-magenta: #6b7a2a;
-  --data-green: #2f8f2c;
-  --data-slate: #5a6355;
+  /* Data colours: small marks only (a topic's dot). Greys and the two
+     signal hues, so nothing is mistaken for the accent fill. */
+  --data-indigo: #3b3a42;
+  --data-teal: #13702e;
+  --data-orange: #a63b0c;
+  --data-magenta: #6d6c74;
+  --data-green: #2f8f4a;
+  --data-slate: #85848c;
 }
 
 :root,
 .light {
   color-scheme: light;
-  --background: #f3f4ee;
-  --surface: #ffffff;
-  --surface-secondary: #ecede6;
-  --surface-tertiary: #e2e4da;
+  --background: #efeef1;
+  --surface: #f8f8f9;
+  --surface-secondary: #e4e3e7;
+  --surface-tertiary: #d9d8dd;
 
-  --foreground: #0a1400;
-  --muted: #585e4e;
-  /* 3.6:1 on white: enough for icons and grips (3:1). */
-  --faint: #7e8968;
+  --foreground: #0e0e10;
+  --muted: #605f67;
+  /* 3.3:1 on surface: enough for icons and grips (3:1). */
+  --faint: #85848c;
 
-  --separator: #e3e5dc;
-  --border: #d7dacf;
-  --border-strong: #7e8968;
+  --separator: #e2e1e5;
+  --border: #d9d8dd;
+  --border-strong: #85848c;
 
-  /* Progress, right answers and done lessons: deep olive for marks you read,
-     pale volt behind them. */
-  --accent: #2f5200;
+  /* Progress, right answers and done lessons: deep green for marks you
+     read, pale mint behind them. */
+  --accent: #13702e;
   --accent-foreground: #ffffff;
-  --accent-soft: #f2ff80;
-  --accent-soft-strong: #eaff4d;
-  --accent-track: rgba(10, 20, 0, 0.1);
-  /* The one filled button per screen: forest with volt text. */
-  --primary: #112000;
-  --primary-foreground: #e6ff00;
+  --accent-soft: #d6f9dc;
+  --accent-soft-strong: #b5f3c1;
+  --accent-track: rgba(14, 14, 16, 0.08);
+  /* The one filled button per screen: ink. */
+  --primary: #0e0e10;
+  --primary-foreground: #f8f8f9;
 
-  --warning: #b4430c;
-  --warning-mark: #d9541a;
-  --warning-soft: rgba(217, 84, 26, 0.1);
-  --danger: #d0302f;
-  --danger-soft: rgba(208, 48, 47, 0.1);
+  --warning: #a63b0c;
+  --warning-mark: #c2410c;
+  --warning-soft: rgba(166, 59, 12, 0.1);
+  --danger: #b92a2a;
+  --danger-soft: rgba(185, 42, 42, 0.1);
 
-  --default: rgba(110, 118, 98, 0.12);
-  --fill-hover: rgba(110, 118, 98, 0.2);
+  --default: rgba(96, 95, 103, 0.1);
+  --fill-hover: rgba(96, 95, 103, 0.18);
 
-  --bar-bg: rgba(255, 255, 255, 0.82);
-  --bar-border: rgba(0, 0, 0, 0.1);
-  --card-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.04);
-  --lift-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
-  --blanket: rgba(0, 0, 0, 0.28);
+  --bar-bg: rgba(248, 248, 249, 0.86);
+  --bar-border: rgba(14, 14, 16, 0.1);
+  --card-shadow: none;
+  --lift-shadow: 0 12px 32px rgba(14, 14, 16, 0.18), 0 0 0 0.5px rgba(14, 14, 16, 0.08);
+  --blanket: rgba(14, 14, 16, 0.3);
 
-  --field-bg: #ffffff;
-  --field-border: #d3d9be;
-  --code-bg: #f7f9ec;
+  --field-bg: #f8f8f9;
+  --field-border: #d9d8dd;
+  --code-bg: #f3f3f5;
 
-  --scale-0: #e2e4da;
+  --scale-0: #e4e3e7;
 }
 
 .dark {
   color-scheme: dark;
-  --background: #060b00;
-  --surface: #0e1602;
-  --surface-secondary: #141f05;
-  --surface-tertiary: #1b2808;
+  --background: #111113;
+  --surface: #19191c;
+  --surface-secondary: #232327;
+  --surface-tertiary: #2c2c31;
 
-  --foreground: #f5f7ee;
-  --muted: #a3aa94;
-  --faint: #5e6553;
+  --foreground: #ededf0;
+  --muted: #a2a1a9;
+  --faint: #75747c;
 
-  --separator: #1c2412;
-  --border: #262f1a;
-  --border-strong: #68705a;
+  --separator: #232327;
+  --border: #2c2c31;
+  --border-strong: #75747c;
 
-  --accent: #e6ff00;
-  --accent-foreground: #0a1400;
-  --accent-soft: rgba(230, 255, 0, 0.12);
-  --accent-soft-strong: rgba(230, 255, 0, 0.24);
+  --accent: #75fa90;
+  --accent-foreground: #0e0e10;
+  --accent-soft: rgba(117, 250, 144, 0.12);
+  --accent-soft-strong: rgba(117, 250, 144, 0.24);
   --accent-track: rgba(255, 255, 255, 0.1);
-  --primary: #e6ff00;
-  --primary-foreground: #0a1400;
+  --primary: #ededf0;
+  --primary-foreground: #111113;
 
-  /* "Not yet" is orange, far enough from the yellow to never be mistaken for it. */
-  --warning: #ff8a4c;
-  --warning-mark: #ff7a33;
-  --warning-soft: rgba(255, 122, 51, 0.14);
-  --danger: #ff6b61;
-  --danger-soft: rgba(255, 107, 97, 0.15);
+  /* "Not yet" is orange, far from the mint. */
+  --warning: #ff9a5c;
+  --warning-mark: #ff8a4c;
+  --warning-soft: rgba(255, 154, 92, 0.14);
+  --danger: #ff6f66;
+  --danger-soft: rgba(255, 111, 102, 0.15);
 
-  --default: rgba(120, 128, 110, 0.24);
-  --fill-hover: rgba(120, 128, 110, 0.34);
+  --default: rgba(162, 161, 169, 0.14);
+  --fill-hover: rgba(162, 161, 169, 0.24);
 
-  --bar-bg: rgba(14, 22, 2, 0.82);
+  --bar-bg: rgba(25, 25, 28, 0.86);
   --bar-border: rgba(255, 255, 255, 0.1);
   --card-shadow: none;
   --lift-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   --blanket: rgba(0, 0, 0, 0.55);
 
-  --field-bg: #0e1602;
-  --field-border: #262f1a;
-  --code-bg: #040800;
+  --field-bg: #19191c;
+  --field-border: #2c2c31;
+  --code-bg: #0c0c0e;
 
-  --scale-0: #141f05;
+  --forest: #232327;
+  --scale-0: #232327;
 }
 
 :root {
@@ -457,7 +458,7 @@ html:not([data-input="key"]) :where(.btn):focus-visible {
 .page-title {
   font-size: 2.125rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   line-height: 1.2;
 }
 .page-subtitle {
@@ -1916,7 +1917,7 @@ pre.shiki,
 }
 .bt-node text.is-new {
   fill: var(--accent);
-  font-weight: 800;
+  font-weight: 600;
 }
 .bt-edge {
   stroke: var(--border-strong);
@@ -2752,22 +2753,22 @@ body {
 }
 .page-title {
   font-size: 2.375rem;
-  font-weight: 800;
-  letter-spacing: -0.045em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.05;
 }
 .page-subtitle {
   font-weight: 500;
 }
 .section-title {
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 .back-link svg {
   color: var(--foreground);
 }
 .figure {
-  letter-spacing: -0.03em;
+  letter-spacing: -0.015em;
 }
 
 /* ---- Floating tab bar ---- */
@@ -2782,7 +2783,7 @@ body {
   border-radius: var(--r-pill);
   box-shadow:
     0 0 0 0.5px var(--bar-border),
-    0 12px 32px -10px rgba(10, 20, 0, 0.35);
+    0 12px 32px -10px rgba(14, 14, 16, 0.35);
 }
 @media (min-width: 42rem) {
   .tabbar {
@@ -2859,14 +2860,14 @@ body {
 .tile__big {
   margin-block-start: auto;
   font-size: 2.75rem;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
 }
 .tile__big--sm {
   display: block;
   margin: 0;
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 .tile__label {
   display: block;
@@ -2893,10 +2894,10 @@ body {
   box-shadow: none;
 }
 .dark .tile--continue {
-  background: #0d1800;
+  background: var(--forest);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
-/* The volt bars: the brand's texture, decorative only. */
+/* Hairline bars, as in the ledger's charts: decorative only. */
 .tile--continue::after,
 .sk-hero::after {
   content: "";
@@ -2904,7 +2905,7 @@ body {
   inset: auto 0 0 0;
   block-size: 3.25rem;
   pointer-events: none;
-  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20600%20220'%20preserveAspectRatio='none'%3E%3Cg%20fill='%23e6ff00'%3E%3Crect%20x='0'%20y='9'%20width='4'%20height='211'/%3E%3Crect%20x='0'%20y='-31'%20width='2'%20height='12'/%3E%3Crect%20x='6'%20y='147'%20width='8'%20height='73'/%3E%3Crect%20x='6'%20y='114'%20width='2'%20height='32'/%3E%3Crect%20x='14'%20y='143'%20width='3'%20height='77'/%3E%3Crect%20x='17'%20y='65'%20width='3'%20height='155'/%3E%3Crect%20x='17'%20y='34'%20width='2'%20height='9'/%3E%3Crect%20x='21'%20y='77'%20width='2'%20height='143'/%3E%3Crect%20x='28'%20y='78'%20width='2'%20height='142'/%3E%3Crect%20x='30'%20y='79'%20width='8'%20height='141'/%3E%3Crect%20x='30'%20y='69'%20width='2'%20height='9'/%3E%3Crect%20x='43'%20y='94'%20width='3'%20height='126'/%3E%3Crect%20x='49'%20y='39'%20width='8'%20height='181'/%3E%3Crect%20x='49'%20y='22'%20width='2'%20height='21'/%3E%3Crect%20x='57'%20y='125'%20width='8'%20height='95'/%3E%3Crect%20x='68'%20y='89'%20width='4'%20height='131'/%3E%3Crect%20x='73'%20y='124'%20width='14'%20height='96'/%3E%3Crect%20x='87'%20y='102'%20width='14'%20height='118'/%3E%3Crect%20x='103'%20y='132'%20width='10'%20height='88'/%3E%3Crect%20x='113'%20y='163'%20width='14'%20height='57'/%3E%3Crect%20x='127'%20y='98'%20width='2'%20height='122'/%3E%3Crect%20x='132'%20y='102'%20width='4'%20height='118'/%3E%3Crect%20x='139'%20y='160'%20width='4'%20height='60'/%3E%3Crect%20x='139'%20y='136'%20width='2'%20height='14'/%3E%3Crect%20x='144'%20y='139'%20width='6'%20height='81'/%3E%3Crect%20x='144'%20y='105'%20width='2'%20height='31'/%3E%3Crect%20x='155'%20y='95'%20width='4'%20height='125'/%3E%3Crect%20x='161'%20y='142'%20width='10'%20height='78'/%3E%3Crect%20x='172'%20y='175'%20width='3'%20height='45'/%3E%3Crect%20x='175'%20y='109'%20width='6'%20height='111'/%3E%3Crect%20x='175'%20y='94'%20width='2'%20height='32'/%3E%3Crect%20x='186'%20y='132'%20width='4'%20height='88'/%3E%3Crect%20x='186'%20y='94'%20width='2'%20height='9'/%3E%3Crect%20x='212'%20y='157'%20width='6'%20height='63'/%3E%3Crect%20x='226'%20y='182'%20width='3'%20height='38'/%3E%3Crect%20x='226'%20y='167'%20width='2'%20height='40'/%3E%3Crect%20x='229'%20y='146'%20width='4'%20height='74'/%3E%3Crect%20x='229'%20y='116'%20width='2'%20height='15'/%3E%3Crect%20x='235'%20y='149'%20width='4'%20height='71'/%3E%3Crect%20x='235'%20y='112'%20width='2'%20height='35'/%3E%3Crect%20x='242'%20y='171'%20width='6'%20height='49'/%3E%3Crect%20x='250'%20y='139'%20width='6'%20height='81'/%3E%3Crect%20x='250'%20y='100'%20width='2'%20height='29'/%3E%3Crect%20x='257'%20y='159'%20width='10'%20height='61'/%3E%3Crect%20x='267'%20y='144'%20width='10'%20height='76'/%3E%3Crect%20x='279'%20y='184'%20width='14'%20height='36'/%3E%3Crect%20x='303'%20y='187'%20width='14'%20height='33'/%3E%3Crect%20x='318'%20y='178'%20width='8'%20height='42'/%3E%3Crect%20x='328'%20y='191'%20width='6'%20height='29'/%3E%3Crect%20x='353'%20y='196'%20width='2'%20height='24'/%3E%3Crect%20x='353'%20y='177'%20width='2'%20height='36'/%3E%3Crect%20x='360'%20y='175'%20width='8'%20height='45'/%3E%3Crect%20x='383'%20y='181'%20width='6'%20height='39'/%3E%3Crect%20x='389'%20y='181'%20width='14'%20height='39'/%3E%3Crect%20x='413'%20y='196'%20width='3'%20height='24'/%3E%3Crect%20x='421'%20y='198'%20width='14'%20height='22'/%3E%3Crect%20x='436'%20y='202'%20width='8'%20height='18'/%3E%3Crect%20x='444'%20y='199'%20width='8'%20height='21'/%3E%3Crect%20x='453'%20y='199'%20width='14'%20height='21'/%3E%3Crect%20x='453'%20y='161'%20width='4'%20height='21'/%3E%3Crect%20x='472'%20y='212'%20width='4'%20height='8'/%3E%3Crect%20x='472'%20y='184'%20width='2'%20height='35'/%3E%3Crect%20x='481'%20y='205'%20width='14'%20height='15'/%3E%3Crect%20x='500'%20y='212'%20width='3'%20height='8'/%3E%3Crect%20x='500'%20y='178'%20width='2'%20height='17'/%3E%3Crect%20x='508'%20y='211'%20width='2'%20height='9'/%3E%3Crect%20x='508'%20y='198'%20width='2'%20height='9'/%3E%3Crect%20x='512'%20y='214'%20width='10'%20height='6'/%3E%3Crect%20x='522'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='522'%20y='204'%20width='2'%20height='38'/%3E%3Crect%20x='552'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='563'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='573'%20y='216'%20width='8'%20height='4'/%3E%3Crect%20x='584'%20y='216'%20width='2'%20height='4'/%3E%3Crect%20x='589'%20y='216'%20width='2'%20height='4'/%3E%3Crect%20x='589'%20y='201'%20width='2'%20height='29'/%3E%3Crect%20x='597'%20y='216'%20width='10'%20height='4'/%3E%3C/g%3E%3C/svg%3E") left bottom / 100% 100% no-repeat;
+  background: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20600%20220'%20preserveAspectRatio='none'%3E%3Cg%20fill='%23ffffff'%20fill-opacity='0.22'%3E%3Crect%20x='0'%20y='133'%20width='2'%20height='87'/%3E%3Crect%20x='5'%20y='127'%20width='2'%20height='93'/%3E%3Crect%20x='10'%20y='124'%20width='2'%20height='96'/%3E%3Crect%20x='15'%20y='123'%20width='2'%20height='97'/%3E%3Crect%20x='20'%20y='124'%20width='2'%20height='96'/%3E%3Crect%20x='25'%20y='126'%20width='2'%20height='94'/%3E%3Crect%20x='30'%20y='128'%20width='2'%20height='92'/%3E%3Crect%20x='35'%20y='130'%20width='2'%20height='90'/%3E%3Crect%20x='40'%20y='130'%20width='2'%20height='90'/%3E%3Crect%20x='45'%20y='129'%20width='2'%20height='91'/%3E%3Crect%20x='50'%20y='125'%20width='2'%20height='95'/%3E%3Crect%20x='55'%20y='119'%20width='2'%20height='101'/%3E%3Crect%20x='60'%20y='113'%20width='2'%20height='107'/%3E%3Crect%20x='65'%20y='107'%20width='2'%20height='113'/%3E%3Crect%20x='70'%20y='103'%20width='2'%20height='117'/%3E%3Crect%20x='75'%20y='101'%20width='2'%20height='119'/%3E%3Crect%20x='80'%20y='101'%20width='2'%20height='119'/%3E%3Crect%20x='85'%20y='104'%20width='2'%20height='116'/%3E%3Crect%20x='90'%20y='110'%20width='2'%20height='110'/%3E%3Crect%20x='95'%20y='118'%20width='2'%20height='102'/%3E%3Crect%20x='100'%20y='127'%20width='2'%20height='93'/%3E%3Crect%20x='105'%20y='135'%20width='2'%20height='85'/%3E%3Crect%20x='110'%20y='142'%20width='2'%20height='78'/%3E%3Crect%20x='115'%20y='146'%20width='2'%20height='74'/%3E%3Crect%20x='120'%20y='148'%20width='2'%20height='72'/%3E%3Crect%20x='125'%20y='147'%20width='2'%20height='73'/%3E%3Crect%20x='130'%20y='144'%20width='2'%20height='76'/%3E%3Crect%20x='135'%20y='140'%20width='2'%20height='80'/%3E%3Crect%20x='140'%20y='137'%20width='2'%20height='83'/%3E%3Crect%20x='145'%20y='134'%20width='2'%20height='86'/%3E%3Crect%20x='150'%20y='134'%20width='2'%20height='86'/%3E%3Crect%20x='155'%20y='136'%20width='2'%20height='84'/%3E%3Crect%20x='160'%20y='140'%20width='2'%20height='80'/%3E%3Crect%20x='165'%20y='146'%20width='2'%20height='74'/%3E%3Crect%20x='170'%20y='152'%20width='2'%20height='68'/%3E%3Crect%20x='175'%20y='157'%20width='2'%20height='63'/%3E%3Crect%20x='180'%20y='161'%20width='2'%20height='59'/%3E%3Crect%20x='185'%20y='162'%20width='2'%20height='58'/%3E%3Crect%20x='190'%20y='160'%20width='2'%20height='60'/%3E%3Crect%20x='195'%20y='155'%20width='2'%20height='65'/%3E%3Crect%20x='200'%20y='147'%20width='2'%20height='73'/%3E%3Crect%20x='205'%20y='137'%20width='2'%20height='83'/%3E%3Crect%20x='210'%20y='127'%20width='2'%20height='93'/%3E%3Crect%20x='215'%20y='118'%20width='2'%20height='102'/%3E%3Crect%20x='220'%20y='111'%20width='2'%20height='109'/%3E%3Crect%20x='225'%20y='107'%20width='2'%20height='113'/%3E%3Crect%20x='230'%20y='106'%20width='2'%20height='114'/%3E%3Crect%20x='235'%20y='107'%20width='2'%20height='113'/%3E%3Crect%20x='240'%20y='111'%20width='2'%20height='109'/%3E%3Crect%20x='245'%20y='115'%20width='2'%20height='105'/%3E%3Crect%20x='250'%20y='119'%20width='2'%20height='101'/%3E%3Crect%20x='255'%20y='121'%20width='2'%20height='99'/%3E%3Crect%20x='260'%20y='121'%20width='2'%20height='99'/%3E%3Crect%20x='265'%20y='118'%20width='2'%20height='102'/%3E%3Crect%20x='270'%20y='112'%20width='2'%20height='108'/%3E%3Crect%20x='275'%20y='106'%20width='2'%20height='114'/%3E%3Crect%20x='280'%20y='99'%20width='2'%20height='121'/%3E%3Crect%20x='285'%20y='93'%20width='2'%20height='127'/%3E%3Crect%20x='290'%20y='90'%20width='2'%20height='130'/%3E%3Crect%20x='295'%20y='91'%20width='2'%20height='129'/%3E%3Crect%20x='300'%20y='95'%20width='2'%20height='125'/%3E%3Crect%20x='305'%20y='102'%20width='2'%20height='118'/%3E%3Crect%20x='310'%20y='112'%20width='2'%20height='108'/%3E%3Crect%20x='315'%20y='124'%20width='2'%20height='96'/%3E%3Crect%20x='320'%20y='135'%20width='2'%20height='85'/%3E%3Crect%20x='325'%20y='145'%20width='2'%20height='75'/%3E%3Crect%20x='330'%20y='153'%20width='2'%20height='67'/%3E%3Crect%20x='335'%20y='157'%20width='2'%20height='63'/%3E%3Crect%20x='490'%20y='99'%20width='2'%20height='121'/%3E%3Crect%20x='495'%20y='89'%20width='2'%20height='131'/%3E%3Crect%20x='500'%20y='79'%20width='2'%20height='141'/%3E%3Crect%20x='505'%20y='72'%20width='2'%20height='148'/%3E%3Crect%20x='510'%20y='69'%20width='2'%20height='151'/%3E%3Crect%20x='515'%20y='70'%20width='2'%20height='150'/%3E%3Crect%20x='520'%20y='76'%20width='2'%20height='144'/%3E%3Crect%20x='525'%20y='86'%20width='2'%20height='134'/%3E%3Crect%20x='530'%20y='97'%20width='2'%20height='123'/%3E%3Crect%20x='535'%20y='110'%20width='2'%20height='110'/%3E%3Crect%20x='540'%20y='121'%20width='2'%20height='99'/%3E%3Crect%20x='545'%20y='130'%20width='2'%20height='90'/%3E%3Crect%20x='550'%20y='135'%20width='2'%20height='85'/%3E%3Crect%20x='555'%20y='135'%20width='2'%20height='85'/%3E%3Crect%20x='560'%20y='133'%20width='2'%20height='87'/%3E%3Crect%20x='565'%20y='128'%20width='2'%20height='92'/%3E%3Crect%20x='570'%20y='122'%20width='2'%20height='98'/%3E%3Crect%20x='575'%20y='117'%20width='2'%20height='103'/%3E%3Crect%20x='580'%20y='114'%20width='2'%20height='106'/%3E%3Crect%20x='585'%20y='114'%20width='2'%20height='106'/%3E%3Crect%20x='590'%20y='118'%20width='2'%20height='102'/%3E%3Crect%20x='595'%20y='125'%20width='2'%20height='95'/%3E%3C/g%3E%3Cg%20fill='%2375fa90'%3E%3Crect%20x='340'%20y='158'%20width='2'%20height='62'/%3E%3Crect%20x='345'%20y='156'%20width='2'%20height='64'/%3E%3Crect%20x='350'%20y='152'%20width='2'%20height='68'/%3E%3Crect%20x='355'%20y='148'%20width='2'%20height='72'/%3E%3Crect%20x='360'%20y='145'%20width='2'%20height='75'/%3E%3Crect%20x='365'%20y='144'%20width='2'%20height='76'/%3E%3Crect%20x='370'%20y='146'%20width='2'%20height='74'/%3E%3Crect%20x='375'%20y='151'%20width='2'%20height='69'/%3E%3Crect%20x='380'%20y='158'%20width='2'%20height='62'/%3E%3Crect%20x='385'%20y='166'%20width='2'%20height='54'/%3E%3Crect%20x='390'%20y='174'%20width='2'%20height='46'/%3E%3Crect%20x='395'%20y='174'%20width='2'%20height='46'/%3E%3Crect%20x='400'%20y='174'%20width='2'%20height='46'/%3E%3Crect%20x='405'%20y='174'%20width='2'%20height='46'/%3E%3Crect%20x='410'%20y='174'%20width='2'%20height='46'/%3E%3Crect%20x='415'%20y='167'%20width='2'%20height='53'/%3E%3Crect%20x='420'%20y='156'%20width='2'%20height='64'/%3E%3Crect%20x='425'%20y='143'%20width='2'%20height='77'/%3E%3Crect%20x='430'%20y='130'%20width='2'%20height='90'/%3E%3Crect%20x='435'%20y='120'%20width='2'%20height='100'/%3E%3Crect%20x='440'%20y='113'%20width='2'%20height='107'/%3E%3Crect%20x='445'%20y='109'%20width='2'%20height='111'/%3E%3Crect%20x='450'%20y='109'%20width='2'%20height='111'/%3E%3Crect%20x='455'%20y='112'%20width='2'%20height='108'/%3E%3Crect%20x='460'%20y='115'%20width='2'%20height='105'/%3E%3Crect%20x='465'%20y='119'%20width='2'%20height='101'/%3E%3Crect%20x='470'%20y='121'%20width='2'%20height='99'/%3E%3Crect%20x='475'%20y='120'%20width='2'%20height='100'/%3E%3Crect%20x='480'%20y='115'%20width='2'%20height='105'/%3E%3Crect%20x='485'%20y='108'%20width='2'%20height='112'/%3E%3C/g%3E%3C/svg%3E") left bottom / 100% 100% no-repeat;
 }
 @media (min-width: 42rem) {
   .tile--continue {
@@ -2938,8 +2939,8 @@ body {
 }
 .tile__title {
   font-size: 1.625rem;
-  font-weight: 800;
-  letter-spacing: -0.045em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.05;
 }
 .tile__sub {
@@ -3040,7 +3041,7 @@ body {
   .tile:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -14px rgba(10, 20, 0, 0.35);
+      0 10px 24px -14px rgba(14, 14, 16, 0.35);
   }
   .tile--continue:hover,
   .tile--streak:hover {
@@ -3087,7 +3088,7 @@ body {
   flex: 1 1 auto;
   font-size: 1.0625rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   line-height: 1.25;
 }
 .row__count {
@@ -3112,7 +3113,7 @@ body {
   .row:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -16px rgba(10, 20, 0, 0.35);
+      0 10px 24px -16px rgba(14, 14, 16, 0.35);
   }
 }
 
@@ -3188,7 +3189,7 @@ body {
   border: 0;
   border-radius: 28px 28px 0 0;
   background: var(--surface);
-  box-shadow: 0 -14px 40px -16px rgba(10, 20, 0, 0.28);
+  box-shadow: 0 -14px 40px -16px rgba(14, 14, 16, 0.28);
 }
 .dark .player__foot {
   box-shadow:
@@ -3227,13 +3228,13 @@ body {
 }
 .step__prompt > p:first-child {
   font-size: 1.375rem;
-  font-weight: 800;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.2;
 }
 .step__title {
-  font-weight: 800;
-  letter-spacing: -0.04em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 .option {
   border-radius: 18px;
@@ -3459,9 +3460,9 @@ body {
   border-radius: 12px;
   background: var(--forest);
   color: #fff;
-  font-weight: 800;
+  font-weight: 600;
   font-size: 1rem;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.015em;
 }
 .book__mark::after {
   content: "";
@@ -3480,7 +3481,7 @@ body {
 .book__title {
   font-size: 1rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   line-height: 1.2;
 }
 .book__by {
@@ -3509,7 +3510,7 @@ body {
   .book:hover {
     box-shadow:
       inset 0 0 0 1px var(--border),
-      0 10px 24px -16px rgba(10, 20, 0, 0.35);
+      0 10px 24px -16px rgba(14, 14, 16, 0.35);
   }
 }
 .bento + section {
@@ -3517,36 +3518,6 @@ body {
 }
 .topic-courses {
   margin-block-start: 1.5rem;
-}
-
-/* ---- Dark mode: glass cards over forest ----
-   Cards, lists, tiles and answer options are translucent with a lit top edge.
-   Sheets, popovers and the lesson footer stay opaque so text over them stays legible. */
-.dark {
-  --glass: rgba(255, 255, 255, 0.045);
-  --glass-hover: rgba(255, 255, 255, 0.07);
-  --glass-edge: rgba(255, 255, 255, 0.07);
-  --glass-highlight: rgba(255, 255, 255, 0.08);
-}
-.dark body {
-  background: var(--background);
-}
-/* :where() keeps this at the specificity of `.dark` alone, so states like
-   .match-item.is-active and .option.is-selected still win. */
-.dark :where(.card, .list, .row, .book, .hint, .option, .order-item, .match-item),
-.dark .tile:not(.tile--continue):not(.tile--streak) {
-  background: var(--glass);
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    inset 0 0 0 1px var(--glass-edge);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  backdrop-filter: blur(20px) saturate(140%);
-}
-@media (hover: hover) {
-  .dark :is(.row, .book):hover,
-  .dark .tile:not(.tile--continue):not(.tile--streak):hover {
-    background: var(--glass-hover);
-  }
 }
 
 /* ---- Long words never widen the page ----
@@ -3586,10 +3557,6 @@ pre code {
   box-shadow: inset 0 0 0 1px var(--separator);
   scroll-margin-block-start: 5rem;
   animation: details-in var(--slow, 0.3s) var(--ease) both;
-}
-.dark .details {
-  background: var(--glass);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), inset 0 0 0 1px var(--glass-edge);
 }
 .details:focus {
   outline: none;
@@ -3766,13 +3733,13 @@ pre code {
   box-shadow: none;
 }
 .dark .sk-hero {
-  background: #0d1800;
+  background: var(--forest);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 .sk-hero .sk-eyebrow { color: rgba(255, 255, 255, 0.6); }
 .sk-hero__top { display: flex; align-items: center; gap: 1rem; }
 .sk-hero__text { flex: 1; min-inline-size: 0; }
-.sk-hero__rank { margin: 0.125rem 0 0.5rem; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.sk-hero__rank { margin: 0.125rem 0 0.5rem; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.15; }
 .sk-level {
   display: flex;
   flex: none;
@@ -3785,7 +3752,7 @@ pre code {
   background: var(--lime);
   color: var(--on-lime);
   font-size: 1.875rem;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1;
 }
 .sk-level__label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-block-end: 0.125rem; }
@@ -3879,7 +3846,7 @@ pre code {
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 1.375rem;
-  font-weight: 800;
+  font-weight: 600;
 }
 .sk-facets { display: flex; flex-direction: column; gap: 0.625rem; margin: 0; padding: 0; list-style: none; }
 .sk-facets li { display: grid; grid-template-columns: 8.5rem 1fr 2rem; align-items: center; gap: 0.75rem; font-size: 0.9375rem; }
@@ -3967,7 +3934,7 @@ pre code {
   background: var(--surface);
   box-shadow:
     inset 0 0 0 1px var(--separator),
-    0 12px 32px -12px rgba(10, 20, 0, 0.35);
+    0 12px 32px -12px rgba(14, 14, 16, 0.35);
 }
 .dark .feedback-dock .feedback {
   box-shadow:
@@ -3978,7 +3945,7 @@ pre code {
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   box-shadow:
     inset 0 0 0 1.5px var(--accent),
-    0 12px 32px -12px rgba(10, 20, 0, 0.35);
+    0 12px 32px -12px rgba(14, 14, 16, 0.35);
 }
 .dark .feedback-dock .feedback--correct {
   box-shadow:
@@ -3988,35 +3955,7 @@ pre code {
 .feedback-dock .feedback--wrong {
   box-shadow:
     inset 0 0 0 1.5px var(--warning-mark),
-    0 12px 32px -12px rgba(10, 20, 0, 0.35);
-}
-
-/* ---- Volt contrast rules ----
-   Light: a volt fill always carries a forest edge, or it melts into white.
-   Dark: finished items are a quiet forest fill, so yellow is kept for what
-   needs attention. */
-:root:not(.dark) .option.is-selected {
-  background: #eeff66;
-  box-shadow: inset 0 0 0 2px var(--on-lime);
-}
-:root:not(.dark) .option.is-selected .option__mark {
-  background: var(--on-lime);
-  border-color: var(--on-lime);
-  color: var(--lime);
-}
-:root:not(.dark) .row.is-done,
-:root:not(.dark) .book.is-done {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--on-lime);
-}
-.dark .row.is-done,
-.dark .book.is-done {
-  background: #132003;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-.dark .option.is-selected,
-.dark .order-item.is-right {
-  box-shadow: inset 0 0 0 2px var(--accent);
+    0 12px 32px -12px rgba(14, 14, 16, 0.35);
 }
 
 /* ---- Today, Library and You ---- */
@@ -4099,8 +4038,8 @@ pre code {
 }
 .you-stat__value {
   font-size: 1.625rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   line-height: 1.1;
 }
 .you-stat__label {
@@ -4113,4 +4052,263 @@ pre code {
 .sk-reqs__n {
   flex: none;
   color: rgba(255, 255, 255, 0.75);
+}
+
+/* ============================================================
+   Ledger. The last layer on purpose: it settles the shared pieces
+   above into the design system's shapes.
+   - Flat panels: surface with a 1px hairline, no shadow, no glass.
+   - Type: light screen titles, semibold figures, uppercase micro-labels.
+   - Screens open with a dot label (the mint dot before the subtitle).
+   - Mint is a fill with ink on it; the primary button is ink.
+   ============================================================ */
+
+body {
+  letter-spacing: 0;
+}
+
+/* Titles: light and a little open, like a ledger heading. */
+.page-title {
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 1.1;
+}
+.page-title::after,
+.dark .page-title::after {
+  display: none;
+}
+.section-title {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.step__prompt > p:first-child {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.step__title {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.tile__title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.figure,
+.tile__big,
+.tile__big--sm,
+.you-stat__value {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* The dot label: the line above a screen title. */
+.page-subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+.page-subtitle::before {
+  content: "";
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--lime);
+  flex: none;
+}
+:root:not(.dark) .page-subtitle::before {
+  box-shadow: inset 0 0 0 1px rgba(14, 14, 16, 0.18);
+}
+
+/* Micro-labels: uppercase, tracked, muted. */
+.tile__eyebrow {
+  font: 500 0.6875rem/1.3 var(--font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Panels are flat in both themes. */
+.tile,
+.book,
+.option,
+.details,
+.dark :where(.card, .list, .row, .book, .hint, .option, .order-item, .match-item) {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.dark :where(.card, .list, .row, .book, .hint, .option, .order-item, .match-item) {
+  background: var(--surface);
+}
+@media (hover: hover) {
+  .tile:hover,
+  .book:hover {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+  .tile--continue:hover,
+  .tile--streak:hover {
+    filter: none;
+  }
+}
+
+/* Continue: the dark dock tile, hairline bars along the bottom. */
+.tile--continue {
+  color: #ededf0;
+  background: var(--forest);
+}
+.dark .tile--continue {
+  background: var(--forest);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.tile__sub {
+  color: #b4b3ba;
+}
+.tile__meta {
+  color: #d6d5db;
+}
+.tile--continue .tile__eyebrow {
+  color: #b4b3ba;
+}
+.tile__meta--bar .meter > span,
+.tile--continue .meter > span {
+  background: var(--lime);
+}
+/* The quick-start key: mint, square-cut. */
+.tile__cta,
+.tile__play {
+  border-radius: var(--r-control);
+}
+
+/* Streak: the one mint tile, ink on mint. */
+.tile--streak,
+:root:not(.dark) .tile--streak {
+  background: var(--lime);
+  color: var(--on-lime);
+  box-shadow: none;
+}
+
+/* Buttons: ink primary, square-cut. */
+.btn,
+.btn--primary,
+.player__actions .btn,
+.tile__pill {
+  border-radius: var(--r-control);
+}
+.tabbar {
+  border-radius: 22px;
+}
+.tabbar__tab {
+  border-radius: 16px;
+}
+
+/* Progress: a thin ink line (mint in dark). */
+.meter > span,
+.segments > span.is-done,
+.tile-meter i.is-on {
+  background: var(--fill);
+}
+.dark {
+  --fill: var(--accent);
+}
+
+/* Lesson status: done is a mint tile with an ink tick. */
+.status--completed,
+.path .status--completed {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--on-lime);
+}
+.path > li.is-completed:not(:last-child)::after {
+  background: var(--border-strong);
+}
+.row.is-done,
+.book.is-done {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* Book marks: an ink tile with a mint corner, like the app mark. */
+.book__mark {
+  border-radius: var(--r-control);
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 700;
+}
+.dark .book__mark {
+  background: var(--surface-tertiary);
+  color: var(--foreground);
+}
+
+/* Answers: a letter tag, an ink ring when chosen. */
+.option {
+  border-radius: var(--r-control);
+}
+.option__mark--letter {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 0;
+  border-radius: var(--r-small);
+  background: var(--surface-secondary);
+  color: var(--muted);
+  font: 600 0.75rem/1 var(--font-code);
+}
+.option.is-selected,
+.dark .option.is-selected {
+  background: var(--surface);
+  box-shadow: inset 0 0 0 2px var(--foreground);
+}
+.option.is-selected .option__mark {
+  background: var(--foreground);
+  border-color: var(--foreground);
+  color: var(--background);
+}
+.option.is-correct,
+.dark .option.is-correct {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.option.is-correct .option__mark {
+  background: var(--lime);
+  border-color: var(--lime);
+  color: var(--on-lime);
+}
+.option.is-wrong,
+.dark .option.is-wrong {
+  background: var(--warning-soft);
+  box-shadow: inset 0 0 0 2px var(--warning-mark);
+}
+.option.is-wrong .option__mark {
+  background: var(--warning-mark);
+  border-color: var(--warning-mark);
+  color: #fff;
+}
+.dark .option.is-wrong .option__mark {
+  color: var(--on-lime);
+}
+.dark .order-item.is-right {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* The lesson footer and feedback: flat, hairline on top. */
+.player__foot,
+.dark .player__foot {
+  border-radius: 0;
+  box-shadow: inset 0 1px 0 var(--border);
+}
+.player__actions .btn {
+  border-radius: var(--r-control);
+}
+.feedback {
+  border-radius: var(--r-card);
+}
+
+/* Code: square-cut like the panels. */
+.code-block,
+.step__code .shiki {
+  border-radius: 14px;
+}
+
+/* The rank card: the dark dock, level on a mint key. */
+.sk-level {
+  border-radius: var(--r-control);
 }

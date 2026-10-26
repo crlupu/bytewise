@@ -48,9 +48,15 @@ export function Options({
               disabled={locked}
               onClick={() => onChange(multiple ? (on ? value.filter((v) => v !== i) : [...value, i]) : [i])}
             >
-              <span className={`option__mark${multiple ? " option__mark--square" : ""}`} aria-hidden>
-                {on && (phase === "wrong" && !o.correct ? <WrongIcon /> : <CheckIcon />)}
-              </span>
+              {multiple ? (
+                <span className="option__mark option__mark--square" aria-hidden>
+                  {on && (phase === "wrong" && !o.correct ? <WrongIcon /> : <CheckIcon />)}
+                </span>
+              ) : (
+                <span className="option__mark option__mark--letter" aria-hidden>
+                  {String.fromCharCode(65 + i)}
+                </span>
+              )}
               <Html as="span" className="option__text" html={o.html} />
               {phase === "correct" && o.correct && <span className="option__tag option__tag--right">Right</span>}
               {on && phase === "wrong" && !o.correct && <span className="option__tag option__tag--wrong">Not this one</span>}
