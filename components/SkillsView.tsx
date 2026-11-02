@@ -189,20 +189,44 @@ export function SkillsView({ catalog, index }: { catalog: Catalog; index: SkillI
 
 /**
  * The rank card: level, rank, XP to the next level, what the next rank
- * needs and this week's activity. Shown on You and at the top of the skill tree.
+ * needs and this week's activity, at the top of the skill tree.
  */
-export function RankCard({ index }: { index: SkillIndex }) {
+function useStanding(index: SkillIndex) {
   const p = useProgress();
-  const hydrated = useHydrated();
   const mast = Object.fromEntries(SKILLS.map((s) => [s.id, mastery(index.exercises[s.id], p)]));
   const facets = FACETS.map((f) => mastery(index.facets[f.id], p));
   const judgment = Math.round(facets.reduce((n, f) => n + f, 0) / facets.length);
   const bosses = SKILLS.filter((s) => p.bosses[s.id]?.defeated).length;
   const standing = { skills: mast, judgment, bosses };
   const rank = rankOf(standing);
-  const next = RANKS[rank + 1];
   const xp = totalXp(p);
-  const lvl = playerLevel(xp);
+  return { p, standing, rank, xp, lvl: playerLevel(xp) };
+}
+
+/** You's one-line rank: level, rank and XP, leading to the full card on the skill tree. */
+export function RankRow({ index }: { index: SkillIndex }) {
+  const hydrated = useHydrated();
+  const { rank, xp, lvl } = useStanding(index);
+  return (
+    <Link href="/skills/" className="card rank-row">
+      <span className="sk-level sk-level--sm figure" aria-label={`Level ${lvl.level}`}>
+        {hydrated ? lvl.level : "–"}
+      </span>
+      <span className="rank-row__body">
+        <span className="rank-row__title">{RANKS[rank].title}</span>
+        <span className="rank-row__meta">
+          Rank {rank + 1} of {RANKS.length} · {xp.toLocaleString()} XP · {(lvl.span - lvl.into).toLocaleString()} to level {lvl.level + 1}
+        </span>
+      </span>
+      <ChevronIcon className="chevron" aria-hidden />
+    </Link>
+  );
+}
+
+export function RankCard({ index }: { index: SkillIndex }) {
+  const hydrated = useHydrated();
+  const { p, standing, rank, xp, lvl } = useStanding(index);
+  const next = RANKS[rank + 1];
   const week = weekDays(p);
   const weekMax = Math.max(1, ...week.map((d) => d.n));
   return (

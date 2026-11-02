@@ -24,7 +24,7 @@ export function PageHead({
     document.title = title === "Today" ? "Bytewise" : `${title} · Bytewise`;
   }, [title]);
   return (
-    <header>
+    <header className={back ? "page-header has-back" : "page-header"}>
       {back && (
         <Link href={back.href} className="back-link">
           <BackIcon aria-hidden />

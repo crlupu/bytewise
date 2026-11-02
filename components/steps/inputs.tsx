@@ -59,7 +59,6 @@ export function Options({
               )}
               <Html as="span" className="option__text" html={o.html} />
               {phase === "correct" && o.correct && <span className="option__tag option__tag--right">Right</span>}
-              {on && phase === "wrong" && !o.correct && <span className="option__tag option__tag--wrong">Not this one</span>}
             </button>
           );
         })}

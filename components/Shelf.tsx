@@ -46,7 +46,7 @@ export function TopicRow({ topic, catalog, p }: { topic: Topic; catalog: Catalog
           <span className="list-row__title topic-row__title">{topic.title}</span>
           <span className="list-row__meta topic-row__by">{byline(topic, catalog)}</span>
           <span className="topic-row__foot">
-            <Meter value={total ? (done / total) * 100 : 0} label={`${topic.title} progress`} />
+            {done || started ? <Meter value={total ? (done / total) * 100 : 0} label={`${topic.title} progress`} /> : null}
             <span className="figure">{complete ? "Done" : done || started ? `${done} of ${total}` : "Not started"}</span>
           </span>
         </span>

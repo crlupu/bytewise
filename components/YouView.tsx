@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { ChevronIcon, ProgressIcon, SettingsIcon, SkillsIcon } from "@/components/icons";
-import { RankCard } from "@/components/SkillsView";
+import { RankRow } from "@/components/SkillsView";
 import { PageHead } from "@/components/ui";
 import { streak, useHydrated, useProgress } from "@/lib/progress";
 import type { SkillIndex } from "@/lib/skills";
 
 /**
- * You: the rank card, three numbers at a glance, and the way into the
+ * You: a one-line rank, three numbers at a glance, and the way into the
  * skill tree, the activity history and settings.
  */
 export function YouView({ index }: { index: SkillIndex }) {
@@ -29,7 +29,7 @@ export function YouView({ index }: { index: SkillIndex }) {
   return (
     <>
       <PageHead title="You" />
-      <RankCard index={index} />
+      <RankRow index={index} />
 
       <div className="you-stats">
         <div className="card card--pad you-stat">

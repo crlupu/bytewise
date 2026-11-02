@@ -43,13 +43,13 @@
   --ease: cubic-bezier(0.2, 0, 0.38, 0.9);
   --ease-out: cubic-bezier(0, 0, 0.3, 1);
 
-  /* Data colours: small marks only (a topic's dot). Greys and the two
-     signal hues, so nothing is mistaken for the accent fill. */
+  /* Data colours: small marks only (a topic's dot, a widget's threads).
+     Greys, a blue and orange; never green, so nothing competes with mint. */
   --data-indigo: #3b3a42;
-  --data-teal: #13702e;
+  --data-teal: #2f5f9e;
   --data-orange: #a63b0c;
   --data-magenta: #6d6c74;
-  --data-green: #2f8f4a;
+  --data-green: #5a6b7d;
   --data-slate: #85848c;
 }
 
@@ -70,12 +70,12 @@
   --border: #d9d8dd;
   --border-strong: #85848c;
 
-  /* Progress, right answers and done lessons: deep green for marks you
-     read, pale mint behind them. */
-  --accent: #13702e;
-  --accent-foreground: #ffffff;
-  --accent-soft: #d6f9dc;
-  --accent-soft-strong: #b5f3c1;
+  /* One green only: mint, as a fill. Everything the old accent coloured
+     (icons, progress, feedback words, charts, tints) is ink or grey. */
+  --accent: #0e0e10;
+  --accent-foreground: #f8f8f9;
+  --accent-soft: #e4e3e7;
+  --accent-soft-strong: #d9d8dd;
   --accent-track: rgba(14, 14, 16, 0.08);
   /* The one filled button per screen: ink. */
   --primary: #0e0e10;
@@ -101,6 +101,10 @@
   --code-bg: #f3f3f5;
 
   --scale-0: #e4e3e7;
+  --scale-1: #d0cfd5;
+  --scale-2: #a9a8b0;
+  --scale-3: #605f67;
+  --scale-4: #0e0e10;
 }
 
 .dark {
@@ -118,10 +122,10 @@
   --border: #2c2c31;
   --border-strong: #75747c;
 
-  --accent: #75fa90;
-  --accent-foreground: #0e0e10;
-  --accent-soft: rgba(117, 250, 144, 0.12);
-  --accent-soft-strong: rgba(117, 250, 144, 0.24);
+  --accent: #ededf0;
+  --accent-foreground: #111113;
+  --accent-soft: #232327;
+  --accent-soft-strong: #2c2c31;
   --accent-track: rgba(255, 255, 255, 0.1);
   --primary: #ededf0;
   --primary-foreground: #111113;
@@ -148,14 +152,12 @@
 
   --forest: #232327;
   --scale-0: #232327;
+  --scale-1: #2c2c31;
+  --scale-2: #4a4a51;
+  --scale-3: #8a8991;
+  --scale-4: #ededf0;
 }
 
-:root {
-  --scale-1: color-mix(in srgb, var(--accent) 25%, var(--surface));
-  --scale-2: color-mix(in srgb, var(--accent) 50%, var(--surface));
-  --scale-3: color-mix(in srgb, var(--accent) 75%, var(--surface));
-  --scale-4: var(--accent);
-}
 
 /* ---- Base ---- */
 
@@ -3265,7 +3267,7 @@ body {
   --fill: var(--foreground);
 }
 .dark {
-  --fill: var(--lime);
+  --fill: var(--foreground);
 }
 
 /* Page titles end with the spark, top right, as in the mark. */
@@ -4208,7 +4210,7 @@ body {
   background: var(--fill);
 }
 .dark {
-  --fill: var(--accent);
+  --fill: var(--foreground);
 }
 
 /* Lesson status: done is a mint tile with an ink tick. */
@@ -4311,4 +4313,114 @@ body {
 /* The rank card: the dark dock, level on a mint key. */
 .sk-level {
   border-radius: var(--r-control);
+}
+
+/* ============================================================
+   One green. Mint (--lime) is the only green, and only as a solid
+   fill with ink on it: the start button, practised days, done marks,
+   a right answer's tag, the level badge, the run of bars on the dark
+   tiles, and the dot on the four tab screens. Icons, progress lines,
+   feedback words, charts and tints are ink or grey (--accent is ink).
+   ============================================================ */
+
+/* Progress lines on the dark tiles are light ink, not mint. */
+.tile__meta--bar .meter > span,
+.tile--continue .meter > span,
+.sk-hero .meter > span {
+  background: #ededf0;
+}
+.sk-reqs li.is-met svg {
+  color: #ededf0;
+}
+.status__fill {
+  background: var(--fill);
+}
+
+/* Streak: a plain panel; mint marks the practised days. */
+.tile--streak,
+:root:not(.dark) .tile--streak {
+  background: var(--surface);
+  color: var(--foreground);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.tile--streak .tile__label {
+  color: var(--muted);
+  font-weight: 500;
+}
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  margin-block-start: auto;
+  padding-block-start: 0.5rem;
+}
+.week-strip i {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--surface-secondary);
+}
+.week-strip i.is-on {
+  background: var(--lime);
+}
+.week-strip i.is-today {
+  box-shadow: inset 0 0 0 1.5px var(--foreground);
+}
+.tile--streak .tile__hint {
+  margin-block-start: 0.375rem;
+}
+
+/* Book marks carry no mint corner. */
+.book__mark::after {
+  display: none;
+}
+
+/* Course: only the next lesson is outlined. */
+.path .is-in_progress .list-row,
+.path .is-available:first-of-type .list-row,
+.path .is-completed + .is-available .list-row {
+  box-shadow: inset 0 0 0 1px var(--separator);
+}
+.path .is-next .list-row {
+  box-shadow: inset 0 0 0 1.5px var(--foreground);
+}
+
+/* The dot opens only the four tab screens; deeper screens get plain context. */
+.has-back .page-subtitle {
+  color: var(--muted);
+}
+.has-back .page-subtitle::before {
+  display: none;
+}
+
+/* You: the rank in one row, leading to the skill tree. */
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  margin-block-end: 0.25rem;
+  background: var(--surface);
+  border-radius: var(--r-card);
+  box-shadow: inset 0 0 0 1px var(--border);
+  color: var(--foreground);
+}
+.sk-level--sm {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  font-size: 1.25rem;
+}
+.rank-row__body {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.rank-row__title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.rank-row__meta {
+  font-size: 0.8125rem;
+  color: var(--muted);
 }

@@ -70,8 +70,11 @@ export function CourseView({
 
       <section>
         <ul className="list path">
-          {course.lessons.map((l, i) => {
-            const status = lessonStatus(l, p);
+          {(() => {
+            const statuses = course.lessons.map((l) => lessonStatus(l, p));
+            const next = statuses.indexOf("in_progress") >= 0 ? statuses.indexOf("in_progress") : statuses.indexOf("available");
+            return course.lessons.map((l, i) => {
+            const status = statuses[i];
             const st = lessonSteps(l, p);
             const rec = p.lessons[l.key];
             const pct = Math.round((st.done / st.total) * 100);
@@ -111,7 +114,7 @@ export function CourseView({
               </>
             );
             return (
-              <li key={l.key} className={`lesson-row is-${status}${status === "locked" ? " is-locked" : ""}`}>
+              <li key={l.key} className={`lesson-row is-${status}${status === "locked" ? " is-locked" : ""}${i === next ? " is-next" : ""}`}>
                 {editing ? (
                   <div className="list-row">
                     {body}
@@ -134,7 +137,8 @@ export function CourseView({
                 )}
               </li>
             );
-          })}
+            });
+          })()}
         </ul>
         {editing && (
           <div style={{ marginTop: 16 }}>

@@ -6,18 +6,9 @@ import { TopicRow, topicProgress } from "@/components/Shelf";
 import { Meter, PageHead, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
 import { dueItems, progress, streak, useHydrated, useProgress } from "@/lib/progress";
+import { weekDays } from "@/lib/skills";
 import { continueTarget, lessonSteps } from "@/lib/status";
 import type { Catalog } from "@/lib/types";
-
-const SPARK = "M32 21c1.2 7.3 3.7 9.8 11 11-7.3 1.2-9.8 3.7-11 11-1.2-7.3-3.7-9.8-11-11 7.3-1.2 9.8-3.7 11-11Z";
-
-function Spark({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden>
-      <path d={SPARK} fill="currentColor" transform="translate(32 32) scale(2.6) translate(-32 -32)" />
-    </svg>
-  );
-}
 
 /**
  * Today: what to do next as the big tile, the streak and the review queue
@@ -30,6 +21,8 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
   const known = new Set(catalog.topics.flatMap((t) => t.courses.flatMap((c) => c.lessons.flatMap((l) => l.exercises))));
   const due = dueItems(p, known).length;
   const s = streak(p);
+  const week = weekDays(p);
+  const todayIndex = (new Date().getDay() + 6) % 7;
   const target = continueTarget(catalog, p);
   const course = target && catalog.topics.flatMap((t) => t.courses).find((c) => c.id === target.lesson.courseId);
   const steps = target ? lessonSteps(target.lesson, p) : null;
@@ -83,11 +76,13 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
         )}
 
         <Link href="/progress/" className="tile tile--streak">
-          <span className="tile__big figure">
-            {s.current}
-            <Spark size={18} />
-          </span>
+          <span className="tile__big figure">{s.current}</span>
           <span className="tile__label">day streak</span>
+          <span className="week-strip" role="img" aria-label={`This week: ${week.filter((d) => d.n).length} of 7 days practised`}>
+            {week.map((d, i) => (
+              <i key={d.day} className={`${d.n ? "is-on" : ""}${i === todayIndex ? " is-today" : ""}`} />
+            ))}
+          </span>
           <span className="tile__hint">{s.today ? "Done for today" : s.current ? "Keep it going today" : "Finish a lesson to start one"}</span>
         </Link>
 
