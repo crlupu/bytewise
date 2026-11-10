@@ -2,11 +2,13 @@
    Bytewise — Ledger.
 
    A well-kept ledger: a cool grey ground, near-black ink, hairline
-   bars and big honest numbers, and one mint accent. Mint is always a
-   FILL (a done mark, the streak, the quick-start key, a delta chip) with
-   ink on it; where it has to be text in light mode it becomes a deep
-   green (--accent). Orange means "not yet" (a wrong answer, an item due);
-   red means destructive and nothing else.
+   bars and big honest numbers, one violet and one mint. Violet
+   (--accent) is interaction: focus, the active tab, the answer you have
+   picked, progress, links. Ink (--right) keeps every "right" and "done",
+   so violet never means correct. Mint is always a FILL (a done mark, the
+   streak, the quick-start key, a delta chip) with ink on it. Orange means
+   "not yet" (a wrong answer, an item due); red means destructive and
+   nothing else.
 
    Panels are flat: a surface tile with a 1px hairline. The primary
    button is ink. Only floating things (the tab bar) cast a shadow.
@@ -72,11 +74,14 @@
 
   /* One green only: mint, as a fill. Everything the old accent coloured
      (icons, progress, feedback words, charts, tints) is ink or grey. */
-  --accent: #0e0e10;
-  --accent-foreground: #f8f8f9;
-  --accent-soft: #e4e3e7;
-  --accent-soft-strong: #d9d8dd;
-  --accent-track: rgba(14, 14, 16, 0.08);
+  --accent: #5636e6;
+  --accent-foreground: #ffffff;
+  --accent-soft: #ebe7ff;
+  --accent-soft-strong: #ddd6ff;
+  --accent-track: rgba(86, 54, 230, 0.12);
+  /* Right and done stay ink: violet means "choosing", never "correct". */
+  --right: #0e0e10;
+  --right-soft: #e4e3e7;
   /* The one filled button per screen: ink. */
   --primary: #0e0e10;
   --primary-foreground: #f8f8f9;
@@ -101,10 +106,10 @@
   --code-bg: #f3f3f5;
 
   --scale-0: #e4e3e7;
-  --scale-1: #d0cfd5;
-  --scale-2: #a9a8b0;
-  --scale-3: #605f67;
-  --scale-4: #0e0e10;
+  --scale-1: #d6cffd;
+  --scale-2: #a796f7;
+  --scale-3: #7457f0;
+  --scale-4: #4a2bd1;
 }
 
 .dark {
@@ -122,11 +127,13 @@
   --border: #2c2c31;
   --border-strong: #75747c;
 
-  --accent: #ededf0;
+  --accent: #9d8cff;
   --accent-foreground: #111113;
-  --accent-soft: #232327;
-  --accent-soft-strong: #2c2c31;
-  --accent-track: rgba(255, 255, 255, 0.1);
+  --accent-soft: #24203a;
+  --accent-soft-strong: #2f2950;
+  --accent-track: rgba(157, 140, 255, 0.16);
+  --right: #ededf0;
+  --right-soft: #232327;
   --primary: #ededf0;
   --primary-foreground: #111113;
 
@@ -152,10 +159,10 @@
 
   --forest: #232327;
   --scale-0: #232327;
-  --scale-1: #2c2c31;
-  --scale-2: #4a4a51;
-  --scale-3: #8a8991;
-  --scale-4: #ededf0;
+  --scale-1: #2e2853;
+  --scale-2: #4a3d99;
+  --scale-3: #7461e0;
+  --scale-4: #a99bff;
 }
 
 
@@ -790,8 +797,8 @@ button.list-row:active {
   block-size: 0.9375rem;
 }
 .status--completed {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--right);
+  border-color: var(--right);
   color: var(--accent-foreground);
 }
 .status--in_progress {
@@ -1342,7 +1349,7 @@ pre.shiki,
   block-size: 1.125rem;
 }
 .feedback--correct .feedback__icon {
-  background: var(--accent);
+  background: var(--right);
 }
 .feedback--wrong .feedback__icon {
   background: var(--warning-mark);
@@ -1429,7 +1436,7 @@ pre.shiki,
   border-color: var(--warning-mark);
 }
 .option.is-correct {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--right);
 }
 .option:disabled {
   cursor: default;
@@ -1441,7 +1448,7 @@ pre.shiki,
   font-weight: 700;
 }
 .option__tag--right {
-  color: var(--accent);
+  color: var(--right);
 }
 .option__tag--wrong {
   color: var(--warning);
@@ -1543,7 +1550,7 @@ pre.shiki,
   block-size: 0.9375rem;
 }
 .order-item__status--right {
-  color: var(--accent);
+  color: var(--right);
 }
 .order-item__status--off {
   color: var(--warning);
@@ -1565,10 +1572,10 @@ pre.shiki,
   position: relative;
 }
 .order-item.is-right {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--right);
 }
 .order-item.is-right .order-item__index {
-  color: var(--accent);
+  color: var(--right);
 }
 .order-item.is-off {
   box-shadow: inset 0 0 0 2px var(--warning-mark);
@@ -1642,7 +1649,7 @@ pre.shiki,
   background: var(--warning-mark);
 }
 .match-item.is-right {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--right);
 }
 
 /* ---- Fill in the blank ---- */
@@ -1679,7 +1686,7 @@ pre.shiki,
   border-block-end-color: var(--accent);
 }
 .blank-input.is-right {
-  border-block-end-color: var(--accent);
+  border-block-end-color: var(--right);
   background: transparent;
 }
 .blank-input.is-wrong {
@@ -1726,7 +1733,7 @@ pre.shiki,
   background: var(--warning-soft);
 }
 .sim__message--good {
-  background: var(--accent-soft);
+  background: var(--right-soft);
 }
 .sim__controls {
   display: flex;
@@ -2259,7 +2266,7 @@ dialog.sheet::backdrop {
   inline-size: 5rem;
   block-size: 5rem;
   border-radius: var(--r-pill);
-  background: var(--accent);
+  background: var(--right);
   color: #fff;
   animation: pop 500ms var(--ease-out);
 }
@@ -2615,7 +2622,7 @@ dialog.sheet::backdrop {
   font-weight: 600;
 }
 .blank-slot.is-right {
-  border-block-end-color: var(--accent);
+  border-block-end-color: var(--right);
   background: transparent;
 }
 .blank-slot.is-wrong {
@@ -2804,8 +2811,8 @@ body {
 }
 .tabbar__tab.is-active,
 .tabbar__tab.is-active svg {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 .tabbar__tab.is-active svg {
   background: none;
@@ -3138,7 +3145,7 @@ body {
   background: var(--separator);
 }
 .path > li.is-completed:not(:last-child)::after {
-  background: var(--accent);
+  background: var(--right);
 }
 .path .list-row {
   border-radius: 20px;
@@ -3156,7 +3163,7 @@ body {
   border-width: 2px;
 }
 .path .status--completed {
-  background: var(--accent);
+  background: var(--right);
 }
 .path .status--locked {
   border-style: solid;
@@ -3220,13 +3227,13 @@ body {
   box-shadow: none;
 }
 .feedback--correct {
-  background: var(--accent-soft);
+  background: var(--right-soft);
 }
 .feedback--correct .feedback__title {
-  color: var(--accent);
+  color: var(--right);
 }
 .dark .feedback--correct .feedback__title {
-  color: var(--accent);
+  color: var(--right);
 }
 .step__prompt > p:first-child {
   font-size: 1.375rem;
@@ -3316,8 +3323,8 @@ body {
 .side-link.is-active,
 .side-link.is-active:hover,
 .side-link.is-active svg {
-  background: var(--foreground);
-  color: var(--background);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 .tabbar__tab.is-active svg,
 .side-link.is-active svg {
@@ -3777,7 +3784,7 @@ pre code {
 .sk-week__label { font-size: 0.6875rem; font-weight: 600; color: rgba(255, 255, 255, 0.5); }
 
 .sk-quest__mark { flex: none; inline-size: 1.5rem; block-size: 1.5rem; color: var(--faint); }
-.sk-quest.is-done .sk-quest__mark { color: var(--accent); }
+.sk-quest.is-done .sk-quest__mark { color: var(--right); }
 .sk-quest.is-done .list-row__title { color: var(--muted); text-decoration: line-through; }
 .sk-quest__mark--play { color: var(--accent); }
 
@@ -3832,7 +3839,7 @@ pre code {
 .sk-boss svg { flex: none; inline-size: 1.125rem; block-size: 1.125rem; }
 .sk-boss.is-locked { color: var(--muted); font-weight: 500; padding-inline: 0; }
 .sk-boss.is-ready { background: var(--lime); color: var(--on-lime); }
-.sk-boss.is-defeated { color: var(--accent); padding-inline: 0; }
+.sk-boss.is-defeated { color: var(--right); padding-inline: 0; }
 
 .sk-judgment { display: flex; flex-direction: column; gap: 1rem; }
 .sk-judgment__head { display: flex; align-items: center; gap: 1rem; }
@@ -3899,14 +3906,14 @@ pre code {
 /* Finished courses and books: tinted, outlined in the accent, marked Done. */
 .row.is-done,
 .book.is-done {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1.5px var(--accent);
+  background: var(--right-soft);
+  box-shadow: inset 0 0 0 1.5px var(--right);
 }
 .row__count--done {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--accent);
+  color: var(--right);
   font-weight: 700;
 }
 .row__count--done svg { inline-size: 1rem; block-size: 1rem; }
@@ -3944,14 +3951,14 @@ pre code {
     0 12px 32px -12px rgba(0, 0, 0, 0.8);
 }
 .feedback-dock .feedback--correct {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  background: color-mix(in srgb, var(--right) 12%, var(--surface));
   box-shadow:
-    inset 0 0 0 1.5px var(--accent),
+    inset 0 0 0 1.5px var(--right),
     0 12px 32px -12px rgba(14, 14, 16, 0.35);
 }
 .dark .feedback-dock .feedback--correct {
   box-shadow:
-    inset 0 0 0 1.5px var(--accent),
+    inset 0 0 0 1.5px var(--right),
     0 12px 32px -12px rgba(0, 0, 0, 0.8);
 }
 .feedback-dock .feedback--wrong {
@@ -4241,7 +4248,7 @@ body {
   color: var(--foreground);
 }
 
-/* Answers: a letter tag, an ink ring when chosen. */
+/* Answers: a letter tag, a violet ring while chosen, ink once right. */
 .option {
   border-radius: var(--r-control);
 }
@@ -4255,19 +4262,20 @@ body {
   font: 600 0.75rem/1 var(--font-code);
 }
 .option.is-selected,
+.option.is-selected:hover:not(:disabled),
 .dark .option.is-selected {
-  background: var(--surface);
-  box-shadow: inset 0 0 0 2px var(--foreground);
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
 }
 .option.is-selected .option__mark {
-  background: var(--foreground);
-  border-color: var(--foreground);
-  color: var(--background);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-foreground);
 }
 .option.is-correct,
 .dark .option.is-correct {
-  background: var(--accent-soft);
-  box-shadow: inset 0 0 0 2px var(--accent);
+  background: var(--right-soft);
+  box-shadow: inset 0 0 0 2px var(--right);
 }
 .option.is-correct .option__mark {
   background: var(--lime);
@@ -4288,7 +4296,7 @@ body {
   color: var(--on-lime);
 }
 .dark .order-item.is-right {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--right);
 }
 
 /* The lesson footer and feedback: flat, hairline on top. */
@@ -4381,7 +4389,7 @@ body {
   box-shadow: inset 0 0 0 1px var(--separator);
 }
 .path .is-next .list-row {
-  box-shadow: inset 0 0 0 1.5px var(--foreground);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
 }
 
 /* The dot opens only the four tab screens; deeper screens get plain context. */
