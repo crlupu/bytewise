@@ -12,18 +12,21 @@ const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const urbanist = localFont({ src: "./fonts/Urbanist-latin.woff2", weight: "300 800", variable: "--font-urbanist", display: "swap" });
 const jetbrainsMono = localFont({ src: "./fonts/JetBrainsMono-latin.woff2", weight: "400 500", variable: "--font-jetbrains-mono", display: "swap" });
 
+// Bump when the icons change, so browsers and home screens fetch the new files.
+const ICON_V = "b5";
+
 export const metadata: Metadata = {
   title: "Bytewise",
   description: "Short, interactive lessons on software engineering: Java, databases, operating systems, networking and architecture.",
   icons: {
     icon: [
-      { url: `${BASE}/icon.svg`, type: "image/svg+xml" },
-      { url: `${BASE}/icon-192.png`, type: "image/png", sizes: "192x192" },
+      { url: `${BASE}/icon.svg?v=${ICON_V}`, type: "image/svg+xml" },
+      { url: `${BASE}/icon-192.png?v=${ICON_V}`, type: "image/png", sizes: "192x192" },
     ],
     // iOS ignores SVG here; it needs a full-bleed PNG and rounds the corners itself.
-    apple: [{ url: `${BASE}/apple-touch-icon.png`, sizes: "180x180" }],
+    apple: [{ url: `${BASE}/apple-touch-icon.png?v=${ICON_V}`, sizes: "180x180" }],
   },
-  manifest: `${BASE}/manifest.webmanifest`,
+  manifest: `${BASE}/manifest.webmanifest?v=${ICON_V}`,
   appleWebApp: { capable: true, title: "Bytewise", statusBarStyle: "default" },
 };
 
