@@ -15,11 +15,11 @@ export function Logo({ size = 28 }: { size?: number }) {
       </defs>
       <rect width="100" height="100" rx="22.37" fill="url(#bw-logo-tile)" />
       <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M57 49A13.5 13.5 0 0 1 56 76H43" stroke="#75fa90" strokeWidth="9.5" />
-        <path d="M51 68L43 76" stroke="#75fa90" strokeWidth="9.5" />
-        <path d="M32 24V76" stroke="#f4f4f6" strokeWidth="9.5" />
-        <path d="M32 24H54A12.5 12.5 0 0 1 54 49H43" stroke="#f4f4f6" strokeWidth="9.5" />
-        <path d="M51 41L43 49" stroke="#f4f4f6" strokeWidth="9.5" />
+        <path d="M55.19 48.76A16.12 16.12 0 0 1 55.19 81.0H39.19" stroke="#75fa90" strokeWidth="9.5" />
+        <path d="M47.19 73.0L39.19 81.0" stroke="#75fa90" strokeWidth="9.5" />
+        <path d="M27.19 19.0V81.0" stroke="#f4f4f6" strokeWidth="9.5" />
+        <path d="M27.19 19.0H53.19A14.88 14.88 0 0 1 53.19 48.76H39.19" stroke="#f4f4f6" strokeWidth="9.5" />
+        <path d="M47.19 40.76L39.19 48.76" stroke="#f4f4f6" strokeWidth="9.5" />
       </g>
     </svg>
   );

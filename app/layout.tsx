@@ -13,7 +13,7 @@ const urbanist = localFont({ src: "./fonts/Urbanist-latin.woff2", weight: "300 8
 const jetbrainsMono = localFont({ src: "./fonts/JetBrainsMono-latin.woff2", weight: "400 500", variable: "--font-jetbrains-mono", display: "swap" });
 
 // Bump when the icons change, so browsers and home screens fetch the new files.
-const ICON_V = "b5";
+const ICON_V = "c1";
 
 export const metadata: Metadata = {
   title: "Bytewise",
