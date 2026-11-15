@@ -5,6 +5,7 @@ import { ChevronIcon, LibraryIcon, PlayIcon, SearchIcon } from "@/components/ico
 import { TopicRow, topicProgress } from "@/components/Shelf";
 import { Meter, PageHead, plural } from "@/components/ui";
 import { longDate } from "@/lib/dates";
+import { Logo } from "@/components/Logo";
 import { dueItems, progress, streak, useHydrated, useProgress } from "@/lib/progress";
 import { weekDays } from "@/lib/skills";
 import { continueTarget, lessonSteps } from "@/lib/status";
@@ -36,7 +37,7 @@ export function HomeView({ catalog }: { catalog: Catalog }) {
 
   return (
     <>
-      <PageHead title="Today" subtitle={hydrated ? longDate() : " "}>
+      <PageHead title="Today" subtitle={hydrated ? longDate() : " "} mark={<Logo size={48} />}>
         <Link href="/search/" className="icon-btn icon-btn--tinted" aria-label="Search lessons">
           <SearchIcon aria-hidden />
         </Link>

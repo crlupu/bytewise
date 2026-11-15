@@ -472,6 +472,17 @@ html:not([data-input="key"]) :where(.btn):focus-visible {
   flex: 1 1 auto;
   min-inline-size: 0;
 }
+/* The app mark beside the Today title on phones and tablets; desktops show it in the sidebar. */
+.page-head__mark {
+  flex: none;
+  align-self: center;
+  line-height: 0;
+}
+@media (min-width: 66rem) {
+  .page-head__mark {
+    display: none;
+  }
+}
 .page-title {
   font-size: 2.125rem;
   font-weight: 700;

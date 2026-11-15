@@ -12,9 +12,12 @@ export function PageHead({
   subtitle,
   lede,
   back,
+  mark,
   children,
 }: {
   title: string;
+  /** The app mark beside the title; shown on phones and tablets, where there is no sidebar. */
+  mark?: ReactNode;
   subtitle?: ReactNode;
   lede?: ReactNode;
   back?: { href: string; label: string };
@@ -32,6 +35,7 @@ export function PageHead({
         </Link>
       )}
       <div className="page-head">
+        {mark && <div className="page-head__mark">{mark}</div>}
         <div className="page-head__text">
           {subtitle && <p className="page-subtitle">{subtitle}</p>}
           <h1 className="page-title">{title}</h1>
